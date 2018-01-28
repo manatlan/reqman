@@ -1,8 +1,11 @@
 - GET: /
+  headers:
+    my_header: hello github                             # set some headers, for fun
+    my_header2: hello github
   tests:
-      - status: 200
-      - content: leading software development platform
-      - "content-type": text/html
+      - status: 200                                     # http 200 is excepted, if not : test is invalid
+      - content: leading software development platform  # this substring is in the content ?
+      - "content-type": text/html                       # content-type is setted and contains text/html ?
 
 - GET: /explore
   tests:
