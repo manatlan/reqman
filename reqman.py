@@ -69,11 +69,11 @@ class TestResult(list):
             #TODO: test if header is just present
             #TODO: test if not !
 
-            results.append( (testname,result) ) #TODO: make a bool class !
+            results.append( (testname,result) ) #TODO: make a (bool)class !
 
         list.__init__(self,results)
 
-    def __repr__(self): #TODO: make better here !
+    def __repr__(self): #TODO: should return str
         print " -",self.req,"--->",self.res
         for testname,result in self:
             print "   - TEST:",testname,"?",result
@@ -120,7 +120,7 @@ class Req(object):
 class Reqs(list):
     def __init__(self,fd):
         self.name = fd.name.replace("\\","/")
-        l=yaml.load( fd.read() )
+        l=yaml.load( fd.read() )    #TODO: should be aware of encodings (utf8/cp1252 at least) (what for mac ?)
         ll=[]
         if l:
             l=[l] if type(l)==dict else l
