@@ -156,6 +156,5 @@ def loadEnv(name=None):
 if __name__=="__main__":
     os.chdir(os.path.join(os.path.dirname(__file__),"."))
     
-    #~ makeTests( loadEnv("ROA") )
-    #~ makeTests( loadEnv("GATEWAY") )
-    makeTests( loadEnv(),"*nas*" )
+    #~ makeTests( loadEnv("test") )
+    makeTests( loadEnv() )
