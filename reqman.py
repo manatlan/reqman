@@ -1,8 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# #
+# #    Copyright (C) 2018 manatlan manatlan[at]gmail(dot)com
+# #
+# # This program is free software; you can redistribute it and/or modify
+# # it under the terms of the GNU General Public License as published
+# # by the Free Software Foundation; version 2 only.
+# #
+# # This program is distributed in the hope that it will be useful,
+# # but WITHOUT ANY WARRANTY; without even the implied warranty of
+# # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# # GNU General Public License for more details.
+# #
+
 import yaml,os,json,sys,httplib,urllib,ssl,sys,fnmatch,urlparse,glob
 
-os.chdir(os.path.join(os.path.dirname(__file__),"."))
 class SyntaxException(Exception):pass
 ###########################################################################
 ## http access
@@ -142,6 +154,8 @@ def loadEnv(name=None):
     return env
 
 if __name__=="__main__":
+    os.chdir(os.path.join(os.path.dirname(__file__),"."))
+    
     #~ makeTests( loadEnv("ROA") )
     #~ makeTests( loadEnv("GATEWAY") )
     makeTests( loadEnv(),"*nas*" )
