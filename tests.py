@@ -167,7 +167,7 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( json.loads(s.req.data), {"var": 1, "txt": "explore"})
         self.assertEqual( s.req.headers,  {'h1': 'my h1',"h3":"explore"})
 
-
+#TODO: more tests !!!
 
 if __name__ == '__main__':
     unittest.main()

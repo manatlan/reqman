@@ -1,0 +1,11 @@
+- GET: /
+  tests:
+      - status: 200
+      - content: leading software development platform
+      - "content-type": text/html
+
+- GET: /explore
+  tests:
+      - status: 200
+      - content:  <title>Explore</title>
+      - "content-type": text/html
