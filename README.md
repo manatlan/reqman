@@ -56,4 +56,49 @@ There are 3 specials (and optionnals) vars :
 
 **tests** : is a list of mono key/value pair, to test the response, which will test each requests. (2 specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
 
+
+## Tests / yml file
+
+It's a yaml file, which can be a list (multiple tests at once), or a dict (just one test).
+
+Here is a yaml, with just one test (a dict):
+
+    GET: /
+
+Here is a yaml, with just multiple tests (a list):
+
+    - GET: /
+    - GET: /explore
+    
+But requests without tests are useless ... see [tests.yml](/example/tests.yml)
+For each request you can set theses keys:
+
+**headers** : is a dict of headers, which will be added to this request
+**tests** : is a list of mono key/value pair, to test this response. (2 specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
+**body** : which can be plain text or dict yaml or json. It's the content body which will be send to http access.
+
+_headers_ & _tests_ can be surcharged using _reqman.conf_ ! Not _body_ !
+
+And, of course, you can use variables everywhere (if declared in reqman.conf ;-), like this:
+
+    - POST: /authent
+      body: login=me&pass={{passwd}}
+      headers:
+        content-type: application/x-www-form-urlencoded
+      tests:
+        - status: 200
+        - content: you are logged in
+
+or a json example request:
+
+    - POST: /authent
+      body:
+        login:  me
+        pass:   "{{passwd}}"
+      headers:
+        content-type: application/json
+      tests:
+        - status: 200
+        - content: you are logged in
+
 **... MORE TO COME ...**

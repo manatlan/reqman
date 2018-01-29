@@ -5,10 +5,10 @@
   tests:
       - status: 200                                     # http 200 is excepted, if not : test is invalid
       - content: leading software development platform  # this substring is in the content ?
-      - "content-type": text/html                       # content-type is setted and contains text/html ?
+      - content-type: text/html                       # content-type is setted and contains text/html ?
 
 - GET: /explore
   tests:
       - status: 200
       - content:  <title>Explore
-      - "content-type": text/html
+      - content-type: text/html
