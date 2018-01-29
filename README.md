@@ -51,9 +51,9 @@ There are 3 specials (and optionnals) vars :
         - content: GitHub           # assert that there will be the strinf "GitHub" in the response content
         - content-type: text/html   # assert the content-type response header will contain "text/html"
 
-    * **root** : is the root of the call request, needed if you omit the full url in reqman tests
-    * **headers** : is a dict of headers, which will be appended to each requests
-    * **tests** : is a list of mono key/value pair, to test the response, which will test each requests
+- **root** : is the root of the call request, needed if you omit the full url in reqman tests
+- **headers** : is a dict of headers, which will be appended to each requests
+- **tests** : is a list of mono key/value pair, to test the response, which will test each requests
 
 (specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
 
@@ -74,9 +74,9 @@ Here is a yaml, with just multiple tests (a list):
 But requests without tests are useless ... see [tests.yml](/example/tests.yml)
 For each request you can set theses keys:
 
-    * **headers** : is a dict of headers, which will be added to this request
-    * **tests** : is a list of mono key/value pair, to test this response. (2 specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
-    * **body** : which can be plain text or dict yaml or json. It's the content body which will be send to http access.
+- **headers** : is a dict of headers, which will be added to this request
+- **tests** : is a list of mono key/value pair, to test this response. (2 specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
+- **body** : which can be plain text or dict yaml or json. It's the content body which will be send to http access.
 
 _headers_ & _tests_ can be surcharged using _reqman.conf_ ! Not _body_ !
 
