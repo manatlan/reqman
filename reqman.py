@@ -74,6 +74,17 @@ def http(r):
 ###########################################################################
 ## Reqs manage
 ###########################################################################
+
+class Test(int):
+    def __new__(cls, name,value):
+        s=super(Test, cls).__new__(cls, value)
+        s.name = name
+        return s
+# class Test(int):
+#     def __new__(cls, name,value):
+#         cls.name = name
+#         return int.__new__(cls, bool(value))
+
 class TestResult(list):
     def __init__(self,req,res,tests):
         self.req=req
@@ -89,15 +100,15 @@ class TestResult(list):
             #TODO: test if header is just present
             #TODO: test if not !
 
-            results.append( (testname,result) ) #TODO: make a (bool)class !
+            results.append( Test(testname,result) )
 
         list.__init__(self,results)
 
-    def __repr__(self):
+    def __str__(self):
         ll=[]
         ll.append( u" - %s --> %s " % (self.req,self.res or u"Not callable" ) )
-        for testname,result in self:
-            ll.append( u"   - TEST: %s ? %s " %(testname,result) )
+        for t in self:
+            ll.append( u"   - TEST: %s ? %s " %(t.name,t==1) )
         txt = os.linesep.join(ll)
         return txt.encode( sys.stdout.encoding ) if sys.stdout.encoding else txt
 
@@ -133,7 +144,9 @@ class Req(object):
         req=Request(h.scheme,h.hostname,h.port,self.method,rep(self.path),rep(self.body),headers)
         if h.hostname:
             res=http( req )
-            return TestResult(req,res,self.tests) #TODO: inheritance tests !
+            tests=[]+env.get("tests",[]) if env else []
+            tests+=self.tests
+            return TestResult(req,res,tests) #TODO: inheritance tests !
         else:
             # no hostname : no response, no tests ! (missing reqman.conf the root var ?)
             return TestResult(req,None,[])
@@ -209,7 +222,7 @@ div.hide > ul > pre {display:none}
                 u"\n".join([u"%s: %s" %(k,v) for k,v in tr.res.headers.items()]),
                 cgi.escape(u(tr.res.content or "")),
 
-                u"".join([u"<li class='%s'>%s</li>" % (result and u"ok" or u"ko",cgi.escape(name)) for name,result in tr ]),
+                u"".join([u"<li class='%s'>%s</li>" % (t and u"ok" or u"ko",cgi.escape(t.name)) for t in tr ]),
                 )
         if html: self.append( html )
 
@@ -273,7 +286,7 @@ def main(params):
             hr.add( tr=tr )
             all+=tr
 
-    ok,total=len([i[1] for i in all if i[1]]),len(all)
+    ok,total=len([i for i in all if i]),len(all)
 
     hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
     hr.save("reqman.html")

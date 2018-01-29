@@ -8,7 +8,7 @@ from StringIO import StringIO
 ################################################################## mock
 def myhttp(q):
     r=StringIO("the content")
-    r.getheaders=lambda: {"content-type":"plain/text","server":"mock"}
+    r.getheaders=lambda: {"content-type":"text/plain","server":"mock"}
     r.status=200
     return reqman.Response(r)
 
@@ -55,9 +55,9 @@ class Tests_Req(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.res.status, 200)
         self.assertEqual( len(s), 3)
-        self.assertEqual(s[0][1], True)
-        self.assertEqual(s[1][1], True)
-        self.assertEqual(s[2][1], True)
+        self.assertTrue(s)
+        self.assertTrue(s)
+        self.assertTrue(s)
 
     def test_env_var_in_path(self):
         env=dict(root="https://github.com/",a_var="explore")
@@ -191,7 +191,40 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( json.loads(s.req.body), {"var": 1, "txt": "explore"})
         self.assertEqual( s.req.headers,  {'h1': 'my h1',"h3":"explore"})
 
+
+    def test_yml_tests_inheritance(self):
+
+        y="""
+- GET: /
+  tests:
+    - content-type: text/plain
+"""
+        f=StringIO(y)
+        f.name="filename"
+        l=reqman.Reqs(f)
+        self.assertEqual( len(l), 1)
+        get=l[0]
+        self.assertEqual( get.path, "/")
+        self.assertEqual( get.body, None)
+        self.assertEqual( get.tests, [{'content-type': 'text/plain'}])
+        #=-
+
+        env=dict(
+            root="https://github.com:443/",
+            tests=[dict(server="mock")],
+        )
+
+        s=get.test(env)
+        self.assertEqual( s.req.host, "github.com")
+        self.assertEqual( s.req.protocol, "https")
+        self.assertEqual( s.req.port, 443)
+        self.assertEqual( s.req.path, "/")
+        self.assertEqual( s.req.body, None)
+        self.assertEqual( s[0],1 )
+        self.assertEqual( s[1],1 )
+
 #TODO: more tests !!!
+#TODO: test command line !
 
 if __name__ == '__main__':
     unittest.main()
