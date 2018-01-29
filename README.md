@@ -103,7 +103,7 @@ or a json example request:
 
 ## Change the config with command line
 
-It can be very useful to run your tests with various parameters. That could be done with "switch" in command line. It use the variable pool of the _reqman.conf_.
+It can be very useful to run your tests with various parameters (think various environments). That could be done with "switch" in command line. It use the variable pool of the _reqman.conf_.
 
 So, if you got a _reqman.conf_ like this:
 
