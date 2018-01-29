@@ -10,5 +10,5 @@
 - GET: /explore
   tests:
       - status: 200
-      - content:  <title>Explore</title>
+      - content:  <title>Explore
       - "content-type": text/html

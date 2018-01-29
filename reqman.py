@@ -12,7 +12,7 @@
 # # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # # GNU General Public License for more details.
 # #
-import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob
+import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi
 
 
 def u(txt):
@@ -192,7 +192,7 @@ div.hide > ul > pre {display:none}
     <b>%s</b> %s : <b>%s</b>
     <ul>
         <pre>%s %s<hr/>%s<hr/>%s</pre>
-        <pre>status: %s<hr/>%s<hr/>%s</pre>
+        <pre>%s<hr/>%s</pre>
         %s
     </ul>
 </div>
@@ -206,11 +206,10 @@ div.hide > ul > pre {display:none}
                 u"\n".join([u"%s: %s" %(k,v) for k,v in tr.req.headers.items()]),
                 tr.req.data,
 
-                tr.res.status,
                 u"\n".join([u"%s: %s" %(k,v) for k,v in tr.res.headers.items()]),
-                u(tr.res.content),
+                cgi.escape(u(tr.res.content)),
 
-                u"".join([u"<li class='%s'>%s</li>" % (result and u"ok" or u"ko",name) for name,result in tr ]),
+                u"".join([u"<li class='%s'>%s</li>" % (result and u"ok" or u"ko",cgi.escape(name)) for name,result in tr ]),
                 )
         if html: self.append( html )
 
