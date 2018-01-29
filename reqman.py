@@ -12,8 +12,30 @@
 # # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # # GNU General Public License for more details.
 # #
-
+"""
+changelog:
+    - when no input files : use ymls in "."
+    - test not executed if missing root (no more exception!)
+    - sys.exit with number of errors
+    - more verbs
+    - verbs insensitives
+    - html renderer
+    - encoding aware
+"""
 import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob
+
+def u(txt):
+    if txt and isinstance(txt,basestring):
+        if type(txt) != unicode:
+            try:
+                return txt.decode("utf8")
+            except:
+                try:
+                    return txt.decode("cp1252")
+                except:
+                    return unicode(txt)
+    return txt
+
 
 class SyntaxException(Exception):pass
 ###########################################################################
@@ -28,22 +50,29 @@ class Request:
         self.path=path
         self.data=data
         self.headers=headers
+
+        if self.host and self.protocol:
+            self.url="%s://%s%s" % (
+                self.protocol,
+                self.host+(":%s"%self.port if self.port else ""),
+                self.path
+            )
+
     def __repr__(self):
         return "[%s %s %s]" % (self.protocol.upper(),self.method,self.path)
 
 class Response:
     def __init__(self,r):
         self.status = r.status
-        self.content = r.read()
+        self.content = u(r.read())      #TODO: bad way to decode to unicode ;-)
         self.headers = dict(r.getheaders())
     def __repr__(self):
         return "[%s]" % (self.status)
         #~ return "[%s %s]" % (self.status,self.headers)
-        # return "<%s %s : %s>" % (self.status,self.headers,self.content.encode("string_escape"))
+        #~ return "<%s %s : %s>" % (self.status,self.headers,self.content.encode("string_escape"))
 
 def http(r):
     #TODO: cookiejar !
-    #TODO: exception, coz host,port could be none,none if not root and "GET /" for example !
     if r.protocol=="https":
         cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
     else:
@@ -73,11 +102,13 @@ class TestResult(list):
 
         list.__init__(self,results)
 
-    def __repr__(self): #TODO: should return str
-        print " -",self.req,"--->",self.res
+    def __repr__(self):
+        ll=[]
+        ll.append( u" - %s --> %s " % (self.req,self.res or u"Not callable" ) )
         for testname,result in self:
-            print "   - TEST:",testname,"?",result
-        return ""
+            ll.append( u"   - TEST: %s ? %s " %(testname,result) )
+        txt = os.linesep.join(ll)
+        return txt.encode( sys.stdout.encoding ) if sys.stdout.encoding else txt
 
 class Req(object):
     def __init__(self,method,path,body=None,headers={},tests=[]):  # body = str ou dict ou None
@@ -94,7 +125,7 @@ class Req(object):
         def rep(txt):
             if env and txt:
                 for key,value in env.items():
-                    if isinstance(value,basestring):
+                    if isinstance(value,basestring) and isinstance(txt,basestring):
                         txt=txt.replace("{{%s}}"%key, value.encode('string_escape') )
             return txt
 
@@ -109,10 +140,12 @@ class Req(object):
             headers[k]=rep(headers[k])
 
         req=Request(h.scheme,h.hostname,h.port,self.method,rep(self.path),rep(self.body),headers)
-        res=http( req )
-
-        return TestResult(req,res,self.tests) #TODO: inheritance tests !
-
+        if h.hostname:
+            res=http( req )
+            return TestResult(req,res,self.tests) #TODO: inheritance tests !
+        else:
+            # no hostname : no response, no tests ! (missing reqman.conf the root var ?)
+            return TestResult(req,None,[])
 
     def __repr__(self):
         return "<%s %s>" % (self.method,self.path)
@@ -120,89 +153,146 @@ class Req(object):
 class Reqs(list):
     def __init__(self,fd):
         self.name = fd.name.replace("\\","/")
-        l=yaml.load( fd.read() )    #TODO: should be aware of encodings (utf8/cp1252 at least) (what for mac ?)
+        l=yaml.load( u(fd.read()) )    #TODO: should be aware of encodings (utf8/cp1252 at least) (what for mac ?)
         ll=[]
         if l:
             l=[l] if type(l)==dict else l
 
             for d in l:
-                if "GET" in d: method,path="GET",d.get("GET","")
-                elif "PUT" in d: method,path="PUT",d.get("PUT","")
-                elif "POST" in d: method,path="POST",d.get("POST","")
-                elif "DELETE" in d: method,path="DELETE",d.get("DELETE","")
-                #TODO: more http verbs !
-                #TODO: no case sensitive verbs !
-                else: raise SyntaxException("no known verbs")
-                ll.append( Req(method,path,d.get("body",None),d.get("headers",[]),d.get("tests",[])) )
+                mapkeys ={ i.upper():i for i in d.keys() }
+                verbs= sorted(list(set(mapkeys).intersection(set(["GET","POST","DELETE","PUT","HEAD","OPTIONS","TRACE","PATCH","CONNECT"]))))
+                if len(verbs)!=1:
+                    raise SyntaxException("no known verbs")
+                else:
+                    method=verbs[0]
+                    ll.append( Req(method,d.get( mapkeys[method],""),d.get("body",None),d.get("headers",[]),d.get("tests",[])) )
         list.__init__(self,ll)
 
 
+def listFiles(path,filters=(".yml") ):
+    for folder, subs, files in os.walk(path):
+        for filename in files:
+            if filename.lower().endswith( filters ):
+                yield os.path.join(folder,filename)
+
+
 ###########################################################################
-## Environnement
+##
 ###########################################################################
-def loadEnv(rc,name=None):
-    env=yaml.load( file(rc).read() )
-    if name in env: env.update( env[name] ) #TODO: should warn when not present ?!
+class HtmlRender(list):
+    def __init__(self):
+        list.__init__(self,[u"""
+<meta charset="utf-8">
+<style>
+.ok {color:green}
+.ko {color:red}
+hr {padding:0px;margin:0px;border:1px solid #EEE;}
+pre {border:1px solid black;background:white !important;overflow-x:auto;width:100%}
+div {cursor:pointer;background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
+div.hide {background:inherit}
+div.hide > ul > pre {display:none}
+</style>
+"""])
+
+    def add(self,html=None,tr=None):
+        if tr:
+            html =u"""
+<div onclick="this.classList.toggle('hide')" class="hide">
+    <b>%s</b> %s : <b>%s</b>
+    <ul>
+        <pre>%s %s<hr/>%s<hr/>%s</pre>
+        <pre>status: %s<hr/>%s<hr/>%s</pre>
+        %s
+    </ul>
+</div>
+            """ % (
+                tr.req.method,
+                tr.req.path,
+                tr.res.status,
+
+                tr.req.method,
+                tr.req.url,
+                u"\n".join([u"%s: %s" %(k,v) for k,v in tr.req.headers.items()]),
+                tr.req.data,
+
+                tr.res.status,
+                u"\n".join([u"%s: %s" %(k,v) for k,v in tr.res.headers.items()]),
+                u(tr.res.content),
+
+                u"".join([u"<li class='%s'>%s</li>" % (result and u"ok" or u"ko",name) for name,result in tr ]),
+                )
+        if html: self.append( html )
+
+    def save(self,name):
+        open(name,"w+").write( os.linesep.join(self).encode("utf8") )
+
+def main(params):
+    # search for a specific env var (starting with "-")
+    varenvs=[]
+    for varenv in [i for i in params if i.startswith("-")]:
+        params.remove( varenv )
+        varenvs.append( varenv[1:] )
+
+    # sort params as yml files
+    ymls=[]
+    if not params: params=["."]
+    for p in params:
+        if os.path.isdir(p):
+            ymls+=sorted(list(listFiles(p)))
+        elif os.path.isfile(p):
+            if p.lower().endswith(".yml"):
+                ymls.append(p)
+            else:
+                raise Exception("not a yml file") #TODO: better here
+        else:
+            raise Exception("bad param: %s" % p) #TODO: better here
+
+    # choose first reqman.conf under choosen files
+    rc=None
+    folders=[""]+list(set([os.path.dirname(i) for i in ymls]))
+    folders.sort( key=lambda i: i.count("/"))
+    for f in folders:
+        if os.path.isfile( os.path.join(f,"reqman.conf") ):
+            rc=os.path.join(f,"reqman.conf")
+
+    # load env !
+    env=yaml.load( u(file(rc).read()) )
+    for name in varenvs:
+        if name in env:
+            env.update( env[name] )
+
+    # hook oauth2
     if "oauth2" in env: #TODO: should found a clever way to setup/update vars in env ! to be better suitable
-        u = urlparse.urlparse(env["oauth2"]["url"])
-        req=Request(u.scheme,u.hostname,u.port,"POST",u.path,urllib.urlencode(env["oauth2"]["params"]),{'Content-Type': 'application/x-www-form-urlencoded'})
+        up = urlparse.urlparse(env["oauth2"]["url"])
+        req=Request(up.scheme,up.hostname,up.port,"POST",up.path,urllib.urlencode(env["oauth2"]["params"]),{'Content-Type': 'application/x-www-form-urlencoded'})
         res=http(req)
         token=json.loads(res.content)
         env["headers"]["Authorization"] = token["token_type"]+" "+token["access_token"]
         print "OAuth2 TOKEN:",env["headers"]["Authorization"]
-    return env
 
-def rlist(path):
-    for folder, subs, files in os.walk(path):
-        for filename in files:
-            if filename.lower().endswith( (".yml") ):
-                yield os.path.join(folder,filename)
+
+    # and make tests
+    all=[]
+    hr=HtmlRender()
+    for f in [Reqs(file(i)) for i in ymls]:
+        print f.name,len(f)
+        hr.add("<h3>%s</h3>"%f.name)
+        for t in f:
+            tr=t.test( env ) #TODO: colorful output !
+            print tr
+            hr.add( tr=tr )
+            all+=tr
+
+    ok,total=len([i[1] for i in all if i[1]]),len(all)
+
+    hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
+    hr.save("reqman.html")
+
+    print "RESULT: %s/%s" % (ok,total)
+    return total - ok
+
 
 if __name__=="__main__":
-    params=sys.argv[1:]
-    # params=["example",]
-    if params:
+    #~ sys.exit( main(sys.argv[1:]) )
+    sys.exit( main(["-ROA"]) )
 
-        # search for a specific env var (starting with "-")
-        env=[i for i in params if i.startswith("-")]
-        assert len(env)<=1  #TODO: better here
-        if len(env)==1:
-            params.remove(env[0])
-            specificEnv=env[0][1:]
-        else:
-            specificEnv=None
-        
-        # sort params as yml files
-        ymls=[]
-        for p in params:
-            if os.path.isdir(p):
-                ymls+=sorted(list(rlist(params[0])))
-            elif os.path.isfile(p):
-                if p.lower().endswith(".yml"):
-                    ymls.append(p)
-                else:
-                    raise Exception("not a yml file") #TODO: better here
-            else:
-                raise Exception("bad param: %s" % p) #TODO: better here
-
-        # choose first reqman.conf under choosen files
-        rc=None
-        folders=[""]+list(set([os.path.dirname(i) for i in ymls]))
-        folders.sort( key=lambda i: i.count("/"))
-        for f in folders:
-            if os.path.isfile( os.path.join(f,"reqman.conf") ):
-                rc=os.path.join(f,"reqman.conf")
-
-        # load env !
-        env=loadEnv(rc,specificEnv) if rc else {} 
-
-        # and make tests
-        #TODO: make a html renderer too !
-        for f in [Reqs(file(i)) for i in ymls]:
-            print f.name,len(f)
-            for t in f:
-                print t.test( env ) #TODO: colorful output !
-        #TODO: coolest sys.exit() depending on tests
-    else:
-        print "USAGE: reqman <pattern> [env]" #TODO: should load all yml under current path, no ?!
-        sys.exit(-1)

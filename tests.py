@@ -47,7 +47,11 @@ class Tests_Req(unittest.TestCase):
     def test_Tests(self):
         env=dict(root="https://github.com/")
 
-        r=reqman.Req("GET","/",tests=[dict(status=200),dict(content="content"),dict(server="mock")])
+        r=reqman.Req("GET","/",tests=[
+                    dict(status=200),
+                    dict(content="content"),
+                    dict(server="mock")
+        ])
         s=r.test(env)
         self.assertEqual(s.res.status, 200)
         self.assertEqual( len(s), 3)
@@ -64,6 +68,8 @@ class Tests_Req(unittest.TestCase):
         self.assertEqual("content" in s.res.content, True)
 
 
+
+
 class Tests_Reqs(unittest.TestCase):
 
     def test_simplest_yml(self):
@@ -73,12 +79,30 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( len(l), 1)
 
 
+
+    def test_encoding_yml(self):
+        f=StringIO(u"GET: https://github.com/\nbody: héhé")
+        f.name="yo"
+        l=reqman.Reqs(f)
+        self.assertEqual( type(l[0].body),unicode)
+
+        f=StringIO(u"GET: https://github.com/\nbody: héhé".encode("utf8"))
+        f.name="yo"
+        l=reqman.Reqs(f)
+        self.assertEqual( type(l[0].body),unicode)
+
+        f=StringIO(u"GET: https://github.com/\nbody: héhé".encode("cp1252"))
+        f.name="yo"
+        l=reqman.Reqs(f)
+        self.assertEqual( type(l[0].body),unicode)
+
+
     def test_yml(self):
         y="""
-- GET: https://github.com/
-- PUT: https://github.com/explore
-- DELETE: https://github.com/explore
-- POST: https://github.com/explore
+- GEt : https://github.com/
+- pUT: https://github.com/explore
+- DEleTE  : https://github.com/explore
+- post: https://github.com/explore
 """
         f=StringIO(y)
         f.name="filename"
@@ -107,9 +131,9 @@ class Tests_Reqs(unittest.TestCase):
 - GET: /
   headers:
     h2: my h2
-- POST: /{{a_var}}
+- POsT: /{{a_var}}
   body: "{{a_var}}"
-- PUT: /
+- PUt: /
   headers:
     h3: "{{a_var}}"
   body:                     # yaml -> json body !
@@ -171,4 +195,3 @@ class Tests_Reqs(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
