@@ -56,7 +56,7 @@ There are 3 specials (and optionnals) vars :
 - **tests** : is a list of mono key/value pair, to test the response, which will test each requests (some are specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
 
 
-## Tests / yml file
+## The Tests / yml file
 
 It's a yaml file, which can be a list (multiple tests at once), or a dict (just one test).
 
@@ -69,7 +69,8 @@ Here is a yaml, with just multiple tests (a list):
     - GET: /
     - GET: /explore
     
-But requests without tests are useless ... see [tests.yml](/example/tests.yml)
+But requests without tests are useless ... see [tests.yml](/example/tests.yml).
+
 For each request you can set theses keys:
 
 - **headers** : is a dict of headers, which will be added to this request
