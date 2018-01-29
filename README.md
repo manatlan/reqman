@@ -39,7 +39,7 @@ Will run all yml files in the folder example
     $ reqman.py example *.yml yo/my_tests.yml
 Will run all yml files in the folder example + all yml files in current folder + the tests in _yo/my_tests.yml_
 
-**reqman** can use a [reqman.conf](/example/reqman.conf) (which is a yaml file too), to store key/value variables, which can be very handly for the tests ;-). **reqman** will use the first _reqman.conf_ available in the path. Variables will be automatically loaded, and fully available is the tests.
+**reqman** can use a [reqman.conf](/example/reqman.conf) (which is a yaml file too), to use key/value variables, which can be very handly for the tests ;-). **reqman** will use the first _reqman.conf_ available in the path. Variables will be automatically loaded, and fully available is the tests.
 
 There are 3 specials (and optionnals) vars :
 
@@ -64,7 +64,7 @@ Here is a yaml, with just one test (a dict):
 
     GET: /
 
-Here is a yaml, with just multiple tests (a list):
+Here is a yaml, with multiple tests (a list):
 
     - GET: /
     - GET: /explore
