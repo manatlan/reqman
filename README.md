@@ -82,7 +82,7 @@ _headers_ & _tests_ can be surcharged using _reqman.conf_ ! Not _body_ !
 And, of course, you can use variables everywhere (if declared in reqman.conf ;-), like this:
 
     - POST: /authent
-      body: login=me&pass={{passwd}}
+      body: login=me&pass={{passwd}}                # plain text urlencoded
       headers:
         content-type: application/x-www-form-urlencoded
       tests:
@@ -92,9 +92,9 @@ And, of course, you can use variables everywhere (if declared in reqman.conf ;-)
 or a json example request:
 
     - POST: /authent
-      body:
+      body:                                         # will be converted to json
         login:  me
-        pass:   "{{passwd}}"
+        pass:   "{{passwd}}"                        # escape the string to avoid trouble with yaml syntax
       headers:
         content-type: application/json
       tests:
