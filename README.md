@@ -124,7 +124,7 @@ If you run your tests like this:
 
 it will use the second "root" var (aka http://localhost:8080) ! (in fact, vars declared under the key _local_ will replace thoses in the first level)
 
-So you can imagine a lot of combinations, because you can add unlimited switch ;-)
+So you can imagine a lot of combinations, because you can add unlimited switchs ;-)
 
 
 **... MORE TO COME ...**
