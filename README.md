@@ -21,6 +21,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * cookie jar
    * create/re-use variables
    * doc ;-)
+   * generate conf/yml for new tests
    * python3 ?
    * postman converter ?
 
@@ -79,7 +80,7 @@ For each request you can set theses keys:
 
 _headers_ & _tests_ can be surcharged using _reqman.conf_ ! Not _body_ !
 
-And, of course, you can use variables everywhere (if declared in reqman.conf ;-), like this:
+And, of course, you can use variables everywhere (if declared in reqman.conf ;-), just use {{my_var}} syntax, like this:
 
     - POST: /authent
       body: login=me&pass={{passwd}}                # plain text urlencoded
