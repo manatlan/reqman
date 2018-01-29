@@ -101,4 +101,30 @@ or a json example request:
         - status: 200
         - content: you are logged in
 
+## Change the config with command line
+
+It can be very useful to run your tests with various parameters. That could be done with "switch" in command line. It use the variable pool of the _reqman.conf_.
+
+So, if you got a _reqman.conf_ like this:
+
+    root: https://github.com
+
+    local:
+        root: http://localhost:8080
+
+If you run your tests like this:
+
+    $ reqman.py *.yml
+
+it will use the first "root" var (aka https://github.com)!
+
+If you run your tests like this:
+
+    $ reqman.py *.yml -local
+
+it will use the second "root" var (aka http://localhost:8080) ! (in fact, vars declared under the key _local_ will replace thoses in the first level)
+
+So you can imagine a lot of combinations, because you can add unlimited switch ;-)
+
+
 **... MORE TO COME ...**
