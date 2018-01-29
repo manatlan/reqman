@@ -144,7 +144,7 @@ class Req(object):
 class Reqs(list):
     def __init__(self,fd):
         self.name = fd.name.replace("\\","/")
-        l=yaml.load( u(fd.read()) )    #TODO: should be aware of encodings (utf8/cp1252 at least) (what for mac ?)
+        l=yaml.load( u(fd.read()) )
         ll=[]
         if l:
             l=[l] if type(l)==dict else l
@@ -283,6 +283,5 @@ def main(params):
 
 
 if __name__=="__main__":
-    #~ sys.exit( main(sys.argv[1:]) )
-    sys.exit( main(["-ROA"]) )
+    sys.exit( main(sys.argv[1:]) )
 
