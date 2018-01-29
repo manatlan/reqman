@@ -12,17 +12,8 @@
 # # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # # GNU General Public License for more details.
 # #
-"""
-changelog:
-    - when no input files : use ymls in "."
-    - test not executed if missing root (no more exception!)
-    - sys.exit with number of errors
-    - more verbs
-    - verbs insensitives
-    - html renderer
-    - encoding aware
-"""
 import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob
+
 
 def u(txt):
     if txt and isinstance(txt,basestring):
