@@ -1,7 +1,7 @@
 - GET: /
   headers:
-    my_header: hello github                             # set some headers, for fun
-    my_header2: hello github
+    my_header: "{{hello_msg}}"                            # set some headers, for fun
+    my_header2: "{{hello_msg}}"
   tests:
       - status: 200                                     # http 200 is excepted, if not : test is invalid
       - content: leading software development platform  # this substring is in the content ?
