@@ -80,10 +80,6 @@ class Test(int):
         s=super(Test, cls).__new__(cls, value)
         s.name = name
         return s
-# class Test(int):
-#     def __new__(cls, name,value):
-#         cls.name = name
-#         return int.__new__(cls, bool(value))
 
 class TestResult(list):
     def __init__(self,req,res,tests):
@@ -146,7 +142,7 @@ class Req(object):
             res=http( req )
             tests=[]+env.get("tests",[]) if env else []
             tests+=self.tests
-            return TestResult(req,res,tests) #TODO: inheritance tests !
+            return TestResult(req,res,tests)
         else:
             # no hostname : no response, no tests ! (missing reqman.conf the root var ?)
             return TestResult(req,None,[])
