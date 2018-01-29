@@ -176,7 +176,7 @@ if __name__=="__main__":
         ymls=[]
         for p in params:
             if os.path.isdir(p):
-                ymls+=sorted(list(rlist(params[0])))
+                ymls+=sorted(list(rlist(p)))
             elif os.path.isfile(p):
                 if p.lower().endswith(".yml"):
                     ymls.append(p)
