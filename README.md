@@ -4,27 +4,29 @@ Reqman is the postman killer ;-)
 Create your http(s)-tests in simple yaml files, and run them with command line, against various environments.
 
 **Features**
-   * Light (simple file, 200 lines of code)
+   * Light (simple file, 300 lines of code)
    * Powerful (at least as postman free version)
+   * tests are simple (no code !)
    * Variable pool
    * Environment aware (switch easily)
    * https/ssl ok
    * oauth2 simple
-   * tests are simple (no code !)
    * headers inherits
    * tests coverage
+   * html tests renderer (with request/response contents)
+   * encoding aware
   
 **and soon**
-   * html tests renderer (with request/response contents)
-   * encoding aware (at least : utf8/cp1252)
    * cookie jar
-   * more http verbs
    * create/re-use variables
    * tests inherits
    * doc ;-)
    * python3 ?
 
 **Example**
+
+    $ reqman.py 
+Will run all yml files in current folder (and children folders)
 
     $ reqman.py *.yml
 Will run all tests in availables yml files
