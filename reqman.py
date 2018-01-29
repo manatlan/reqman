@@ -33,13 +33,13 @@ class SyntaxException(Exception):pass
 ## http access
 ###########################################################################
 class Request:
-    def __init__(self,protocol,host,port,method,path,data=None,headers={}):
+    def __init__(self,protocol,host,port,method,path,body=None,headers={}):
         self.protocol=protocol
         self.host=host
         self.port=port
         self.method=method
         self.path=path
-        self.data=data
+        self.body=body
         self.headers=headers
 
         if self.host and self.protocol:
@@ -68,7 +68,7 @@ def http(r):
         cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
     else:
         cnx=httplib.HTTPConnection(r.host,r.port)
-    cnx.request(r.method,r.path,r.data,r.headers)
+    cnx.request(r.method,r.path,r.body,r.headers)
     return Response(cnx.getresponse())
 
 ###########################################################################
@@ -204,10 +204,10 @@ div.hide > ul > pre {display:none}
                 tr.req.method,
                 tr.req.url,
                 u"\n".join([u"%s: %s" %(k,v) for k,v in tr.req.headers.items()]),
-                tr.req.data,
+                cgi.escape(u(tr.req.body or "")),
 
                 u"\n".join([u"%s: %s" %(k,v) for k,v in tr.res.headers.items()]),
-                cgi.escape(u(tr.res.content)),
+                cgi.escape(u(tr.res.content or "")),
 
                 u"".join([u"<li class='%s'>%s</li>" % (result and u"ok" or u"ko",cgi.escape(name)) for name,result in tr ]),
                 )

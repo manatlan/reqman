@@ -172,7 +172,7 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s.req.protocol, "https")
         self.assertEqual( s.req.port, None)
         self.assertEqual( s.req.path, "/")
-        self.assertEqual( s.req.data, None)
+        self.assertEqual( s.req.body, None)
         self.assertEqual( s.req.headers,  {'h1': 'my h1', 'h2': 'my h2'})
 
         s=post.test(env)
@@ -180,7 +180,7 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s.req.protocol, "https")
         self.assertEqual( s.req.port, None)
         self.assertEqual( s.req.path, "/explore")
-        self.assertEqual( s.req.data, "explore")
+        self.assertEqual( s.req.body, "explore")
         self.assertEqual( s.req.headers,  {'h1': 'my h1'})
 
         s=put.test(env)
@@ -188,7 +188,7 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s.req.protocol, "https")
         self.assertEqual( s.req.port, None)
         self.assertEqual( s.req.path, "/")
-        self.assertEqual( json.loads(s.req.data), {"var": 1, "txt": "explore"})
+        self.assertEqual( json.loads(s.req.body), {"var": 1, "txt": "explore"})
         self.assertEqual( s.req.headers,  {'h1': 'my h1',"h3":"explore"})
 
 #TODO: more tests !!!
