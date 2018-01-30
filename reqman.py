@@ -189,6 +189,8 @@ hr {padding:0px;margin:0px;height: 1px;border: 0;color: #CCC;background-color: #
 pre {padding:4px;border:1px solid black;background:white !important;overflow-x:auto;width:100%;max-height:300px}
 div {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
 span {cursor:pointer;}
+ul {margin:0px;}
+span:hover {background:#EEE;}
 div.hide {background:inherit}
 div.hide > ul > pre {display:none}
 h3 {color:blue;}
@@ -201,8 +203,8 @@ h3 {color:blue;}
 <div class="hide">
     <span onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b></span>
     <ul>
-        <pre>%s %s<hr/>%s<hr/>%s</pre>
-        <pre>%s<hr/>%s</pre>
+        <pre title="the request">%s %s<hr/>%s<hr/>%s</pre>
+        <pre title="the response">%s<hr/>%s</pre>
         %s
     </ul>
 </div>
@@ -275,7 +277,7 @@ def main(params):
     all=[]
     hr=HtmlRender()
     for f in [Reqs(file(i)) for i in ymls]:
-        print f.name,len(f)
+        print f.name
         hr.add("<h3>%s</h3>"%f.name)
         for t in f:
             tr=t.test( env ) #TODO: colorful output !
