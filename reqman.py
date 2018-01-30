@@ -185,19 +185,21 @@ class HtmlRender(list):
 <style>
 .ok {color:green}
 .ko {color:red}
-hr {padding:0px;margin:0px;border:1px solid #EEE;}
-pre {border:1px solid black;background:white !important;overflow-x:auto;width:100%}
-div {cursor:pointer;background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
+hr {padding:0px;margin:0px;height: 1px;border: 0;color: #CCC;background-color: #CCC;}
+pre {padding:4px;border:1px solid black;background:white !important;overflow-x:auto;width:100%;max-height:300px}
+div {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
+span {cursor:pointer;}
 div.hide {background:inherit}
 div.hide > ul > pre {display:none}
+h3 {color:blue;}
 </style>
 """])
 
     def add(self,html=None,tr=None):
         if tr is not None:
             html =u"""
-<div onclick="this.classList.toggle('hide')" class="hide">
-    <b>%s</b> %s : <b>%s</b>
+<div class="hide">
+    <span onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b></span>
     <ul>
         <pre>%s %s<hr/>%s<hr/>%s</pre>
         <pre>%s<hr/>%s</pre>
