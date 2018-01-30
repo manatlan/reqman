@@ -14,7 +14,6 @@
 # #
 import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi
 
-
 def u(txt):
     if txt and isinstance(txt,basestring):
         if type(txt) != unicode:
@@ -106,7 +105,7 @@ class TestResult(list):
         for t in self:
             ll.append( u"   - TEST: %s ? %s " %(t.name,t==1) )
         txt = os.linesep.join(ll)
-        return txt.encode( sys.stdout.encoding ) if sys.stdout.encoding else txt
+        return txt.encode( sys.stdout.encoding if sys.stdout.encoding else "utf8")
 
 class Req(object):
     def __init__(self,method,path,body=None,headers={},tests=[]):  # body = str ou dict ou None
@@ -195,7 +194,7 @@ div.hide > ul > pre {display:none}
 """])
 
     def add(self,html=None,tr=None):
-        if tr:
+        if tr is not None:
             html =u"""
 <div onclick="this.classList.toggle('hide')" class="hide">
     <b>%s</b> %s : <b>%s</b>
@@ -292,5 +291,4 @@ def main(params):
 
 
 if __name__=="__main__":
-    sys.exit( main(sys.argv[1:]) )
-
+    sys.exit( main( ["-DUA"] ) )
