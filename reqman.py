@@ -215,10 +215,10 @@ h3 {color:blue;}
 
                 tr.req.method,
                 tr.req.url,
-                u"\n".join([u"%s: %s" %(k,v) for k,v in tr.req.headers.items()]),
+                u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.req.headers.items()]),
                 cgi.escape(u(tr.req.body or "")),
 
-                u"\n".join([u"%s: %s" %(k,v) for k,v in tr.res.headers.items()]),
+                u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.res.headers.items()]),
                 cgi.escape(u(tr.res.content or "")),
 
                 u"".join([u"<li class='%s'>%s</li>" % (t and u"ok" or u"ko",cgi.escape(t.name)) for t in tr ]),
