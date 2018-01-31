@@ -295,4 +295,4 @@ def main(params):
 
 
 if __name__=="__main__":
-    sys.exit( main( ["-DUA"] ) )
+    sys.exit( main(sys.argv[1:]) )
