@@ -12,7 +12,7 @@
 # # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # # GNU General Public License for more details.
 # #
-import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi
+import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket
 
 def u(txt):
     if txt and isinstance(txt,basestring):
@@ -28,6 +28,7 @@ def u(txt):
 
 
 class SyntaxException(Exception):pass
+class ErrorException(Exception):pass
 ###########################################################################
 ## http access
 ###########################################################################
@@ -63,12 +64,15 @@ class Response:
 
 def http(r):
     #TODO: cookiejar !
-    if r.protocol=="https":
-        cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
-    else:
-        cnx=httplib.HTTPConnection(r.host,r.port)
-    cnx.request(r.method,r.path,r.body,r.headers)
-    return Response(cnx.getresponse())
+    try:
+        if r.protocol=="https":
+            cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
+        else:
+            cnx=httplib.HTTPConnection(r.host,r.port)
+        cnx.request(r.method,r.path,r.body,r.headers)
+        return Response(cnx.getresponse())
+    except socket.error:
+        raise ErrorException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
 
 ###########################################################################
 ## Reqs manage
@@ -198,7 +202,7 @@ h3 {color:blue;}
 """])
 
     def add(self,html=None,tr=None):
-        if tr is not None:
+        if tr is not None and tr.req and tr.res:
             html =u"""
 <div class="hide">
     <span onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b></span>
@@ -229,70 +233,75 @@ h3 {color:blue;}
         open(name,"w+").write( os.linesep.join(self).encode("utf8") )
 
 def main(params):
-    # search for a specific env var (starting with "-")
-    varenvs=[]
-    for varenv in [i for i in params if i.startswith("-")]:
-        params.remove( varenv )
-        varenvs.append( varenv[1:] )
+    try:
+        # search for a specific env var (starting with "-")
+        varenvs=[]
+        for varenv in [i for i in params if i.startswith("-")]:
+            params.remove( varenv )
+            varenvs.append( varenv[1:] )
 
-    # sort params as yml files
-    ymls=[]
-    if not params: params=["."]
-    for p in params:
-        if os.path.isdir(p):
-            ymls+=sorted(list(listFiles(p)))
-        elif os.path.isfile(p):
-            if p.lower().endswith(".yml"):
-                ymls.append(p)
+        # sort params as yml files
+        ymls=[]
+        if not params: params=["."]
+        for p in params:
+            if os.path.isdir(p):
+                ymls+=sorted(list(listFiles(p)))
+            elif os.path.isfile(p):
+                if p.lower().endswith(".yml"):
+                    ymls.append(p)
+                else:
+                    raise ErrorException("not a yml file") #TODO: better here
             else:
-                raise Exception("not a yml file") #TODO: better here
-        else:
-            raise Exception("bad param: %s" % p) #TODO: better here
+                raise ErrorException("bad param: %s" % p) #TODO: better here
 
-    # choose first reqman.conf under choosen files
-    rc=None
-    folders=[""]+list(set([os.path.dirname(i) for i in ymls]))
-    folders.sort( key=lambda i: i.count("/"))
-    for f in folders:
-        if os.path.isfile( os.path.join(f,"reqman.conf") ):
-            rc=os.path.join(f,"reqman.conf")
+        # choose first reqman.conf under choosen files
+        rc=None
+        folders=[""]+list(set([os.path.dirname(i) for i in ymls]))
+        folders.sort( key=lambda i: i.count("/"))
+        for f in folders:
+            if os.path.isfile( os.path.join(f,"reqman.conf") ):
+                rc=os.path.join(f,"reqman.conf")
 
-    # load env !
-    env=yaml.load( u(file(rc).read()) )
-    for name in varenvs:
-        if name in env:
-            env.update( env[name] )
+        # load env !
+        env=yaml.load( u(file(rc).read()) )
+        for name in varenvs:
+            if name in env:
+                env.update( env[name] )
 
-    # hook oauth2
-    if "oauth2" in env: #TODO: should found a clever way to setup/update vars in env ! to be better suitable
-        up = urlparse.urlparse(env["oauth2"]["url"])
-        req=Request(up.scheme,up.hostname,up.port,"POST",up.path,urllib.urlencode(env["oauth2"]["params"]),{'Content-Type': 'application/x-www-form-urlencoded'})
-        res=http(req)
-        token=json.loads(res.content)
-        env["headers"]["Authorization"] = token["token_type"]+" "+token["access_token"]
-        print "OAuth2 TOKEN:",env["headers"]["Authorization"]
+        # hook oauth2
+        if "oauth2" in env: #TODO: should found a clever way to setup/update vars in env ! to be better suitable
+            up = urlparse.urlparse(env["oauth2"]["url"])
+            req=Request(up.scheme,up.hostname,up.port,"POST",up.path,urllib.urlencode(env["oauth2"]["params"]),{'Content-Type': 'application/x-www-form-urlencoded'})
+            res=http(req)
+            token=json.loads(res.content)
+            env["headers"]["Authorization"] = token["token_type"]+" "+token["access_token"]
+            print "OAuth2 TOKEN:",env["headers"]["Authorization"]
 
 
-    # and make tests
-    all=[]
-    hr=HtmlRender()
-    for f in [Reqs(file(i)) for i in ymls]:
-        print f.name
-        hr.add("<h3>%s</h3>"%f.name)
-        for t in f:
-            tr=t.test( env ) #TODO: colorful output !
-            print tr
-            hr.add( tr=tr )
-            all+=tr
+        # and make tests
+        all=[]
+        hr=HtmlRender()
+        for f in [Reqs(file(i)) for i in ymls]:
+            print f.name
+            hr.add("<h3>%s</h3>"%f.name)
+            for t in f:
+                tr=t.test( env ) #TODO: colorful output !
+                print tr
+                hr.add( tr=tr )
+                all+=tr
 
-    ok,total=len([i for i in all if i]),len(all)
+        ok,total=len([i for i in all if i]),len(all)
 
-    hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
-    hr.save("reqman.html")
+        hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
+        hr.save("reqman.html")
 
-    print "RESULT: %s/%s" % (ok,total)
-    return total - ok
+        print "RESULT: %s/%s" % (ok,total)
+        return total - ok
+    except ErrorException as e:
+        print "ERROR: %s" % e
+        return -1
 
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
+    #~ sys.exit( main( ["-DUA"] ) )
