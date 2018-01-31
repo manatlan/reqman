@@ -190,8 +190,10 @@ def loadEnv( fd, varenvs=[] ):
         if name in env:
             conf=env[name].copy()
             for k,v in conf.items():
-                if k in env and type(env[k])==dict:
+                if k in env and type(env[k])==dict and type(v)==dict:
                     env[k].update( v )
+                elif k in env and type(env[k])==list and type(v)==list:
+                    env[k]+= v
                 else:
                     env[k]=v
     return env

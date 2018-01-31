@@ -215,6 +215,7 @@ class Tests_Reqs(unittest.TestCase):
         )
 
         s=get.test(env)
+        self.assertTrue( "[HTTPS GET /] --> [200]" in str(s))
         self.assertEqual( s.req.host, "github.com")
         self.assertEqual( s.req.protocol, "https")
         self.assertEqual( s.req.port, 443)
@@ -249,7 +250,7 @@ local2:
         self.assertEqual( e["root"],"AA2" )
 
 
-    def test_env_override_header1(self):
+    def test_env_override_header_add(self):
         conf="""
 headers:
     h1: txt1
@@ -267,7 +268,7 @@ local:
         self.assertEqual( e["headers"],{ 'h1':'txt1', 'h2':'txt2', 'h3':'txt3' } )
 
 
-    def test_env_override_header2(self):
+    def test_env_override_header_replace(self):
         conf="""
 headers:
     h1: txt1
@@ -284,6 +285,26 @@ local:
         e=reqman.loadEnv( StringIO(conf), ["local"] )
         self.assertEqual( e["headers"],{'h1': 'txt1','h2': 'txt2'} )
 
+    def test_env_override_tests_add(self):
+        conf="""
+tests:
+    - status: 200
+
+local:
+    tests:
+        - content: yo
+
+"""
+        e=reqman.loadEnv( StringIO(conf) )
+        self.assertEqual( e["tests"],[{'status': 200}]  )
+
+        e=reqman.loadEnv( StringIO(conf), ["local"] )
+        self.assertEqual( e["tests"],[{'status': 200}, {'content': 'yo'}] )
+
+
+#~ class Tests_main(unittest.TestCase):
+    #~ def test_env_override_root(self):
+        #~ self.assertEqual(reqman.main(["unknown_param","-unknown"]),-1)  # minimal test ;-( ... to increase % coverage
 
 
 #TODO: more tests !!!
