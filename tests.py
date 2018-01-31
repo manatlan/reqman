@@ -223,6 +223,69 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s[0],1 )
         self.assertEqual( s[1],1 )
 
+class Tests_Conf(unittest.TestCase):
+
+    def test_env_override_root(self):
+        conf="""
+root: AAA
+local1:
+    root: AA1
+local2:
+    root: AA2
+"""
+        e=reqman.loadEnv( StringIO(conf) )
+        self.assertEqual( e["root"],"AAA" )
+
+        e=reqman.loadEnv( StringIO(conf), ["unknown"] )
+        self.assertEqual( e["root"],"AAA" )
+
+        e=reqman.loadEnv( StringIO(conf), ["local1"] )
+        self.assertEqual( e["root"],"AA1" )
+
+        e=reqman.loadEnv( StringIO(conf), ["local2"] )
+        self.assertEqual( e["root"],"AA2" )
+
+        e=reqman.loadEnv( StringIO(conf), ["local1","local2"] )
+        self.assertEqual( e["root"],"AA2" )
+
+
+    def test_env_override_header1(self):
+        conf="""
+headers:
+    h1: txt1
+    h2: txt2
+
+local:
+    headers:
+        h3: txt3
+
+"""
+        e=reqman.loadEnv( StringIO(conf) )
+        self.assertEqual( e["headers"],{'h1': 'txt1','h2': 'txt2'}  )
+
+        e=reqman.loadEnv( StringIO(conf), ["local"] )
+        self.assertEqual( e["headers"],{ 'h1':'txt1', 'h2':'txt2', 'h3':'txt3' } )
+
+
+    def test_env_override_header2(self):
+        conf="""
+headers:
+    h1: txt1
+    h2: bad
+
+local:
+    headers:
+        h2: txt2
+
+"""
+        e=reqman.loadEnv( StringIO(conf) )
+        self.assertEqual( e["headers"],{'h1': 'txt1','h2': 'bad'}  )
+
+        e=reqman.loadEnv( StringIO(conf), ["local"] )
+        self.assertEqual( e["headers"],{'h1': 'txt1','h2': 'txt2'} )
+
+
+
 #TODO: more tests !!!
 #TODO: test command line !
 

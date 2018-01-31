@@ -1,17 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# #
-# #    Copyright (C) 2018 manatlan manatlan[at]gmail(dot)com
-# #
-# # This program is free software; you can redistribute it and/or modify
-# # it under the terms of the GNU General Public License as published
-# # by the Free Software Foundation; version 2 only.
-# #
-# # This program is distributed in the hope that it will be useful,
-# # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# # GNU General Public License for more details.
-# #
+# #############################################################################
+#    Copyright (C) 2018 manatlan manatlan[at]gmail(dot)com
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published
+# by the Free Software Foundation; version 2 only.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# https://github.com/manatlan/reqman
+# #############################################################################
 import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket
 
 def u(txt):
@@ -30,7 +32,7 @@ def u(txt):
 class SyntaxException(Exception):pass
 class ErrorException(Exception):pass
 ###########################################################################
-## http access
+## http request/response
 ###########################################################################
 class Request:
     def __init__(self,protocol,host,port,method,path,body=None,headers={}):
@@ -59,8 +61,7 @@ class Response:
         self.headers = dict(r.getheaders())
     def __repr__(self):
         return "[%s]" % (self.status)
-        #~ return "[%s %s]" % (self.status,self.headers)
-        #~ return "<%s %s : %s>" % (self.status,self.headers,self.content.encode("string_escape"))
+
 
 def http(r):
     #TODO: cookiejar !
@@ -172,6 +173,10 @@ class Reqs(list):
         list.__init__(self,ll)
 
 
+
+###########################################################################
+## Helpers
+###########################################################################
 def listFiles(path,filters=(".yml") ):
     for folder, subs, files in os.walk(path):
         for filename in files:
@@ -179,9 +184,18 @@ def listFiles(path,filters=(".yml") ):
                 yield os.path.join(folder,filename)
 
 
-###########################################################################
-##
-###########################################################################
+def loadEnv( fd, varenvs=[] ):
+    env=yaml.load( u(fd.read()) )
+    for name in varenvs:
+        if name in env:
+            conf=env[name].copy()
+            for k,v in conf.items():
+                if k in env and type(env[k])==dict:
+                    env[k].update( v )
+                else:
+                    env[k]=v
+    return env
+
 class HtmlRender(list):
     def __init__(self):
         list.__init__(self,[u"""
@@ -263,10 +277,7 @@ def main(params):
                 rc=os.path.join(f,"reqman.conf")
 
         # load env !
-        env=yaml.load( u(file(rc).read()) )
-        for name in varenvs:
-            if name in env:
-                env.update( env[name] )
+        env=loadEnv( file(rc), varenvs )
 
         # hook oauth2
         if "oauth2" in env: #TODO: should found a clever way to setup/update vars in env ! to be better suitable
@@ -301,7 +312,5 @@ def main(params):
         print "ERROR: %s" % e
         return -1
 
-
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
-    #~ sys.exit( main( ["-DUA"] ) )
