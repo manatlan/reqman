@@ -14,7 +14,7 @@
 #
 # https://github.com/manatlan/reqman
 # #############################################################################
-import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket
+import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re
 
 def u(txt):
     if txt and isinstance(txt,basestring):
@@ -112,8 +112,16 @@ class TestResult(list):
         txt = os.linesep.join(ll)
         return txt.encode( sys.stdout.encoding if sys.stdout.encoding else "utf8")
 
+def getVar(env,var):
+    if var in env:
+        return env[var]
+    elif "." in var:
+        deb,fin=var.split(".",1)
+        return getVar( getVar(env, deb), fin)
+
+
 class Req(object):
-    def __init__(self,method,path,body=None,headers={},tests=[]):  # body = str ou dict ou None
+    def __init__(self,method,path,body=None,headers={},tests=[],save=None):  # body = str ou dict ou None
         if body and not isinstance(body,basestring): body=json.dumps(body)
 
         self.method=method.upper()
@@ -121,20 +129,35 @@ class Req(object):
         self.body=body
         self.headers=headers
         self.tests=tests
+        self.save=save
 
     def test(self,env=None):
 
+        #~ def rep(txt):
+            #~ if env and txt:
+                #~ for key,value in env.items():
+                    #~ if isinstance(value,basestring) and isinstance(txt,basestring):
+                        #~ txt=txt.replace("{{%s}}"%key, value.encode('string_escape') )
+            #~ return txt
+
         def rep(txt):
-            if env and txt:
-                for key,value in env.items():
-                    if isinstance(value,basestring) and isinstance(txt,basestring):
-                        txt=txt.replace("{{%s}}"%key, value.encode('string_escape') )
+            if env and txt and isinstance(txt,basestring):
+                for vvar in re.findall("\{\{[^\}]+\}\}",txt):
+                    var=vvar[2:-2]
+
+                    val=getVar(env,var)
+                    if val is not None and isinstance(val,basestring):
+                        if type(val)==unicode: val=val.encode("utf8")
+                        txt=txt.replace( vvar , val.encode('string_escape'))
+
             return txt
 
-        if env and "root" in env:
+
+        if env and (not self.path.strip().startswith("http")) and ("root" in env):
             h=urlparse.urlparse( env["root"] )
         else:
             h=urlparse.urlparse( self.path )
+            self.path = h.path + ("?"+h.query if h.query else "")
 
         headers=env.get("headers",{}).copy() if env else {}
         headers.update(self.headers)
@@ -144,6 +167,12 @@ class Req(object):
         req=Request(h.scheme,h.hostname,h.port,self.method,rep(self.path),rep(self.body),headers)
         if h.hostname:
             res=http( req )
+            if self.save:
+                try:
+                    env[ self.save ]=json.loads(res.content)
+                except:
+                    env[ self.save ]=res.content
+
             tests=[]+env.get("tests",[]) if env else []
             tests+=self.tests
             return TestResult(req,res,tests)
@@ -156,8 +185,12 @@ class Req(object):
 
 class Reqs(list):
     def __init__(self,fd):
-        self.name = fd.name.replace("\\","/")
-        l=yaml.load( u(fd.read()) )
+        self.name = fd.name.replace("\\","/") if hasattr(fd,"name") else "String"
+        try:
+            l=yaml.load( u(fd.read()) )
+        except Exception as e:
+            raise ErrorException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
+
         ll=[]
         if l:
             l=[l] if type(l)==dict else l
@@ -169,7 +202,7 @@ class Reqs(list):
                     raise SyntaxException("no known verbs")
                 else:
                     method=verbs[0]
-                    ll.append( Req(method,d.get( mapkeys[method],""),d.get("body",None),d.get("headers",[]),d.get("tests",[])) )
+                    ll.append( Req(method,d.get( mapkeys[method],""),d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",None)) )
         list.__init__(self,ll)
 
 
@@ -185,7 +218,10 @@ def listFiles(path,filters=(".yml") ):
 
 
 def loadEnv( fd, varenvs=[] ):
-    env=yaml.load( u(fd.read()) )
+    try:
+        env=yaml.load( u(fd.read()) )
+    except Exception as e:
+        raise ErrorException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
     for name in varenvs:
         if name in env:
             conf=env[name].copy()
@@ -315,4 +351,8 @@ def main(params):
         return -1
 
 if __name__=="__main__":
+    #~ os.chdir(r"D:\otoolbox-local\workspaces\psp2020_op1\PSENTRE_payment\tests")
+    #~ sys.exit( main( ["-dua"] ) )
+
     sys.exit( main(sys.argv[1:]) )
+    #~ sys.exit( main( ["auth.yml"] ) )

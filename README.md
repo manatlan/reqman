@@ -16,10 +16,10 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * unittests coverage
    * html tests renderer (with request/response contents)
    * encoding aware
-  
+   * can create(save)/re-use variables per request
+
 **and soon**
    * cookie jar
-   * create/re-use variables
    * doc ;-)
    * generate conf/yml for new tests
    * python3 ?
@@ -27,7 +27,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
 
 **Example**
 
-    $ reqman.py 
+    $ reqman.py
 Will run all yml files in current folder (and children folders)
 
     $ reqman.py *.yml
@@ -68,7 +68,7 @@ Here is a yaml, with multiple tests (a list):
 
     - GET: /
     - GET: /explore
-    
+
 But requests without tests are useless ... see [tests.yml](/example/tests.yml).
 
 For each request you can set theses keys:
@@ -76,6 +76,7 @@ For each request you can set theses keys:
 - **headers** : is a dict of headers, which will be added to this request
 - **tests** : is a list of mono key/value pair, to test this response. (2 specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
 - **body** : which can be plain text or dict yaml or json. It's the content body which will be send to http access.
+- **save** : save response content in a var in the environment (can be reused in next requests)
 
 _headers_ & _tests_ can be surcharged using _reqman.conf_ (see above) ! Not _body_ !
 

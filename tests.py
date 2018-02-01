@@ -74,7 +74,6 @@ class Tests_Reqs(unittest.TestCase):
 
     def test_simplest_yml(self):
         f=StringIO("GET: https://github.com/")
-        f.name="yo"
         l=reqman.Reqs(f)
         self.assertEqual( len(l), 1)
 
@@ -82,17 +81,14 @@ class Tests_Reqs(unittest.TestCase):
 
     def test_encoding_yml(self):
         f=StringIO(u"GET: https://github.com/\nbody: héhé")
-        f.name="yo"
         l=reqman.Reqs(f)
         self.assertEqual( type(l[0].body),unicode)
 
         f=StringIO(u"GET: https://github.com/\nbody: héhé".encode("utf8"))
-        f.name="yo"
         l=reqman.Reqs(f)
         self.assertEqual( type(l[0].body),unicode)
 
         f=StringIO(u"GET: https://github.com/\nbody: héhé".encode("cp1252"))
-        f.name="yo"
         l=reqman.Reqs(f)
         self.assertEqual( type(l[0].body),unicode)
 
@@ -105,14 +101,12 @@ class Tests_Reqs(unittest.TestCase):
 - post: https://github.com/explore
 """
         f=StringIO(y)
-        f.name="filename"
         l=reqman.Reqs(f)
         self.assertEqual( len(l), 4)
         self.assertEqual( [i.method for i in l], ['GET', 'PUT', 'DELETE', 'POST'])
 
     def test_bad_yml(self):
         f=StringIO("")
-        f.name="filename"
 
         self.assertEqual(reqman.Reqs(f),[])
 
@@ -121,7 +115,6 @@ class Tests_Reqs(unittest.TestCase):
 - NOOP: https://github.com/
 """
         f=StringIO(y)
-        f.name="filename"
 
         self.assertRaises(reqman.SyntaxException, lambda: reqman.Reqs(f))
 
@@ -141,7 +134,6 @@ class Tests_Reqs(unittest.TestCase):
     txt: "{{a_var}}"
 """
         f=StringIO(y)
-        f.name="filename"
         l=reqman.Reqs(f)
         self.assertEqual( len(l), 3)
         get=l[0]
@@ -192,6 +184,57 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s.req.headers,  {'h1': 'my h1',"h3":"explore"})
 
 
+
+
+
+    def test_yml_test_env_dotted_var(self):
+
+        y="""
+- GET: /{{var}}
+- GET: /{{pool.var}}
+"""
+        f=StringIO(y)
+
+        l=reqman.Reqs(f)
+        self.assertEqual( len(l), 2)
+        get1=l[0]
+        get2=l[1]
+
+        self.assertEqual( get1.path, "/{{var}}")
+        self.assertEqual( get2.path, "/{{pool.var}}")
+
+        env=dict(
+            root="https://github.com/",
+            var="val",
+            pool=dict(var="val_from_pool")
+        )
+
+        tr=get1.test(env)
+        self.assertEqual( tr.req.path, "/val")
+
+        tr=get2.test(env)
+        self.assertEqual( tr.req.path, "/val_from_pool")
+
+    def test_yml_root_env_override(self):
+
+        y="""
+- GET: /explore
+- GET: https://github.fr/explore
+"""
+        f=StringIO(y)
+        l=reqman.Reqs(f)
+        self.assertEqual( len(l), 2)
+        #=-
+
+        env=dict(
+            root="https://github.com/",
+        )
+
+        ex=lambda x: (x.req.protocol, x.req.host, x.req.path)
+
+        self.assertEqual( ex( l[0].test(env) ), ('https', 'github.com', '/explore') )
+        self.assertEqual( ex( l[1].test(env) ), ('https', 'github.fr', '/explore') )
+
     def test_yml_tests_inheritance(self):
 
         y="""
@@ -200,7 +243,6 @@ class Tests_Reqs(unittest.TestCase):
     - content-type: text/plain
 """
         f=StringIO(y)
-        f.name="filename"
         l=reqman.Reqs(f)
         self.assertEqual( len(l), 1)
         get=l[0]
@@ -300,6 +342,72 @@ local:
 
         e=reqman.loadEnv( StringIO(conf), ["local"] )
         self.assertEqual( e["tests"],[{'status': 200}, {'content': 'yo'}] )
+
+
+
+class Tests_Yml_bad(unittest.TestCase):
+
+    def test_conf_exception(self):
+        conf="""
+i'm a yaml error
+fdsq:
+"""
+        self.assertRaises(reqman.ErrorException, lambda: reqman.loadEnv( StringIO(conf) ) )
+
+
+    def test_yml_exception(self):
+        f=StringIO("""
+i'm a yaml error
+fdsq:
+""")
+        self.assertRaises(reqman.ErrorException, lambda: reqman.Reqs(f) )
+
+class Tests_env_save(unittest.TestCase):
+
+    def test_create_var(self):
+        f=StringIO("""
+- GET: http://supersite.fr/rien
+  save: newVar
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        l[0].test(env)
+
+        self.assertEqual( env, {'newVar': u'the content'} )
+
+    def test_override_var(self):
+        f=StringIO("""
+- GET: http://supersite.fr/nada
+  save: newVar
+""")
+        l=reqman.Reqs(f)
+
+        env={"newVar":"old value"}
+        self.assertEqual( env, {'newVar': u'old value'} )
+        l[0].test(env)
+        self.assertEqual( env, {'newVar': u'the content'} )
+
+
+class Tests_getVar(unittest.TestCase):
+
+    def test_baba(self):
+        env={
+            "var":"val",
+            "var.x":"valx",
+        }
+        self.assertEqual( reqman.getVar(env,"nib"), None )
+        self.assertEqual( reqman.getVar(env,"var"), "val" )
+        self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
+
+    def test_baba_dotted(self):
+        env={
+            "var":dict( ssvar="val" ),
+            "var.x":"valx",
+        }
+        self.assertEqual( reqman.getVar(env,"var.ssvar"), "val" )
+        self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
+        self.assertEqual( reqman.getVar(env,"var.nimp"), None )
 
 
 #~ class Tests_main(unittest.TestCase):
