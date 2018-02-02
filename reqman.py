@@ -121,7 +121,7 @@ def getVar(env,var):
 
 
 class Req(object):
-    def __init__(self,method,path,body=None,headers={},tests=[],save=None):  # body = str ou dict ou None
+    def __init__(self,method,path,body=None,headers={},tests=[],save=None,params={}):  # body = str ou dict ou None
         if body and not isinstance(body,basestring): body=json.dumps(body)
 
         self.method=method.upper()
@@ -130,8 +130,16 @@ class Req(object):
         self.headers=headers
         self.tests=tests
         self.save=save
+        self.params=params
 
     def test(self,env=None):
+
+        if env:
+            cenv = env.copy()
+        else:
+            cenv = {}
+
+        cenv.update( self.params )
 
         #~ def rep(txt):
             #~ if env and txt:
@@ -141,11 +149,11 @@ class Req(object):
             #~ return txt
 
         def rep(txt):
-            if env and txt and isinstance(txt,basestring):
+            if cenv and txt and isinstance(txt,basestring):
                 for vvar in re.findall("\{\{[^\}]+\}\}",txt):
                     var=vvar[2:-2]
 
-                    val=getVar(env,var)
+                    val=getVar(cenv,var)
                     if val is not None and isinstance(val,basestring):
                         if type(val)==unicode: val=val.encode("utf8")
                         txt=txt.replace( vvar , val.encode('string_escape'))
@@ -153,13 +161,13 @@ class Req(object):
             return txt
 
 
-        if env and (not self.path.strip().startswith("http")) and ("root" in env):
-            h=urlparse.urlparse( env["root"] )
+        if cenv and (not self.path.strip().startswith("http")) and ("root" in cenv):
+            h=urlparse.urlparse( cenv["root"] )
         else:
             h=urlparse.urlparse( self.path )
             self.path = h.path + ("?"+h.query if h.query else "")
 
-        headers=env.get("headers",{}).copy() if env else {}
+        headers=cenv.get("headers",{}).copy() if env else {}
         headers.update(self.headers)
         for k in headers:
             headers[k]=rep(headers[k])
@@ -173,7 +181,7 @@ class Req(object):
                 except:
                     env[ self.save ]=res.content
 
-            tests=[]+env.get("tests",[]) if env else []
+            tests=[]+cenv.get("tests",[]) if cenv else []
             tests+=self.tests
             return TestResult(req,res,tests)
         else:
@@ -185,6 +193,9 @@ class Req(object):
 
 class Reqs(list):
     def __init__(self,fd):
+
+        defs={}
+
         self.name = fd.name.replace("\\","/") if hasattr(fd,"name") else "String"
         try:
             l=yaml.load( u(fd.read()) )
@@ -196,13 +207,30 @@ class Reqs(list):
             l=[l] if type(l)==dict else l
 
             for d in l:
+                #--------------------------------------------------
+                if "def" in d.keys():
+                    callname = d["def"]
+                    request = d
+                    del request["def"]
+                    defs[ callname ] = request
+                    continue # just declare and nothing yet
+                elif "call" in d.keys():
+                    callname = d["call"]
+                    del d["call"]
+                    if callname in defs:
+                        override = d.copy()
+                        d.update( defs[callname] )
+                        d.update( override )
+                    else:
+                        raise SyntaxException("call a not defined def %s" % callname)
+                #--------------------------------------------------
                 mapkeys ={ i.upper():i for i in d.keys() }
                 verbs= sorted(list(set(mapkeys).intersection(set(["GET","POST","DELETE","PUT","HEAD","OPTIONS","TRACE","PATCH","CONNECT"]))))
                 if len(verbs)!=1:
                     raise SyntaxException("no known verbs")
                 else:
                     method=verbs[0]
-                    ll.append( Req(method,d.get( mapkeys[method],""),d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",None)) )
+                    ll.append( Req(method,d.get( mapkeys[method],""),d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",None),d.get("params",{})) )
         list.__init__(self,ll)
 
 

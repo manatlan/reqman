@@ -8,6 +8,8 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * Powerful (at least as postman free version)
    * tests are simple (no code !)
    * Variable pool
+   * can create(save)/re-use variables per request
+   * "macros" (def/call)
    * Environment aware (switch easily)
    * https/ssl ok
    * oauth2 simple
@@ -16,7 +18,6 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * unittests coverage
    * html tests renderer (with request/response contents)
    * encoding aware
-   * can create(save)/re-use variables per request
 
 **and soon**
    * cookie jar

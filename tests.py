@@ -15,6 +15,26 @@ def myhttp(q):
 reqman.http = myhttp
 ##################################################################
 
+class Tests_getVar(unittest.TestCase):
+
+    def test_baba(self):
+        env={
+            "var":"val",
+            "var.x":"valx",
+        }
+        self.assertEqual( reqman.getVar(env,"nib"), None )
+        self.assertEqual( reqman.getVar(env,"var"), "val" )
+        self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
+
+    def test_baba_dotted(self):
+        env={
+            "var":dict( ssvar="val" ),
+            "var.x":"valx",
+        }
+        self.assertEqual( reqman.getVar(env,"var.ssvar"), "val" )
+        self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
+        self.assertEqual( reqman.getVar(env,"var.nimp"), None )
+
 class Tests_Req(unittest.TestCase):
 
     def test_noenv(self):
@@ -297,11 +317,9 @@ local2:
 headers:
     h1: txt1
     h2: txt2
-
 local:
     headers:
         h3: txt3
-
 """
         e=reqman.loadEnv( StringIO(conf) )
         self.assertEqual( e["headers"],{'h1': 'txt1','h2': 'txt2'}  )
@@ -315,11 +333,9 @@ local:
 headers:
     h1: txt1
     h2: bad
-
 local:
     headers:
         h2: txt2
-
 """
         e=reqman.loadEnv( StringIO(conf) )
         self.assertEqual( e["headers"],{'h1': 'txt1','h2': 'bad'}  )
@@ -331,11 +347,9 @@ local:
         conf="""
 tests:
     - status: 200
-
 local:
     tests:
         - content: yo
-
 """
         e=reqman.loadEnv( StringIO(conf) )
         self.assertEqual( e["tests"],[{'status': 200}]  )
@@ -389,25 +403,148 @@ class Tests_env_save(unittest.TestCase):
         self.assertEqual( env, {'newVar': u'the content'} )
 
 
-class Tests_getVar(unittest.TestCase):
+class Tests_macros(unittest.TestCase):
 
-    def test_baba(self):
-        env={
-            "var":"val",
-            "var.x":"valx",
-        }
-        self.assertEqual( reqman.getVar(env,"nib"), None )
-        self.assertEqual( reqman.getVar(env,"var"), "val" )
-        self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
+    def test_yml_macros(self):
 
-    def test_baba_dotted(self):
-        env={
-            "var":dict( ssvar="val" ),
-            "var.x":"valx",
-        }
-        self.assertEqual( reqman.getVar(env,"var.ssvar"), "val" )
-        self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
-        self.assertEqual( reqman.getVar(env,"var.nimp"), None )
+        y="""
+- def: jo
+  GET: /
+
+- call: jo
+- call: jo
+- call: jo
+- {"call": "jo"}    #json notation (coz json is a subset of yaml ;-)
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 4)
+
+    def test_yml_macros_def_without_call(self):
+
+        y="""
+- def: jo
+  GET: /
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 0)    # 0 request !
+
+    def test_yml_macros_call_without_def(self):
+
+        y="""
+- call: me
+"""
+        self.assertRaises(reqman.SyntaxException, lambda: reqman.Reqs(StringIO(y)) )
+
+
+
+class Tests_params(unittest.TestCase):
+
+    def test_yml_params(self):
+
+        y="""
+- GET: /{{myvar}}
+  params:
+    myvar: hello
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        env={}
+        tr=l[0].test(env)
+
+        self.assertEqual( tr.req.path, "/hello" )
+
+    def test_yml_params_override(self):
+
+        y="""
+- GET: /{{myvar}}
+  params:
+    myvar: this one
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        env={"myvar":"not this"}
+        tr=l[0].test(env)
+
+        self.assertEqual( tr.req.path, "/this one" )
+
+
+    def test_yml_params_override_root(self):
+
+        y="""
+- GET: /
+  params:
+    root: https://this_one.net
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/")
+
+        env={"root":"http://not_this.com"}
+        tr=l[0].test(env)
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.host, "this_one.net" )
+
+    def test_yml_params_with_macros(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}
+
+- call: call_me
+  params:
+    myvar: bingo
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo" )
+
+    def test_yml_params_with_macros_override_def_params(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}
+  params:
+    myvar: bad      # will be overriden
+
+- call: call_me
+  params:
+    myvar: bingo    # override original defined in def statement
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo" )
+
+    def test_yml_params_with_macros2(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}
+  params:
+    myvar: bingo
+
+- call: call_me
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo" )
+
+
 
 
 #~ class Tests_main(unittest.TestCase):
