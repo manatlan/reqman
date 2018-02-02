@@ -351,8 +351,4 @@ def main(params):
         return -1
 
 if __name__=="__main__":
-    #~ os.chdir(r"D:\otoolbox-local\workspaces\psp2020_op1\PSENTRE_payment\tests")
-    #~ sys.exit( main( ["-dua"] ) )
-
     sys.exit( main(sys.argv[1:]) )
-    #~ sys.exit( main( ["auth.yml"] ) )
