@@ -134,19 +134,8 @@ class Req(object):
 
     def test(self,env=None):
 
-        if env:
-            cenv = env.copy()
-        else:
-            cenv = {}
-
-        cenv.update( self.params )
-
-        #~ def rep(txt):
-            #~ if env and txt:
-                #~ for key,value in env.items():
-                    #~ if isinstance(value,basestring) and isinstance(txt,basestring):
-                        #~ txt=txt.replace("{{%s}}"%key, value.encode('string_escape') )
-            #~ return txt
+        cenv = env.copy() if env else {}    # current env
+        cenv.update( self.params )          # override with self params
 
         def rep(txt):
             if cenv and txt and isinstance(txt,basestring):
@@ -167,8 +156,8 @@ class Req(object):
             h=urlparse.urlparse( self.path )
             self.path = h.path + ("?"+h.query if h.query else "")
 
-        headers=cenv.get("headers",{}).copy() if env else {}
-        headers.update(self.headers)
+        headers=cenv.get("headers",{}).copy() if cenv else {}
+        headers.update(self.headers)                        # override with self headers
         for k in headers:
             headers[k]=rep(headers[k])
 
@@ -182,7 +171,7 @@ class Req(object):
                     env[ self.save ]=res.content
 
             tests=[]+cenv.get("tests",[]) if cenv else []
-            tests+=self.tests
+            tests+=self.tests                               # override with self tests
             return TestResult(req,res,tests)
         else:
             # no hostname : no response, no tests ! (missing reqman.conf the root var ?)
