@@ -18,10 +18,10 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * unittests coverage
    * html tests renderer (with request/response contents)
    * encoding aware
+   * cookie handling (very simple, need more works)
 
 **and soon**
-   * cookie jar
-   * doc ;-)
+   * doc & examples ;-)
    * generate conf/yml for new tests
    * python3 ?
    * postman converter ?

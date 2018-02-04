@@ -34,8 +34,11 @@ class ErrorException(Exception):pass
 ###########################################################################
 ## http request/response
 ###########################################################################
+COOKIEJAR=None
+
 class Request:
     def __init__(self,protocol,host,port,method,path,body=None,headers={}):
+        global COOKIEJAR
         self.protocol=protocol
         self.host=host
         self.port=port
@@ -43,6 +46,8 @@ class Request:
         self.path=path
         self.body=body
         self.headers=headers
+        if COOKIEJAR:
+            self.headers["cookie"]=COOKIEJAR
 
         if self.host and self.protocol:
             self.url="%s://%s%s" % (
@@ -56,15 +61,19 @@ class Request:
 
 class Response:
     def __init__(self,r):
+        global COOKIEJAR
         self.status = r.status
         self.content = u(r.read())      #TODO: bad way to decode to unicode ;-)
         self.headers = dict(r.getheaders())
+        if "set-cookie" in self.headers:
+            COOKIEJAR = r.getheader('set-cookie') 
+
     def __repr__(self):
         return "[%s]" % (self.status)
 
 
 def http(r):
-    #TODO: cookiejar (with urllib2 ?)!
+    #TODO: cookies better handling with urllib2 ?!
     try:
         if r.protocol=="https":
             cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
