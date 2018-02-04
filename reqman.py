@@ -198,7 +198,7 @@ class Reqs(list):
         self.name = fd.name.replace("\\","/") if hasattr(fd,"name") else "String"
         try:
             l=yaml.load( u(fd.read()) )
-        except Exception as e:
+        except yaml.parser.ParserError as e:
             raise ErrorException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
 
         ll=[]
@@ -247,7 +247,7 @@ def listFiles(path,filters=(".yml") ):
 def loadEnv( fd, varenvs=[] ):
     try:
         env=yaml.load( u(fd.read()) )
-    except Exception as e:
+    except yaml.parser.ParserError as e:
         raise ErrorException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
     for name in varenvs:
         if name in env:
