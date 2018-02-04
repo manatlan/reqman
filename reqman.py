@@ -64,7 +64,7 @@ class Response:
 
 
 def http(r):
-    #TODO: cookiejar !
+    #TODO: cookiejar (with urllib2 ?)!
     try:
         if r.protocol=="https":
             cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
@@ -80,6 +80,7 @@ def http(r):
 ###########################################################################
 
 class Test(int):
+    """ a boolean with a name """
     def __new__(cls, name,value):
         s=super(Test, cls).__new__(cls, value)
         s.name = name
@@ -332,7 +333,7 @@ def main(params):
                 rc=os.path.join(f,"reqman.conf")
 
         # load env !
-        env=loadEnv( file(rc), varenvs )
+        env=loadEnv( file(rc), varenvs ) if rc else {}
 
         # hook oauth2
         if "oauth2" in env: #TODO: should found a clever way to setup/update vars in env ! to be better suitable

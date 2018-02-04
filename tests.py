@@ -6,13 +6,13 @@ import json
 from StringIO import StringIO
 
 ################################################################## mock
-def myhttp(q):
+def mockHttp(q):
     r=StringIO("the content")
     r.getheaders=lambda: {"content-type":"text/plain","server":"mock"}
     r.status=200
     return reqman.Response(r)
 
-reqman.http = myhttp
+reqman.http = mockHttp
 ##################################################################
 
 class Tests_getVar(unittest.TestCase):
@@ -49,6 +49,14 @@ class Tests_Req(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.res.status, 200)
 
+    def test_simplest_env2(self):
+        env=dict(root="https://github.com/")
+
+        r=reqman.Req("Get","{{root}}/") # {{root}} it not needed, it's implicit ... but u can, if u want ;-)
+        s=r.test(env)
+        self.assertEqual(s.res.status, 200)
+
+
     def test_http(self):
         env=dict(root="http://github.com/")
 
@@ -75,9 +83,9 @@ class Tests_Req(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.res.status, 200)
         self.assertEqual( len(s), 3)
-        self.assertTrue(s)
-        self.assertTrue(s)
-        self.assertTrue(s)
+        self.assertTrue(s[0])
+        self.assertTrue(s[1])
+        self.assertTrue(s[2])
 
     def test_env_var_in_path(self):
         env=dict(root="https://github.com/",a_var="explore")
@@ -120,8 +128,7 @@ class Tests_Reqs(unittest.TestCase):
 - DEleTE  : https://github.com/explore
 - post: https://github.com/explore
 """
-        f=StringIO(y)
-        l=reqman.Reqs(f)
+        l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 4)
         self.assertEqual( [i.method for i in l], ['GET', 'PUT', 'DELETE', 'POST'])
 
@@ -153,8 +160,7 @@ class Tests_Reqs(unittest.TestCase):
     var: 1
     txt: "{{a_var}}"
 """
-        f=StringIO(y)
-        l=reqman.Reqs(f)
+        l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 3)
         get=l[0]
         post=l[1]
