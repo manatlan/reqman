@@ -7,10 +7,7 @@ from StringIO import StringIO
 
 ################################################################## mock
 def mockHttp(q):
-    r=StringIO("the content")
-    r.getheaders=lambda: {"content-type":"text/plain","server":"mock"}
-    r.status=200
-    return reqman.Response(r)
+    return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock"})
 
 reqman.http = mockHttp
 ##################################################################
@@ -143,7 +140,7 @@ class Tests_Reqs(unittest.TestCase):
 """
         f=StringIO(y)
 
-        self.assertRaises(reqman.SyntaxException, lambda: reqman.Reqs(f))
+        self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f))
 
     def test_yml_test_env(self):
 
@@ -305,8 +302,7 @@ local2:
         e=reqman.loadEnv( StringIO(conf) )
         self.assertEqual( e["root"],"AAA" )
 
-        e=reqman.loadEnv( StringIO(conf), ["unknown"] )
-        self.assertEqual( e["root"],"AAA" )
+        self.assertRaises(reqman.RMException, lambda: reqman.loadEnv( StringIO(conf), ["unknown"] ) )
 
         e=reqman.loadEnv( StringIO(conf), ["local1"] )
         self.assertEqual( e["root"],"AA1" )
@@ -372,7 +368,7 @@ class Tests_Yml_bad(unittest.TestCase):
 i'm a yaml error
 fdsq:
 """
-        self.assertRaises(reqman.ErrorException, lambda: reqman.loadEnv( StringIO(conf) ) )
+        self.assertRaises(reqman.RMException, lambda: reqman.loadEnv( StringIO(conf) ) )
 
 
     def test_yml_exception(self):
@@ -380,7 +376,7 @@ fdsq:
 i'm a yaml error
 fdsq:
 """)
-        self.assertRaises(reqman.ErrorException, lambda: reqman.Reqs(f) )
+        self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f) )
 
 class Tests_env_save(unittest.TestCase):
 
@@ -439,7 +435,7 @@ class Tests_macros(unittest.TestCase):
         y="""
 - call: me
 """
-        self.assertRaises(reqman.SyntaxException, lambda: reqman.Reqs(StringIO(y)) )
+        self.assertRaises(reqman.RMException, lambda: reqman.Reqs(StringIO(y)) )
 
 
 

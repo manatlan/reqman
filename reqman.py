@@ -29,11 +29,12 @@ def u(txt):
     return txt
 
 
-class SyntaxException(Exception):pass
-class ErrorException(Exception):pass
+class RMException(Exception):pass
+
 ###########################################################################
 ## http request/response
 ###########################################################################
+
 COOKIEJAR=None
 
 class Request:
@@ -46,6 +47,7 @@ class Request:
         self.path=path
         self.body=body
         self.headers=headers
+
         if COOKIEJAR:
             self.headers["cookie"]=COOKIEJAR
 
@@ -60,13 +62,14 @@ class Request:
         return "[%s %s %s]" % (self.protocol.upper(),self.method,self.path)
 
 class Response:
-    def __init__(self,r):
+    def __init__(self,status,body,headers):
         global COOKIEJAR
-        self.status = r.status
-        self.content = u(r.read())      #TODO: bad way to decode to unicode ;-)
-        self.headers = dict(r.getheaders())
+        self.status = status
+        self.content = u(body)      #TODO: bad way to decode to unicode ;-)
+        self.headers = dict(headers)
+
         if "set-cookie" in self.headers:
-            COOKIEJAR = r.getheader('set-cookie') 
+            COOKIEJAR = self.headers['set-cookie']
 
     def __repr__(self):
         return "[%s]" % (self.status)
@@ -80,9 +83,36 @@ def http(r):
         else:
             cnx=httplib.HTTPConnection(r.host,r.port)
         cnx.request(r.method,r.path,r.body,r.headers)
-        return Response(cnx.getresponse())
+        r=cnx.getresponse()
+        return Response( r.status,r.read(),r.getheaders() )
     except socket.error:
-        raise ErrorException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
+        raise RMException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
+
+
+#= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #=
+# http with urllib2 / but remove COOKIEJAR from Request/Response
+# don't works well with 302 (coz urllib resolves them)
+#= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #=
+#~ import cookielib, urllib2
+
+#~ # install an urlopener which handle cookies
+#~ cookiejar = cookielib.CookieJar()
+#~ opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar))
+#~ urllib2.install_opener(opener)
+
+#~ def http(r):
+    #~ try:
+        #~ request = urllib2.Request( r.url, r.body, r.headers)
+        #~ request.get_method = lambda: r.method
+        #~ res=urllib2.urlopen(request, context=ssl._create_unverified_context())
+    #~ except urllib2.HTTPError as err:
+       #~ if err.code >= 400: # that's not errors ;-)
+           #~ res=err
+       #~ else:
+           #~ raise
+    #~ return Response( res.code, res.read(), res.headers )
+#~ #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #=
+#= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #=
 
 ###########################################################################
 ## Reqs manage
@@ -199,7 +229,7 @@ class Reqs(list):
         try:
             l=yaml.load( u(fd.read()) )
         except Exception as e:
-            raise ErrorException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
+            raise RMException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
 
         ll=[]
         if l:
@@ -221,12 +251,12 @@ class Reqs(list):
                         d.update( defs[callname] )
                         d.update( override )
                     else:
-                        raise SyntaxException("call a not defined def %s" % callname)
+                        raise RMException("call a not defined def %s" % callname)
                 #--------------------------------------------------
                 mapkeys ={ i.upper():i for i in d.keys() }
                 verbs= sorted(list(set(mapkeys).intersection(set(["GET","POST","DELETE","PUT","HEAD","OPTIONS","TRACE","PATCH","CONNECT"]))))
                 if len(verbs)!=1:
-                    raise SyntaxException("no known verbs")
+                    raise RMException("no known verbs")
                 else:
                     method=verbs[0]
                     ll.append( Req(method,d.get( mapkeys[method],""),d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",None),d.get("params",{})) )
@@ -246,11 +276,13 @@ def listFiles(path,filters=(".yml") ):
 
 def loadEnv( fd, varenvs=[] ):
     try:
-        env=yaml.load( u(fd.read()) )
+        env=yaml.load( u(fd.read()) ) if fd else {}
     except Exception as e:
-        raise ErrorException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
+        raise RMException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
     for name in varenvs:
-        if name in env:
+        if name not in env:
+            raise RMException("the switch '-%s' is unknown ?!" % name)
+        else:
             conf=env[name].copy()
             for k,v in conf.items():
                 if k in env and type(env[k])==dict and type(v)==dict:
@@ -321,28 +353,34 @@ def main(params):
 
         # sort params as yml files
         ymls=[]
+        paths=[]
         if not params: params=["."]
         for p in params:
             if os.path.isdir(p):
+                paths.append(p)
                 ymls+=sorted(list(listFiles(p)))
             elif os.path.isfile(p):
+                paths.append( os.path.dirname(p) )
                 if p.lower().endswith(".yml"):
                     ymls.append(p)
                 else:
-                    raise ErrorException("not a yml file") #TODO: better here
+                    raise RMException("not a yml file") #TODO: better here
             else:
-                raise ErrorException("bad param: %s" % p) #TODO: better here
+                raise RMException("bad param: %s" % p) #TODO: better here
+
 
         # choose first reqman.conf under choosen files
         rc=None
-        folders=[""]+list(set([os.path.dirname(i) for i in ymls]))
+        folders=list(set(paths))
         folders.sort( key=lambda i: i.count("/"))
         for f in folders:
+            print "===",f
             if os.path.isfile( os.path.join(f,"reqman.conf") ):
                 rc=os.path.join(f,"reqman.conf")
 
+
         # load env !
-        env=loadEnv( file(rc), varenvs ) if rc else {}
+        env=loadEnv( file(rc) if rc else None, varenvs )
 
         # hook oauth2
         if "oauth2" in env: #TODO: should found a clever way to setup/update vars in env ! to be better suitable
@@ -373,7 +411,7 @@ def main(params):
 
         print "RESULT: %s/%s" % (ok,total)
         return total - ok
-    except ErrorException as e:
+    except RMException as e:
         print "ERROR: %s" % e
         return -1
 
