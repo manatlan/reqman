@@ -3,6 +3,7 @@
 import unittest
 import reqman
 import json
+import os
 from StringIO import StringIO
 
 ################################################################## mock
@@ -642,7 +643,9 @@ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverag
         self.assertEqual(reqman.main(["tests.py"]),-1)  # not a yaml file
 
     def test_command_line(self): 
+        if os.path.isfile("reqman.html"): os.unlink("reqman.html")
         self.assertEqual(reqman.main(["example/tests.yml"]),2)  # 2 bad tests
+        self.assertTrue( os.path.isfile("reqman.html") )
 
 class Tests_real_http(unittest.TestCase):
 
