@@ -52,6 +52,12 @@ def u(txt):
     return txt
 
 
+def prettyJson(txt):
+    try:
+        return json.dumps( json.loads( txt ), indent=4, sort_keys=True )
+    except:
+        return txt
+
 class RMException(Exception):pass
 
 ###########################################################################
@@ -357,7 +363,7 @@ h3 {color:blue;}
                 cgi.escape(u(tr.req.body or "")),
 
                 u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.res.headers.items()]),
-                cgi.escape(u(tr.res.content or "")),
+                cgi.escape( prettyJson( u(tr.res.content or "")) ),
 
                 u"".join([u"<li class='%s'>%s</li>" % (t and u"ok" or u"ko",cgi.escape(t.name)) for t in tr ]),
                 )
