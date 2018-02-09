@@ -22,6 +22,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * color output in console (when colorama python lib is present)
 
 **and soon**
+   * release versionning
    * doc & examples ;-)
    * generate conf/yml for new tests ?
    * python3 ?
