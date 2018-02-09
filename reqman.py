@@ -214,6 +214,8 @@ class Req(object):
                     if val is not None and isinstance(val,basestring):
                         if type(val)==unicode: val=val.encode("utf8")
                         txt=txt.replace( vvar , val.encode('string_escape'))
+                    else:
+                        raise RMException("Can't resolve "+vvar+" in : "+ ", ".join(cenv.keys()))
 
             return txt
 

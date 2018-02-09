@@ -451,6 +451,23 @@ class Tests_env_save(unittest.TestCase):
         s=l[1].test(env)
         self.assertEqual( s.req.headers["Authorizattion"], "Bearer the content" )
 
+    def test_bad_reuse_var_created(self):
+        f=StringIO("""
+- GET: http://supersite.fr/rien
+  save: var
+
+- POST: http://supersite.fr/rien/yo
+  headers:
+    Authorizattion: Bearer {{unknown_var}}
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        l[0].test(env)
+        self.assertEqual( env, {'var': u'the content'} )
+
+        self.assertRaises(reqman.RMException, lambda: l[1].test(env))
+
 
 
 
