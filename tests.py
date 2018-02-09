@@ -18,9 +18,18 @@ def mockHttp(q):
 reqman.http = mockHttp
 ##################################################################
 
+class Tests_prettyjson(unittest.TestCase):
+
+    def test_b_aba(self):
+        self.assertEqual( reqman.prettyJson(None), None )
+        self.assertEqual( reqman.prettyJson("yo"), "yo" )
+        self.assertEqual( reqman.prettyJson("42"), "42" )
+        self.assertEqual( reqman.prettyJson("{not good:json}"), "{not good:json}" )
+        self.assertEqual( reqman.prettyJson('{       "albert":   "jo"   }'), '{\n    "albert": "jo"\n}' )
+
 class Tests_getVar(unittest.TestCase):
 
-    def test_baba(self):
+    def test_b_aba(self):
         env={
             "var":"val",
             "var.x":"valx",
