@@ -15,6 +15,7 @@ def mockHttp(q):
     else:
         return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock"})
 
+reqman_http = reqman.http
 reqman.http = mockHttp
 ##################################################################
 
@@ -630,13 +631,39 @@ class Tests_params(unittest.TestCase):
 
 
 
-#~ class Tests_main(unittest.TestCase):
-    #~ def test_env_override_root(self):
-        #~ self.assertEqual(reqman.main(["unknown_param","-unknown"]),-1)  # minimal test ;-( ... to increase % coverage
+class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
+
+    #TODO: test command line more !
+
+    def test_command_line_bad(self):
+        self.assertEqual(reqman.main(["unknown_param"]),-1)  # bad param
+        self.assertEqual(reqman.main(["example","-unknown"]),-1)  # unknown switch
+        self.assertEqual(reqman.main(["example/tests.yml","-unknown"]),-1)  # unknown switch
+        self.assertEqual(reqman.main(["tests.py"]),-1)  # not a yaml file
+
+    def test_command_line(self): 
+        self.assertEqual(reqman.main(["example/tests.yml"]),2)  # 2 bad tests
+
+class Tests_real_http(unittest.TestCase):
+
+    def test_1(self):
+        r=reqman.Request("https","github.com","443","GET","/")
+        self.assertEqual(r.url,"https://github.com:443/")
+        res=reqman_http(r)
+        self.assertEqual(res.status,200)
+
+    def test_2(self):
+        r=reqman.Request("http","github.com",None,"GET","/")
+        self.assertEqual(r.url,"http://github.com/")
+        res=reqman_http(r)
+        self.assertEqual(res.status,301)
+
+    def test_3(self):
+        r=reqman.Request("http","localhost",59999,"GET","/")
+        self.assertRaises(reqman.RMException, lambda: reqman_http(r))
 
 
 #TODO: more tests !!!
-#TODO: test command line !
 
 if __name__ == '__main__':
     unittest.main()
