@@ -433,6 +433,27 @@ class Tests_env_save(unittest.TestCase):
         self.assertEqual( env, {'newVar': u'the content'} )
 
 
+    def test_reuse_var_created(self):
+        f=StringIO("""
+- GET: http://supersite.fr/rien
+  save: var
+
+- POST: http://supersite.fr/rien/yo
+  headers:
+    Authorizattion: Bearer {{var}}
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        l[0].test(env)
+        self.assertEqual( env, {'var': u'the content'} )
+
+        s=l[1].test(env)
+        self.assertEqual( s.req.headers["Authorizattion"], "Bearer the content" )
+
+
+
+
 class Tests_macros(unittest.TestCase):
 
     def test_yml_macros(self):
