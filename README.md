@@ -19,10 +19,11 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * html tests renderer (with request/response contents)
    * encoding aware
    * cookie handling (very simple, need more works)
+   * color output in console (when colorama python lib is present)
 
 **and soon**
    * doc & examples ;-)
-   * generate conf/yml for new tests
+   * generate conf/yml for new tests ?
    * python3 ?
    * postman converter ?
 
@@ -78,6 +79,7 @@ For each request you can set theses keys:
 - **tests** : is a list of mono key/value pair, to test this response. (2 specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
 - **body** : which can be plain text or dict yaml or json. It's the content body which will be send to http access.
 - **save** : save response content in a var in the environment (can be reused in next requests)
+- **params** : is a dict of params, that can override env params for the current request
 
 _headers_ & _tests_ can be surcharged using _reqman.conf_ (see above) ! Not _body_ !
 
