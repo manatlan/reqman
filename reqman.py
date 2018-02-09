@@ -22,17 +22,17 @@ try: # colorama is optionnal
     from colorama import init,Fore,Style
     init()
 
-    cy=lambda t: Fore.YELLOW+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
-    cr=lambda t: Fore.RED+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
-    cg=lambda t: Fore.GREEN+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
-    cw=lambda t: Fore.WHITE+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
-    cb=lambda t: Fore.CYAN+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
+    cy=lambda t: Fore.YELLOW+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
+    cr=lambda t: Fore.RED+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
+    cg=lambda t: Fore.GREEN+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
+    cb=lambda t: Fore.CYAN+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
+    cw=lambda t: Fore.WHITE+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
 except:
     cy=lambda t: t
     cr=lambda t: t
     cg=lambda t: t
-    cw=lambda t: t
     cb=lambda t: t
+    cw=lambda t: t
 
 
 def u(txt):

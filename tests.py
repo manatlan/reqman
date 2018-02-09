@@ -18,6 +18,16 @@ def mockHttp(q):
 reqman.http = mockHttp
 ##################################################################
 
+class Tests_colorama(unittest.TestCase):
+
+    def test_b_aba(self):
+        self.assertTrue( reqman.cr(None) is None)
+        self.assertTrue( "HELLO" in reqman.cy("HELLO"))
+        self.assertTrue( "HELLO" in reqman.cr("HELLO"))
+        self.assertTrue( "HELLO" in reqman.cg("HELLO"))
+        self.assertTrue( "HELLO" in reqman.cb("HELLO"))
+        self.assertTrue( "HELLO" in reqman.cw("HELLO"))
+
 class Tests_prettyjson(unittest.TestCase):
 
     def test_b_aba(self):
