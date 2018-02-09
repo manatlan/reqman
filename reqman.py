@@ -14,7 +14,27 @@
 #
 # https://github.com/manatlan/reqman
 # #############################################################################
-import yaml,os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re
+import yaml         # see pip
+import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re
+
+try:
+    import colorama     # colorama is optionnal
+    colorama.init()
+
+    from colorama import Fore,Style
+
+    cy=lambda t: Fore.YELLOW+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
+    cr=lambda t: Fore.RED+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
+    cg=lambda t: Fore.GREEN+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
+    cw=lambda t: Fore.WHITE+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
+    cb=lambda t: Fore.CYAN+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
+except:
+    cy=lambda t: t
+    cr=lambda t: t
+    cg=lambda t: t
+    cw=lambda t: t
+    cb=lambda t: t
+
 
 def u(txt):
     if txt and isinstance(txt,basestring):
@@ -25,7 +45,10 @@ def u(txt):
                 try:
                     return txt.decode("cp1252")
                 except:
-                    return unicode(txt)
+                    try:
+                        return unicode(txt)
+                    except:
+                        return "*** BINARY SIZE(%s) ***" % len(txt)
     return txt
 
 
@@ -59,7 +82,7 @@ class Request:
             )
 
     def __repr__(self):
-        return "[%s %s %s]" % (self.protocol.upper(),self.method,self.path)
+        return cy(self.method)+" "+self.path
 
 class Response:
     def __init__(self,status,body,headers):
@@ -72,7 +95,7 @@ class Response:
             COOKIEJAR = self.headers['set-cookie']
 
     def __repr__(self):
-        return "[%s]" % (self.status)
+        return "%s" % (self.status)
 
 
 def http(r):
@@ -145,10 +168,10 @@ class TestResult(list):
         list.__init__(self,results)
 
     def __str__(self):
-        ll=[]
-        ll.append( u" - %s --> %s " % (self.req,self.res or u"Not callable" ) )
+        ll=[""]
+        ll.append( cy("*")+u" %s --> %s " % (self.req,cw(str(self.res)) if self.res else cr(u"Not callable") ) )
         for t in self:
-            ll.append( u"   - TEST: %s ? %s " %(t.name,t==1) )
+            ll.append( u"   - TEST: %s ? %s " %(t.name,cg("OK") if t==1 else cr("KO")) )
         txt = os.linesep.join(ll)
         return txt.encode( sys.stdout.encoding if sys.stdout.encoding else "utf8")
 
@@ -374,9 +397,11 @@ def main(params):
         folders=list(set(paths))
         folders.sort( key=lambda i: i.count("/"))
         for f in folders:
-            print "===",f
             if os.path.isfile( os.path.join(f,"reqman.conf") ):
                 rc=os.path.join(f,"reqman.conf")
+
+        #if not, take the local reqman.conf
+        if rc is None and os.path.isfile( "reqman.conf" ): rc="reqman.conf"
 
 
         # load env !
@@ -389,14 +414,14 @@ def main(params):
             res=http(req)
             token=json.loads(res.content)
             env["headers"]["Authorization"] = token["token_type"]+" "+token["access_token"]
-            print "OAuth2 TOKEN:",env["headers"]["Authorization"]
+            print cy("OAuth2 TOKEN: %s" % env["headers"]["Authorization"])
 
 
         # and make tests
         all=[]
         hr=HtmlRender()
         for f in [Reqs(file(i)) for i in ymls]:
-            print f.name
+            print cb(f.name)
             hr.add("<h3>%s</h3>"%f.name)
             for t in f:
                 tr=t.test( env ) #TODO: colorful output !
@@ -409,10 +434,16 @@ def main(params):
         hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
         hr.save("reqman.html")
 
-        print "RESULT: %s/%s" % (ok,total)
+        print
+        print "RESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total))
         return total - ok
     except RMException as e:
+        print
         print "ERROR: %s" % e
+        return -1
+    except KeyboardInterrupt as e:
+        print
+        print "ERROR: process interrupted"
         return -1
 
 if __name__=="__main__":
