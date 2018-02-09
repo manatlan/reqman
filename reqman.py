@@ -17,11 +17,10 @@
 import yaml         # see pip
 import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re
 
-try:
-    import colorama     # colorama is optionnal
-    colorama.init()
+try: # colorama is optionnal
 
-    from colorama import Fore,Style
+    from colorama import init,Fore,Style
+    init()
 
     cy=lambda t: Fore.YELLOW+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
     cr=lambda t: Fore.RED+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL
