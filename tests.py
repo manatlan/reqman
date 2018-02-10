@@ -111,6 +111,21 @@ class Tests_Req(unittest.TestCase):
         self.assertTrue(s[1])
         self.assertTrue(s[2])
 
+    def test_replace_vars_in_tests(self):
+        env=dict(root="https://github.com/",myserver="mock")
+
+        r=reqman.Req("GET","/",tests=[
+                    dict(status=200),
+                    dict(content="content"),
+                    dict(server="{{myserver}}")
+        ])
+        s=r.test(env)
+        self.assertEqual(s.res.status, 200)
+        self.assertEqual( len(s), 3)
+        self.assertTrue(s[0])
+        self.assertTrue(s[1])
+        self.assertTrue(s[2])
+
     def test_env_var_in_path(self):
         env=dict(root="https://github.com/",a_var="explore")
 

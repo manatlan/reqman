@@ -233,6 +233,12 @@ class Req(object):
 
         req=Request(h.scheme,h.hostname,h.port,self.method,rep(self.path),rep(self.body),headers)
         if h.hostname:
+
+            tests=[]+cenv.get("tests",[]) if cenv else []
+            tests+=self.tests                               # override with self tests
+
+            tests=[{test.keys()[0]:rep(test.values()[0])} for test in tests]    # replace vars
+
             res=http( req )
             if self.save:
                 try:
@@ -240,8 +246,6 @@ class Req(object):
                 except:
                     env[ self.save ]=res.content
 
-            tests=[]+cenv.get("tests",[]) if cenv else []
-            tests+=self.tests                               # override with self tests
             return TestResult(req,res,tests)
         else:
             # no hostname : no response, no tests ! (missing reqman.conf the root var ?)
