@@ -14,8 +14,29 @@
   tests:
     - status: 404
 
-- call: my_macro                            # first call with param hello 2
+- call: my_macro                            # second call with param hello 2
   params:
     param: hello 2
   tests:
     - status: 404
+
+################################################################################
+# but this ^ is the same as the following v
+################################################################################
+
+#------------------------------------------
+- def: my_macro2                             # this is my macro
+#------------------------------------------
+  POST: /
+  body: "{{param}}"
+  tests:
+    - status: 404
+
+
+- call: my_macro2                            # first call with param hello 1
+  params:
+    param: hello 1
+
+- call: my_macro2                            # second call with param hello 2
+  params:
+    param: hello 2
