@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 reqman.html
+SciTE.properties
+
 
 # C extensions
 *.so

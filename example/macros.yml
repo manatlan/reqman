@@ -1,0 +1,21 @@
+
+#------------------------------------------
+- def: my_macro                             # this is my macro
+#------------------------------------------
+  POST: /
+  body: "{{param}}"
+
+
+
+
+- call: my_macro                            # first call with param hello 1
+  params:
+    param: hello 1
+  tests:
+    - status: 404
+
+- call: my_macro                            # first call with param hello 2
+  params:
+    param: hello 2
+  tests:
+    - status: 404

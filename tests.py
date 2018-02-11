@@ -659,7 +659,7 @@ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverag
 
     def test_command_line(self): 
         if os.path.isfile("reqman.html"): os.unlink("reqman.html")
-        self.assertEqual(reqman.main(["example/tests.yml"]),2)  # 2 bad tests
+        self.assertEqual(reqman.main(["example/tests.yml"]),3)  # 2 bad tests
         self.assertTrue( os.path.isfile("reqman.html") )
 
 class Tests_real_http(unittest.TestCase):
@@ -749,6 +749,27 @@ class Tests_BODY_TRANSFORM(unittest.TestCase):
         self.assertEqual(r.body,'[30, 12]')
         s=r.test(env)
         self.assertEqual(s.req.body,"42")
+
+
+    def test_trans_unknown_method(self):
+        y="""
+- GET: /
+  body|unknown: will break ;-)
+"""
+        l=reqman.Reqs(StringIO(y))
+        r=l[0]
+        self.assertEqual(r.body,'will break ;-)')
+        self.assertRaises(reqman.RMException, lambda: r.test({}))
+
+    def test_trans_bad_method(self):
+        y="""
+- GET: /
+  body|bad: will break ;-)
+"""
+        l=reqman.Reqs(StringIO(y))
+        r=l[0]
+        self.assertEqual(r.body,'will break ;-)')
+        self.assertRaises(reqman.RMException, lambda: r.test({"bad":"gfdsgfds"}))
 
 #TODO: more tests !!!
 

@@ -239,12 +239,15 @@ class Req(object):
                 try:
                     exec "def DYNAMIC(x):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in locals()
                 except Exception as e:
-                    raise RMException("Error in method "+self.transformMethodName+" : "+str(e))    
+                    raise RMException("Error in declaration of method "+self.transformMethodName+" : "+str(e))    
                 try:
                     x=json.loads(body)
                 except:
                     x=body
-                body=str( DYNAMIC( x ) )
+                try:
+                    body=str( DYNAMIC( x ) )
+                except Exception as e:
+                    raise RMException("Error in execution of method "+self.transformMethodName+" : "+str(e))    
             else:
                 raise RMException("Can't find method "+self.transformMethodName+" in : "+ ", ".join(cenv.keys()))
                 

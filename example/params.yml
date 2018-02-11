@@ -1,0 +1,17 @@
+- GET: /
+  tests:
+    - status: 200
+
+- GET: /
+  params: # here, you'll override global var "root", but you can override what you want ;-)
+          # (this overriding is just for the context of this request)
+    root: https://about.gitlab.com/
+  tests:
+    - status: 200
+
+- POST: /
+  body|rot13: I'm reqman
+  params: # overriding the "rot13" method (see original in reqman.conf)
+    rot13: return x.encode("base64")
+  tests:
+    - status: 404
