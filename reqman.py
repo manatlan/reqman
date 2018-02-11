@@ -365,7 +365,7 @@ h3 {color:blue;}
                 tr.req.method,
                 tr.req.url,
                 u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.req.headers.items()]),
-                cgi.escape(u(tr.req.body or "")),
+                cgi.escape( prettyJson( u(tr.req.body or "")) ),
 
                 u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.res.headers.items()]),
                 cgi.escape( prettyJson( u(tr.res.content or "")) ),
