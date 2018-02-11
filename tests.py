@@ -681,6 +681,75 @@ class Tests_real_http(unittest.TestCase):
         self.assertRaises(reqman.RMException, lambda: reqman_http(r))
 
 
+class Tests_BODY_TRANSFORM(unittest.TestCase):
+    def test_trans_int(self):
+        env=dict(
+            root="https://github.com/",
+            trans="return int(x)*2",
+        )
+
+        y="""
+- GET: /
+  body|trans: 21
+"""
+        l=reqman.Reqs(StringIO(y))
+        r=l[0]
+        self.assertEqual(r.body,"21")
+        s=r.test(env)
+        self.assertEqual(s.req.body,"42")
+
+    def test_trans_string(self):
+        env=dict(
+            root="https://github.com/",
+            trans="return x.encode('rot13')",
+        )
+
+        y="""
+- GET: /
+  body|trans: xxx
+"""
+        l=reqman.Reqs(StringIO(y))
+        r=l[0]
+        self.assertEqual(r.body,"xxx")
+        s=r.test(env)
+        self.assertEqual(s.req.body,"kkk")
+
+    def test_trans_dict(self):
+        env=dict(
+            root="https://github.com/",
+            trans="return x['a']+x['b']",
+        )
+
+        y="""
+- GET: /
+  body|trans:
+    a: 31
+    b: 11
+"""
+        l=reqman.Reqs(StringIO(y))
+        r=l[0]
+        self.assertEqual(r.body,'{"a": 31, "b": 11}')
+        s=r.test(env)
+        self.assertEqual(s.req.body,"42")
+
+    def test_trans_list(self):
+        env=dict(
+            root="https://github.com/",
+            trans="return sum(x)",
+        )
+
+        y="""
+- GET: /
+  body|trans:
+    - 30
+    - 12
+"""
+        l=reqman.Reqs(StringIO(y))
+        r=l[0]
+        self.assertEqual(r.body,'[30, 12]')
+        s=r.test(env)
+        self.assertEqual(s.req.body,"42")
+
 #TODO: more tests !!!
 
 if __name__ == '__main__':

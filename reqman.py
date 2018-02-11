@@ -189,16 +189,17 @@ def getVar(env,var):
 
 
 class Req(object):
-    def __init__(self,method,path,body=None,headers={},tests=[],save=None,params={}):  # body = str ou dict ou None
+    def __init__(self,method,path,body=None,headers={},tests=[],save=None,params={},transformMethodName=None):  # body = str ou dict ou None
         if body and not isinstance(body,basestring): body=json.dumps(body)
 
         self.method=method.upper()
         self.path=path
-        self.body=body
+        self.body=body              #here, body is a string or None
         self.headers=headers
         self.tests=tests
         self.save=save
         self.params=params
+        self.transformMethodName=transformMethodName
 
     def test(self,env=None):
 
@@ -231,7 +232,24 @@ class Req(object):
         for k in headers:
             headers[k]=rep(headers[k])
 
-        req=Request(h.scheme,h.hostname,h.port,self.method,rep(self.path),rep(self.body),headers)
+        body=rep(self.body)
+        if body and self.transformMethodName:
+            if self.transformMethodName in cenv:
+                code=getVar(cenv,self.transformMethodName)
+                try:
+                    exec "def DYNAMIC(x):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in locals()
+                except Exception as e:
+                    raise RMException("Error in method "+self.transformMethodName+" : "+str(e))    
+                try:
+                    x=json.loads(body)
+                except:
+                    x=body
+                body=str( DYNAMIC( x ) )
+            else:
+                raise RMException("Can't find method "+self.transformMethodName+" in : "+ ", ".join(cenv.keys()))
+                
+
+        req=Request(h.scheme,h.hostname,h.port,self.method,rep(self.path),body,headers)
         if h.hostname:
 
             tests=[]+cenv.get("tests",[]) if cenv else []
@@ -253,6 +271,16 @@ class Req(object):
 
     def __repr__(self):
         return "<%s %s>" % (self.method,self.path)
+
+def getBody(d):
+    """return a tuple (body,transformMethodName)"""
+    if "body" in d:
+        return d["body"],None
+    else:
+        for i in d.keys():
+            if i.startswith("body|"):
+                return d[i], i.split("|",1)[-1]
+    return None,None
 
 class Reqs(list):
     def __init__(self,fd):
@@ -293,7 +321,8 @@ class Reqs(list):
                     raise RMException("no known verbs")
                 else:
                     method=verbs[0]
-                    ll.append( Req(method,d.get( mapkeys[method],""),d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",None),d.get("params",{})) )
+                    body,transformBody=getBody(d)
+                    ll.append( Req(method,d.get( mapkeys[method],""),body,d.get("headers",[]),d.get("tests",[]),d.get("save",None),d.get("params",{}),transformBody) )
         list.__init__(self,ll)
 
 
