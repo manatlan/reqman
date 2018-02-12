@@ -737,41 +737,84 @@ class Tests_params(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo" )
 
+    def test_yml_params_with_macros_and_inheritance(self):
+
+        y="""
+- def: METHOD
+  GET: /{{myvar}}/{{myvar2}}
+  params:
+    myvar2: end
+  headers:
+    myheader: myheader
+  tests:
+    - status: 200
+
+- call: METHOD
+  params:
+    myvar: bingo
+  headers:
+    myheader2: myheader2
+  tests:
+    - content-type: text/plain
+
+- call: METHOD
+  params:
+    myvar: bongi
+  headers:
+    myheader3: myheader3
+  tests:
+    - server: mock
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 2)
+        self.assertEqual( l[0].path, "/{{myvar}}/{{myvar2}}")
+        self.assertEqual( l[1].path, "/{{myvar}}/{{myvar2}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( len(tr), 2)
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo/end" )
+        self.assertEqual( tr.req.headers, {'myheader': 'myheader','myheader2': 'myheader2'} )
+
+        tr=l[1].test( dict(root="http://fake.com") )
+        self.assertEqual( len(tr), 2)
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bongi/end" )
+        self.assertEqual( tr.req.headers, {'myheader': 'myheader','myheader3': 'myheader3'} )
 
 
+# ~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
 
-#~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
+#     ~ #TODO: test command line more !
 
-    #~ #TODO: test command line more !
+#     ~ def test_command_line_bad(self):
+#         ~ self.assertEqual(reqman.main(["unknown_param"]),-1)  # bad param
+#         ~ self.assertEqual(reqman.main(["example","-unknown"]),-1)  # unknown switch
+#         ~ self.assertEqual(reqman.main(["example/tests.yml","-unknown"]),-1)  # unknown switch
+#         ~ self.assertEqual(reqman.main(["tests.py"]),-1)  # not a yaml file
 
-    #~ def test_command_line_bad(self):
-        #~ self.assertEqual(reqman.main(["unknown_param"]),-1)  # bad param
-        #~ self.assertEqual(reqman.main(["example","-unknown"]),-1)  # unknown switch
-        #~ self.assertEqual(reqman.main(["example/tests.yml","-unknown"]),-1)  # unknown switch
-        #~ self.assertEqual(reqman.main(["tests.py"]),-1)  # not a yaml file
+#     ~ def test_command_line(self):
+#         ~ if os.path.isfile("reqman.html"): os.unlink("reqman.html")
+#         ~ self.assertEqual(reqman.main(["example/tests.yml"]),3)  # 2 bad tests
+#         ~ self.assertTrue( os.path.isfile("reqman.html") )
 
-    #~ def test_command_line(self):
-        #~ if os.path.isfile("reqman.html"): os.unlink("reqman.html")
-        #~ self.assertEqual(reqman.main(["example/tests.yml"]),3)  # 2 bad tests
-        #~ self.assertTrue( os.path.isfile("reqman.html") )
+# ~ class Tests_real_http(unittest.TestCase):
 
-#~ class Tests_real_http(unittest.TestCase):
+#     ~ def test_1(self):
+#         ~ r=reqman.Request("https","github.com","443","GET","/")
+#         ~ self.assertEqual(r.url,"https://github.com:443/")
+#         ~ res=reqman_http(r)
+#         ~ self.assertEqual(res.status,200)
 
-    #~ def test_1(self):
-        #~ r=reqman.Request("https","github.com","443","GET","/")
-        #~ self.assertEqual(r.url,"https://github.com:443/")
-        #~ res=reqman_http(r)
-        #~ self.assertEqual(res.status,200)
+#     ~ def test_2(self):
+#         ~ r=reqman.Request("http","github.com",None,"GET","/")
+#         ~ self.assertEqual(r.url,"http://github.com/")
+#         ~ res=reqman_http(r)
+#         ~ self.assertEqual(res.status,301)
 
-    #~ def test_2(self):
-        #~ r=reqman.Request("http","github.com",None,"GET","/")
-        #~ self.assertEqual(r.url,"http://github.com/")
-        #~ res=reqman_http(r)
-        #~ self.assertEqual(res.status,301)
-
-    #~ def test_3(self):
-        #~ r=reqman.Request("http","localhost",59999,"GET","/")
-        #~ self.assertRaises(reqman.RMException, lambda: reqman_http(r))
+#     ~ def test_3(self):
+#         ~ r=reqman.Request("http","localhost",59999,"GET","/")
+#         ~ self.assertRaises(reqman.RMException, lambda: reqman_http(r))
 
 
 class Tests_TRANSFORM(unittest.TestCase):

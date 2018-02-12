@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 import yaml         # see pip
-import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re
+import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy
 
 try: # colorama is optionnal
 
@@ -337,7 +337,6 @@ class Reqs(list):
         ll=[]
         if l:
             l=[l] if type(l)==dict else l
-
             for d in l:
                 #--------------------------------------------------
                 if "def" in d.keys():
@@ -350,20 +349,32 @@ class Reqs(list):
                     callname = d["call"]
                     del d["call"]
                     if callname in defs:
-                        override = d.copy()
-                        d.update( defs[callname] )
-                        d.update( override )
+
+                        q = copy.deepcopy( defs[callname] )
+
+                        for k,v in d.items():
+                            if k=="tests":
+                                q.setdefault("tests",[]).extend( v )
+                            elif k=="headers":
+                                q.setdefault("headers",{}).update( v )
+                            elif k=="params":
+                                q.setdefault("params",{}).update( v )
+                            else: # save, 
+                                q[k]=v
                     else:
                         raise RMException("call a not defined def %s" % callname)
+                else:
+                    q=d.copy()
                 #--------------------------------------------------
-                mapkeys ={ i.upper():i for i in d.keys() }
+                mapkeys ={ i.upper():i for i in q.keys() }
                 verbs= sorted(list(set(mapkeys).intersection(set(["GET","POST","DELETE","PUT","HEAD","OPTIONS","TRACE","PATCH","CONNECT"]))))
                 if len(verbs)!=1:
                     raise RMException("no known verbs")
                 else:
                     method=verbs[0]
-                    body=d.get("body",None)
-                    ll.append( Req(method,d.get( mapkeys[method],""),body,d.get("headers",[]),d.get("tests",[]),d.get("save",None),d.get("params",{})) )
+                    body=q.get("body",None)
+                    ll.append( Req(method,q.get( mapkeys[method],""),body,q.get("headers",[]),q.get("tests",[]),q.get("save",None),q.get("params",{})) )
+
         list.__init__(self,ll)
 
 
