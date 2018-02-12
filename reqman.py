@@ -36,6 +36,7 @@ except:
 
 
 def u(txt):
+    """ decode txt to unicode """
     if txt and isinstance(txt,basestring):
         if type(txt) != unicode:
             try:
@@ -44,11 +45,18 @@ def u(txt):
                 try:
                     return txt.decode("cp1252")
                 except:
-                    try:
-                        return unicode(txt)
-                    except:
-                        return "*** BINARY SIZE(%s) ***" % len(txt)
+                    return unicode(txt)
     return txt
+
+
+def ub(txt):
+    """ same as u, but assume if decode trouble -> it's binary, and so return
+        a string that represents the BINARY STUFF, to be able to display it
+    """
+    try:
+        return u(txt)
+    except:
+        return "*** BINARY SIZE(%s) ***" % len(txt) #TODO: not great for non-response body
 
 
 def prettyJson(txt):
@@ -56,6 +64,20 @@ def prettyJson(txt):
         return json.dumps( json.loads( txt ), indent=4, sort_keys=True )
     except:
         return txt
+
+class NotFound: pass
+
+def jpath(elem, path):
+    for i in path.strip(".").split("."):
+        try:
+            if type(elem)==list:
+                elem= elem[ int(i) ]
+            else:
+                elem= elem.get(i,NotFound)
+        except (ValueError,IndexError) as e:
+            return NotFound
+    return elem
+
 
 class RMException(Exception):pass
 
@@ -93,7 +115,7 @@ class Response:
     def __init__(self,status,body,headers):
         global COOKIEJAR
         self.status = status
-        self.content = u(body)      #TODO: bad way to decode to unicode ;-)
+        self.content = ub(body)
         self.headers = dict(headers)
 
         if "set-cookie" in self.headers:
@@ -164,9 +186,16 @@ class TestResult(list):
             testname = "%s = %s" % (what,value)
             if what=="status":  result = int(value)==int(self.res.status)
             elif what=="content": result = value in self.res.content
-            else: result = value in self.res.headers.get(what,"")
+            elif what.startswith("json."):
+                try:
+                    jzon=json.loads(self.res.content)
+                    val=jpath(jzon,what[5:])
+                    val=None if val == NotFound else val
+                    result = (value == val)
+                except:
+                    result=False
+            else: result = (value in self.res.headers.get(what,""))
             #TODO: test if header is just present
-            #TODO: test if not !
 
             results.append( Test(testname,result) )
 
@@ -183,23 +212,55 @@ class TestResult(list):
 def getVar(env,var):
     if var in env:
         return env[var]
+    elif "|" in var:
+        key,method=var.split("|",1)
+
+        if key in env:
+            content = env[key]
+            return transform(content,env,method) if method else content
+        else:
+            raise RMException("Can't resolve "+key+" in : "+ ", ".join(env.keys()))
+
     elif "." in var:
-        deb,fin=var.split(".",1)
-        return getVar( getVar(env, deb), fin)
+        val=jpath(env,var)
+        if val is NotFound:
+            raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
+        return val
+    else:
+        raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
+
+
+
+def transform(content,env,methodName):
+    if content and methodName:
+        if methodName in env:
+            code=getVar(env,methodName)
+            try:
+                exec "def DYNAMIC(x):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in locals()
+            except Exception as e:
+                raise RMException("Error in declaration of method "+methodName+" : "+str(e))
+            try:
+                x=json.loads(content)
+            except:
+                x=content
+            try:
+                content=DYNAMIC( x )
+            except Exception as e:
+                raise RMException("Error in execution of method "+methodName+" : "+str(e))
+        else:
+            raise RMException("Can't find method "+methodName+" in : "+ ", ".join(env.keys()))
+    return content
 
 
 class Req(object):
-    def __init__(self,method,path,body=None,headers={},tests=[],save=None,params={},transformMethodName=None):  # body = str ou dict ou None
-        if body and not isinstance(body,basestring): body=json.dumps(body)
-
+    def __init__(self,method,path,body=None,headers={},tests=[],save=None,params={}):  # body = str ou dict ou None
         self.method=method.upper()
         self.path=path
-        self.body=body              #here, body is a string or None
+        self.body=body
         self.headers=headers
         self.tests=tests
         self.save=save
         self.params=params
-        self.transformMethodName=transformMethodName
 
     def test(self,env=None):
 
@@ -215,42 +276,29 @@ class Req(object):
                     if val is not None and isinstance(val,basestring):
                         if type(val)==unicode: val=val.encode("utf8")
                         txt=txt.replace( vvar , val.encode('string_escape'))
-                    else:
-                        raise RMException("Can't resolve "+vvar+" in : "+ ", ".join(cenv.keys()))
 
             return txt
 
 
+        # path ...
         if cenv and (not self.path.strip().startswith("http")) and ("root" in cenv):
             h=urlparse.urlparse( cenv["root"] )
         else:
             h=urlparse.urlparse( self.path )
             self.path = h.path + ("?"+h.query if h.query else "")
 
+        # headers ...
         headers=cenv.get("headers",{}).copy() if cenv else {}
         headers.update(self.headers)                        # override with self headers
         for k in headers:
             headers[k]=rep(headers[k])
 
-        body=rep(self.body)
-        if body and self.transformMethodName:
-            if self.transformMethodName in cenv:
-                code=getVar(cenv,self.transformMethodName)
-                try:
-                    exec "def DYNAMIC(x):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in locals()
-                except Exception as e:
-                    raise RMException("Error in declaration of method "+self.transformMethodName+" : "+str(e))    
-                try:
-                    x=json.loads(body)
-                except:
-                    x=body
-                try:
-                    body=str( DYNAMIC( x ) )
-                except Exception as e:
-                    raise RMException("Error in execution of method "+self.transformMethodName+" : "+str(e))    
-            else:
-                raise RMException("Can't find method "+self.transformMethodName+" in : "+ ", ".join(cenv.keys()))
-                
+        # body ...
+        if self.body and not isinstance(self.body,basestring):
+            body=json.dumps(self.body)
+        else:
+            body=self.body
+        body=rep(body)
 
         req=Request(h.scheme,h.hostname,h.port,self.method,rep(self.path),body,headers)
         if h.hostname:
@@ -274,16 +322,6 @@ class Req(object):
 
     def __repr__(self):
         return "<%s %s>" % (self.method,self.path)
-
-def getBody(d):
-    """return a tuple (body,transformMethodName)"""
-    if "body" in d:
-        return d["body"],None
-    else:
-        for i in d.keys():
-            if i.startswith("body|"):
-                return d[i], i.split("|",1)[-1]
-    return None,None
 
 class Reqs(list):
     def __init__(self,fd):
@@ -324,8 +362,8 @@ class Reqs(list):
                     raise RMException("no known verbs")
                 else:
                     method=verbs[0]
-                    body,transformBody=getBody(d)
-                    ll.append( Req(method,d.get( mapkeys[method],""),body,d.get("headers",[]),d.get("tests",[]),d.get("save",None),d.get("params",{}),transformBody) )
+                    body=d.get("body",None)
+                    ll.append( Req(method,d.get( mapkeys[method],""),body,d.get("headers",[]),d.get("tests",[]),d.get("save",None),d.get("params",{})) )
         list.__init__(self,ll)
 
 

@@ -13,12 +13,62 @@ def mockHttp(q):
     elif q.path=="/test_binary":
         binary="".join([chr(i) for i in range(255,0,-1)])
         return reqman.Response( 200, binary, {"content-type":"audio/mpeg","server":"mock"})
+    elif q.path=="/test_json":
+        my=dict(
+            mydict=dict(name="jack"),
+            mylist=["aaa",42,dict(name="john")],
+        )
+        return reqman.Response( 200, json.dumps(my), {"content-type":"application/json","server":"mock"})
     else:
         return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock"})
 
 reqman_http = reqman.http
 reqman.http = mockHttp
 ##################################################################
+
+class Tests_jpath(unittest.TestCase):
+
+    def test_b_aba(self):
+        d=reqman.yaml.load("""
+
+        toto:
+            val1: 100
+            val2: 200
+            val3: null
+
+        titi:
+            - v1
+            - v2:
+                a: 1
+                b: 2
+
+        whos:
+            - pers1:
+                name: jo
+                age: 42
+            - pers2:
+                name: jack
+                age: 43
+
+        """)
+        self.assertEqual( reqman.jpath(d,"tata"), reqman.NotFound )
+        self.assertEqual( reqman.jpath(d,"toto.val1"), 100 )
+        self.assertEqual( reqman.jpath(d,"toto.val2"), 200 )
+        self.assertEqual( reqman.jpath(d,"toto.val3"), None )
+        self.assertEqual( reqman.jpath(d,"toto.val4"), reqman.NotFound )
+        self.assertEqual( reqman.jpath(d,"toto.0"), reqman.NotFound )
+        self.assertEqual( reqman.jpath(d,"toto.1"), reqman.NotFound )
+        self.assertEqual( reqman.jpath(d,"toto.2"), reqman.NotFound )
+        self.assertEqual( reqman.jpath(d,"toto"), {'val2': 200, 'val1': 100, 'val3':None} )
+
+        self.assertEqual( reqman.jpath(d,"titi") , ['v1', {'v2': {'a': 1, 'b': 2}}] )
+        self.assertEqual( reqman.jpath(d,"titi.0") , "v1" )
+        self.assertEqual( reqman.jpath(d,"titi.1") , {'v2': {'a': 1, 'b': 2}} )
+        self.assertEqual( reqman.jpath(d,"titi.1.v2") , {'a': 1, 'b': 2} )
+        self.assertEqual( reqman.jpath(d,"titi.1.v2.b") ,2 )
+        self.assertEqual( reqman.jpath(d,"titi.2") , reqman.NotFound )
+
+        self.assertEqual( reqman.jpath(d,"whos.0.pers1.name") , "jo" )
 
 class Tests_colorama(unittest.TestCase):
 
@@ -39,25 +89,55 @@ class Tests_prettyjson(unittest.TestCase):
         self.assertEqual( reqman.prettyJson("{not good:json}"), "{not good:json}" )
         self.assertEqual( reqman.prettyJson('{       "albert":   "jo"   }'), '{\n    "albert": "jo"\n}' )
 
+class Tests_transform(unittest.TestCase):
+
+    def test_b_aba(self):
+        env={
+            "var": "hello",
+            "trans": "return x.encode('rot13')",
+        }
+        self.assertEqual( reqman.transform("xxx",env,"trans"), "kkk" )
+        self.assertEqual( reqman.transform(None,env,"trans"), None )
+        self.assertRaises(reqman.RMException, lambda: reqman.transform("xxx",env,"trans2") )
+        self.assertEqual( reqman.transform(None,env,"trans2"), None )   # no exception if empty content
+
+
 class Tests_getVar(unittest.TestCase):
 
     def test_b_aba(self):
         env={
             "var":"val",
-            "var.x":"valx",
+            "var.x":"valx", #this is a var named "var.x" !!
+            "mylist":[31,32,33]
         }
-        self.assertEqual( reqman.getVar(env,"nib"), None )
+        self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"nib") )
         self.assertEqual( reqman.getVar(env,"var"), "val" )
         self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
+        self.assertEqual( reqman.getVar(env,"mylist.0"), 31 )
+        self.assertEqual( reqman.getVar(env,"mylist.1"), 32 )
+        self.assertEqual( reqman.getVar(env,"mylist.2"), 33 )
+        self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"mylist.3") )
 
     def test_baba_dotted(self):
         env={
-            "var":dict( ssvar="val" ),
-            "var.x":"valx",
+            "var":dict( ssvar="val",x="eclipsed" ),
+            "var.x":"valx", #this is a var named "var.x" !!
         }
         self.assertEqual( reqman.getVar(env,"var.ssvar"), "val" )
         self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
-        self.assertEqual( reqman.getVar(env,"var.nimp"), None )
+        self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"var.nimp") )
+        self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"xxx") )
+
+
+    def test_baba_trans(self):
+        env={
+            "var": "hello",
+            "trans": "return x.encode('rot13')",
+        }
+        self.assertEqual( reqman.getVar(env,"var"), "hello" )
+        self.assertEqual( reqman.getVar(env,"var|trans"), "uryyb" )
+        self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"var|unknown") )
+
 
 class Tests_Req(unittest.TestCase):
 
@@ -107,9 +187,7 @@ class Tests_Req(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.res.status, 200)
         self.assertEqual( len(s), 3)
-        self.assertTrue(s[0])
-        self.assertTrue(s[1])
-        self.assertTrue(s[2])
+        self.assertTrue( all(s) )
 
     def test_replace_vars_in_tests(self):
         env=dict(root="https://github.com/",myserver="mock")
@@ -122,9 +200,7 @@ class Tests_Req(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.res.status, 200)
         self.assertEqual( len(s), 3)
-        self.assertTrue(s[0])
-        self.assertTrue(s[1])
-        self.assertTrue(s[2])
+        self.assertTrue( all(s) )
 
     def test_env_var_in_path(self):
         env=dict(root="https://github.com/",a_var="explore")
@@ -165,8 +241,6 @@ class Tests_Reqs(unittest.TestCase):
         f=StringIO("GET: https://github.com/")
         l=reqman.Reqs(f)
         self.assertEqual( len(l), 1)
-
-
 
     def test_encoding_yml(self):
         f=StringIO(u"GET: https://github.com/\nbody: héhé")
@@ -235,7 +309,7 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( post.headers, [])
 
         self.assertEqual( put.path, "/")
-        self.assertEqual( json.loads(put.body), {"var": 1, "txt": "{{a_var}}"})
+        self.assertEqual( put.body, {"var": 1, "txt": "{{a_var}}"})
         self.assertEqual( put.headers, {'h3': '{{a_var}}'})
 
         #=-
@@ -269,10 +343,6 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s.req.path, "/")
         self.assertEqual( json.loads(s.req.body), {"var": 1, "txt": "explore"})
         self.assertEqual( s.req.headers,  {'h1': 'my h1',"h3":"explore"})
-
-
-
-
 
     def test_yml_test_env_dotted_var(self):
 
@@ -352,6 +422,29 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s.req.body, None)
         self.assertEqual( s[0],1 )
         self.assertEqual( s[1],1 )
+
+
+    def test_yml_tests_json(self):
+
+        y="""
+- GET: /test_json
+  tests:
+    - content-type:         application/json
+    - json.mylist.0:        aaa
+    - json.mylist.1:        42
+    - json.mylist.2.name:   john
+    - json.mydict.name:     jack
+    - json.mylist.3:        null
+    - json.mydict.0:        null
+    - json.0:               null
+
+"""
+        f=StringIO(y)
+        l=reqman.Reqs(f)
+
+        s=l[0].test( dict(root="https://github.com:443/"))
+        #~ print s.res.content
+        self.assertTrue( all(s) )
 
 class Tests_Conf(unittest.TestCase):
 
@@ -647,58 +740,43 @@ class Tests_params(unittest.TestCase):
 
 
 
-class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
+#~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
 
-    #TODO: test command line more !
+    #~ #TODO: test command line more !
 
-    def test_command_line_bad(self):
-        self.assertEqual(reqman.main(["unknown_param"]),-1)  # bad param
-        self.assertEqual(reqman.main(["example","-unknown"]),-1)  # unknown switch
-        self.assertEqual(reqman.main(["example/tests.yml","-unknown"]),-1)  # unknown switch
-        self.assertEqual(reqman.main(["tests.py"]),-1)  # not a yaml file
+    #~ def test_command_line_bad(self):
+        #~ self.assertEqual(reqman.main(["unknown_param"]),-1)  # bad param
+        #~ self.assertEqual(reqman.main(["example","-unknown"]),-1)  # unknown switch
+        #~ self.assertEqual(reqman.main(["example/tests.yml","-unknown"]),-1)  # unknown switch
+        #~ self.assertEqual(reqman.main(["tests.py"]),-1)  # not a yaml file
 
-    def test_command_line(self): 
-        if os.path.isfile("reqman.html"): os.unlink("reqman.html")
-        self.assertEqual(reqman.main(["example/tests.yml"]),3)  # 2 bad tests
-        self.assertTrue( os.path.isfile("reqman.html") )
+    #~ def test_command_line(self):
+        #~ if os.path.isfile("reqman.html"): os.unlink("reqman.html")
+        #~ self.assertEqual(reqman.main(["example/tests.yml"]),3)  # 2 bad tests
+        #~ self.assertTrue( os.path.isfile("reqman.html") )
 
-class Tests_real_http(unittest.TestCase):
+#~ class Tests_real_http(unittest.TestCase):
 
-    def test_1(self):
-        r=reqman.Request("https","github.com","443","GET","/")
-        self.assertEqual(r.url,"https://github.com:443/")
-        res=reqman_http(r)
-        self.assertEqual(res.status,200)
+    #~ def test_1(self):
+        #~ r=reqman.Request("https","github.com","443","GET","/")
+        #~ self.assertEqual(r.url,"https://github.com:443/")
+        #~ res=reqman_http(r)
+        #~ self.assertEqual(res.status,200)
 
-    def test_2(self):
-        r=reqman.Request("http","github.com",None,"GET","/")
-        self.assertEqual(r.url,"http://github.com/")
-        res=reqman_http(r)
-        self.assertEqual(res.status,301)
+    #~ def test_2(self):
+        #~ r=reqman.Request("http","github.com",None,"GET","/")
+        #~ self.assertEqual(r.url,"http://github.com/")
+        #~ res=reqman_http(r)
+        #~ self.assertEqual(res.status,301)
 
-    def test_3(self):
-        r=reqman.Request("http","localhost",59999,"GET","/")
-        self.assertRaises(reqman.RMException, lambda: reqman_http(r))
+    #~ def test_3(self):
+        #~ r=reqman.Request("http","localhost",59999,"GET","/")
+        #~ self.assertRaises(reqman.RMException, lambda: reqman_http(r))
 
 
-class Tests_BODY_TRANSFORM(unittest.TestCase):
-    def test_trans_int(self):
-        env=dict(
-            root="https://github.com/",
-            trans="return int(x)*2",
-        )
-
-        y="""
-- GET: /
-  body|trans: 21
-"""
-        l=reqman.Reqs(StringIO(y))
-        r=l[0]
-        self.assertEqual(r.body,"21")
-        s=r.test(env)
-        self.assertEqual(s.req.body,"42")
-
-    def test_trans_string(self):
+class Tests_TRANSFORM(unittest.TestCase):
+ 
+    def test_trans_var(self):
         env=dict(
             root="https://github.com/",
             trans="return x.encode('rot13')",
@@ -706,70 +784,15 @@ class Tests_BODY_TRANSFORM(unittest.TestCase):
 
         y="""
 - GET: /
-  body|trans: xxx
+  body: "{{var|trans}}"
+  params:
+    var: hello
 """
         l=reqman.Reqs(StringIO(y))
         r=l[0]
-        self.assertEqual(r.body,"xxx")
+        self.assertEqual(r.body,"{{var|trans}}")
         s=r.test(env)
-        self.assertEqual(s.req.body,"kkk")
-
-    def test_trans_dict(self):
-        env=dict(
-            root="https://github.com/",
-            trans="return x['a']+x['b']",
-        )
-
-        y="""
-- GET: /
-  body|trans:
-    a: 31
-    b: 11
-"""
-        l=reqman.Reqs(StringIO(y))
-        r=l[0]
-        self.assertEqual(r.body,'{"a": 31, "b": 11}')
-        s=r.test(env)
-        self.assertEqual(s.req.body,"42")
-
-    def test_trans_list(self):
-        env=dict(
-            root="https://github.com/",
-            trans="return sum(x)",
-        )
-
-        y="""
-- GET: /
-  body|trans:
-    - 30
-    - 12
-"""
-        l=reqman.Reqs(StringIO(y))
-        r=l[0]
-        self.assertEqual(r.body,'[30, 12]')
-        s=r.test(env)
-        self.assertEqual(s.req.body,"42")
-
-
-    def test_trans_unknown_method(self):
-        y="""
-- GET: /
-  body|unknown: will break ;-)
-"""
-        l=reqman.Reqs(StringIO(y))
-        r=l[0]
-        self.assertEqual(r.body,'will break ;-)')
-        self.assertRaises(reqman.RMException, lambda: r.test({}))
-
-    def test_trans_bad_method(self):
-        y="""
-- GET: /
-  body|bad: will break ;-)
-"""
-        l=reqman.Reqs(StringIO(y))
-        r=l[0]
-        self.assertEqual(r.body,'will break ;-)')
-        self.assertRaises(reqman.RMException, lambda: r.test({"bad":"gfdsgfds"}))
+        self.assertEqual(s.req.body,"uryyb")
 
 #TODO: more tests !!!
 
