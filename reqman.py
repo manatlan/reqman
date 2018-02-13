@@ -132,7 +132,8 @@ def http(r):
             cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
         else:
             cnx=httplib.HTTPConnection(r.host,r.port)
-        cnx.request(r.method,r.path,r.body,r.headers)
+        enc=lambda x: x.replace(" ","%20")
+        cnx.request(r.method,enc(r.path),r.body,r.headers)
         r=cnx.getresponse()
         return Response( r.status,r.read(),r.getheaders() )
     except socket.error:
@@ -273,8 +274,22 @@ class Req(object):
                     var=vvar[2:-2]
 
                     val=getVar(cenv,var)
-                    if val is not None and isinstance(val,basestring):
-                        if type(val)==unicode: val=val.encode("utf8")
+                    if val is NotFound:
+                        raise RMException("Can't resolve "+var+" in : "+ ", ".join(cenv.keys()))
+                    else:      
+                        if val is None:
+                            val=""
+                        elif val is True:
+                            val="true"
+                        elif val is False:
+                            val="false"
+                        elif isinstance(val,basestring):
+                            if type(val)==unicode: val=val.encode("utf8")   #TODO: do better here
+                        elif type(val) in [list,dict]:
+                            val=json.dumps(val)
+                        else: #int, float, ...
+                            val=str(val)
+
                         txt=txt.replace( vvar , val.encode('string_escape'))
 
             return txt

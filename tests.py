@@ -153,6 +153,17 @@ class Tests_Req(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.res.status, 200)
 
+    def test_simplest_env(self):
+        env=dict(root="https://github.com/")
+
+        r=reqman.Req("Get","/toto tata")
+        self.assertEqual(r.path, "/toto tata")
+        s=r.test(env)
+        self.assertEqual(s.req.path, "/toto tata")  #the real call is "/toto%20tata"
+        self.assertEqual(s.res.status, 200)
+
+
+
     def test_simplest_env2(self):
         env=dict(root="https://github.com/")
 
@@ -234,6 +245,93 @@ class Tests_Req(unittest.TestCase):
         self.assertTrue( "*** BINARY" in s.res.content)
 
 
+    def test_var_float(self):
+        f=StringIO("""
+- POST: /{{var}}
+  params:
+    var: 0.7823
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        s=l[0].test(env)
+        self.assertEqual( s.req.path, "/0.7823" )
+
+    def test_var_int(self):
+        f=StringIO("""
+- POST: /{{var}}
+  params:
+    var: 42
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        s=l[0].test(env)
+        self.assertEqual( s.req.path, "/42" )
+
+    def test_var_true(self):
+        f=StringIO("""
+- POST: /{{var}}
+  params:
+    var: true
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        s=l[0].test(env)
+        self.assertEqual( s.req.path, "/true" )
+
+    def test_var_false(self):
+        f=StringIO("""
+- POST: /{{var}}
+  params:
+    var: false
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        s=l[0].test(env)
+        self.assertEqual( s.req.path, "/false" )
+
+    def test_var_None(self):
+        f=StringIO("""
+- POST: /{{var}}
+  params:
+    var: null
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        s=l[0].test(env)
+        self.assertEqual( s.req.path, "/" )
+
+    def test_var_list(self):
+        f=StringIO("""
+- POST: /{{var}}
+  params:
+    var:
+        - 13
+        - 42
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        s=l[0].test(env)
+        self.assertEqual( s.req.path, "/[13, 42]" )
+
+    def test_var_dict(self):
+        f=StringIO("""
+- POST: /{{var}}
+  params:
+    var:
+        a: 42
+        b: 13
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        s=l[0].test(env)
+        self.assertEqual( s.req.path, '/{"a": 42, "b": 13}' )
 
 class Tests_Reqs(unittest.TestCase):
 

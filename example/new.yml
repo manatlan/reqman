@@ -1,0 +1,16 @@
+- GET: https://blockchain.info/fr/ticker    # https://blockchain.info/api
+  tests:
+      - status: 200                                     # http 200 is excepted, if not : test is invalid
+      - content-type: application/json                  # content-type is setted and contains application/json  ?
+      - json.EUR.symbol: "\u20ac"                       # the returned json contains the key EUR, which contains the key symbol == EUR
+
+- GET: https://blockchain.info/tobtc?currency=EUR&value=500
+  tests:
+      - status: 200
+      - content-type: text/plain
+  save: eur500toBTC
+
+- GET: /{{eur500toBTC}}
+  tests:
+      - status: 406
+      - content-type: text/html
