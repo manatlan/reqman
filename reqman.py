@@ -17,6 +17,7 @@
 import yaml         # see pip
 import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy
 
+
 try: # colorama is optionnal
 
     from colorama import init,Fore,Style
@@ -276,7 +277,7 @@ class Req(object):
                     val=getVar(cenv,var)
                     if val is NotFound:
                         raise RMException("Can't resolve "+var+" in : "+ ", ".join(cenv.keys()))
-                    else:      
+                    else:
                         if val is None:
                             val=""
                         elif val is True:
@@ -296,11 +297,12 @@ class Req(object):
 
 
         # path ...
-        if cenv and (not self.path.strip().startswith("http")) and ("root" in cenv):
+        path = rep(self.path)
+        if cenv and (not path.strip().startswith("http")) and ("root" in cenv):
             h=urlparse.urlparse( cenv["root"] )
         else:
-            h=urlparse.urlparse( self.path )
-            self.path = h.path + ("?"+h.query if h.query else "")
+            h=urlparse.urlparse( path )
+            path = h.path + ("?"+h.query if h.query else "")
 
         # headers ...
         headers=cenv.get("headers",{}).copy() if cenv else {}
@@ -315,7 +317,7 @@ class Req(object):
             body=self.body
         body=rep(body)
 
-        req=Request(h.scheme,h.hostname,h.port,self.method,rep(self.path),body,headers)
+        req=Request(h.scheme,h.hostname,h.port,self.method,path,body,headers)
         if h.hostname:
 
             tests=[]+cenv.get("tests",[]) if cenv else []
@@ -374,7 +376,7 @@ class Reqs(list):
                                 q.setdefault("headers",{}).update( v )
                             elif k=="params":
                                 q.setdefault("params",{}).update( v )
-                            else: # save, 
+                            else: # save,
                                 q[k]=v
                     else:
                         raise RMException("call a not defined def %s" % callname)
@@ -555,3 +557,4 @@ def main(params):
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
+
