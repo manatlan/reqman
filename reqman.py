@@ -522,7 +522,7 @@ def main(params):
             req=Request(up.scheme,up.hostname,up.port,"POST",up.path,urllib.urlencode(env["oauth2"]["params"]),{'Content-Type': 'application/x-www-form-urlencoded'})
             res=http(req)
             token=json.loads(res.content)
-            env["headers"]["Authorization"] = token["token_type"]+" "+token["access_token"]
+            env.setdefault("headers",{})["Authorization"] = token["token_type"]+" "+token["access_token"]
             print cy("OAuth2 TOKEN: %s" % env["headers"]["Authorization"])
 
 
