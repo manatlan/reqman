@@ -509,7 +509,7 @@ def main(params):
         # choose first reqman.conf under choosen files
         rc=None
         folders=list(set(paths))
-        folders.sort( key=lambda i: i.count("/"))
+        folders.sort( key=lambda i: i.count("/")+i.count("\\"))
         for f in folders:
             if os.path.isfile( os.path.join(f,"reqman.conf") ):
                 rc=os.path.join(f,"reqman.conf")
