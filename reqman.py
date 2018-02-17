@@ -415,7 +415,7 @@ def loadEnv( fd, varenvs=[] ):
             raise RMException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
     else:
         env={}
-        
+
     for name in varenvs:
         if name not in env:
             raise RMException("the switch '-%s' is unknown ?!" % name)
@@ -494,8 +494,8 @@ def main(params):
         if not params: params=["."]
         for p in params:
             if os.path.isdir(p):
-                paths.append(p)
                 ymls+=sorted(list(listFiles(p)))
+                paths+=[os.path.dirname(i) for i in ymls]
             elif os.path.isfile(p):
                 paths.append( os.path.dirname(p) )
                 if p.lower().endswith(".yml"):
@@ -505,9 +505,8 @@ def main(params):
             else:
                 raise RMException("bad param: %s" % p) #TODO: better here
 
-
+    
         # choose first reqman.conf under choosen files
-        paths=[os.path.realpath(p) for p in paths]
         rc=None
         folders=list(set(paths))
         folders.sort( key=lambda i: i.count("/"))
