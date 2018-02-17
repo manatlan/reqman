@@ -935,6 +935,67 @@ class Tests_TRANSFORM(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.req.body,"uryyb")
 
+
+class Tests_resolver_with_rc(unittest.TestCase):
+
+    def setUp(self):
+        reqman.os.path.isfile = lambda x: reqman.os.path.realpath(x) in [reqman.os.path.realpath(i) for i in [
+            "reqman.conf",
+            "jo/f1.yml",
+            "jo/f2.yml",
+            "jack/f1.yml",
+            "jack/f2.yml",
+            "jack/reqman.conf",
+        ]]
+
+    def tearDown(self):
+        reqman.os.path.isfile = os.path.isfile
+
+    def test_fnf(self):
+        self.assertRaises(reqman.RMException, lambda: reqman.resolver(["nimp/nimp.yml"]))   # fnf
+        self.assertRaises(reqman.RMException, lambda: reqman.resolver(["jo/f1.yml","nimp/nimp.yml"]))   # fnf
+        self.assertRaises(reqman.RMException, lambda: reqman.resolver(["reqman.conf"]))     #not a yaml file
+
+    def test_rc(self):
+        rc,ll = reqman.resolver(["jo/f1.yml"])
+        self.assertTrue( "reqman.conf" in rc )
+        self.assertEquals( len(ll),1 )
+
+    def test_rc2(self):
+        rc,ll = reqman.resolver(["jack/f1.yml"])
+        self.assertTrue( "jack/reqman.conf" in rc )
+        self.assertEquals( len(ll),1 )
+
+class Tests_resolver_without_rc(unittest.TestCase):
+
+    def setUp(self):
+        reqman.os.path.isfile = lambda x: reqman.os.path.realpath(x) in [reqman.os.path.realpath(i) for i in [
+            "jo/f1.yml",
+            "jo/f2.yml",
+            "jack/f1.yml",
+            "jack/f2.yml",
+            "jack/reqman.conf",
+        ]]
+
+    def tearDown(self):
+        reqman.os.path.isfile = os.path.isfile
+
+    def test_rc(self):
+        rc,ll = reqman.resolver(["jo/f1.yml"])
+        self.assertTrue( rc is None )   # no reqman.conf at root !
+        self.assertEquals( len(ll),1 )
+
+    def test_rc2(self):
+        rc,ll = reqman.resolver(["jack/f1.yml"])
+        self.assertTrue( "jack/reqman.conf" in rc )
+        self.assertEquals( len(ll),1 )
+
+    def test_rc3(self):
+        rc,ll = reqman.resolver(["jo/f1.yml","jack/f1.yml"])
+        self.assertTrue( "jack/reqman.conf" in rc )
+        self.assertEquals( len(ll),2 )
+
+
 #TODO: more tests !!!
 
 if __name__ == '__main__':

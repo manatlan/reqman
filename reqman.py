@@ -480,6 +480,51 @@ h3 {color:blue;}
     def save(self,name):
         open(name,"w+").write( os.linesep.join(self).encode("utf8") )
 
+def resolver(params):
+    """ return tuple (reqman.conf,ymls) finded with params """
+    # sort params as yml files
+    if not params: params=["."]
+
+    ymls=[]
+    paths=[]
+    
+    for p in params:
+        if os.path.isdir(p):
+            ymls+=sorted(list(listFiles(p)))
+            paths+=[os.path.dirname(i) for i in ymls]
+        elif os.path.isfile(p):
+            paths.append( os.path.dirname(p) )
+            if p.lower().endswith(".yml"):
+                ymls.append(p)
+            else:
+                raise RMException("not a yml file") #TODO: better here
+        else:
+            raise RMException("bad param: %s" % p) #TODO: better here
+
+
+    # choose first reqman.conf under choosen files
+    rc=None
+    folders=list(set(paths))
+    folders.sort( key=lambda i: i.count("/")+i.count("\\"))
+    for f in folders:
+        if os.path.isfile( os.path.join(f,"reqman.conf") ):
+            rc=os.path.join(f,"reqman.conf")
+
+    #if not, take the first reqman.conf in backwards
+    if rc is None:
+        current = os.path.realpath(folders[0])
+        while 1:
+            rc=os.path.join( current,"reqman.conf" )
+            if os.path.isfile(rc): break
+            next = os.path.realpath(os.path.join(current,".."))
+            if next == current:
+                rc=None
+                break
+            else:
+                current=next
+
+    return rc,ymls
+
 def main(params):
     try:
         # search for a specific env var (starting with "-")
@@ -488,44 +533,7 @@ def main(params):
             params.remove( varenv )
             varenvs.append( varenv[1:] )
 
-        # sort params as yml files
-        ymls=[]
-        paths=[]
-        if not params: params=["."]
-        for p in params:
-            if os.path.isdir(p):
-                ymls+=sorted(list(listFiles(p)))
-                paths+=[os.path.dirname(i) for i in ymls]
-            elif os.path.isfile(p):
-                paths.append( os.path.dirname(p) )
-                if p.lower().endswith(".yml"):
-                    ymls.append(p)
-                else:
-                    raise RMException("not a yml file") #TODO: better here
-            else:
-                raise RMException("bad param: %s" % p) #TODO: better here
-
-    
-        # choose first reqman.conf under choosen files
-        rc=None
-        folders=list(set(paths))
-        folders.sort( key=lambda i: i.count("/")+i.count("\\"))
-        for f in folders:
-            if os.path.isfile( os.path.join(f,"reqman.conf") ):
-                rc=os.path.join(f,"reqman.conf")
-
-        #if not, take the first reqman.conf in backwards
-        if rc is None:
-            current = os.path.realpath(folders[0])
-            while 1:
-                rc=os.path.join( current,"reqman.conf" )
-                if os.path.isfile(rc): break
-                next = os.path.realpath(os.path.join(current,".."))
-                if next == current:
-                    rc=None
-                    break
-                else:
-                    current=next
+        rc,ymls=resolver(params)
 
         # load env !
         env=loadEnv( file(rc) if rc else None, varenvs )
