@@ -487,7 +487,7 @@ def resolver(params):
 
     ymls=[]
     paths=[]
-    
+
     for p in params:
         if os.path.isdir(p):
             ymls+=sorted(list(listFiles(p)))
@@ -540,12 +540,15 @@ def main(params):
 
         # hook oauth2
         if "oauth2" in env: #TODO: should found a clever way to setup/update vars in env ! to be better suitable
-            up = urlparse.urlparse(env["oauth2"]["url"])
-            req=Request(up.scheme,up.hostname,up.port,"POST",up.path,urllib.urlencode(env["oauth2"]["params"]),{'Content-Type': 'application/x-www-form-urlencoded'})
-            res=http(req)
-            token=json.loads(res.content)
-            env.setdefault("headers",{})["Authorization"] = token["token_type"]+" "+token["access_token"]
-            print cy("OAuth2 TOKEN: %s" % env["headers"]["Authorization"])
+            try:
+                up = urlparse.urlparse(env["oauth2"]["url"])
+                req=Request(up.scheme,up.hostname,up.port,"POST",up.path,urllib.urlencode(env["oauth2"]["params"]),{'Content-Type': 'application/x-www-form-urlencoded'})
+                res=http(req)
+                token=json.loads(res.content)
+                env.setdefault("headers",{})["Authorization"] = token["token_type"]+" "+token["access_token"]
+                print cy("OAuth2 TOKEN: %s" % env["headers"]["Authorization"])
+            except Exception as e:
+                raise RMException("OAuth2 error %s" % e)
 
 
         # and make tests
