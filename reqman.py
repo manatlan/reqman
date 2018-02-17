@@ -407,10 +407,15 @@ def listFiles(path,filters=(".yml") ):
 
 
 def loadEnv( fd, varenvs=[] ):
-    try:
-        env=yaml.load( u(fd.read()) ) if fd else {}
-    except Exception as e:
-        raise RMException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
+    if fd:
+        try:
+            env=yaml.load( u(fd.read()) ) if fd else {}
+            if hasattr(fd,"name"): print cw("Use '%s'" % fd.name)
+        except Exception as e:
+            raise RMException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
+    else:
+        env={}
+        
     for name in varenvs:
         if name not in env:
             raise RMException("the switch '-%s' is unknown ?!" % name)
@@ -502,6 +507,7 @@ def main(params):
 
 
         # choose first reqman.conf under choosen files
+        paths=[os.path.realpath(p) for p in paths]
         rc=None
         folders=list(set(paths))
         folders.sort( key=lambda i: i.count("/"))
@@ -509,9 +515,18 @@ def main(params):
             if os.path.isfile( os.path.join(f,"reqman.conf") ):
                 rc=os.path.join(f,"reqman.conf")
 
-        #if not, take the local reqman.conf
-        if rc is None and os.path.isfile( "reqman.conf" ): rc="reqman.conf"
-
+        #if not, take the first reqman.conf in backwards
+        if rc is None:
+            current = os.path.realpath(folders[0])
+            while 1:
+                rc=os.path.join( current,"reqman.conf" )
+                if os.path.isfile(rc): break
+                next = os.path.realpath(os.path.join(current,".."))
+                if next == current:
+                    rc=None
+                    break
+                else:
+                    current=next
 
         # load env !
         env=loadEnv( file(rc) if rc else None, varenvs )
