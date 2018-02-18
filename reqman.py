@@ -97,10 +97,12 @@ class Request:
         self.method=method
         self.path=path
         self.body=body
-        self.headers=headers
+        self.headers={}
 
         if COOKIEJAR:
             self.headers["cookie"]=COOKIEJAR
+
+        self.headers.update(headers)
 
         if self.host and self.protocol:
             self.url="%s://%s%s" % (
