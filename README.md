@@ -20,7 +20,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * encoding aware
    * cookie handling (very simple, need more works)
    * color output in console (when colorama python lib is present)
-   * variables can be computed/transformed
+   * variables can be computed/transformed (in a chain way)
 
 **and soon**
    * release versionning
