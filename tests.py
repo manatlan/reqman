@@ -6,6 +6,8 @@ import json
 import os
 from StringIO import StringIO
 
+fwp = lambda x:x.replace("\\","/") # fake windows path
+
 ################################################################## mock
 def mockHttp(q):
     if q.path=="/test_cookie":
@@ -935,6 +937,24 @@ class Tests_TRANSFORM(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.req.body,"uryyb")
 
+    def test_trans_chainable(self):
+        env=dict(
+            root="https://github.com/",
+            trans="return x.encode('rot13')",
+        )
+
+        y="""
+- GET: /
+  body: "{{var|trans|trans}}"
+  params:
+    var: hello
+"""
+        l=reqman.Reqs(StringIO(y))
+        r=l[0]
+        self.assertEqual(r.body,"{{var|trans|trans}}")
+        s=r.test(env)
+        self.assertEqual(s.req.body,"hello")
+
 
 class Tests_resolver_with_rc(unittest.TestCase):
 
@@ -963,7 +983,7 @@ class Tests_resolver_with_rc(unittest.TestCase):
 
     def test_rc2(self):
         rc,ll = reqman.resolver(["jack/f1.yml"])
-        self.assertTrue( "jack/reqman.conf" in rc )
+        self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),1 )
 
 class Tests_resolver_without_rc(unittest.TestCase):
@@ -987,12 +1007,12 @@ class Tests_resolver_without_rc(unittest.TestCase):
 
     def test_rc2(self):
         rc,ll = reqman.resolver(["jack/f1.yml"])
-        self.assertTrue( "jack/reqman.conf" in rc )
+        self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),1 )
 
     def test_rc3(self):
         rc,ll = reqman.resolver(["jo/f1.yml","jack/f1.yml"])
-        self.assertTrue( "jack/reqman.conf" in rc )
+        self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),2 )
 
 
