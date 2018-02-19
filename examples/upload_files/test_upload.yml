@@ -1,0 +1,9 @@
+# this example show you how to use "transformers" to read a filesystem file
+# to use it as the content body (here as a base64 encoded string)
+
+- POST: /
+  body: "{{myfile|readToBase64}}"
+  params:
+    myfile: test_upload.yml
+  tests:
+    - status: 404   # github doesn't want my base64 encoded file ;-)

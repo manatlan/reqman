@@ -889,13 +889,13 @@ class Tests_params(unittest.TestCase):
 
 #     ~ def test_command_line_bad(self):
 #         ~ self.assertEqual(reqman.main(["unknown_param"]),-1)  # bad param
-#         ~ self.assertEqual(reqman.main(["example","-unknown"]),-1)  # unknown switch
-#         ~ self.assertEqual(reqman.main(["example/tests.yml","-unknown"]),-1)  # unknown switch
+#         ~ self.assertEqual(reqman.main(["examples","-unknown"]),-1)  # unknown switch
+#         ~ self.assertEqual(reqman.main(["examples/tests.yml","-unknown"]),-1)  # unknown switch
 #         ~ self.assertEqual(reqman.main(["tests.py"]),-1)  # not a yaml file
 
 #     ~ def test_command_line(self):
 #         ~ if os.path.isfile("reqman.html"): os.unlink("reqman.html")
-#         ~ self.assertEqual(reqman.main(["example/tests.yml"]),3)  # 2 bad tests
+#         ~ self.assertEqual(reqman.main(["examples/tests.yml"]),3)  # 2 bad tests
 #         ~ self.assertTrue( os.path.isfile("reqman.html") )
 
 # ~ class Tests_real_http(unittest.TestCase):
