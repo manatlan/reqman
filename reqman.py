@@ -245,7 +245,7 @@ def transform(content,env,methodName):
         if methodName in env:
             code=getVar(env,methodName)
             try:
-                exec "def DYNAMIC(x):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in locals()
+                exec "def DYNAMIC(x):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in globals()
             except Exception as e:
                 raise RMException("Error in declaration of method "+methodName+" : "+str(e))
             try:
