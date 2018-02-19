@@ -139,7 +139,6 @@ def http(r):
         else:
             cnx=httplib.HTTPConnection(r.host,r.port)
         enc=lambda x: x.replace(" ","%20")
-        print [r.body,]
         cnx.request(r.method,enc(r.path),r.body,r.headers)
         r=cnx.getresponse()
         return Response( r.status,r.read(),r.getheaders() )
@@ -563,7 +562,8 @@ def main(params):
         all=[]
         hr=HtmlRender()
         for f in [Reqs(file(i)) for i in ymls]:
-            print cb(f.name)
+            print 
+            print "TESTS:",cb(f.name)
             hr.add("<h3>%s</h3>"%f.name)
             for t in f:
                 tr=t.test( env ) #TODO: colorful output !
