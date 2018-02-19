@@ -17,6 +17,9 @@
 import yaml         # see pip
 import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy
 
+"""
+- chain'able trans
+"""
 
 try: # colorama is optionnal
 
@@ -136,6 +139,7 @@ def http(r):
         else:
             cnx=httplib.HTTPConnection(r.host,r.port)
         enc=lambda x: x.replace(" ","%20")
+        print [r.body,]
         cnx.request(r.method,enc(r.path),r.body,r.headers)
         r=cnx.getresponse()
         return Response( r.status,r.read(),r.getheaders() )
@@ -221,7 +225,9 @@ def getVar(env,var):
 
         if key in env:
             content = env[key]
-            return transform(content,env,method) if method else content
+            for m in method.split("|"):
+                content=transform(content,env,m)
+            return content
         else:
             raise RMException("Can't resolve "+key+" in : "+ ", ".join(env.keys()))
 
