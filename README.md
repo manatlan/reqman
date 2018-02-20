@@ -73,7 +73,7 @@ Here is a yaml, with multiple tests (a list):
     - GET: /
     - GET: /explore
 
-But requests without tests are useless ... see [tests.yml](/example/tests.yml).
+But requests without tests are useless ... see [tests.yml](/examples/tests.yml).
 
 For each request you can set theses keys:
 
