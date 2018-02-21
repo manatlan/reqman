@@ -4,13 +4,15 @@
 
 
 # ask the token
-- POST:               https://myserver.com/api/oauth/token
+- POST:               /api/oauth/token
   headers:
       Content-Type:   application/json
   body:
       grant_type:     client_credentials
       client_id:      dbfa4d98-4124-4b61-a435-f69ace80f0ce
       client_secret:  caf46bde-affb-c803-8f26-0b2b751d30ab
+  tests:
+    - status: 200
   save:               auth                                    # save response json to var "auth"
 
 
