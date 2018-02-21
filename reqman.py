@@ -272,7 +272,6 @@ class Req(object):
         self.params=params
 
     def test(self,env=None):
-
         cenv = env.copy() if env else {}    # current env
         cenv.update( self.params )          # override with self params
 
@@ -281,7 +280,7 @@ class Req(object):
                 for vvar in re.findall("\{\{[^\}]+\}\}",txt):
                     var=vvar[2:-2]
 
-                    val=getVar(cenv,var)
+                    val=rep(getVar(cenv,var))   #recursive here ! (if myvar="{{otherVar}}"", redo a pass to resolve otherVar)
                     if val is NotFound:
                         raise RMException("Can't resolve "+var+" in : "+ ", ".join(cenv.keys()))
                     else:

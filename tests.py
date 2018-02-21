@@ -900,6 +900,46 @@ class Tests_params(unittest.TestCase):
         self.assertEqual( tr.req.path, "/bongi/end" )
         self.assertEqual( tr.req.headers, {'myheader': 'myheader','myheader3': 'myheader3'} )
 
+    def test_yml_macros_with_2params(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}/{{myvar2}}
+  params:
+    myvar: bingo
+
+- call: call_me
+  params:
+    myvar2: bongi
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}/{{myvar2}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo/bongi" )
+
+    def test_yml_macros_with_2params_embedded(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}
+  params:
+    myvar: "{{my}}"
+
+- call: call_me
+  params:
+    my: bongi
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bongi" )
 
 # ~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
 
@@ -933,6 +973,7 @@ class Tests_params(unittest.TestCase):
 #     ~ def test_3(self):
 #         ~ r=reqman.Request("http","localhost",59999,"GET","/")
 #         ~ self.assertRaises(reqman.RMException, lambda: reqman_http(r))
+
 
 
 class Tests_TRANSFORM(unittest.TestCase):
