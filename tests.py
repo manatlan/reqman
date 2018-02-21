@@ -920,7 +920,7 @@ class Tests_params(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo/bongi" )
 
-    def test_yml_macros_with_2params_embedded(self):
+    def test_yml_macros_with_2params_recursive(self):
 
         y="""
 - def: call_me
@@ -930,13 +930,13 @@ class Tests_params(unittest.TestCase):
 
 - call: call_me
   params:
-    my: bongi
+    my: "{{a_val}}"
 """
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 1)
         self.assertEqual( l[0].path, "/{{myvar}}")
 
-        tr=l[0].test( dict(root="http://fake.com") )
+        tr=l[0].test( dict(root="http://fake.com",a_val="bongi") )
 
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bongi" )
@@ -1074,8 +1074,6 @@ class Tests_resolver_without_rc(unittest.TestCase):
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),2 )
 
-
-#TODO: more tests !!!
 
 if __name__ == '__main__':
     unittest.main()
