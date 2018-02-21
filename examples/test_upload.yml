@@ -4,6 +4,6 @@
 - POST: /
   body: "{{myfile|readToBase64}}"
   params:
-    myfile: test_upload.yml
+    myfile: test_upload.yml         # the path should be relative to that of the reqman.conf (if no rq.conf -> according the current execution path)
   tests:
     - status: 404   # github doesn't want my base64 encoded file ;-)

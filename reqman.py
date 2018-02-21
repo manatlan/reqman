@@ -72,9 +72,8 @@ def jpath(elem, path):
         try:
             if type(elem)==list:
                 elem= elem[ int(i) ]
-            else:
+            elif type(elem)==dict:
                 elem= elem.get(i,NotFound)
-            if elem is NotFound: raise ValueError()
         except (ValueError,IndexError) as e:
             return NotFound
     return elem
@@ -250,13 +249,20 @@ def transform(content,env,methodName):
             except:
                 x=content
             try:
+                if transform.path:
+                    curdir = os.getcwd()
+                    os.chdir( transform.path )
                 content=DYNAMIC( x )
             except Exception as e:
                 raise RMException("Error in execution of method "+methodName+" : "+str(e))
+            finally:
+                if transform.path:
+                    os.chdir(curdir)
         else:
             raise RMException("Can't find method "+methodName+" in : "+ ", ".join(env.keys()))
     return content
 
+transform.path=None # change cd cwd for transform methods when executed
 
 class Req(object):
     def __init__(self,method,path,body=None,headers={},tests=[],save=None,params={}):  # body = str ou dict ou None
@@ -278,6 +284,7 @@ class Req(object):
                     var=vvar[2:-2]
 
                     val=rep(getVar(cenv,var))   #recursive here ! (if myvar="{{otherVar}}"", redo a pass to resolve otherVar)
+                    #val=getVar(cenv,var)
                     if val is NotFound:
                         raise RMException("Can't resolve "+var+" in : "+ ", ".join(cenv.keys()))
                     else:
@@ -422,7 +429,9 @@ def loadEnv( fd, varenvs=[] ):
         if not hasattr(fd,"name"): setattr(fd,"name","")
         try:
             env=yaml.load( u(fd.read()) ) if fd else {}
-            if fd.name: print cw("Use '%s'" % fd.name)
+            if fd.name:
+                print cw("Use '%s'" % fd.name)
+                transform.path = os.path.dirname(fd.name) # change path when executing transform methods, according the path of reqman.conf
         except Exception as e:
             raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
 

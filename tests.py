@@ -32,7 +32,6 @@ class Tests_jpath(unittest.TestCase):
 
     def test_b_aba(self):
         d=reqman.yaml.load("""
-
         toto:
             val1: 100
             val2: 200
@@ -69,6 +68,8 @@ class Tests_jpath(unittest.TestCase):
         self.assertEqual( reqman.jpath(d,"titi.1.v2") , {'a': 1, 'b': 2} )
         self.assertEqual( reqman.jpath(d,"titi.1.v2.b") ,2 )
         self.assertEqual( reqman.jpath(d,"titi.2") , reqman.NotFound )
+
+        self.assertEqual( reqman.jpath(d,"tata") , reqman.NotFound )
 
         self.assertEqual( reqman.jpath(d,"whos.0.pers1.name") , "jo" )
 

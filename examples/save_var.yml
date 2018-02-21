@@ -12,7 +12,7 @@
       client_id:      dbfa4d98-4124-4b61-a435-f69ace80f0ce
       client_secret:  caf46bde-affb-c803-8f26-0b2b751d30ab
   tests:
-    - status: 200
+    - status: 422                                             # github doesn't want my authent ?? for sure ;-)
   save:               auth                                    # save response json to var "auth"
 
 
