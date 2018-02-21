@@ -17,10 +17,6 @@
 import yaml         # see pip
 import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy
 
-"""
-- chain'able trans
-"""
-
 try: # colorama is optionnal
 
     from colorama import init,Fore,Style
