@@ -74,6 +74,7 @@ def jpath(elem, path):
                 elem= elem[ int(i) ]
             else:
                 elem= elem.get(i,NotFound)
+            if elem is NotFound: raise ValueError()
         except (ValueError,IndexError) as e:
             return NotFound
     return elem
