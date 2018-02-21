@@ -14,7 +14,7 @@
 #
 # https://github.com/manatlan/reqman
 # #############################################################################
-import yaml         # see pip
+import yaml         # see "pip install pyaml"
 import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy
 
 try: # colorama is optionnal
