@@ -635,6 +635,24 @@ fdsq:
 """)
         self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f) )
 
+
+    def test_yml_bad_tests(self):
+        f=StringIO("""
+- GET: http://jim.com
+  tests:
+      badkey: bad
+""")
+        self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f)[0].test({}) )  #  should be a list of mono key/value pairs (
+
+    def test_yml_bad_headers(self):
+        f=StringIO("""
+- GET: http://jim.com
+  headers:
+      - badkey: bad
+""")
+        self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f)[0].test({}) )  #should be a dict
+
+
 class Tests_env_save(unittest.TestCase):
 
     def test_create_var(self):

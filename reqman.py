@@ -212,7 +212,7 @@ class TestResult(list):
         ll=[""]
         ll.append( cy("*")+u" %s --> %s " % (self.req,cw(str(self.res)) if self.res else cr(u"Not callable") ) )
         for t in self:
-            ll.append( u"   - TEST: %s ? %s " %(t.name,cg("OK") if t==1 else cr("KO")) )
+            ll.append( u"  - TEST: %s ? %s " %(t.name,cg("OK") if t==1 else cr("KO")) )
         txt = os.linesep.join(ll)
         return txt.encode( sys.stdout.encoding if sys.stdout.encoding else "utf8")
 
@@ -313,7 +313,11 @@ class Req(object):
 
         # headers ...
         headers=cenv.get("headers",{}).copy() if cenv else {}
-        headers.update(self.headers)                        # override with self headers
+        try:
+            headers.update(self.headers)                        # override with self headers
+        except ValueError:
+            raise RMException("'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')")
+
         for k in headers:
             headers[k]=rep(headers[k])
 
@@ -330,7 +334,10 @@ class Req(object):
             tests=[]+cenv.get("tests",[]) if cenv else []
             tests+=self.tests                               # override with self tests
 
-            tests=[{test.keys()[0]:rep(test.values()[0])} for test in tests]    # replace vars
+            try:
+                tests=[{test.keys()[0]:rep(test.values()[0])} for test in tests]    # replace vars
+            except AttributeError:
+                raise RMException("'tests:' should be a list of mono key/value pairs (ex: '- status: 200')")
 
             res=http( req )
             if self.save:
@@ -353,10 +360,11 @@ class Reqs(list):
         defs={}
 
         self.name = fd.name.replace("\\","/") if hasattr(fd,"name") else "String"
+        if not hasattr(fd,"name"): setattr(fd,"name","<string>")
         try:
             l=yaml.load( u(fd.read()) )
         except Exception as e:
-            raise RMException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
+            raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
 
         ll=[]
         if l:
@@ -415,11 +423,13 @@ def listFiles(path,filters=(".yml") ):
 
 def loadEnv( fd, varenvs=[] ):
     if fd:
+        if not hasattr(fd,"name"): setattr(fd,"name","")
         try:
             env=yaml.load( u(fd.read()) ) if fd else {}
-            if hasattr(fd,"name"): print cw("Use '%s'" % fd.name)
+            if fd.name: print cw("Use '%s'" % fd.name)
         except Exception as e:
-            raise RMException("YML syntax :"+e.problem+" at line "+str(e.context_mark and e.context_mark.line or ""))
+            raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
+
     else:
         env={}
 
@@ -553,7 +563,7 @@ def main(params):
                 res=http(req)
                 token=json.loads(res.content)
                 env.setdefault("headers",{})["Authorization"] = token["token_type"]+" "+token["access_token"]
-                print cy("OAuth2 TOKEN: %s" % env["headers"]["Authorization"])
+                print cy("Use OAuth2: %s" % env["headers"]["Authorization"])
             except Exception as e:
                 raise RMException("OAuth2 error %s" % e)
 
@@ -562,7 +572,7 @@ def main(params):
         all=[]
         hr=HtmlRender()
         for f in [Reqs(file(i)) for i in ymls]:
-            print 
+            print
             print "TESTS:",cb(f.name)
             hr.add("<h3>%s</h3>"%f.name)
             for t in f:
