@@ -385,8 +385,8 @@ class Reqs(list):
                     del d["call"]
                     if callname in defs:
 
+                        #TODO: real merge !
                         q = copy.deepcopy( defs[callname] )
-
                         for k,v in d.items():
                             if k=="tests":
                                 q.setdefault("tests",[]).extend( v )
@@ -442,6 +442,7 @@ def loadEnv( fd, varenvs=[] ):
         if name not in env:
             raise RMException("the switch '-%s' is unknown ?!" % name)
         else:
+            #TODO: real merge !
             conf=env[name].copy()
             for k,v in conf.items():
                 if k in env and type(env[k])==dict and type(v)==dict:
