@@ -208,7 +208,7 @@ class TestResult(list):
         ll=[""]
         ll.append( cy("*")+u" %s --> %s " % (self.req,cw(str(self.res)) if self.res else cr(u"Not callable") ) )
         for t in self:
-            ll.append( u"  - TEST: %s ? %s " %(t.name,cg("OK") if t==1 else cr("KO")) )
+            ll.append( u"  - %s: %s" % ( cg("OK") if t==1 else cr("KO"),t.name ) )
         txt = os.linesep.join(ll)
         return txt.encode( sys.stdout.encoding if sys.stdout.encoding else "utf8")
 
