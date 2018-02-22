@@ -23,7 +23,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * variables can be computed/transformed (in a chain way)
 
 **and soon**
-   * release versionning
+   * release versionning + list available switch
    * doc & examples ;-)
    * generate conf/yml for new tests ?
    * python3 ?
