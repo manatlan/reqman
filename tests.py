@@ -942,6 +942,22 @@ class Tests_params(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bongi" )
 
+
+    def test_yml_macros_with_params_recursive_horror(self):
+
+        y="""
+            - GET: /{{my}}
+              params:
+                my: "{{my2}}"
+                my2: "{{my}}"
+        """
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{my}}")
+
+        self.assertRaises(RuntimeError, lambda: l[0].test({}) )     #TODO: reccursion error !!!
+
+
 # ~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
 
 #     ~ #TODO: test command line more !
