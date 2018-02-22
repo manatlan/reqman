@@ -51,6 +51,11 @@ class Tests_jpath(unittest.TestCase):
                 name: jack
                 age: 43
 
+        astring: hello
+        anumber: 42
+        abool: true
+        anone: null
+
         """)
         self.assertEqual( reqman.jpath(d,"tata"), reqman.NotFound )
         self.assertEqual( reqman.jpath(d,"toto.val1"), 100 )
@@ -69,7 +74,25 @@ class Tests_jpath(unittest.TestCase):
         self.assertEqual( reqman.jpath(d,"titi.1.v2.b") ,2 )
         self.assertEqual( reqman.jpath(d,"titi.2") , reqman.NotFound )
 
-        self.assertEqual( reqman.jpath(d,"tata") , reqman.NotFound )
+        self.assertEqual( reqman.jpath(d,"astring") , "hello" )
+        self.assertEqual( reqman.jpath(d,"astring.var") , "hello" )
+        self.assertEqual( reqman.jpath(d,"astring.0") , "hello" )
+        self.assertEqual( reqman.jpath(d,"astring.var.cvx.vcx.fgsd") , "hello" )
+
+        self.assertEqual( reqman.jpath(d,"anumber") , 42 )
+        self.assertEqual( reqman.jpath(d,"anumber.var") , 42 )
+        self.assertEqual( reqman.jpath(d,"anumber.0") , 42 )
+        self.assertEqual( reqman.jpath(d,"anumber.var.cvx.vcx.fgsd") , 42 )
+
+        self.assertEqual( reqman.jpath(d,"abool") , True )
+        self.assertEqual( reqman.jpath(d,"abool.var") , True )
+        self.assertEqual( reqman.jpath(d,"abool.0") , True )
+        self.assertEqual( reqman.jpath(d,"abool.var.cvx.vcx.fgsd") , True )
+
+        self.assertEqual( reqman.jpath(d,"anone") , None )
+        self.assertEqual( reqman.jpath(d,"anone.var") , None )
+        self.assertEqual( reqman.jpath(d,"anone.0") , None )
+        self.assertEqual( reqman.jpath(d,"anone.var.cvx.vcx.fgsd") , None )
 
         self.assertEqual( reqman.jpath(d,"whos.0.pers1.name") , "jo" )
 
