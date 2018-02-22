@@ -24,6 +24,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
 
 **and soon**
    * release versionning + list available switch
+   * own extension for tests yml -> rml (ReqManLanguage)
    * doc & examples ;-)
    * generate conf/yml for new tests ?
    * python3 ?
