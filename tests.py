@@ -1091,8 +1091,8 @@ class Tests_resolver_without_rc(unittest.TestCase):
         reqman.os.path.isfile = lambda x: reqman.os.path.realpath(x) in [reqman.os.path.realpath(i) for i in [
             "jo/f1.yml",
             "jo/f2.yml",
-            "jack/f1.yml",
             "jack/f2.yml",
+            "jack/f1.yml",
             "jack/reqman.conf",
         ]]
 
@@ -1113,6 +1113,7 @@ class Tests_resolver_without_rc(unittest.TestCase):
         rc,ll = reqman.resolver(["jo/f1.yml","jack/f1.yml"])
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),2 )
+        self.assertEquals( ll,['jack/f1.yml', 'jo/f1.yml'] )    # sorted
 
 
 if __name__ == '__main__':

@@ -512,7 +512,7 @@ def resolver(params):
 
     for p in params:
         if os.path.isdir(p):
-            ymls+=sorted(list(listFiles(p)))
+            ymls+=sorted(list(listFiles(p)), key=lambda x: x.lower())
             paths+=[os.path.dirname(i) for i in ymls]
         elif os.path.isfile(p):
             paths.append( os.path.dirname(p) )
@@ -545,6 +545,7 @@ def resolver(params):
             else:
                 current=next
 
+    ymls.sort( key = lambda x: x.lower() )
     return rc,ymls
 
 def main(params):
