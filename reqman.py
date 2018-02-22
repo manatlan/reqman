@@ -130,7 +130,7 @@ class Response:
 def http(r):
     #TODO: cookies better handling with urllib2 ?!
     try:
-        if r.protocol=="https":
+        if r.protocol and r.protocol.lower()=="https":
             cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
         else:
             cnx=httplib.HTTPConnection(r.host,r.port)
@@ -311,7 +311,7 @@ class Req(object):
 
         # path ...
         path = rep(self.path)
-        if cenv and (not path.strip().startswith("http")) and ("root" in cenv):
+        if cenv and (not path.strip().lower().startswith("http")) and ("root" in cenv):
             h=urlparse.urlparse( cenv["root"] )
         else:
             h=urlparse.urlparse( path )
