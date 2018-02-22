@@ -978,7 +978,7 @@ class Tests_params(unittest.TestCase):
         self.assertEqual( len(l), 1)
         self.assertEqual( l[0].path, "/{{my}}")
 
-        self.assertRaises(RuntimeError, lambda: l[0].test({}) )     #TODO: reccursion error !!!
+        self.assertRaises(reqman.RMException, lambda: l[0].test({}) )     #reccursion error !!!
 
 
 # ~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage

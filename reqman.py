@@ -283,7 +283,10 @@ class Req(object):
                 for vvar in re.findall("\{\{[^\}]+\}\}",txt):
                     var=vvar[2:-2]
 
-                    val=rep(getVar(cenv,var))   #recursive here ! (if myvar="{{otherVar}}"", redo a pass to resolve otherVar)
+                    try:
+                        val=rep(getVar(cenv,var))   #recursive here ! (if myvar="{{otherVar}}"", redo a pass to resolve otherVar)
+                    except RuntimeError:
+                        raise RMException("Recursion trouble for '%s'" % var)
                     #val=getVar(cenv,var)
                     if val is NotFound:
                         raise RMException("Can't resolve "+var+" in : "+ ", ".join(cenv.keys()))
