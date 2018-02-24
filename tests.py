@@ -1094,6 +1094,8 @@ class Tests_resolver_without_rc(unittest.TestCase):
             "jack/f2.yml",
             "jack/f1.yml",
             "jack/reqman.conf",
+            "jim/f1.rml",
+            "jim/reqman.conf",
         ]]
 
     def tearDown(self):
@@ -1114,6 +1116,11 @@ class Tests_resolver_without_rc(unittest.TestCase):
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),2 )
         self.assertEquals( ll,['jack/f1.yml', 'jo/f1.yml'] )    # sorted
+
+    def test_rml(self):
+        rc,ll = reqman.resolver(["jim/f1.rml"])
+        self.assertTrue( "jim/reqman.conf" in fwp(rc) )
+        self.assertEquals( len(ll),1 )
 
 
 if __name__ == '__main__':

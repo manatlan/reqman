@@ -420,7 +420,7 @@ class Reqs(list):
 ###########################################################################
 ## Helpers
 ###########################################################################
-def listFiles(path,filters=(".yml") ):
+def listFiles(path,filters=(".yml",".rml") ):
     for folder, subs, files in os.walk(path):
         for filename in files:
             if filename.lower().endswith( filters ):
@@ -520,10 +520,10 @@ def resolver(params):
             paths+=[os.path.dirname(i) for i in ymls]
         elif os.path.isfile(p):
             paths.append( os.path.dirname(p) )
-            if p.lower().endswith(".yml"):
+            if p.lower().endswith(".yml") or p.lower().endswith(".rml"):
                 ymls.append(p)
             else:
-                raise RMException("not a yml file") #TODO: better here
+                raise RMException("not a rml file") #TODO: better here
         else:
             raise RMException("bad param: %s" % p) #TODO: better here
 
