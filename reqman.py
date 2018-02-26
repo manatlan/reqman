@@ -537,7 +537,7 @@ def resolver(params):
             rc=os.path.join(f,"reqman.conf")
 
     #if not, take the first reqman.conf in backwards
-    if rc is None:
+    if rc is None and folders:
         current = os.path.realpath(folders[0])
         while 1:
             rc=os.path.join( current,"reqman.conf" )
@@ -577,28 +577,31 @@ def main(params):
             except Exception as e:
                 raise RMException("OAuth2 error %s" % e)
 
+        if ymls:
+            # and make tests
+            all=[]
+            hr=HtmlRender()
+            for f in [Reqs(file(i)) for i in ymls]:
+                print
+                print "TESTS:",cb(f.name)
+                hr.add("<h3>%s</h3>"%f.name)
+                for t in f:
+                    tr=t.test( env ) #TODO: colorful output !
+                    print tr
+                    hr.add( tr=tr )
+                    all+=tr
 
-        # and make tests
-        all=[]
-        hr=HtmlRender()
-        for f in [Reqs(file(i)) for i in ymls]:
+            ok,total=len([i for i in all if i]),len(all)
+
+            hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
+            hr.save("reqman.html")
+
             print
-            print "TESTS:",cb(f.name)
-            hr.add("<h3>%s</h3>"%f.name)
-            for t in f:
-                tr=t.test( env ) #TODO: colorful output !
-                print tr
-                hr.add( tr=tr )
-                all+=tr
-
-        ok,total=len([i for i in all if i]),len(all)
-
-        hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
-        hr.save("reqman.html")
-
-        print
-        print "RESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total))
-        return total - ok
+            print "RESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total))
+            return total - ok
+        else:
+            print "ERROR: No tests found !"
+            return -1
     except RMException as e:
         print
         print "ERROR: %s" % e
