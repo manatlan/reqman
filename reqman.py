@@ -278,7 +278,7 @@ class Req(object):
         cenv = env.copy() if env else {}    # current env
         cenv.update( self.params )          # override with self params
 
-        def rep(txt):
+        def rep(txt,escapeString=False):
             if cenv and txt and isinstance(txt,basestring):
                 for vvar in re.findall("\{\{[^\}]+\}\}",txt)+re.findall("<<[^>]+>>",txt):
                     var=vvar[2:-2]
@@ -304,7 +304,10 @@ class Req(object):
                         else: #int, float, ...
                             val=json.dumps(val)
 
-                        txt=txt.replace( vvar , val.encode('string_escape'))
+                        if escapeString:
+                            txt=txt.replace( vvar , val.encode("string_escape") )
+                        else:
+                            txt=txt.replace( vvar , val )
 
             return txt
 
@@ -353,7 +356,7 @@ class Req(object):
             body=apply(self.body, jrep )
             body=json.dumps( body ) # and convert to string !
         else:
-            body=rep(self.body)
+            body=rep(self.body,True) #body is a string, so we should ensure escaping string in string !
 
         req=Request(h.scheme,h.hostname,h.port,self.method,path,body,headers)
         if h.hostname:

@@ -745,9 +745,6 @@ class Tests_env_save(unittest.TestCase):
 
 
 class Tests_macros(unittest.TestCase):
-### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     def test_yml_macros_call_with_diff_types(self):
 
         y="""
@@ -833,9 +830,6 @@ class Tests_macros(unittest.TestCase):
         r=l[3].test({})
         self.assertEqual( json.loads(r.req.body),  {'data': dict(a=1,b=2) } )
 
-### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     def test_yml_macros(self):
 
@@ -1093,6 +1087,84 @@ class Tests_params(unittest.TestCase):
         self.assertEqual( l[0].path, "/{{my}}")
 
         self.assertRaises(reqman.RMException, lambda: l[0].test({}) )     #reccursion error !!!
+
+
+    def test_yml_params_escape_string1(self):
+
+        y="""
+- POST: /test
+  body:
+    <<myvar>>
+  params:
+    myvar: |
+        line1
+        line2
+        line3
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+
+        tr=l[0].test({})
+
+        self.assertEqual( tr.req.body, "line1\\nline2\\nline3\\n" )
+
+    def test_yml_params_escape_string2(self):
+
+        y="""
+- POST: /test
+  body:
+    start<<myvar>>end
+  params:
+    myvar: |
+        line1
+        line2
+        line3
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+
+        tr=l[0].test({})
+
+        self.assertEqual( tr.req.body, "startline1\\nline2\\nline3\\nend" )
+
+    def test_yml_params_escape_string3(self):
+
+        y="""
+- POST: /test
+  body:
+    start<<myvar>>end
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+
+        tr=l[0].test({"myvar":"aaa\nbbb"})
+
+        self.assertEqual( tr.req.body, "startaaa\\nbbbend" )
+
+
+    def test_yml_params_escape_string4(self):
+
+        y="""
+- def: proc
+  POST: /test
+  body:
+    <<myvar>>
+
+- call: proc
+  params:
+    myvar: |
+        start
+        <<var>>
+        end
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+
+        tr=l[0].test({"var":"aaa\nbbb"})
+
+        self.assertEqual( tr.req.body, "start\\naaa\\nbbb\\nend\\n" )
+
+
 
 
 # ~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
