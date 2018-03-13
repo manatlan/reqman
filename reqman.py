@@ -71,9 +71,15 @@ def jpath(elem, path):
     for i in path.strip(".").split("."):
         try:
             if type(elem)==list:
-                elem= elem[ int(i) ]
+                if i=="size":
+                    return len(elem)
+                else:
+                    elem= elem[ int(i) ]
             elif type(elem)==dict:
-                elem= elem.get(i,NotFound)
+                if i=="size":
+                    return len(elem.keys())
+                else:
+                    elem= elem.get(i,NotFound)
         except (ValueError,IndexError) as e:
             return NotFound
     return elem
