@@ -105,6 +105,8 @@ class Tests_jpath(unittest.TestCase):
         self.assertEqual( reqman.jpath(d,"abool.size") , True )    # unknown key for a bool return content, see ^
         self.assertEqual( reqman.jpath(d,"anone.size") , None )    # unknown key for a null return content, see ^
         self.assertEqual( reqman.jpath(d,"unknown.size") , reqman.NotFound )    # unknown key for a unknown return NotFound, see ^
+        self.assertEqual( reqman.jpath(d,".size") , 7 )    # .size at the root --> 7 keys
+        self.assertEqual( reqman.jpath(d,"size") , 7 )    # size is assimilatted to .size, so -> 7
 
 class Tests_colorama(unittest.TestCase):
 
