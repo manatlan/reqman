@@ -410,8 +410,10 @@ class Tests_Reqs(unittest.TestCase):
 - GET: /
   headers:
     h2: my h2
+
 - POsT: /{{a_var}}
   body: "{{a_var}}"
+
 - PUt: /
   headers:
     h3: "{{a_var}}"
@@ -567,7 +569,7 @@ class Tests_Reqs(unittest.TestCase):
         l=reqman.Reqs(f)
 
         s=l[0].test( dict(root="https://github.com:443/"))
-        #~ print s.res.content
+
         self.assertTrue( all(s) )
 
 class Tests_Conf(unittest.TestCase):
@@ -743,6 +745,97 @@ class Tests_env_save(unittest.TestCase):
 
 
 class Tests_macros(unittest.TestCase):
+### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    def test_yml_macros_call_with_diff_types(self):
+
+        y="""
+- def: jo
+  POST: /
+  body:
+    <<val>>
+
+- call: jo
+  params:
+    val:
+        - 1
+        - 2
+
+- call: jo
+  params:
+    val:
+        a: 1
+        b: 2
+
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 2)
+
+        r=l[0].test({})
+        self.assertEqual( json.loads(r.req.body), [1,2] )
+
+        r=l[1].test({})
+        self.assertEqual( json.loads(r.req.body), dict(a=1,b=2) )
+
+    def test_yml_macros_call_with_sub_diff_types(self):
+
+        y="""
+- def: jo
+  POST: /
+  body:
+    data:
+        "{{val}}"
+
+- def: jack
+  POST: /
+  body:
+    data:
+        <<val>>         # second escaper
+
+- call: jo
+  params:
+    val:
+        - 1
+        - 2
+
+- call: jo
+  params:
+    val:
+        a: 1
+        b: 2
+
+- call: jack
+  params:
+    val:
+        - 1
+        - 2
+
+- call: jack
+  params:
+    val:
+        a: 1
+        b: 2
+
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 4)
+
+        r=l[0].test({})
+        self.assertEqual( json.loads(r.req.body), {'data': [1, 2]} )
+
+        r=l[1].test({})
+        self.assertEqual( json.loads(r.req.body),  {'data': dict(a=1,b=2) } )
+
+        r=l[2].test({})
+        self.assertEqual( json.loads(r.req.body), {'data': [1, 2]} )
+
+        r=l[3].test({})
+        self.assertEqual( json.loads(r.req.body),  {'data': dict(a=1,b=2) } )
+
+### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     def test_yml_macros(self):
 
@@ -965,6 +1058,27 @@ class Tests_params(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bongi" )
 
+
+    def test_yml_macros_with_2params_recursive_secondEscaper(self):
+
+        y="""
+- def: call_me
+  GET: /<<myvar>>
+  params:
+    myvar: <<my>>
+
+- call: call_me
+  params:
+    my: <<a_val>>
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/<<myvar>>")
+
+        tr=l[0].test( dict(root="http://fake.com",a_val="bongi") )
+
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bongi" )
 
     def test_yml_macros_with_params_recursive_horror(self):
 

@@ -280,7 +280,7 @@ class Req(object):
 
         def rep(txt):
             if cenv and txt and isinstance(txt,basestring):
-                for vvar in re.findall("\{\{[^\}]+\}\}",txt):
+                for vvar in re.findall("\{\{[^\}]+\}\}",txt)+re.findall("<<[^>]+>>",txt):
                     var=vvar[2:-2]
 
                     try:
@@ -302,7 +302,7 @@ class Req(object):
                         elif type(val) in [list,dict]:
                             val=json.dumps(val)
                         else: #int, float, ...
-                            val=str(val)
+                            val=json.dumps(val)
 
                         txt=txt.replace( vvar , val.encode('string_escape'))
 
@@ -329,10 +329,31 @@ class Req(object):
 
         # body ...
         if self.body and not isinstance(self.body,basestring):
-            body=json.dumps(self.body)
+
+            def jrep(x): # "json rep"
+                r=rep(x)
+                if r and isinstance(r,basestring):
+                    try:
+                        return json.loads(r)
+                    except ValueError:
+                        return r
+                else:
+                    return r
+
+            #================================
+            def apply(body,method):
+                if type(body)==list:
+                    return [ apply(i,method) for i in body]
+                elif type(body)==dict:
+                    return { k:apply(v,method) for k,v in body.items() }
+                else:
+                    return method(body)
+            #================================
+
+            body=apply(self.body, jrep )
+            body=json.dumps( body ) # and convert to string !
         else:
-            body=self.body
-        body=rep(body)
+            body=rep(self.body)
 
         req=Request(h.scheme,h.hostname,h.port,self.method,path,body,headers)
         if h.hostname:
@@ -613,4 +634,5 @@ def main(params):
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
+    #~ execfile("tests.py")
 
