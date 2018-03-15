@@ -442,9 +442,9 @@ class Reqs(list):
                             continue
                         else:
                             raise RMException("call a not defined def '%s' in '%s'" % (callname,fd.name))
-                    elif len(d.keys())==1: # a declaration of a macro ?
+                    elif len(d.keys())==1: # a declaration of a procedure ?
                         callname=d.keys()[0]
-                        if type(d[callname]) in [dict,list]:    # dict is one call, list is a list of dict (multiple calls) -> so it's a macro
+                        if type(d[callname]) in [dict,list]:    # dict is one call, list is a list of dict (multiple calls) -> so it's a procedure
                             defs[callname] = d[callname]        # save it
                             continue  # just declare and nothing yet
                         else:

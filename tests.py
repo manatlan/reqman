@@ -880,8 +880,8 @@ class Tests_env_save(unittest.TestCase):
 
 
 
-class Tests_macros_NEW(unittest.TestCase):
-    def test_yml_macros_call_with_diff_types(self):
+class Tests_procedures_NEW(unittest.TestCase):
+    def test_yml_procedures_call_with_diff_types(self):
 
         y="""
 - jo:
@@ -911,7 +911,7 @@ class Tests_macros_NEW(unittest.TestCase):
         r=l[1].test({})
         self.assertEqual( json.loads(r.req.body), dict(a=1,b=2) )
 
-    def test_yml_macros_call_with_sub_diff_types(self):
+    def test_yml_procedures_call_with_sub_diff_types(self):
 
         y="""
 - jo:
@@ -967,7 +967,7 @@ class Tests_macros_NEW(unittest.TestCase):
         self.assertEqual( json.loads(r.req.body),  {'data': dict(a=1,b=2) } )
 
 
-    def test_yml_macros(self):
+    def test_yml_procedures(self):
 
         y="""
 - jo:
@@ -981,7 +981,7 @@ class Tests_macros_NEW(unittest.TestCase):
         self.assertEqual( len(l), 4)
 
 
-    def test_yml_macros_multiple(self):     # NEW
+    def test_yml_procedures_multiple(self):     # NEW
         y="""
 - jo:
     - GET: /
@@ -1005,7 +1005,7 @@ class Tests_macros_NEW(unittest.TestCase):
 
 
 
-    def test_yml_macros_multiple_mad(self):     # NEW
+    def test_yml_procedures_multiple_mad(self):     # NEW
         y="""
 - jo:
     - jack:
@@ -1018,7 +1018,7 @@ class Tests_macros_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 2)
 
-    def test_yml_macros_def_without_call(self):
+    def test_yml_procedures_def_without_call(self):
 
         y="""
 - jo:
@@ -1027,7 +1027,7 @@ class Tests_macros_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 0)    # 0 request !
 
-    def test_yml_macros_call_without_def(self):
+    def test_yml_procedures_call_without_def(self):
 
         y="""
 - call: me
@@ -1087,7 +1087,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.host, "this_one.net" )
 
-    def test_yml_params_with_macros(self):
+    def test_yml_params_with_procedures(self):
 
         y="""
 - call_me:
@@ -1104,7 +1104,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo" )
 
-    def test_yml_params_with_macros_override_def_params(self):
+    def test_yml_params_with_procedures_override_def_params(self):
 
         y="""
 - call_me:
@@ -1123,7 +1123,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo" )
 
-    def test_yml_params_with_macros2(self):
+    def test_yml_params_with_procedures2(self):
 
         y="""
 - call_me:
@@ -1140,7 +1140,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo" )
 
-    def test_yml_params_with_macros_and_inheritance(self):
+    def test_yml_params_with_procedures_and_inheritance(self):
 
         y="""
 - METHOD:
@@ -1185,7 +1185,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( tr.req.path, "/bongi/end" )
         self.assertEqual( tr.req.headers, {'myheader': 'myheader','myheader3': 'myheader3'} )
 
-    def test_yml_macros_with_2params(self):
+    def test_yml_procedures_with_2params(self):
 
         y="""
 - call_me:
@@ -1205,7 +1205,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo/bongi" )
 
-    def test_yml_macros_with_2params_recursive(self):
+    def test_yml_procedures_with_2params_recursive(self):
 
         y="""
 - call_me:
@@ -1227,7 +1227,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( tr.req.path, "/bongi" )
 
 
-    def test_yml_macros_with_2params_recursive_secondEscaper(self):
+    def test_yml_procedures_with_2params_recursive_secondEscaper(self):
 
         y="""
 - call_me:
@@ -1248,7 +1248,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bongi" )
 
-    def test_yml_macros_with_params_recursive_horror(self):
+    def test_yml_procedures_with_params_recursive_horror(self):
 
         y="""
             - GET: /{{my}}

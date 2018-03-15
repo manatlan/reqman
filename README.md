@@ -9,7 +9,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * tests are simple (no code !)
    * Variable pool
    * can create(save)/re-use variables per request
-   * "macros" (def/call)
+   * "procedures" (declarations & re-use/call)
    * Environment aware (switch easily)
    * https/ssl ok
    * oauth2 simple
