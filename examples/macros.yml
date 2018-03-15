@@ -40,3 +40,24 @@
 - call: my_macro2                            # second call with param hello 2
   params:
     param: hello 2
+
+
+################################################################################
+# but a macro can be a list of actions too
+################################################################################
+
+#------------------------------------------
+- my_macro3:                             # this is my macro
+#------------------------------------------
+    - GET: /
+      tests:
+        - status: 200
+    - POST: /
+      body: "{{param}}"
+      tests:
+        - status: 404
+
+
+- call: my_macro3                     
+  params:
+    param: hello 1
