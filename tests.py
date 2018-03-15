@@ -108,6 +108,121 @@ class Tests_jpath(unittest.TestCase):
         self.assertEqual( reqman.jpath(d,".size") , 7 )    # .size at the root --> 7 keys
         self.assertEqual( reqman.jpath(d,"size") , 7 )    # size is assimilatted to .size, so -> 7
 
+class Tests_merge(unittest.TestCase):
+
+    def test_b_aba(self):
+        d1={
+            "anum": 1,
+            "headers": {
+                "v1": 1
+            },
+            "headers1": {
+                "v": 0
+            },
+            "mad": {
+                "kif": [
+                    "kif1",
+                    "kif11"
+                ],
+                "use": {
+                    "v1": 1
+                }
+            },
+            "test1": [
+                {
+                    "status": 201
+                }
+            ],
+            "tests": [
+                {
+                    "status": 201
+                }
+            ]
+        }
+
+        d2={
+            "anum": 2,
+            "headers": {
+                "v2": 2
+            },
+            "headers2": {
+                "v": 0
+            },
+            "mad": {
+                "kif": [
+                    "kif2",
+                    "kif22",
+                    "kif222"
+                ],
+                "use": {
+                    "v2": 2
+                }
+            },
+            "test2": [
+                {
+                    "status": 202
+                }
+            ],
+            "tests": [
+                {
+                    "status": 202
+                }
+            ]
+        }
+
+
+        d={}
+        reqman.dict_merge(d,d1)
+        reqman.dict_merge(d,d2)
+
+        dd={ # print json.dumps( d2, indent=4, sort_keys=True )
+            "anum": 2,
+            "headers": {
+                "v1": 1,
+                "v2": 2
+            },
+            "headers1": {
+                "v": 0
+            },
+            "headers2": {
+                "v": 0
+            },
+            "mad": {
+                "kif": [
+                    "kif1",
+                    "kif11",
+                    "kif2",
+                    "kif22",
+                    "kif222"
+                ],
+                "use": {
+                    "v1": 1,
+                    "v2": 2
+                }
+            },
+            "test1": [
+                {
+                    "status": 201
+                }
+            ],
+            "test2": [
+                {
+                    "status": 202
+                }
+            ],
+            "tests": [
+                {
+                    "status": 201
+                },
+                {
+                    "status": 202
+                }
+            ]
+        }
+
+        self.assertEqual( d,dd)
+
+
 class Tests_colorama(unittest.TestCase):
 
     def test_b_aba(self):
@@ -394,10 +509,10 @@ class Tests_Reqs(unittest.TestCase):
 
     def test_yml(self):
         y="""
-- GEt : https://github.com/
-- pUT: https://github.com/explore
-- DEleTE  : https://github.com/explore
-- post: https://github.com/explore
+- GET : https://github.com/
+- PUT: https://github.com/explore
+- DELETE  : https://github.com/explore
+- POST: https://github.com/explore
 """
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 4)
@@ -407,6 +522,14 @@ class Tests_Reqs(unittest.TestCase):
         f=StringIO("")
 
         self.assertEqual(reqman.Reqs(f),[])
+
+
+    def test_bad_yml2(self):
+        y="""
+- Get: https://github.com/
+"""
+        f=StringIO(y)
+        self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f))
 
     def test_bad_yml2(self):
         y="""
@@ -423,10 +546,10 @@ class Tests_Reqs(unittest.TestCase):
   headers:
     h2: my h2
 
-- POsT: /{{a_var}}
+- POST: /{{a_var}}
   body: "{{a_var}}"
 
-- PUt: /
+- PUT: /
   headers:
     h3: "{{a_var}}"
   body:                     # yaml -> json body !
@@ -1283,6 +1406,44 @@ class Tests_macros_NEW(unittest.TestCase):
 """
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 4)
+
+
+    def test_yml_macros_multiple(self):     # NEW
+        y="""
+- jo:
+    - GET: /
+    - POST: /
+    - PUT: /
+- call: jo
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 3)
+
+        y="""
+- jo:
+    - GET: /
+    - POST: /
+    - PUT: /
+- call: jo
+- call: jo
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 6)
+
+
+
+    def test_yml_macros_multiple_mad(self):     # NEW
+        y="""
+- jo:
+    - jack:
+        GET: /
+
+    - call: jack
+    - call: jack
+- call: jo
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 2)
 
     def test_yml_macros_def_without_call(self):
 

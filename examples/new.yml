@@ -13,4 +13,3 @@
 - GET: /{{eur500toBTC}}
   tests:
       - status: 406
-      - content-type: text/html

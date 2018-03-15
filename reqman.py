@@ -15,8 +15,14 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 import yaml         # see "pip install pyaml"
-import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy
+import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections
 
+class NotFound: pass
+class RMException(Exception):pass
+
+###########################################################################
+## Utilities
+###########################################################################
 try: # colorama is optionnal
 
     from colorama import init,Fore,Style
@@ -33,7 +39,6 @@ except:
     cg=lambda t: t
     cb=lambda t: t
     cw=lambda t: t
-
 
 def u(txt):
     """ decode txt to unicode """
@@ -58,6 +63,16 @@ def ub(txt):
     except:
         return "*** BINARY SIZE(%s) ***" % len(txt) #TODO: not great for non-response body
 
+def dict_merge(dct, merge_dct):
+    """ merge 'merge_dct' in --> dct """
+    for k, v in merge_dct.iteritems():
+        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], collections.Mapping)):
+            dict_merge(dct[k], merge_dct[k])
+        else:
+            if (k in dct and isinstance(dct[k], list) and isinstance(merge_dct[k], list)):
+                dct[k] += merge_dct[k]
+            else:
+                dct[k] = merge_dct[k]
 
 def prettyJson(txt):
     try:
@@ -65,7 +80,6 @@ def prettyJson(txt):
     except:
         return txt
 
-class NotFound: pass
 
 def jpath(elem, path):
     for i in path.strip(".").split("."):
@@ -85,7 +99,6 @@ def jpath(elem, path):
     return elem
 
 
-class RMException(Exception):pass
 
 ###########################################################################
 ## http request/response
@@ -393,8 +406,6 @@ class Req(object):
 class Reqs(list):
     def __init__(self,fd):
 
-        defs={}
-
         self.name = fd.name.replace("\\","/") if hasattr(fd,"name") else "String"
         if not hasattr(fd,"name"): setattr(fd,"name","<string>")
         try:
@@ -402,58 +413,61 @@ class Reqs(list):
         except Exception as e:
             raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
 
-        ll=[]
-        if l:
-            l=[l] if type(l)==dict else l
-            for d in l:
-                #--------------------------------------------------
-                if "def" in d.keys():
-                    callname = d["def"]
-                    request = d
-                    del request["def"]
-                    defs[ callname ] = request
-                    print "***DEPRECATED*** : old declaration of '%s' in '%s', prefer the new method !" % (callname,fd.name)
-                    continue # just declare and nothing yet
-                elif "call" in d.keys():
-                    callname = d["call"]
-                    del d["call"]
-                    if callname in defs:
+        defs={}
 
-                        #TODO: real merge !
-                        q = copy.deepcopy( defs[callname] )
-                        for k,v in d.items():
-                            if k=="tests":
-                                q.setdefault("tests",[]).extend( v )
-                            elif k=="headers":
-                                q.setdefault("headers",{}).update( v )
-                            elif k=="params":
-                                q.setdefault("params",{}).update( v )
-                            else: # save,
-                                q[k]=v
-                    else:
-                        raise RMException("call a not defined def '%s' in '%s'" % (callname,fd.name))
-                else:
-                    q=d.copy()
-                #--------------------------------------------------
-                mapkeys ={ i.upper():i for i in q.keys() }
-                verbs= sorted(list(set(mapkeys).intersection(set(["GET","POST","DELETE","PUT","HEAD","OPTIONS","TRACE","PATCH","CONNECT"]))))
-                if len(verbs)!=1:
-                    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- NEW
-                    # there is only a 'key' ... save NEW MACRO
-                    if len(d.keys())==1:
+        def feed(l):
+            """ recursive, return a list of <Req> (valids)"""
+            KNOWNVERBS = set(["GET","POST","DELETE","PUT","HEAD","OPTIONS","TRACE","PATCH","CONNECT"])
+            ll=[]
+
+            if l:
+                l=[l] if type(l)==dict else l # ensure we've got a list
+
+                for d in l:
+                    #--------------------------------------------------
+                    if "def" in d.keys():
+                        callname = d["def"]
+                        request = d
+                        del request["def"]
+                        defs[ callname ] = request
+                        print "***DEPRECATED*** : old declaration of '%s' in '%s', prefer the new method !" % (callname,fd.name)
+
+                        continue # just declare and nothing yet
+                    elif "call" in d.keys():
+                        callname = d["call"]
+                        del d["call"]
+                        if callname in defs:
+
+                            commands=[defs[callname]] if type(defs[callname])==dict else defs[callname] # ensure we've got a list
+
+                            ncommands=[]
+                            for command in commands:
+                                q = copy.deepcopy( command )
+                                dict_merge(q,d)
+                                ncommands.append( q )
+
+                            ll+= feed(ncommands)    # *recursive*
+
+                            continue
+                        else:
+                            raise RMException("call a not defined def '%s' in '%s'" % (callname,fd.name))
+                    elif len(d.keys())==1:
                         callname=d.keys()[0]
-                        if type(d[callname])==dict:
-                            defs[ callname] = d[callname]
-                            continue # just declare and nothing yet
-                    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-                    raise RMException("no known verbs")
-                    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+                        if type(d[callname]) in [dict,list]:    # dict is one call, list is a list of dict (multiple calls)
+                            defs[callname] = d[callname]
+                            continue  # just declare and nothing yet
 
-                method=verbs[0]
-                body=q.get("body",None)
-                ll.append( Req(method,q.get( mapkeys[method],""),body,q.get("headers",[]),q.get("tests",[]),q.get("save",None),q.get("params",{})) )
+                    verbs=list(KNOWNVERBS.intersection( d.keys() ))
+                    if verbs:
+                        verb=verbs[0]
+                        ll.append( Req(verb,d[verb],d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",None),d.get("params",{})) )
+                    else:
+                        raise RMException("Unknown verbs (%s) in '%s'" % (d.keys(),fd.name))
 
-        list.__init__(self,ll)
+            return ll
+
+
+        list.__init__(self,feed(l) )
 
 
 
@@ -485,15 +499,7 @@ def loadEnv( fd, varenvs=[] ):
         if name not in env:
             raise RMException("the switch '-%s' is unknown ?!" % name)
         else:
-            #TODO: real merge !
-            conf=env[name].copy()
-            for k,v in conf.items():
-                if k in env and type(env[k])==dict and type(v)==dict:
-                    env[k].update( v )
-                elif k in env and type(env[k])==list and type(v)==list:
-                    env[k]+= v
-                else:
-                    env[k]=v
+            dict_merge(env,env[name] )
     return env
 
 class HtmlRender(list):
@@ -653,5 +659,5 @@ def main(params):
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
-    #~ execfile("tests.py")
+    #execfile("tests.py")
 
