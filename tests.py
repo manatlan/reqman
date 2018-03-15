@@ -755,8 +755,13 @@ class Tests_env_save(unittest.TestCase):
 
 
 
-
-class Tests_macros(unittest.TestCase):
+###################################################################
+###################################################################
+## AEFF !!!! (debut)
+###################################################################
+###################################################################
+class Tests_macros_OLD(unittest.TestCase):
+    # ---------> []
     def test_yml_macros_call_with_diff_types(self):
 
         y="""
@@ -786,7 +791,7 @@ class Tests_macros(unittest.TestCase):
 
         r=l[1].test({})
         self.assertEqual( json.loads(r.req.body), dict(a=1,b=2) )
-
+    # ---------> []
     def test_yml_macros_call_with_sub_diff_types(self):
 
         y="""
@@ -841,8 +846,7 @@ class Tests_macros(unittest.TestCase):
 
         r=l[3].test({})
         self.assertEqual( json.loads(r.req.body),  {'data': dict(a=1,b=2) } )
-
-
+    # ---------> []
     def test_yml_macros(self):
 
         y="""
@@ -855,12 +859,436 @@ class Tests_macros(unittest.TestCase):
 """
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 4)
-
+    # ---------> []
     def test_yml_macros_def_without_call(self):
 
         y="""
 - def: jo
   GET: /
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 0)    # 0 request !
+    # ---------> []
+    def test_yml_macros_call_without_def(self):
+
+        y="""
+- call: me
+"""
+        self.assertRaises(reqman.RMException, lambda: reqman.Reqs(StringIO(y)) )
+
+
+
+class Tests_params_OLD(unittest.TestCase):
+    # ---------> []
+    def test_yml_params(self):
+
+        y="""
+- GET: /{{myvar}}
+  params:
+    myvar: hello
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        env={}
+        tr=l[0].test(env)
+
+        self.assertEqual( tr.req.path, "/hello" )
+    # ---------> []
+    def test_yml_params_override(self):
+
+        y="""
+- GET: /{{myvar}}
+  params:
+    myvar: this one
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        env={"myvar":"not this"}
+        tr=l[0].test(env)
+
+        self.assertEqual( tr.req.path, "/this one" )
+    # ---------> []
+    def test_yml_params_override_root(self):
+
+        y="""
+- GET: /
+  params:
+    root: https://this_one.net
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/")
+
+        env={"root":"http://not_this.com"}
+        tr=l[0].test(env)
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.host, "this_one.net" )
+    # ---------> []
+    def test_yml_params_with_macros(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}
+- call: call_me
+  params:
+    myvar: bingo
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo" )
+    # ---------> []
+    def test_yml_params_with_macros_override_def_params(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}
+  params:
+    myvar: bad      # will be overriden
+- call: call_me
+  params:
+    myvar: bingo    # override original defined in def statement
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo" )
+    # ---------> []
+    def test_yml_params_with_macros2(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}
+  params:
+    myvar: bingo
+- call: call_me
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo" )
+    # ---------> []
+    def test_yml_params_with_macros_and_inheritance(self):
+
+        y="""
+- def: METHOD
+  GET: /{{myvar}}/{{myvar2}}
+  params:
+    myvar2: end
+  headers:
+    myheader: myheader
+  tests:
+    - status: 200
+
+- call: METHOD
+  params:
+    myvar: bingo
+  headers:
+    myheader2: myheader2
+  tests:
+    - content-type: text/plain
+
+- call: METHOD
+  params:
+    myvar: bongi
+  headers:
+    myheader3: myheader3
+  tests:
+    - server: mock
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 2)
+        self.assertEqual( l[0].path, "/{{myvar}}/{{myvar2}}")
+        self.assertEqual( l[1].path, "/{{myvar}}/{{myvar2}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( len(tr), 2)
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo/end" )
+        self.assertEqual( tr.req.headers, {'myheader': 'myheader','myheader2': 'myheader2'} )
+
+        tr=l[1].test( dict(root="http://fake.com") )
+        self.assertEqual( len(tr), 2)
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bongi/end" )
+        self.assertEqual( tr.req.headers, {'myheader': 'myheader','myheader3': 'myheader3'} )
+    # ---------> []
+    def test_yml_macros_with_2params(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}/{{myvar2}}
+  params:
+    myvar: bingo
+
+- call: call_me
+  params:
+    myvar2: bongi
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}/{{myvar2}}")
+
+        tr=l[0].test( dict(root="http://fake.com") )
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bingo/bongi" )
+    # ---------> []
+    def test_yml_macros_with_2params_recursive(self):
+
+        y="""
+- def: call_me
+  GET: /{{myvar}}
+  params:
+    myvar: "{{my}}"
+
+- call: call_me
+  params:
+    my: "{{a_val}}"
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{myvar}}")
+
+        tr=l[0].test( dict(root="http://fake.com",a_val="bongi") )
+
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bongi" )
+    # ---------> []
+    def test_yml_macros_with_2params_recursive_secondEscaper(self):
+
+        y="""
+- def: call_me
+  GET: /<<myvar>>
+  params:
+    myvar: <<my>>
+
+- call: call_me
+  params:
+    my: <<a_val>>
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/<<myvar>>")
+
+        tr=l[0].test( dict(root="http://fake.com",a_val="bongi") )
+
+        self.assertEqual( tr.res.status, 200)
+        self.assertEqual( tr.req.path, "/bongi" )
+    # ---------> []
+    def test_yml_macros_with_params_recursive_horror(self):
+
+        y="""
+            - GET: /{{my}}
+              params:
+                my: "{{my2}}"
+                my2: "{{my}}"
+        """
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        self.assertEqual( l[0].path, "/{{my}}")
+
+        self.assertRaises(reqman.RMException, lambda: l[0].test({}) )     #reccursion error !!!
+    # ---------> []
+    def test_yml_params_escape_string1(self):
+
+        y="""
+- POST: /test
+  body:
+    <<myvar>>
+  params:
+    myvar: |
+        line1
+        line2
+        line3
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+
+        tr=l[0].test({})
+
+        self.assertEqual( tr.req.body, "line1\\nline2\\nline3\\n" )
+    # ---------> []
+    def test_yml_params_escape_string2(self):
+
+        y="""
+- POST: /test
+  body:
+    start<<myvar>>end
+  params:
+    myvar: |
+        line1
+        line2
+        line3
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+
+        tr=l[0].test({})
+
+        self.assertEqual( tr.req.body, "startline1\\nline2\\nline3\\nend" )
+    # ---------> []
+    def test_yml_params_escape_string3(self):
+
+        y="""
+- POST: /test
+  body:
+    start<<myvar>>end
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+
+        tr=l[0].test({"myvar":"aaa\nbbb"})
+
+        self.assertEqual( tr.req.body, "startaaa\\nbbbend" )
+    # ---------> []
+    def test_yml_params_escape_string4(self):
+
+        y="""
+- def: proc
+  POST: /test
+  body:
+    <<myvar>>
+
+- call: proc
+  params:
+    myvar: |
+        start
+        <<var>>
+        end
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+
+        tr=l[0].test({"var":"aaa\nbbb"})
+
+        self.assertEqual( tr.req.body, "start\\naaa\\nbbb\\nend\\n" )
+    # ---------> []
+###################################################################
+###################################################################
+## AEFF !!!! (fin)
+###################################################################
+###################################################################
+
+
+
+class Tests_macros_NEW(unittest.TestCase):
+    def test_yml_macros_call_with_diff_types(self):
+
+        y="""
+- jo:
+      POST: /
+      body:
+        <<val>>
+
+- call: jo
+  params:
+    val:
+        - 1
+        - 2
+
+- call: jo
+  params:
+    val:
+        a: 1
+        b: 2
+
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 2)
+
+        r=l[0].test({})
+        self.assertEqual( json.loads(r.req.body), [1,2] )
+
+        r=l[1].test({})
+        self.assertEqual( json.loads(r.req.body), dict(a=1,b=2) )
+
+    def test_yml_macros_call_with_sub_diff_types(self):
+
+        y="""
+- jo:
+      POST: /
+      body:
+        data:
+            "{{val}}"
+
+- jack:
+      POST: /
+      body:
+        data:
+            <<val>>         # second escaper
+
+- call: jo
+  params:
+    val:
+        - 1
+        - 2
+
+- call: jo
+  params:
+    val:
+        a: 1
+        b: 2
+
+- call: jack
+  params:
+    val:
+        - 1
+        - 2
+
+- call: jack
+  params:
+    val:
+        a: 1
+        b: 2
+
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 4)
+
+        r=l[0].test({})
+        self.assertEqual( json.loads(r.req.body), {'data': [1, 2]} )
+
+        r=l[1].test({})
+        self.assertEqual( json.loads(r.req.body),  {'data': dict(a=1,b=2) } )
+
+        r=l[2].test({})
+        self.assertEqual( json.loads(r.req.body), {'data': [1, 2]} )
+
+        r=l[3].test({})
+        self.assertEqual( json.loads(r.req.body),  {'data': dict(a=1,b=2) } )
+
+
+    def test_yml_macros(self):
+
+        y="""
+- jo:
+    GET: /
+- call: jo
+- call: jo
+- call: jo
+- {"call": "jo"}    #json notation (coz json is a subset of yaml ;-)
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 4)
+
+    def test_yml_macros_def_without_call(self):
+
+        y="""
+- jo:
+    GET: /
 """
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 0)    # 0 request !
@@ -874,7 +1302,7 @@ class Tests_macros(unittest.TestCase):
 
 
 
-class Tests_params(unittest.TestCase):
+class Tests_params_NEW(unittest.TestCase):
 
     def test_yml_params(self):
 
@@ -928,8 +1356,8 @@ class Tests_params(unittest.TestCase):
     def test_yml_params_with_macros(self):
 
         y="""
-- def: call_me
-  GET: /{{myvar}}
+- call_me:
+    GET: /{{myvar}}
 - call: call_me
   params:
     myvar: bingo
@@ -945,10 +1373,10 @@ class Tests_params(unittest.TestCase):
     def test_yml_params_with_macros_override_def_params(self):
 
         y="""
-- def: call_me
-  GET: /{{myvar}}
-  params:
-    myvar: bad      # will be overriden
+- call_me:
+      GET: /{{myvar}}
+      params:
+        myvar: bad      # will be overriden
 - call: call_me
   params:
     myvar: bingo    # override original defined in def statement
@@ -964,10 +1392,10 @@ class Tests_params(unittest.TestCase):
     def test_yml_params_with_macros2(self):
 
         y="""
-- def: call_me
-  GET: /{{myvar}}
-  params:
-    myvar: bingo
+- call_me:
+      GET: /{{myvar}}
+      params:
+        myvar: bingo
 - call: call_me
 """
         l=reqman.Reqs(StringIO(y))
@@ -981,14 +1409,14 @@ class Tests_params(unittest.TestCase):
     def test_yml_params_with_macros_and_inheritance(self):
 
         y="""
-- def: METHOD
-  GET: /{{myvar}}/{{myvar2}}
-  params:
-    myvar2: end
-  headers:
-    myheader: myheader
-  tests:
-    - status: 200
+- METHOD:
+      GET: /{{myvar}}/{{myvar2}}
+      params:
+        myvar2: end
+      headers:
+        myheader: myheader
+      tests:
+        - status: 200
 
 - call: METHOD
   params:
@@ -1026,10 +1454,10 @@ class Tests_params(unittest.TestCase):
     def test_yml_macros_with_2params(self):
 
         y="""
-- def: call_me
-  GET: /{{myvar}}/{{myvar2}}
-  params:
-    myvar: bingo
+- call_me:
+      GET: /{{myvar}}/{{myvar2}}
+      params:
+        myvar: bingo
 
 - call: call_me
   params:
@@ -1046,10 +1474,10 @@ class Tests_params(unittest.TestCase):
     def test_yml_macros_with_2params_recursive(self):
 
         y="""
-- def: call_me
-  GET: /{{myvar}}
-  params:
-    myvar: "{{my}}"
+- call_me:
+      GET: /{{myvar}}
+      params:
+        myvar: "{{my}}"
 
 - call: call_me
   params:
@@ -1068,10 +1496,10 @@ class Tests_params(unittest.TestCase):
     def test_yml_macros_with_2params_recursive_secondEscaper(self):
 
         y="""
-- def: call_me
-  GET: /<<myvar>>
-  params:
-    myvar: <<my>>
+- call_me:
+      GET: /<<myvar>>
+      params:
+        myvar: <<my>>
 
 - call: call_me
   params:
@@ -1157,10 +1585,10 @@ class Tests_params(unittest.TestCase):
     def test_yml_params_escape_string4(self):
 
         y="""
-- def: proc
-  POST: /test
-  body:
-    <<myvar>>
+- proc:
+      POST: /test
+      body:
+        <<myvar>>
 
 - call: proc
   params:
@@ -1175,8 +1603,6 @@ class Tests_params(unittest.TestCase):
         tr=l[0].test({"var":"aaa\nbbb"})
 
         self.assertEqual( tr.req.body, "start\\naaa\\nbbb\\nend\\n" )
-
-
 
 
 # ~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage

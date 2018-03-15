@@ -412,6 +412,7 @@ class Reqs(list):
                     request = d
                     del request["def"]
                     defs[ callname ] = request
+                    print "***DEPRECATED*** : old declaration of '%s' in '%s', prefer the new method !" % (callname,fd.name)
                     continue # just declare and nothing yet
                 elif "call" in d.keys():
                     callname = d["call"]
@@ -430,18 +431,27 @@ class Reqs(list):
                             else: # save,
                                 q[k]=v
                     else:
-                        raise RMException("call a not defined def %s" % callname)
+                        raise RMException("call a not defined def '%s' in '%s'" % (callname,fd.name))
                 else:
                     q=d.copy()
                 #--------------------------------------------------
                 mapkeys ={ i.upper():i for i in q.keys() }
                 verbs= sorted(list(set(mapkeys).intersection(set(["GET","POST","DELETE","PUT","HEAD","OPTIONS","TRACE","PATCH","CONNECT"]))))
                 if len(verbs)!=1:
+                    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- NEW
+                    # there is only a 'key' ... save NEW MACRO
+                    if len(d.keys())==1:
+                        callname=d.keys()[0]
+                        if type(d[callname])==dict:
+                            defs[ callname] = d[callname]
+                            continue # just declare and nothing yet
+                    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
                     raise RMException("no known verbs")
-                else:
-                    method=verbs[0]
-                    body=q.get("body",None)
-                    ll.append( Req(method,q.get( mapkeys[method],""),body,q.get("headers",[]),q.get("tests",[]),q.get("save",None),q.get("params",{})) )
+                    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+                method=verbs[0]
+                body=q.get("body",None)
+                ll.append( Req(method,q.get( mapkeys[method],""),body,q.get("headers",[]),q.get("tests",[]),q.get("save",None),q.get("params",{})) )
 
         list.__init__(self,ll)
 
