@@ -424,7 +424,6 @@ class Reqs(list):
                 l=[l] if type(l)==dict else l # ensure we've got a list
 
                 for d in l:
-                    #--------------------------------------------------
                     if "call" in d.keys():
                         callname = d["call"]
                         del d["call"]
@@ -443,11 +442,14 @@ class Reqs(list):
                             continue
                         else:
                             raise RMException("call a not defined def '%s' in '%s'" % (callname,fd.name))
-                    elif len(d.keys())==1:
+                    elif len(d.keys())==1: # a declaration of a macro ?
                         callname=d.keys()[0]
-                        if type(d[callname]) in [dict,list]:    # dict is one call, list is a list of dict (multiple calls)
-                            defs[callname] = d[callname]
+                        if type(d[callname]) in [dict,list]:    # dict is one call, list is a list of dict (multiple calls) -> so it's a macro
+                            defs[callname] = d[callname]        # save it
                             continue  # just declare and nothing yet
+                        else:
+                            # it's, perhaps, a single command (ex: "- GET: /")
+                            pass
 
                     verbs=list(KNOWNVERBS.intersection( d.keys() ))
                     if verbs:
@@ -650,6 +652,6 @@ def main(params):
         return -1
 
 if __name__=="__main__":
-    # sys.exit( main(sys.argv[1:]) )
-    execfile("tests.py")
+    sys.exit( main(sys.argv[1:]) )
+    # execfile("tests.py")
 
