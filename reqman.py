@@ -425,15 +425,7 @@ class Reqs(list):
 
                 for d in l:
                     #--------------------------------------------------
-                    if "def" in d.keys():
-                        callname = d["def"]
-                        request = d
-                        del request["def"]
-                        defs[ callname ] = request
-                        print "***DEPRECATED*** : old declaration of '%s' in '%s', prefer the new method !" % (callname,fd.name)
-
-                        continue # just declare and nothing yet
-                    elif "call" in d.keys():
+                    if "call" in d.keys():
                         callname = d["call"]
                         del d["call"]
                         if callname in defs:
@@ -658,6 +650,6 @@ def main(params):
         return -1
 
 if __name__=="__main__":
-    sys.exit( main(sys.argv[1:]) )
-    #execfile("tests.py")
+    # sys.exit( main(sys.argv[1:]) )
+    execfile("tests.py")
 
