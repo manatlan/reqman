@@ -413,7 +413,7 @@ class Reqs(list):
         except Exception as e:
             raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
 
-        defs={}
+        procedures={}
 
         def feed(l):
             """ recursive, return a list of <Req> (valids)"""
@@ -427,9 +427,9 @@ class Reqs(list):
                     if "call" in d.keys():
                         callname = d["call"]
                         del d["call"]
-                        if callname in defs:
+                        if callname in procedures:
 
-                            commands=[defs[callname]] if type(defs[callname])==dict else defs[callname] # ensure we've got a list
+                            commands=[procedures[callname]] if type(procedures[callname])==dict else procedures[callname] # ensure we've got a list
 
                             ncommands=[]
                             for command in commands:
@@ -441,11 +441,11 @@ class Reqs(list):
 
                             continue
                         else:
-                            raise RMException("call a not defined def '%s' in '%s'" % (callname,fd.name))
+                            raise RMException("call a not defined procedure '%s' in '%s'" % (callname,fd.name))
                     elif len(d.keys())==1: # a declaration of a procedure ?
                         callname=d.keys()[0]
                         if type(d[callname]) in [dict,list]:    # dict is one call, list is a list of dict (multiple calls) -> so it's a procedure
-                            defs[callname] = d[callname]        # save it
+                            procedures[callname] = d[callname]        # save it
                             continue  # just declare and nothing yet
                         else:
                             # it's, perhaps, a single command (ex: "- GET: /")
