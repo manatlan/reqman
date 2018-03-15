@@ -1,1 +1,1 @@
-Examples are in ".yml" files, just because github use colored syntax for yaml files. But you can use ".rml" files in place ! (github doesn't know that my rml files are just regular yaml files)
+Examples are in ".yml" files, just because github use colored syntax for yaml files ; it's better displayed as is. But you can use ".rml" files in place ! (github doesn't know that my rml files are just regular yaml files)
