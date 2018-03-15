@@ -21,10 +21,10 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * cookie handling (very simple, need more works)
    * color output in console (when colorama python lib is present)
    * variables can be computed/transformed (in a chain way)
+   * tests files extension : .yml or .rml (ReqManLanguage)
 
 **and soon**
    * release versionning + query available switch
-   * own extension for tests yml -> rml (ReqManLanguage)
    * doc & examples ;-)
    * generate conf/yml for new tests ?
    * python3 ?
@@ -61,13 +61,15 @@ There are 3 specials (and optionnals) vars :
 - **tests** : is a list of mono key/value pair, to test the response, which will test each requests (some are specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
 
 
-## The Tests / yml file
+## The Tests / [ry]ml file
 
 It's a yaml file, which can be a list (multiple tests at once), or a dict (just one test).
 
 Here is a yaml, with just one test (a dict):
 
     GET: /
+
+"GET" is a http verb, always uppercases
 
 Here is a yaml, with multiple tests (a list):
 
@@ -86,7 +88,7 @@ For each request you can set theses keys:
 
 _headers_ & _tests_ can be surcharged using _reqman.conf_ (see above) ! Not _body_ !
 
-And, of course, you can use variables everywhere (if declared in reqman.conf ;-), just use {{my_var}} syntax, like this:
+And, of course, you can use variables everywhere (if declared in reqman.conf ;-), just use {{my_var}} syntax (or alternative syntax <<my_var>>), like this:
 
     - POST: /authent
       body: login=me&pass={{passwd}}                # plain text urlencoded
@@ -101,7 +103,7 @@ or a json example request:
     - POST: /authent
       body:                                         # will be converted to json
         login:  me
-        pass:   "{{passwd}}"                        # escape the string to avoid trouble with yaml syntax
+        pass:   "{{passwd}}"                        # escape the string to avoid trouble with yaml syntax (else use the alternative syntax)
       headers:
         content-type: application/json
       tests:
