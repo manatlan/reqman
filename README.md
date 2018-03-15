@@ -69,7 +69,7 @@ Here is a yaml, with just one test (a dict):
 
     GET: /
 
-"GET" is a http verb, always uppercases
+("GET" is a http verb, always uppercases)
 
 Here is a yaml, with multiple tests (a list):
 
