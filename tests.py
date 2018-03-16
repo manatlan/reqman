@@ -1018,6 +1018,7 @@ class Tests_procedures_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 2)
 
+
     def test_yml_procedures_def_without_call(self):
 
         y="""
@@ -1034,6 +1035,16 @@ class Tests_procedures_NEW(unittest.TestCase):
 """
         self.assertRaises(reqman.RMException, lambda: reqman.Reqs(StringIO(y)) )
 
+    def test_yml_procedure_global(self):     # NEW
+        y="""
+- call: me
+"""
+        env={
+            "me": [{"GET":"/"},{"POST":"/"}],   # declare a global proc
+        }
+
+        l=reqman.Reqs(StringIO(y),env)
+        self.assertEqual( len(l), 2)
 
 
 class Tests_params_NEW(unittest.TestCase):

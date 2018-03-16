@@ -404,8 +404,8 @@ class Req(object):
         return "<%s %s>" % (self.method,self.path)
 
 class Reqs(list):
-    def __init__(self,fd):
-
+    def __init__(self,fd,env={}):
+        self.env=env    # just for proc finding
         self.name = fd.name.replace("\\","/") if hasattr(fd,"name") else "String"
         if not hasattr(fd,"name"): setattr(fd,"name","<string>")
         try:
@@ -427,9 +427,11 @@ class Reqs(list):
                     if "call" in d.keys():
                         callname = d["call"]
                         del d["call"]
-                        if callname in procedures:
 
-                            commands=[procedures[callname]] if type(procedures[callname])==dict else procedures[callname] # ensure we've got a list
+                        commands = procedures[callname] if callname in procedures else self.env[callname] if callname in self.env else None # local proc in first !
+
+                        if commands:
+                            commands=[commands] if type(commands)==dict else commands # ensure we've got a list
 
                             ncommands=[]
                             for command in commands:
@@ -653,5 +655,5 @@ def main(params):
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
-    # execfile("tests.py")
+    #~ execfile("tests.py")
 
