@@ -404,8 +404,8 @@ class Req(object):
         return "<%s %s>" % (self.method,self.path)
 
 class Reqs(list):
-    def __init__(self,fd,env={}):
-        self.env=env    # just for proc finding
+    def __init__(self,fd,env=None):
+        self.env=env or {}    # just for proc finding
         self.name = fd.name.replace("\\","/") if hasattr(fd,"name") else "String"
         if not hasattr(fd,"name"): setattr(fd,"name","<string>")
         try:
@@ -623,7 +623,7 @@ def main(params):
             # and make tests
             all=[]
             hr=HtmlRender()
-            for f in [Reqs(file(i)) for i in ymls]:
+            for f in [Reqs(file(i),env) for i in ymls]:
                 print
                 print "TESTS:",cb(f.name)
                 hr.add("<h3>%s</h3>"%f.name)
