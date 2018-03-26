@@ -233,14 +233,14 @@ class Tests_colorama(unittest.TestCase):
         self.assertTrue( "HELLO" in reqman.cb("HELLO"))
         self.assertTrue( "HELLO" in reqman.cw("HELLO"))
 
-class Tests_prettyjson(unittest.TestCase):
+class Tests_prettify(unittest.TestCase):
 
     def test_b_aba(self):
-        self.assertEqual( reqman.prettyJson(None), None )
-        self.assertEqual( reqman.prettyJson("yo"), "yo" )
-        self.assertEqual( reqman.prettyJson("42"), "42" )
-        self.assertEqual( reqman.prettyJson("{not good:json}"), "{not good:json}" )
-        self.assertEqual( reqman.prettyJson('{       "albert":   "jo"   }'), '{\n    "albert": "jo"\n}' )
+        self.assertEqual( reqman.prettify(None), None )
+        self.assertEqual( reqman.prettify("yo"), "yo" )
+        self.assertEqual( reqman.prettify("42"), "42" )
+        self.assertEqual( reqman.prettify("{not good:json}"), "{not good:json}" )
+        self.assertEqual( reqman.prettify('{       "albert":   "jo"   }'), '{\n    "albert": "jo"\n}' )
 
 class Tests_transform(unittest.TestCase):
 

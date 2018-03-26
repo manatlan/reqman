@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 import yaml         # see "pip install pyaml"
-import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections
+import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections,xml.dom.minidom
 
 class NotFound: pass
 class RMException(Exception):pass
@@ -74,11 +74,18 @@ def dict_merge(dct, merge_dct):
             else:
                 dct[k] = merge_dct[k]
 
-def prettyJson(txt):
+
+def prettify(txt,indentation=4):
     try:
-        return json.dumps( json.loads( txt ), indent=4, sort_keys=True )
+        x=xml.dom.minidom.parseString( txt ).toprettyxml(indent=" "*indentation)
+        x="\n".join([s for s in x.splitlines() if s.strip()]) # http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
+        return x
     except:
-        return txt
+        try:
+            return json.dumps( json.loads( txt ), indent=indentation, sort_keys=True )
+        except:
+            return txt
+
 
 
 def jpath(elem, path):
@@ -192,9 +199,12 @@ def http(r):
 
 class Test(int):
     """ a boolean with a name """
-    def __new__(cls, name,value):
+    def __new__(cls, value,nameOK,nameKO):
         s=super(Test, cls).__new__(cls, value)
-        s.name = name
+        if value:
+            s.name = nameOK
+        else:
+            s.name = nameKO
         return s
 
 class TestResult(list):
@@ -206,6 +216,7 @@ class TestResult(list):
             what,value = test.keys()[0],test.values()[0]
 
             testname = "%s = %s" % (what,value)
+            testnameKO = "%s != %s" % (what,value)
             if what=="status":  result = int(value)==int(self.res.status)
             elif what=="content": result = value in self.res.content
             elif what.startswith("json."):
@@ -219,7 +230,7 @@ class TestResult(list):
             else: result = (value in self.res.headers.get(what,""))
             #TODO: test if header is just present
 
-            results.append( Test(testname,result) )
+            results.append( Test(result,testname,testnameKO) )
 
         list.__init__(self,results)
 
@@ -536,10 +547,10 @@ h3 {color:blue;}
                 tr.req.method,
                 tr.req.url,
                 u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.req.headers.items()]),
-                cgi.escape( prettyJson( u(tr.req.body or "")) ),
+                cgi.escape( prettify( u(tr.req.body or "")) ),
 
                 u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.res.headers.items()]),
-                cgi.escape( prettyJson( u(tr.res.content or "")) ),
+                cgi.escape( prettify( u(tr.res.content or "")) ),
 
                 u"".join([u"<li class='%s'>%s</li>" % (t and u"ok" or u"ko",cgi.escape(t.name)) for t in tr ]),
                 )
