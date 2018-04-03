@@ -647,7 +647,10 @@ def main(params):
             ok,total=len([i for i in all if i]),len(all)
 
             hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
-            hr.save("reqman.html")
+            fn="_".join( ["reqman"]+varenvs ) + ".html"
+            print
+            print cw("Generate "+fn)
+            hr.save( fn )
 
             print
             print "RESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total))
