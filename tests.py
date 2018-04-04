@@ -11,18 +11,18 @@ fwp = lambda x:x.replace("\\","/") # fake windows path
 ################################################################## mock
 def mockHttp(q):
     if q.path=="/test_cookie":
-        return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock","set-cookie":"mycookie=myval"})
+        return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock","Set-Cookie":"mycookie=myval"},q.url)
     elif q.path=="/test_binary":
         binary="".join([chr(i) for i in range(255,0,-1)])
-        return reqman.Response( 200, binary, {"content-type":"audio/mpeg","server":"mock"})
+        return reqman.Response( 200, binary, {"content-type":"audio/mpeg","server":"mock"},q.url)
     elif q.path=="/test_json":
         my=dict(
             mydict=dict(name="jack"),
             mylist=["aaa",42,dict(name="john")],
         )
-        return reqman.Response( 200, json.dumps(my), {"content-type":"application/json","server":"mock"})
+        return reqman.Response( 200, json.dumps(my), {"content-type":"application/json","server":"mock"}, q.url)
     else:
-        return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock"})
+        return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock"}, q.url)
 
 reqman_http = reqman.http
 reqman.http = mockHttp
@@ -291,6 +291,72 @@ class Tests_getVar(unittest.TestCase):
         self.assertEqual( reqman.getVar(env,"var|trans"), "uryyb" )
         self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"var|unknown") )
 
+class Tests_CookieStore(unittest.TestCase):
+    def test(self):
+        import Cookie
+        CJ=reqman.CookieStore()
+
+        #------------------------------------------------------ create a cookie using "Cookie"
+        c = Cookie.SimpleCookie()
+        c["cidf"]="malz"
+        c["cidf"]["path"]="/yo"
+
+        c["cidf2"]="malz2"
+        headers=[ ("user-Agent","yo"),("content-type","text/html") ]
+        for k,v in c.iteritems():
+            headers.append(tuple(v.output().split(": ",1)))
+        #------------------------------------------------------
+
+        CJ.saveCookie(headers,'http://localhost')
+        self.assertEqual( CJ.getCookieHeaderForUrl('http://localhost/yo') , {'Cookie': 'cidf=malz; cidf2=malz2'} )
+        self.assertEqual( CJ.getCookieHeaderForUrl('http://localhost/') , {'Cookie': 'cidf2=malz2'} )
+        self.assertEqual( CJ.getCookieHeaderForUrl('http://mama.com/') , {} )
+
+        CJ.saveCookie( {"set-cookie":"kkk=va"},'http://mama.com')
+        self.assertEqual( CJ.getCookieHeaderForUrl('http://mama.com/') , {'Cookie': 'kkk=va'} )
+
+
+
+class Tests_ReqRespCookie(unittest.TestCase):
+    def test_1cookie(self):
+        reqman.COOKIEJAR.clear()
+        res=reqman.Response(200,"ok",{"Set-Cookie":"cook=1"},"http://localhost/")   # set the cookie !
+
+        hr=reqman.Request("http","localhost","80","GET","/",None).headers
+        self.assertTrue( "Cookie" in hr )
+        self.assertEqual( hr["Cookie"],"cook=1" )
+        self.assertFalse( "Cookie" in reqman.Request("http","myhost","80","GET","/",None).headers )
+
+    def test_2cookies(self):
+        reqman.COOKIEJAR.clear()
+        res=reqman.Response(200,"ok",[ ("Set-Cookie","cook1=1"),("Set-Cookie","cook2=2; Path=/p2")],"http://localhost/")   # set the cookie !
+
+        self.assertEqual( len(reqman.COOKIEJAR), 2)
+
+        hr=reqman.Request("http","localhost","80","GET","/",None).headers
+        self.assertTrue( "Cookie" in hr )
+        self.assertTrue( "cook1=1" in hr["Cookie"] )
+        self.assertFalse( "cook2=2" in hr["Cookie"] )
+
+        hr=reqman.Request("http","localhost","80","GET","/p2",None).headers
+        self.assertTrue( "Cookie" in hr )
+        self.assertTrue( "cook1=1" in hr["Cookie"] )
+        self.assertTrue( "cook2=2" in hr["Cookie"] )
+
+        self.assertFalse( "Cookie" in reqman.Request("http","myhost","80","GET","/",None).headers )
+
+    def test_cookie_override(self):
+        reqman.COOKIEJAR.clear()
+        res=reqman.Response(200,"ok",{"Set-Cookie":"cook=1"},"http://blahblah.com/")   # set the cookie !
+
+        hr=reqman.Request("http","blahblah.com","80","GET","/",None).headers
+        self.assertEqual( hr["Cookie"],"cook=1" )
+
+        res=reqman.Response(200,"ok",{"Set-Cookie":"cook=2"},"http://blahblah.com/")   # set the cookie !
+        hr=reqman.Request("http","blahblah.com","80","GET","/",None).headers
+        self.assertEqual( hr["Cookie"],"cook=2" )
+
+        self.assertEqual( len(reqman.COOKIEJAR), 1)
 
 class Tests_Req(unittest.TestCase):
 
@@ -375,20 +441,22 @@ class Tests_Req(unittest.TestCase):
         self.assertEqual("content" in s.res.content, True)
 
     def test_cookie(self):
-        reqman.COOKIEJAR=None   # ensure no cookies
+        reqman.COOKIEJAR.clear()   # ensure no cookies
 
         env=dict(root="https://github.com/")
 
         r=reqman.Req("Get","/test_cookie")  # --> return a cookie header
         s=r.test(env)
-        self.assertEqual(s.res.headers["set-cookie"], "mycookie=myval")
+        self.assertEqual(s.res.headers["Set-Cookie"], "mycookie=myval")
+
+        c=list(reqman.COOKIEJAR)[0]
+        self.assertEqual( c.name, "mycookie" )
+        self.assertEqual( c.value, "myval" )
 
         r=reqman.Req("Get","/")
-        self.assertFalse("cookie" in r.headers) # the request is virgin
         s=r.test(env)
-        self.assertEqual(s.req.headers["cookie"], "mycookie=myval") # assert that the cookie persist when sending
+        self.assertEqual(s.req.headers["Cookie"], "mycookie=myval") # assert that the cookie persist when sending
 
-        reqman.COOKIEJAR=None   # ensure no cookies
 
     def test_binary(self):
         env=dict(root="https://github.com/")
@@ -730,6 +798,7 @@ local2:
 
         e=reqman.loadEnv( StringIO(conf), ["local1","local2"] )
         self.assertEqual( e["root"],"AA2" )
+
 
 
     def test_env_override_header_add(self):

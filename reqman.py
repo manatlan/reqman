@@ -15,7 +15,9 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 import yaml         # see "pip install pyaml"
-import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections,xml.dom.minidom
+import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections,xml.dom.minidom,Cookie,cookielib,urllib2,mimetools,StringIO
+
+
 
 class NotFound: pass
 class RMException(Exception):pass
@@ -24,7 +26,6 @@ class RMException(Exception):pass
 ## Utilities
 ###########################################################################
 try: # colorama is optionnal
-
     from colorama import init,Fore,Style
     init()
 
@@ -34,11 +35,7 @@ try: # colorama is optionnal
     cb=lambda t: Fore.CYAN+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
     cw=lambda t: Fore.WHITE+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
 except:
-    cy=lambda t: t
-    cr=lambda t: t
-    cg=lambda t: t
-    cb=lambda t: t
-    cw=lambda t: t
+    cy=cr=cg=cb=cw=lambda t: t
 
 def u(txt):
     """ decode txt to unicode """
@@ -111,11 +108,28 @@ def jpath(elem, path):
 ## http request/response
 ###########################################################################
 
-COOKIEJAR=None
+class CookieStore(cookielib.CookieJar):
+    """ Manage cookiejar for httplib-like """
+    def saveCookie(self,headers,url):
+        if type(headers)==dict: headers=headers.items()
+        class FakeResponse:
+            def __init__(self, headers=[]):
+                """headers: list of RFC822-style 'Key: value' strings"""
+                self._headers = mimetools.Message(StringIO.StringIO("\n".join(headers)))
+            def info(self): return self._headers
+        response = FakeResponse( [ ": ".join([k,v]) for k,v in headers] )
+        self.extract_cookies(response, urllib2.Request(url) )
+
+    def getCookieHeaderForUrl(self,url):
+        r=urllib2.Request(url)
+        self.add_cookie_header(r)
+        return dict(r.header_items())
+
+COOKIEJAR = CookieStore()
 
 class Request:
     def __init__(self,protocol,host,port,method,path,body=None,headers={}):
-        global COOKIEJAR
+
         self.protocol=protocol
         self.host=host
         self.port=port
@@ -124,37 +138,35 @@ class Request:
         self.body=body
         self.headers={}
 
-        if COOKIEJAR:
-            self.headers["cookie"]=COOKIEJAR
+        self.url="%s://%s%s" % (
+            self.protocol,
+            (self.host or "")+(":%s"%self.port if self.port else ""),
+            self.path
+        )
+
+        self.headers = COOKIEJAR.getCookieHeaderForUrl( self.url )
 
         self.headers.update(headers)
 
-        if self.host and self.protocol:
-            self.url="%s://%s%s" % (
-                self.protocol,
-                self.host+(":%s"%self.port if self.port else ""),
-                self.path
-            )
 
     def __repr__(self):
         return cy(self.method)+" "+self.path
 
+
 class Response:
-    def __init__(self,status,body,headers):
-        global COOKIEJAR
+    def __init__(self,status,body,headers,url):
         self.status = status
         self.content = ub(body)
-        self.headers = dict(headers)
+        self.headers = dict(headers)    # /!\ cast list of 2-tuple to dict ;-(
+                                        # eg: if multiple "set-cookie" -> only the last is kept
 
-        if "set-cookie" in self.headers:
-            COOKIEJAR = self.headers['set-cookie']
+        COOKIEJAR.saveCookie( headers, url )
 
     def __repr__(self):
         return "%s" % (self.status)
 
 
 def http(r):
-    #TODO: cookies better handling with urllib2 ?!
     try:
         if r.protocol and r.protocol.lower()=="https":
             cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
@@ -162,36 +174,12 @@ def http(r):
             cnx=httplib.HTTPConnection(r.host,r.port)
         enc=lambda x: x.replace(" ","%20")
         cnx.request(r.method,enc(r.path),r.body,r.headers)
-        r=cnx.getresponse()
-        return Response( r.status,r.read(),r.getheaders() )
+        rr=cnx.getresponse()
+        return Response( rr.status,rr.read(),rr.getheaders(), r.url )
     except socket.error:
         raise RMException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
 
 
-#= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #=
-# http with urllib2 / but remove COOKIEJAR from Request/Response
-# don't works well with 302 (coz urllib resolves them)
-#= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #=
-#~ import cookielib, urllib2
-
-#~ # install an urlopener which handle cookies
-#~ cookiejar = cookielib.CookieJar()
-#~ opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar))
-#~ urllib2.install_opener(opener)
-
-#~ def http(r):
-    #~ try:
-        #~ request = urllib2.Request( r.url, r.body, r.headers)
-        #~ request.get_method = lambda: r.method
-        #~ res=urllib2.urlopen(request, context=ssl._create_unverified_context())
-    #~ except urllib2.HTTPError as err:
-       #~ if err.code >= 400: # that's not errors ;-)
-           #~ res=err
-       #~ else:
-           #~ raise
-    #~ return Response( res.code, res.read(), res.headers )
-#~ #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #=
-#= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #= #=
 
 ###########################################################################
 ## Reqs manage
