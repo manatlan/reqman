@@ -18,7 +18,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * unittests coverage
    * html tests renderer (with request/response contents)
    * encoding aware
-   * cookie handling (very simple, need more works)
+   * cookie handling
    * color output in console (when colorama python lib is present)
    * variables can be computed/transformed (in a chain way)
    * tests files extension : .yml or .rml (ReqManLanguage)
