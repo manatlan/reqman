@@ -1569,6 +1569,7 @@ class Tests_resolver_without_rc(unittest.TestCase):
 if __name__ == '__main__':
 
     def load_tests(loader, tests, pattern):
+        if ONLY: print "*** WARNING *** skip some tests !"
         suite = unittest.TestSuite()
         for k,v in globals().items():
             if isinstance(v, type) and hasattr(v,"skipTest"):
