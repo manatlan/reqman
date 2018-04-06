@@ -377,7 +377,7 @@ class Tests_Req(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.res.status, 200)
 
-    def test_simplest_env(self):
+    def test_simplest_env2(self):
         env=dict(root="https://github.com/")
 
         r=reqman.Req("Get","/toto tata")
@@ -388,7 +388,7 @@ class Tests_Req(unittest.TestCase):
 
 
 
-    def test_simplest_env2(self):
+    def test_simplest_env3(self):
         env=dict(root="https://github.com/")
 
         r=reqman.Req("Get","{{root}}/") # {{root}} it not needed, it's implicit ... but u can, if u want ;-)
