@@ -1573,9 +1573,8 @@ if __name__ == '__main__':
         print "*** WARNING *** skip some tests !"
         def load_tests(loader, tests, pattern):
             suite = unittest.TestSuite()
-            for k,v in globals().items():
-                if isinstance(v, type) and hasattr(v,"skipTest"):
-                    suite.addTests([i for i in loader.loadTestsFromTestCase(v) if i._testMethodName in ONLYs])
+            for c in tests._tests:
+                suite.addTests( [t for t in c._tests if t._testMethodName in ONLYs])
             return suite
 
     unittest.main( )    
