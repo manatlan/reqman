@@ -8,9 +8,9 @@ from StringIO import StringIO
 
 fwp = lambda x:x.replace("\\","/") # fake windows path
 
-ONLY=[]
+ONLYs=[]
 def only(f):
-    ONLY.append(f.func_name)
+    ONLYs.append(f.func_name)
     return f
 
 ################################################################## mock
@@ -1560,6 +1560,7 @@ class Tests_resolver_without_rc(unittest.TestCase):
         self.assertEquals( len(ll),2 )
         self.assertEquals( ll,['jack/f1.yml', 'jo/f1.yml'] )    # sorted
 
+    # @only
     def test_rml(self):
         rc,ll = reqman.resolver(["jim/f1.rml"])
         self.assertTrue( "jim/reqman.conf" in fwp(rc) )
@@ -1568,18 +1569,13 @@ class Tests_resolver_without_rc(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    def load_tests(loader, tests, pattern):
-        if ONLY: print "*** WARNING *** skip some tests !"
-        suite = unittest.TestSuite()
-        for k,v in globals().items():
-            if isinstance(v, type) and hasattr(v,"skipTest"):
-                tests = []
-                for i in loader.loadTestsFromTestCase(v):
-                    if ONLY:
-                        if i._testMethodName not in ONLY:
-                            continue
-                    tests.append(i)
-                suite.addTests(tests)
-        return suite
+    if ONLYs:
+        print "*** WARNING *** skip some tests !"
+        def load_tests(loader, tests, pattern):
+            suite = unittest.TestSuite()
+            for k,v in globals().items():
+                if isinstance(v, type) and hasattr(v,"skipTest"):
+                    suite.addTests([i for i in loader.loadTestsFromTestCase(v) if i._testMethodName in ONLYs])
+            return suite
 
     unittest.main( )    
