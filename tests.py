@@ -8,6 +8,11 @@ from StringIO import StringIO
 
 fwp = lambda x:x.replace("\\","/") # fake windows path
 
+ONLY=[]
+def only(f):
+    ONLY.append(f.func_name)
+    return f
+
 ################################################################## mock
 def mockHttp(q):
     if q.path=="/test_cookie":
@@ -1548,7 +1553,7 @@ class Tests_resolver_without_rc(unittest.TestCase):
         rc,ll = reqman.resolver(["jack/f1.yml"])
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),1 )
-
+        
     def test_rc3(self):
         rc,ll = reqman.resolver(["jo/f1.yml","jack/f1.yml"])
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
@@ -1562,4 +1567,18 @@ class Tests_resolver_without_rc(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+
+    def load_tests(loader, tests, pattern):
+        suite = unittest.TestSuite()
+        for k,v in globals().items():
+            if isinstance(v, type) and hasattr(v,"skipTest"):
+                tests = []
+                for i in loader.loadTestsFromTestCase(v):
+                    if ONLY:
+                        if i._testMethodName not in ONLY:
+                            continue
+                    tests.append(i)
+                suite.addTests(tests)
+        return suite
+
+    unittest.main( )    
