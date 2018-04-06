@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 reqman.html
 SciTE.properties
-cc.py
 
 # C extensions
 *.so
