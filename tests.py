@@ -604,7 +604,7 @@ class Tests_Reqs(unittest.TestCase):
         f=StringIO(y)
         self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f))
 
-    def test_bad_yml2(self):
+    def test_bad_yml3(self):
         y="""
 - NOOP: https://github.com/
 """
