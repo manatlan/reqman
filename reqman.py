@@ -178,6 +178,10 @@ def http(r):
         return Response( rr.status,rr.read(),rr.getheaders(), r.url )
     except socket.error:
         raise RMException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
+    except httplib.BadStatusLine :
+        #A subclass of HTTPException. Raised if a server responds with a HTTP status code that we don’t understand.
+        #Presumably, the server closed the connection before sending a valid response.
+        raise RMException("Server closed the connection (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
 
 
 
