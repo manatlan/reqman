@@ -380,6 +380,48 @@ class Tests_Req(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.res.status, 200)
 
+    def test_simplest_env_with_root_as_url(self):
+        env=dict(root="https://github.com/path1")
+        r=reqman.Req("Get","/path2")
+        self.assertEqual(r.path, "/path2")
+        s=r.test(env)
+        self.assertEqual(s.req.host, "github.com")
+        self.assertEqual(s.req.path, "/path1/path2")
+        self.assertEqual(s.req.url, "https://github.com/path1/path2")
+        self.assertEqual(s.res.status, 200)
+
+
+        env=dict(root="https://github.com/path1/")
+        r=reqman.Req("Get","/path2")
+        self.assertEqual(r.path, "/path2")
+        s=r.test(env)
+        self.assertEqual(s.req.host, "github.com")
+        self.assertEqual(s.req.path, "/path1/path2")
+        self.assertEqual(s.req.url, "https://github.com/path1/path2")
+        self.assertEqual(s.res.status, 200)
+
+
+        env=dict(root="https://github.com/path1/")
+        r=reqman.Req("Get","path2")
+        self.assertEqual(r.path, "path2")
+        s=r.test(env)
+        self.assertEqual(s.req.host, "github.com")
+        self.assertEqual(s.req.path, "/path1/path2")
+        self.assertEqual(s.req.url, "https://github.com/path1/path2")
+        self.assertEqual(s.res.status, 200)
+
+        ######## without / separator at all
+        env=dict(root="https://github.com/path1")
+
+        r=reqman.Req("Get","path2")
+        self.assertEqual(r.path, "path2")
+        s=r.test(env)
+        self.assertEqual(s.req.host, "github.com")
+        self.assertEqual(s.req.path, "/path1path2")
+        self.assertEqual(s.req.url, "https://github.com/path1path2")
+        self.assertEqual(s.res.status, 200)
+
+
     def test_simplest_env2(self):
         env=dict(root="https://github.com/")
 

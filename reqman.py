@@ -346,11 +346,11 @@ class Req(object):
 
             return txt
 
-
         # path ...
         path = rep(self.path)
         if cenv and (not path.strip().lower().startswith("http")) and ("root" in cenv):
             h=urlparse.urlparse( cenv["root"] )
+            path=(h.path+path).replace("//","/")    # remove over slash
         else:
             h=urlparse.urlparse( path )
             path = h.path + ("?"+h.query if h.query else "")
