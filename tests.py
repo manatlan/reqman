@@ -4,6 +4,7 @@ import unittest
 import reqman
 import json
 import os
+import socket
 from StringIO import StringIO
 
 fwp = lambda x:x.replace("\\","/") # fake windows path
@@ -26,6 +27,8 @@ def mockHttp(q):
             mylist=["aaa",42,dict(name="john")],
         )
         return reqman.Response( 200, json.dumps(my), {"content-type":"application/json","server":"mock"}, q.url)
+    elif q.path=="/test_error":
+        return reqman.ResponseError( "My Error" )
     else:
         return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock"}, q.url)
 
@@ -725,6 +728,77 @@ class Tests_Reqs(unittest.TestCase):
 
         self.assertEqual( ex( l[0].test(env) ), ('https', 'github.com', '/explore') )
         self.assertEqual( ex( l[1].test(env) ), ('https', 'github.fr', '/explore') )
+
+
+    def test_yml_http_error(self):  # bas status line / server down / timeout
+
+        y="""
+- GET: /test_error
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 1)
+        get=l[0]
+
+        env=dict(
+            root="https://github.com:443/",
+            tests=[dict(server="mock")],
+        )
+        s=get.test(env)
+        self.assertEqual( s.req.host, "github.com")
+        self.assertTrue( isinstance(s.res, reqman.ResponseError) )
+
+
+    def test_yml_http_timeout_default(self):
+        get=reqman.Reqs(StringIO("""- GET: /"""))[0]
+
+        env=dict(
+            root="https://github.com:443/",
+            tests=[dict(server="mock")],
+        )
+        get.test(env)
+        self.assertEqual( socket.getdefaulttimeout(), None )
+
+
+    def test_yml_http_timeout_set(self):
+        get=reqman.Reqs(StringIO("""- GET: /"""))[0]
+        env=dict(
+            root="https://github.com:443/",
+            timeout="200",
+            tests=[dict(server="mock")],
+        )
+        get.test(env)
+        self.assertEqual( socket.getdefaulttimeout(), 0.2 )
+
+        # and ... timeout is resetted to default
+        env=dict(
+            root="https://github.com:443/",
+            tests=[dict(server="mock")],
+        )
+        get.test(env)
+        self.assertEqual( socket.getdefaulttimeout(), None )
+
+
+    def test_yml_http_timeout_set_default(self):
+        get=reqman.Reqs(StringIO("""- GET: /"""))[0]
+        env=dict(
+            root="https://github.com:443/",
+            timeout=None,
+            tests=[dict(server="mock")],
+        )
+        get.test(env)
+        self.assertEqual( socket.getdefaulttimeout(), None )
+
+    def test_yml_http_timeout_set_bad(self):
+        get=reqman.Reqs(StringIO("""- GET: /"""))[0]
+        env=dict(
+            root="https://github.com:443/",
+            timeout="DHSJHDHSSFSDFFD",
+            tests=[dict(server="mock")],
+        )
+        get.test(env)
+        self.assertEqual( socket.getdefaulttimeout(), None )
+
+
 
     def test_yml_tests_inheritance(self):
 
@@ -1553,14 +1627,14 @@ class Tests_resolver_without_rc(unittest.TestCase):
         rc,ll = reqman.resolver(["jack/f1.yml"])
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),1 )
-        
+
     def test_rc3(self):
         rc,ll = reqman.resolver(["jo/f1.yml","jack/f1.yml"])
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),2 )
         self.assertEquals( ll,['jack/f1.yml', 'jo/f1.yml'] )    # sorted
 
-    # @only
+    #~ @only
     def test_rml(self):
         rc,ll = reqman.resolver(["jim/f1.rml"])
         self.assertTrue( "jim/reqman.conf" in fwp(rc) )
@@ -1577,4 +1651,4 @@ if __name__ == '__main__':
                 suite.addTests( [t for t in c._tests if t._testMethodName in ONLYs])
             return suite
 
-    unittest.main( )    
+    unittest.main( )

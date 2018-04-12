@@ -18,7 +18,6 @@ import yaml         # see "pip install pyaml"
 import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections,xml.dom.minidom,Cookie,cookielib,urllib2,mimetools,StringIO
 
 
-
 class NotFound: pass
 class RMException(Exception):pass
 
@@ -165,6 +164,14 @@ class Response:
     def __repr__(self):
         return "%s" % (self.status)
 
+class ResponseError:
+    def __init__(self,m):
+        self.status = None
+        self.content = m
+        self.headers = {}
+    def __repr__(self):
+        return "ERROR: %s" % (self.content)
+
 
 def http(r):
     try:
@@ -176,12 +183,17 @@ def http(r):
         cnx.request(r.method,enc(r.path),r.body,r.headers)
         rr=cnx.getresponse()
         return Response( rr.status,rr.read(),rr.getheaders(), r.url )
+    except socket.timeout:
+        #raise RMException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
+        return ResponseError("Response timeout")
     except socket.error:
-        raise RMException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
-    except httplib.BadStatusLine :
+        #raise RMException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
+        return ResponseError("Server is down ?!")
+    except httplib.BadStatusLine:
         #A subclass of HTTPException. Raised if a server responds with a HTTP status code that we don’t understand.
         #Presumably, the server closed the connection before sending a valid response.
-        raise RMException("Server closed the connection (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
+        # raise RMException("Server closed the connection (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
+        return ResponseError("Server closed the connection")
 
 
 
@@ -209,13 +221,14 @@ class TestResult(list):
 
             testname = "%s = %s" % (what,value)
             testnameKO = "%s != %s" % (what,value)
-            if what=="status":  result = int(value)==int(self.res.status)
+            if what=="status":  result = int(value)==(self.res.status and int(self.res.status))
             elif what=="content": result = value in self.res.content
             elif what.startswith("json."):
                 try:
                     jzon=json.loads(self.res.content)
                     val=jpath(jzon,what[5:])
                     val=None if val == NotFound else val
+
                     result = (value == val)
                 except:
                     result=False
@@ -391,8 +404,14 @@ class Req(object):
             except AttributeError:
                 raise RMException("'tests:' should be a list of mono key/value pairs (ex: '- status: 200')")
 
+            timeout=cenv.get("timeout",None)
+            try:
+                socket.setdefaulttimeout( timeout and float(timeout)/1000.0 )
+            except ValueError:
+                socket.setdefaulttimeout( None )
+
             res=http( req )
-            if self.save:
+            if self.save and isinstance(res,Response):
                 try:
                     env[ self.save ]=json.loads(res.content)
                 except:
@@ -534,7 +553,7 @@ h3 {color:blue;}
             """ % (
                 tr.req.method,
                 tr.req.path,
-                tr.res.status,
+                tr.res.status or tr.res,
 
                 tr.req.method,
                 tr.req.url,
@@ -662,4 +681,3 @@ def main(params):
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
     #~ execfile("tests.py")
-
