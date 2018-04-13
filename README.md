@@ -12,7 +12,6 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * "procedures" (declarations & re-use/call), local or global
    * Environment aware (switch easily)
    * https/ssl ok
-   * oauth2 simple
    * headers inherits
    * tests inherits
    * unittests coverage
@@ -46,7 +45,7 @@ Will run all yml files in the folder example + all yml files in current folder +
 
 **reqman** can use a [reqman.conf](/examples/reqman.conf) (which is a yaml file too), to use key/value variables, which can be very handly for the tests ;-). **reqman** will use the first _reqman.conf_ available in the path. Variables will be automatically loaded, and fully available in the tests.
 
-There are 3 specials (and optionnals) vars :
+There are 5 specials (and optionnals) vars :
 
     root: http://github.com         # so you can write your tests without full url (ex: "GET: /")
     headers:
@@ -59,6 +58,7 @@ There are 3 specials (and optionnals) vars :
 - **root** : is the root of the call request, needed if you omit the full url in reqman tests
 - **headers** : is a dict of headers, which will be appended to each requests
 - **tests** : is a list of mono key/value pair, to test the response, which will test each requests (some are specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
+- **BEGIN** / **END** : theses are procedures which will be runned at start, or at end of the tests. (useful to start/end a specific context)
 
 
 ## The Tests / [ry]ml file
