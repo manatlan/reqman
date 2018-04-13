@@ -219,8 +219,10 @@ class TestResult(list):
         for test in tests:
             what,value = test.keys()[0],test.values()[0]
 
-            testname = "%s = %s" % (what,value)
-            testnameKO = "%s != %s" % (what,value)
+            val = "null" if value is None else "true" if value is True else "false" if value is False else value
+
+            testname = "%s = %s" % (what,val)
+            testnameKO = "%s != %s" % (what,val)
             if what=="status":  result = int(value)==(self.res.status and int(self.res.status))
             elif what=="content": result = value in self.res.content
             elif what.startswith("json."):
