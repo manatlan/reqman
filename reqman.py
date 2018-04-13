@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 import yaml         # see "pip install pyaml"
-import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections,xml.dom.minidom,Cookie,cookielib,urllib2,mimetools,StringIO
+import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections,xml.dom.minidom,Cookie,cookielib,urllib2,mimetools,StringIO,datetime
 
 
 class NotFound: pass
@@ -364,8 +364,7 @@ class Req(object):
         except ValueError:
             raise RMException("'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')")
 
-        for k in headers:
-            headers[k]=rep(headers[k])
+        headers={ k:rep(v) for k,v in headers.items() if v is not None}
 
         # body ...
         if self.body and not isinstance(self.body,basestring):
@@ -538,6 +537,8 @@ span:hover {background:#EEE;}
 div.hide {background:inherit}
 div.hide > ul > pre {display:none}
 h3 {color:blue;}
+.info {position:fixed;top:0px;right:0px;background:rgba(1,1,1,0.2);border-radius:4px;text-align:right}
+.info > * {display:block}
 </style>
 """])
 
@@ -618,6 +619,19 @@ def resolver(params):
     ymls.sort( key = lambda x: x.lower() )
     return rc,ymls
 
+def makeReqs(reqs,env):
+    if env and ("BEGIN" in env):
+        r=StringIO.StringIO("call: BEGIN")
+        r.name="BEGIN (reqman.conf)"
+        reqs = [ Reqs(r,env) ] + reqs
+
+    if env and ("END" in env):
+        r=StringIO.StringIO("call: END")
+        r.name="END (reqman.conf)"
+        reqs = reqs + [ Reqs(r,env) ]
+
+    return reqs
+
 def main(params):
     try:
         # search for a specific env var (starting with "-")
@@ -631,23 +645,16 @@ def main(params):
         # load env !
         env=loadEnv( file(rc) if rc else None, varenvs )
 
-        # hook oauth2
-        if "oauth2" in env: #TODO: should found a clever way to setup/update vars in env ! to be better suitable
-            try:
-                up = urlparse.urlparse(env["oauth2"]["url"])
-                req=Request(up.scheme,up.hostname,up.port,"POST",up.path,urllib.urlencode(env["oauth2"]["params"]),{'Content-Type': 'application/x-www-form-urlencoded'})
-                res=http(req)
-                token=json.loads(res.content)
-                env.setdefault("headers",{})["Authorization"] = token["token_type"]+" "+token["access_token"]
-                print cy("Use OAuth2: %s" % env["headers"]["Authorization"])
-            except Exception as e:
-                raise RMException("OAuth2 error %s" % e)
+        fn="reqman.html"
 
-        if ymls:
+
+        reqs=makeReqs([Reqs(file(i),env) for i in ymls],env)
+
+        if reqs:
             # and make tests
             all=[]
             hr=HtmlRender()
-            for f in [Reqs(file(i),env) for i in ymls]:
+            for f in reqs:
                 print
                 print "TESTS:",cb(f.name)
                 hr.add("<h3>%s</h3>"%f.name)
@@ -660,9 +667,8 @@ def main(params):
             ok,total=len([i for i in all if i]),len(all)
 
             hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
-            fn="_".join( ["reqman"]+varenvs ) + ".html"
-            print
-            print cw("Generate "+fn)
+            hr.add( "<div class='info'><i>%s</i><b>%s</b></div>" % ( str(datetime.datetime.now())[:16], " ".join(varenvs) ) )
+
             hr.save( fn )
 
             print
@@ -671,6 +677,7 @@ def main(params):
         else:
             print "ERROR: No tests found !"
             return -1
+
     except RMException as e:
         print
         print "ERROR: %s" % e

@@ -456,6 +456,16 @@ class Tests_Req(unittest.TestCase):
         self.assertEqual("h1" in s.req.headers, True)
         self.assertEqual("h2" in s.req.headers, True)
 
+    def test_env_headers_inheritance_remove(self):
+        env=dict(root="https://github.com/",headers=dict(h1="my h1",h2="my h2"))
+
+        r=reqman.Req("GET","/",headers=dict(h1=None))   # remove h1
+        s=r.test(env)
+        self.assertFalse("h1" in s.req.headers)
+        self.assertTrue("h2" in s.req.headers)
+
+
+
     def test_Tests(self):
         env=dict(root="https://github.com/")
 
@@ -1682,6 +1692,47 @@ class Tests_resolver_without_rc(unittest.TestCase):
         self.assertTrue( "jim/reqman.conf" in fwp(rc) )
         self.assertEquals( len(ll),1 )
 
+
+class Tests_play(unittest.TestCase):
+
+    def test_call_proc_from_rc(self):
+
+        conf="""
+root: https://github.com/
+XXX:
+    - GET: /start
+"""
+        env=reqman.loadEnv( StringIO(conf) )
+
+        y="""
+- call: XXX
+- GET: /
+"""
+        rs=reqman.Reqs(StringIO(y),env)
+        self.assertEqual( len(rs),2)
+
+        ll=reqman.makeReqs([rs],env)
+        self.assertEqual( len(ll), 1)
+
+
+    def test_call_begin_from_rc(self):
+
+        conf="""
+root: https://github.com/
+
+BEGIN:
+    - GET: /start
+"""
+        env=reqman.loadEnv( StringIO(conf) )
+
+        y="""
+- GET: /
+"""
+        rs=reqman.Reqs(StringIO(y),env)
+        self.assertEqual( len(rs),1)
+
+        ll=reqman.makeReqs([rs],env)
+        self.assertEqual( len(ll), 2)
 
 if __name__ == '__main__':
 
