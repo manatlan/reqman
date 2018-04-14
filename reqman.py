@@ -352,7 +352,13 @@ class Req(object):
         path = rep(self.path)
         if cenv and (not path.strip().lower().startswith("http")) and ("root" in cenv):
             h=urlparse.urlparse( cenv["root"] )
-            path=(h.path+path).replace("//","/")    # remove over slash
+            if h.path and h.path[-1]=="/":
+                if path[0]=="/":
+                    path=h.path + path[1:]
+                else:
+                    path=h.path + path
+            else:
+                path=h.path + path
         else:
             h=urlparse.urlparse( path )
             path = h.path + ("?"+h.query if h.query else "")
