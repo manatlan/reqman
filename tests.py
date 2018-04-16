@@ -255,12 +255,12 @@ class Tests_transform(unittest.TestCase):
     def test_b_aba(self):
         env={
             "var": "hello",
-            "trans": "return x.encode('rot13')",
+            "trans": "return x and x.encode('rot13')",
         }
         self.assertEqual( reqman.transform("xxx",env,"trans"), "kkk" )
         self.assertEqual( reqman.transform(None,env,"trans"), None )
         self.assertRaises(reqman.RMException, lambda: reqman.transform("xxx",env,"trans2") )
-        self.assertEqual( reqman.transform(None,env,"trans2"), None )   # no exception if empty content
+        self.assertRaises(reqman.RMException, lambda: reqman.transform(None,env,"trans2") )
 
 
 class Tests_getVar(unittest.TestCase):
@@ -1247,6 +1247,12 @@ class Tests_procedures_NEW(unittest.TestCase):
         self.assertEqual( len(l), 2)
 
 
+
+
+
+
+
+
 class Tests_params_NEW(unittest.TestCase):
 
     def test_yml_params(self):
@@ -1549,6 +1555,57 @@ class Tests_params_NEW(unittest.TestCase):
 
         self.assertEqual( tr.req.body, "start\\naaa\\nbbb\\nend\\n" )
 
+    #~ @only
+    def test_yml_prog_embeded_call(self):
+
+        y="""
+
+- proc2:
+    - GET: /<<a>>/<<b>>
+
+- proc:
+    - call: proc2
+      params: {"b":1}
+    - call: proc2
+      params: {"b":2}
+
+- call: proc
+  params: {"a":1}
+
+- call: proc
+  params: {"a":2}
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 4)
+
+        mp=[i.test().req.path for i in l]
+        self.assertEqual( mp, ['/1/1', '/1/2', '/2/1', '/2/2'] )
+
+    def test_yml_call_embeded_declaration(self):
+
+        y="""
+- proc:
+    - proc2:
+        - GET: /<<a>>/<<b>>
+
+    - call: proc2
+      params: {"b":1}
+    - call: proc2
+      params: {"b":2}
+
+- call: proc
+  params: {"a":1}
+
+- call: proc
+  params: {"a":2}
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 4)
+
+        mp=[i.test().req.path for i in l]
+        self.assertEqual( mp, ['/1/1', '/1/2', '/2/1', '/2/2'] )
+
+
 
 # ~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
 
@@ -1623,6 +1680,19 @@ class Tests_TRANSFORM(unittest.TestCase):
         s=r.test(env)
         self.assertEqual(s.req.body,"hello")
 
+
+    def test_call_without_param(self):     # NEW
+        y="""
+- GET: http://kiki.com/1{{|now}}2
+  params:
+    now:    return "OK"
+    #~ now:    return datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+"""
+        env={}
+
+        l=reqman.Reqs(StringIO(y),env)
+        s=l[0].test()
+        self.assertEqual( s.req.path, "/1OK2" )
 
 class Tests_resolver_with_rc(unittest.TestCase):
 

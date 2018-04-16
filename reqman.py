@@ -255,7 +255,12 @@ def getVar(env,var):
     elif "|" in var:
         key,method=var.split("|",1)
 
-        if key in env:
+        if not key:
+            content=None
+            for m in method.split("|"):
+                content=transform(content,env,m)
+            return content
+        elif key in env:
             content = env[key]
             for m in method.split("|"):
                 content=transform(content,env,m)
@@ -274,7 +279,7 @@ def getVar(env,var):
 
 
 def transform(content,env,methodName):
-    if content and methodName:
+    if methodName:
         if methodName in env:
             code=getVar(env,methodName)
             try:
@@ -465,10 +470,11 @@ class Reqs(list):
                             ncommands=[]
                             for command in commands:
                                 q = copy.deepcopy( command )
-                                dict_merge(q,d)
+                                if KNOWNVERBS.intersection( q.keys() ) or "call" in q.keys():
+                                    # merge passed params with action only ! (avoid merging with proc declaration)
+                                    dict_merge(q,d)
                                 ncommands.append( q )
-
-                            ll+= feed(ncommands)    # *recursive*
+                            ll+=feed(ncommands)    # *recursive*
 
                             continue
                         else:
