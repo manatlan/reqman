@@ -1,0 +1,172 @@
+
+##############################################################################
+##
+## this is a tutorial : if you read step by step this guide ; you will
+## masterize how to create a test file (*.yml or .rml)
+##
+##############################################################################
+
+
+
+#--------------------------------------------
+# the simplest call !
+# (you won't need a reqman.conf !)
+- GET: https://google.com
+
+#--------------------------------------------
+# but it can be very handy, to have one, with a declared "root" var (ex: root: https://github.com)
+# so all requests can have a common path
+- GET: /      # <-- it does a HTTP GET at the root of the root var
+
+#--------------------------------------------
+# obviously, you can use the others HTTP VERBS (always in uppercase)
+- POST: /
+- PUT: /
+- DELETE: /
+- PATCH: /
+- OPTIONS: /
+- HEAD: /
+- TRACE: /
+- CONNECT: /
+
+#--------------------------------------------
+# Thus, you can use send your headers as :
+- GET: /
+  headers:
+    Authorization: Bear me
+    user-agent:    Just Me
+
+
+#--------------------------------------------
+# And you can use set your body :
+- POST: /
+  headers:
+    user-agent:   Hello, it's me
+  body:           For sure ; It's me ;-)
+
+#--------------------------------------------
+# You can send json, like that :
+- POST: /
+  headers:
+    Content-Type: application/json        # best practice, but not needed
+  body:           {"name":"jo","age":42}  # json is a subclass of the yaml syntax !
+
+#--------------------------------------------
+# But reqman, let you write as yaml too, it's more readable :
+- POST: /
+  headers:
+    Content-Type: application/json        # best practice, but not needed
+  body:
+    name:         jo                      # \_ It's exactlly like previous request ^^
+    age:          42                      # /
+
+#--------------------------------------------
+# You can override vars, with params (here, you won't need a reqman.conf)
+- GET: /
+  params:
+    root: http://google.com   # thus, root will be overriden for this request
+
+#--------------------------------------------
+# You can declare vars, with params
+- POST: /
+  body: <<message>>
+  params:
+    message: I'm the message
+
+#--------------------------------------------
+# if you want to declare multiline text in your message
+- POST: /
+  body: <<message>>
+  params:
+    message: |            # <-- use this yaml syntax, use "|" will create multiple lines
+      I'm the line 1
+      I'm the line 2
+      I'm the line 3
+
+#--------------------------------------------
+# And your var can be transformed by a (python) method like that:
+- POST: /
+  body: <<message|encode>>
+  params:
+    message: I'm the message
+    encode: return x.encode("base64")    # 'x' is the input (here; content of message ;-)
+
+#--------------------------------------------
+# alternativly you can call a method without input, like that :
+- POST: /
+  body: <<|now>>
+  params:
+    now: return datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+
+#--------------------------------------------
+# But params are usefull for procedures, to avoid repeating yourself (DRY !)
+
+- my_procedure:   # this is a declaration !
+    - GET: /
+    - POST: /
+      body: <<message>>
+    - GET: /
+
+- call: my_procedure  # here is the call
+  params:
+    message: Hello1
+
+- call: my_procedure  # here is a second call
+  params:
+    message: Hello2
+
+#--------------------------------------------
+# procedures and params can serve to create context too
+# (here, you won't need a reqman.conf)
+- my_context:   # this is a declaration !
+    - GET: /
+
+- call: my_context  # here is the call, with overriding root
+  params:
+    root: http://google.com
+
+#--------------------------------------------
+# of course, you can create procedures in procedures, and so on
+
+- proc1:                   # this is a declaration !
+    - proc2:               # this is a sub declaration !
+      - GET: /nib
+    - call: proc2
+    - call: proc2
+
+- call: proc1  # this will produce 2 gets !
+
+#--------------------------------------------
+# TODO  !!!!!!
+# TODO  !!!!!!
+# Procedures can be declared in reqman.conf !
+# methods can be declared in reqman.conf !
+# But there's more : BEGIN & END 's procedures called at start, and at exit
+# TODO  !!!!!!
+# TODO  !!!!!!
+
+
+
+#--------------------------------------------
+# But requests without tests are useless
+# (and, it's the main job of reqman)
+- GET: /
+  tests:                  # "tests" is a list of tests !
+    - status: 200                 # "status" is a special key, the http status is 200 OK
+    - content-type: text/html     # others are headers : the response "content-type" is text/html
+    - content-type: html          # the response content type is html, for sure
+    - content-type: text          # so it's text, for sure
+    - content:  <body>            # "content" is a special key : assert that "<body>" is in the content
+    - content:  </body>           # assert that "<body>" is in the content
+
+#--------------------------------------------
+# and if your respone is pure json, you can test its content using prefix "json."
+- GET: /
+  tests:                  # "tests" is a list of tests !
+    - status: 200                 # "status" is a special key, the http status is 200 OK
+    - json.result:                ok    # assert response = {"result":"ok"}
+
+# TODO: more here !
+
+
+
