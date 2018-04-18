@@ -150,14 +150,10 @@ class Content:
             return u(self.__content)
         except:
             return "*** BINARY SIZE(%s) ***" % len(self.__content) #TODO: not great for non-response body
-    # def __iter__(self):
-    #     return iter(self.__unicode__())
     def toBinary(self):
         return self.__content
     def __contains__(self, key):
         return key in self.__unicode__()
-    # def __str__(self):
-    #     return unicode(self).encode("utf8")
 
 class Response:
     def __init__(self,status,body,headers,url):
