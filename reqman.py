@@ -50,15 +50,6 @@ def u(txt):
     return txt
 
 
-def ub(txt):
-    """ same as u, but assume if decode trouble -> it's binary, and so return
-        a string that represents the BINARY STUFF, to be able to display it
-    """
-    try:
-        return u(txt)
-    except:
-        return "*** BINARY SIZE(%s) ***" % len(txt) #TODO: not great for non-response body
-
 def dict_merge(dct, merge_dct):
     """ merge 'merge_dct' in --> dct """
     for k, v in merge_dct.iteritems():
@@ -151,11 +142,27 @@ class Request:
     def __repr__(self):
         return cy(self.method)+" "+self.path
 
+class Content:
+    def __init__(self,content):
+        self.__content=content
+    def __unicode__(self):
+        try:
+            return u(self.__content)
+        except:
+            return "*** BINARY SIZE(%s) ***" % len(self.__content) #TODO: not great for non-response body
+    def __iter__(self):
+        return iter(self.__unicode__())
+    def toBinary(self):
+        return self.__content
+    def __contains__(self, key):
+        return key in self.__unicode__()
+    # def __str__(self):
+    #     return unicode(self).encode("utf8")
 
 class Response:
     def __init__(self,status,body,headers,url):
         self.status = status
-        self.content = ub(body)
+        self.content = Content(body)
         self.headers = dict(headers)    # /!\ cast list of 2-tuple to dict ;-(
                                         # eg: if multiple "set-cookie" -> only the last is kept
 
@@ -224,10 +231,10 @@ class TestResult(list):
             testname = "%s = %s" % (what,val)
             testnameKO = "%s != %s" % (what,val)
             if what=="status":  result = int(value)==(self.res.status and int(self.res.status))
-            elif what=="content": result = value in self.res.content
+            elif what=="content": result = value in unicode(self.res.content)
             elif what.startswith("json."):
                 try:
-                    jzon=json.loads(self.res.content)
+                    jzon=json.loads( unicode(self.res.content) )
                     val=jpath(jzon,what[5:])
                     val=None if val == NotFound else val
 
@@ -428,15 +435,15 @@ class Req(object):
                 if dest.lower().startswith("file://"):
                     name=dest[7:]
                     try:
-                        with open(name,"w+") as fid:
-                            fid.write(res.content)
+                        with open(name,"wb+") as fid:
+                            fid.write(res.content.toBinary())
                     except Exception as e:
                         raise RMException("Save to file '%s' error : %s" % (name,e))
                 else:
                     try:
-                        env[ dest ]=json.loads(res.content)
+                        env[ dest ]=json.loads(unicode(res.content))
                     except:
-                        env[ dest ]=res.content
+                        env[ dest ]=unicode(res.content)
 
             return TestResult(req,res,tests)
         else:

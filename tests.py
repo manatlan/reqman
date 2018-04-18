@@ -14,13 +14,14 @@ def only(f):
     ONLYs.append(f.func_name)
     return f
 
+BINARY="".join([chr(i) for i in range(255,0,-1)])
+
 ################################################################## mock
 def mockHttp(q):
     if q.path=="/test_cookie":
         return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock","Set-Cookie":"mycookie=myval"},q.url)
     elif q.path=="/test_binary":
-        binary="".join([chr(i) for i in range(255,0,-1)])
-        return reqman.Response( 200, binary, {"content-type":"audio/mpeg","server":"mock"},q.url)
+        return reqman.Response( 200, BINARY, {"content-type":"audio/mpeg","server":"mock"},q.url)
     elif q.path=="/test_json":
         my=dict(
             mydict=dict(name="jack"),
@@ -523,6 +524,7 @@ class Tests_Req(unittest.TestCase):
 
         r=reqman.Req("Get","/test_binary")  # --> return binary
         s=r.test(env)
+        print s.res.content
         self.assertTrue( "*** BINARY" in s.res.content)
 
 
@@ -883,7 +885,6 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s[0],1 )
         self.assertEqual( s[1],1 )
 
-
     def test_yml_tests_json(self):
 
         y="""
@@ -903,7 +904,6 @@ class Tests_Reqs(unittest.TestCase):
         l=reqman.Reqs(f)
 
         s=l[0].test( dict(root="https://github.com:443/"))
-
         self.assertTrue( all(s) )
 
 class Tests_Conf(unittest.TestCase):
@@ -1027,6 +1027,18 @@ class Tests_env_save(unittest.TestCase):
         l[0].test(env)
 
         self.assertEqual( env, {'newVar': u'the content'} )
+        
+    def test_create_json_var(self):
+        f=StringIO("""
+- GET: http://supersite.fr/test_json
+  save: newVar
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        l[0].test(env)
+
+        self.assertEqual( env, {'newVar': {"mylist": ["aaa", 42, {"name": "john"}], "mydict": {"name": "jack"}} } )
 
     def test_override_var(self):
         f=StringIO("""
@@ -1039,7 +1051,6 @@ class Tests_env_save(unittest.TestCase):
         self.assertEqual( env, {'newVar': u'old value'} )
         l[0].test(env)
         self.assertEqual( env, {'newVar': u'the content'} )
-
 
     def test_reuse_var_created(self):
         f=StringIO("""
@@ -1054,7 +1065,7 @@ class Tests_env_save(unittest.TestCase):
 
         env={}
         l[0].test(env)
-        self.assertEqual( env, {'var': u'the content'} )
+        self.assertEqual( env, {'var': 'the content'} )
 
         s=l[1].test(env)
         self.assertEqual( s.req.headers["Authorizattion"], "Bearer the content" )
@@ -1090,7 +1101,7 @@ class Tests_env_save(unittest.TestCase):
 
         env={}
         l[0].test(env)
-        self.assertEqual( env, {'jo': u'the content'} )
+        self.assertEqual( env, {'jo': 'the content'} )
 
 
     def test_save_var_to_file_denied(self):
@@ -1107,7 +1118,6 @@ class Tests_env_save(unittest.TestCase):
     def test_save_var_to_file_txt(self):
         f=StringIO("""
 - GET: http://supersite.fr/
-#- GET: http://supersite.fr/test_binary
   save: file://aeff.txt
 """)
         l=reqman.Reqs(f)
@@ -1116,6 +1126,20 @@ class Tests_env_save(unittest.TestCase):
         self.assertFalse( os.path.isfile("aeff.txt") )
         l[0].test(env)
         self.assertTrue( os.path.isfile("aeff.txt") )
+        self.assertEqual( file("aeff.txt").read(), "the content" )
+
+    def test_save_var_to_file_bin(self):
+        f=StringIO("""
+- GET: http://supersite.fr/test_binary
+  save: file://aeff.txt
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        self.assertFalse( os.path.isfile("aeff.txt") )
+        l[0].test(env)
+        self.assertTrue( os.path.isfile("aeff.txt") )
+        self.assertEqual( file("aeff.txt").read(), BINARY )
 
     def setUp(self):
         self.tearDown()
