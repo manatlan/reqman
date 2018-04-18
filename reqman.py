@@ -592,7 +592,7 @@ h3 {color:blue;}
                 cgi.escape( prettify( u(tr.req.body or "")) ),
 
                 u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.res.headers.items()]),
-                cgi.escape( prettify( u(tr.res.content or "")) ),
+                cgi.escape( prettify( u(unicode(tr.res.content) or "")) ),
 
                 u"".join([u"<li class='%s'>%s</li>" % (t and u"ok" or u"ko",cgi.escape(t.name)) for t in tr ]),
                 )
