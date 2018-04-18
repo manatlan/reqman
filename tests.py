@@ -1093,6 +1093,36 @@ class Tests_env_save(unittest.TestCase):
         self.assertEqual( env, {'jo': u'the content'} )
 
 
+    def test_save_var_to_file_denied(self):
+        f=StringIO("""
+- GET: http://supersite.fr/rien
+  save: file:///at_root
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        self.assertRaises(reqman.RMException, lambda: l[0].test(env))
+
+
+    def test_save_var_to_file_txt(self):
+        f=StringIO("""
+- GET: http://supersite.fr/
+#- GET: http://supersite.fr/test_binary
+  save: file://aeff.txt
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        self.assertFalse( os.path.isfile("aeff.txt") )
+        l[0].test(env)
+        self.assertTrue( os.path.isfile("aeff.txt") )
+
+    def setUp(self):
+        self.tearDown()
+
+    def tearDown(self):
+        if os.path.isfile("aeff.txt"):
+            os.unlink("aeff.txt")
 
 
 

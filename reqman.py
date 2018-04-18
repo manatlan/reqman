@@ -425,10 +425,18 @@ class Req(object):
             res=http( req )
             if self.save and isinstance(res,Response):
                 dest=rep(self.save)
-                try:
-                    env[ dest ]=json.loads(res.content)
-                except:
-                    env[ dest ]=res.content
+                if dest.lower().startswith("file://"):
+                    name=dest[7:]
+                    try:
+                        with open(name,"w+") as fid:
+                            fid.write(res.content)
+                    except Exception as e:
+                        raise RMException("Save to file '%s' error : %s" % (name,e))
+                else:
+                    try:
+                        env[ dest ]=json.loads(res.content)
+                    except:
+                        env[ dest ]=res.content
 
             return TestResult(req,res,tests)
         else:
