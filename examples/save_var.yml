@@ -20,5 +20,5 @@
 - POST:               /api/my_api
   headers:
       Content-Type:   application/json
-      Authorization:  Bearer {{auth.token}}                   # re-use the property "token" of var "auth", as a bearer token !
+      #Authorization:  Bearer {{auth.token}}                   # re-use the property "token" of var "auth", as a bearer token ! (UNCOMMENT THIS!!!!)
   body:               mydata
