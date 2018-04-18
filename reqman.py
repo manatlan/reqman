@@ -424,10 +424,11 @@ class Req(object):
 
             res=http( req )
             if self.save and isinstance(res,Response):
+                dest=rep(self.save)
                 try:
-                    env[ self.save ]=json.loads(res.content)
+                    env[ dest ]=json.loads(res.content)
                 except:
-                    env[ self.save ]=res.content
+                    env[ dest ]=res.content
 
             return TestResult(req,res,tests)
         else:

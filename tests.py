@@ -1076,6 +1076,22 @@ class Tests_env_save(unittest.TestCase):
 
         self.assertRaises(reqman.RMException, lambda: l[1].test(env))
 
+    def test_save_var_as_variable(self):
+        f=StringIO("""
+- justdoit:
+    GET: http://supersite.fr/rien
+    save: <<my_destination>>
+
+- call: justdoit
+  params:
+    my_destination: jo
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        l[0].test(env)
+        self.assertEqual( env, {'jo': u'the content'} )
+
 
 
 
