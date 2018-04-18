@@ -524,7 +524,6 @@ class Tests_Req(unittest.TestCase):
 
         r=reqman.Req("Get","/test_binary")  # --> return binary
         s=r.test(env)
-        print s.res.content
         self.assertTrue( "*** BINARY" in s.res.content)
 
 
