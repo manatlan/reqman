@@ -270,8 +270,7 @@ def getVar(env,var):
     else:
         raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
 
-def DYNAMIC(x): return ""
-
+def DYNAMIC(x): return ""   # will be overriden by the exec statement later ! (just to prevent VS warns)
 
 def transform(content,env,methodName):
     if methodName:
