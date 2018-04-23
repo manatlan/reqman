@@ -17,7 +17,6 @@
 import yaml         # see "pip install pyaml"
 import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections,xml.dom.minidom,Cookie,cookielib,urllib2,mimetools,StringIO,datetime
 
-
 class NotFound: pass
 class RMException(Exception):pass
 
@@ -258,18 +257,10 @@ def getVar(env,var):
     elif "|" in var:
         key,method=var.split("|",1)
 
-        if not key:
-            content=None
-            for m in method.split("|"):
-                content=transform(content,env,m)
-            return content
-        elif key in env:
-            content = env[key]
-            for m in method.split("|"):
-                content=transform(content,env,m)
-            return content
-        else:
-            raise RMException("Can't resolve "+key+" in : "+ ", ".join(env.keys()))
+        content = env.get(key,key)     # resolv keys else use it a value !!!!!
+        for m in method.split("|"):
+            content=transform(content,env,m)
+        return content
 
     elif "." in var:
         val=jpath(env,var)
@@ -553,13 +544,13 @@ class HtmlRender(list):
 .ok {color:green}
 .ko {color:red}
 hr {padding:0px;margin:0px;height: 1px;border: 0;color: #CCC;background-color: #CCC;}
-pre {padding:4px;border:1px solid black;background:white !important;overflow-x:auto;width:100%;max-height:300px}
+pre {padding:4px;border:1px solid black;background:white !important;overflow-x:auto;width:100%;max-height:300px;margin:2px;}
 div {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
-span {cursor:pointer;}
+span.title {cursor:pointer;}
+span.title:hover {background:#EEE;}
 ul {margin:0px;}
-span:hover {background:#EEE;}
 div.hide {background:inherit}
-div.hide > ul > pre {display:none}
+div.hide > ul > span {display:none}
 h3 {color:blue;}
 .info {position:fixed;top:0px;right:0px;background:rgba(1,1,1,0.2);border-radius:4px;text-align:right}
 .info > * {display:block}
@@ -570,10 +561,13 @@ h3 {color:blue;}
         if tr is not None and tr.req and tr.res:
             html =u"""
 <div class="hide">
-    <span onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b></span>
+    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b></span>
     <ul>
-        <pre title="the request">%s %s<hr/>%s<hr/>%s</pre>
-        <pre title="the response">%s<hr/>%s</pre>
+        <span>
+            <pre title="the request">%s %s<hr/>%s<hr/>%s</pre>
+            -
+            <pre title="the response">%s<hr/>%s</pre>
+        </span>
         %s
     </ul>
 </div>
@@ -611,10 +605,7 @@ def resolver(params):
             paths+=[os.path.dirname(i) for i in ymls]
         elif os.path.isfile(p):
             paths.append( os.path.dirname(p) )
-            if p.lower().endswith(".yml") or p.lower().endswith(".rml"):
-                ymls.append(p)
-            else:
-                raise RMException("not a rml file") #TODO: better here
+            ymls.append(p)
         else:
             raise RMException("bad param: %s" % p) #TODO: better here
 
