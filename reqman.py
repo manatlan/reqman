@@ -257,7 +257,7 @@ def getVar(env,var):
     elif "|" in var:
         key,method=var.split("|",1)
 
-        content = env.get(key,key)     # resolv keys else use it a value !!!!!
+        content = env.get(key,key)     # resolv keys else use it as a value !!!!!
         for m in method.split("|"):
             content=transform(content,env,m)
         return content
