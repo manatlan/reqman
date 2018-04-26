@@ -149,6 +149,30 @@
 - call: proc1  # this will produce 2 gets !
 
 #--------------------------------------------
+# or better, it could be written like this
+
+- proc1:                   # this is a declaration !
+    - proc2:               # this is a sub declaration !
+      - GET: /nib
+    - call: <<|caller>>    # Call can be a list of procedures to call !!!
+
+- call: proc1  # this will produce 2 gets !
+  params:
+    caller: return ["proc2","proc2"]
+
+#--------------------------------------------
+# or better (developper way), it could be written like this
+
+- proc1:                   # this is a declaration !
+    - proc2:               # this is a sub declaration !
+      - GET: /nib
+    - call: <<2|caller>>    # Call can be a list of procedures to call !!!
+
+- call: proc1  # this will produce 2 gets !
+  params:
+    caller: return x * ["proc2"]
+
+#--------------------------------------------
 # TODO  !!!!!!
 # TODO  !!!!!!
 # Procedures can be declared in reqman.conf !
