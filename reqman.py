@@ -253,20 +253,22 @@ class TestResult(list):
 
 def getVar(env,var):
     if var in env:
-        return env[var]
+        return txtReplace(env,env[var])
     elif "|" in var:
         key,method=var.split("|",1)
 
         content = env.get(key,key)     # resolv keys else use it a value !!!!!
+        content=txtReplace(env,content)
         for m in method.split("|"):
             content=transform(content,env,m)
+            content=txtReplace(env,content)
         return content
 
     elif "." in var:
         val=jpath(env,var)
         if val is NotFound:
             raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
-        return val
+        return txtReplace(env,val)
     else:
         raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
 
@@ -296,9 +298,41 @@ def transform(content,env,methodName):
                     os.chdir(curdir)
         else:
             raise RMException("Can't find method "+methodName+" in : "+ ", ".join(env.keys()))
+
     return content
 
 transform.path=None # change cd cwd for transform methods when executed
+
+
+def txtReplace(env,txt):
+    if env and txt and isinstance(txt,basestring):
+        for vvar in re.findall("\{\{[^\}]+\}\}",txt)+re.findall("<<[^>]+>>",txt):
+            var=vvar[2:-2]
+
+            try:
+                val=getVar(env,var)   #recursive here ! (if myvar="{{otherVar}}"", redo a pass to resolve otherVar)
+            except RuntimeError:
+                raise RMException("Recursion trouble for '%s'" % var)
+
+            if val is NotFound:
+                raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
+            else:
+                if val is None:
+                    val=""
+                elif val is True:
+                    val="true"
+                elif val is False:
+                    val="false"
+                elif isinstance(val,basestring):
+                    if type(val)==unicode: val=val.encode("utf8")   #TODO: do better here
+                elif type(val) in [list,dict]:
+                    val=json.dumps(val)
+                else: #int, float, ...
+                    val=json.dumps(val)
+
+                txt=txt.replace( vvar , val )
+
+    return txt
 
 class Req(object):
     def __init__(self,method,path,body=None,headers={},tests=[],save=None,params={}):  # body = str ou dict ou None
@@ -314,41 +348,8 @@ class Req(object):
         cenv = env.copy() if env else {}    # current env
         cenv.update( self.params )          # override with self params
 
-        def rep(txt,escapeString=False):
-            if cenv and txt and isinstance(txt,basestring):
-                for vvar in re.findall("\{\{[^\}]+\}\}",txt)+re.findall("<<[^>]+>>",txt):
-                    var=vvar[2:-2]
-
-                    try:
-                        val=rep(getVar(cenv,var))   #recursive here ! (if myvar="{{otherVar}}"", redo a pass to resolve otherVar)
-                    except RuntimeError:
-                        raise RMException("Recursion trouble for '%s'" % var)
-                    #val=getVar(cenv,var)
-                    if val is NotFound:
-                        raise RMException("Can't resolve "+var+" in : "+ ", ".join(cenv.keys()))
-                    else:
-                        if val is None:
-                            val=""
-                        elif val is True:
-                            val="true"
-                        elif val is False:
-                            val="false"
-                        elif isinstance(val,basestring):
-                            if type(val)==unicode: val=val.encode("utf8")   #TODO: do better here
-                        elif type(val) in [list,dict]:
-                            val=json.dumps(val)
-                        else: #int, float, ...
-                            val=json.dumps(val)
-
-                        if escapeString:
-                            txt=txt.replace( vvar , val.encode("string_escape") )
-                        else:
-                            txt=txt.replace( vvar , val )
-
-            return txt
-
         # path ...
-        path = rep(self.path)
+        path = txtReplace(cenv,self.path)
         if cenv and (not path.strip().lower().startswith("http")) and ("root" in cenv):
             h=urlparse.urlparse( cenv["root"] )
             if h.path and h.path[-1]=="/":
@@ -369,13 +370,13 @@ class Req(object):
         except ValueError:
             raise RMException("'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')")
 
-        headers={ k:rep(v) for k,v in headers.items() if v is not None}
+        headers={ k:txtReplace(cenv,v) for k,v in headers.items() if v is not None}
 
         # body ...
         if self.body and not isinstance(self.body,basestring):
 
             def jrep(x): # "json rep"
-                r=rep(x)
+                r=txtReplace(cenv,x)
                 if r and isinstance(r,basestring):
                     try:
                         return json.loads(r)
@@ -397,8 +398,7 @@ class Req(object):
             body=apply(self.body, jrep )
             body=json.dumps( body ) # and convert to string !
         else:
-            #~ body=rep(self.body,True) #body is a string, so we should ensure escaping string in string !
-            body=rep(self.body,False) #NO MORE ^^
+            body=txtReplace(cenv,self.body)
 
         req=Request(h.scheme,h.hostname,h.port,self.method,path,body,headers)
         if h.hostname:
@@ -407,7 +407,7 @@ class Req(object):
             tests+=self.tests                               # override with self tests
 
             try:
-                tests=[{test.keys()[0]:rep(test.values()[0])} for test in tests]    # replace vars
+                tests=[{test.keys()[0]:txtReplace(cenv,test.values()[0])} for test in tests]    # replace vars
             except AttributeError:
                 raise RMException("'tests:' should be a list of mono key/value pairs (ex: '- status: 200')")
 
@@ -419,7 +419,7 @@ class Req(object):
 
             res=http( req )
             if self.save and isinstance(res,Response):
-                dest=rep(self.save)
+                dest=txtReplace(cenv,self.save)
                 if dest.lower().startswith("file://"):
                     name=dest[7:]
                     try:
@@ -463,26 +463,28 @@ class Reqs(list):
 
                 for d in l:
                     if "call" in d.keys():
-                        callname = d["call"]
+                        callnames = d["call"] if type(d["call"])==list else [ d["call"] ]   # make a list ;-)
                         del d["call"]
 
-                        commands = procedures[callname] if callname in procedures else self.env[callname] if callname in self.env else None # local proc in first !
+                        for callname in callnames:
+                            commands = procedures[callname] if callname in procedures else self.env[callname] if callname in self.env else None # local proc in first !
 
-                        if commands:
-                            commands=[commands] if type(commands)==dict else commands # ensure we've got a list
+                            if commands:
+                                commands=[commands] if type(commands)==dict else commands # ensure we've got a list
 
-                            ncommands=[]
-                            for command in commands:
-                                q = copy.deepcopy( command )
-                                if KNOWNVERBS.intersection( q.keys() ) or "call" in q.keys():
-                                    # merge passed params with action only ! (avoid merging with proc declaration)
-                                    dict_merge(q,d)
-                                ncommands.append( q )
-                            ll+=feed(ncommands)    # *recursive*
+                                ncommands=[]
+                                for command in commands:
+                                    q = copy.deepcopy( command )
+                                    if KNOWNVERBS.intersection( q.keys() ) or "call" in q.keys():
+                                        # merge passed params with action only ! (avoid merging with proc declaration)
+                                        dict_merge(q,d)
+                                    ncommands.append( q )
+                                ll+=feed(ncommands)    # *recursive*
 
-                            continue
-                        else:
-                            raise RMException("call a not defined procedure '%s' in '%s'" % (callname,fd.name))
+                                continue
+                            else:
+                                raise RMException("call a not defined procedure '%s' in '%s'" % (callname,fd.name))
+                        continue
                     elif len(d.keys())==1: # a declaration of a procedure ?
                         callname=d.keys()[0]
                         if type(d[callname]) in [dict,list]:    # dict is one call, list is a list of dict (multiple calls) -> so it's a procedure
@@ -705,4 +707,4 @@ def main(params):
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
-    #~ execfile("tests.py")
+    #execfile("tests.py")

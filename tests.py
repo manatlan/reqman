@@ -615,6 +615,50 @@ class Tests_Req(unittest.TestCase):
         s=l[0].test(env)
         self.assertEqual( s.req.path, '/{"a": 42, "b": 13}' )
 
+    def test_var_complex(self): # a real case I met ;-)
+        f=StringIO("""
+- context:
+    - proc:
+        - POST: /<<var>>
+
+    - call: proc
+      params:
+        var: <<kif|dd>>
+
+- call: context
+  params:
+     kif: "a,b"
+     dd: return "/".join(x.split(","))
+
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        s=l[0].test(env)
+        self.assertEqual( s.req.path, '/a/b' )
+        #------------------
+        f=StringIO("""
+- context:
+    - proc:
+        - POST: /<<var|dd>>          # <-- the |dd is here
+
+    - call: proc
+      params:
+        var: <<kif>>                 # <-- not here
+
+- call: context
+  params:
+     kif: "a,b"
+     dd: return "/".join(x.split(","))
+
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        s=l[0].test(env)
+        self.assertEqual( s.req.path, '/a/b' )
+
+
 class Tests_Reqs(unittest.TestCase):
 
     def test_simplest_yml(self):
@@ -1268,6 +1312,20 @@ class Tests_procedures_NEW(unittest.TestCase):
     - PUT: /
 - call: jo
 - call: jo
+"""
+        l=reqman.Reqs(StringIO(y))
+        self.assertEqual( len(l), 6)
+
+
+    def test_yml_call_procedures_as_list(self):
+        y="""
+- jo:
+    - GET: /
+    - POST: /
+    - PUT: /
+- call:
+    - jo
+    - jo
 """
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 6)
