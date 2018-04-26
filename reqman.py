@@ -304,6 +304,14 @@ def transform(content,env,methodName):
 transform.path=None # change cd cwd for transform methods when executed
 
 
+def objReplace(env,txt): # same as txtReplace() but for "object" (json'able)
+    obj=txtReplace(env,txt)
+    try:
+        obj=json.loads(obj)
+    except:
+        pass
+    return obj    
+
 def txtReplace(env,txt):
     if env and txt and isinstance(txt,basestring):
         for vvar in re.findall("\{\{[^\}]+\}\}",txt)+re.findall("<<[^>]+>>",txt):
@@ -333,6 +341,8 @@ def txtReplace(env,txt):
                 txt=txt.replace( vvar , val )
 
     return txt
+
+
 
 class Req(object):
     def __init__(self,method,path,body=None,headers={},tests=[],save=None,params={}):  # body = str ou dict ou None
@@ -376,14 +386,7 @@ class Req(object):
         if self.body and not isinstance(self.body,basestring):
 
             def jrep(x): # "json rep"
-                r=txtReplace(cenv,x)
-                if r and isinstance(r,basestring):
-                    try:
-                        return json.loads(r)
-                    except ValueError:
-                        return r
-                else:
-                    return r
+                return objReplace(cenv,x)
 
             #================================
             def apply(body,method):
@@ -467,11 +470,7 @@ class Reqs(list):
                     dict_merge(env,d.get("params",{}))  # add current params (to find proc)
 
                     if "call" in d.keys():
-                        callContent=txtReplace(env,d["call"])
-                        try:
-                            callContent=json.loads(callContent)
-                        except:
-                            callContent=callContent
+                        callContent=objReplace(env,d["call"])
 
                         callnames = callContent if type(callContent)==list else [ callContent ]   # make a list ;-)
                         del d["call"]
