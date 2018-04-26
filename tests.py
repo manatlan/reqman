@@ -615,7 +615,7 @@ class Tests_Req(unittest.TestCase):
         s=l[0].test(env)
         self.assertEqual( s.req.path, '/{"a": 42, "b": 13}' )
 
-    def test_var_complex(self): # a real case I met ;-)
+    def test_var_complex_transform_in_call(self): 
         f=StringIO("""
 - context:
     - proc:
@@ -636,7 +636,8 @@ class Tests_Req(unittest.TestCase):
         env={}
         s=l[0].test(env)
         self.assertEqual( s.req.path, '/a/b' )
-        #------------------
+
+    def test_var_complex_transform_in_call2(self): # a real case I met ;-)
         f=StringIO("""
 - context:
     - proc:
@@ -658,6 +659,44 @@ class Tests_Req(unittest.TestCase):
         s=l[0].test(env)
         self.assertEqual( s.req.path, '/a/b' )
 
+    def test_callmethod(self): #*NEW* (power tip !)
+        f=StringIO("""
+- context:
+    - GET: https:/github.com
+
+- call: <<3|tooMuch>>
+  params:
+     tooMuch: return x * ["context"]
+
+""")
+        l=reqman.Reqs(f)
+        self.assertEqual( len(l), 3)
+
+    def test_callmethod_glob(self): #*NEW* (power tip !)
+        f=StringIO("""
+- context:
+    - GET: https:/github.com
+
+- call: <<3|tooMuch>>
+
+""")
+        env=dict(tooMuch="""return x * ["context"]""")
+        l=reqman.Reqs(f,env)
+        self.assertEqual( len(l), 3)
+
+    def test_callmethod_glob2(self): #*NEW* (power tip !)
+        f=StringIO("""
+- context:
+    - GET: https:/github.com
+
+- call: <<nb|tooMuch>>
+  params:
+    nb: 3
+
+""")
+        env=dict(tooMuch="""return x * ["context"]""")
+        l=reqman.Reqs(f,env)
+        self.assertEqual( len(l), 3)
 
 class Tests_Reqs(unittest.TestCase):
 

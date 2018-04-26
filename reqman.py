@@ -462,8 +462,18 @@ class Reqs(list):
                 l=[l] if type(l)==dict else l # ensure we've got a list
 
                 for d in l:
+                    env={}
+                    dict_merge(env,self.env)
+                    dict_merge(env,d.get("params",{}))  # add current params (to find proc)
+
                     if "call" in d.keys():
-                        callnames = d["call"] if type(d["call"])==list else [ d["call"] ]   # make a list ;-)
+                        callContent=txtReplace(env,d["call"])
+                        try:
+                            callContent=json.loads(callContent)
+                        except:
+                            callContent=callContent
+
+                        callnames = callContent if type(callContent)==list else [ callContent ]   # make a list ;-)
                         del d["call"]
 
                         for callname in callnames:
