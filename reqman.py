@@ -562,7 +562,7 @@ pre {padding:4px;border:1px solid black;background:white !important;overflow-x:a
 div {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
 span.title {cursor:pointer;}
 span.title:hover {background:#EEE;}
-span > i {float:right}
+span > i {float:right;color:#AAA}
 ul {margin:0px;}
 div.hide {background:inherit}
 div.hide > ul > span {display:none}
