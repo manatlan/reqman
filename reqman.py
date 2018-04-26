@@ -562,11 +562,11 @@ pre {padding:4px;border:1px solid black;background:white !important;overflow-x:a
 div {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
 span.title {cursor:pointer;}
 span.title:hover {background:#EEE;}
-span > i {float:right;color:#AAA}
+i {float:right;color:#AAA}
 ul {margin:0px;}
 div.hide {background:inherit}
 div.hide > ul > span {display:none}
-h3 {color:blue;}
+h3 {color:blue;margin:8 0 0 0;padding:0px}
 .info {position:fixed;top:0px;right:0px;background:rgba(1,1,1,0.2);border-radius:4px;text-align:right}
 .info > * {display:block}
 </style>
@@ -576,7 +576,7 @@ h3 {color:blue;}
         if tr is not None and tr.req and tr.res:
             html =u"""
 <div class="hide">
-    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b> <i>(%s)</i></span>
+    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b> <i>%s</i></span>
     <ul>
         <span>
             <pre title="the request">%s %s<hr/>%s<hr/>%s</pre>
@@ -688,17 +688,26 @@ def main(params):
             for f in reqs:
                 print
                 print "TESTS:",cb(f.name)
-                hr.add("<h3>%s</h3>"%f.name)
+                times=[]
+                trs=[]
                 for t in f:
                     tr=t.test( env ) #TODO: colorful output !
+                    times.append( tr.res.time )
                     print tr
-                    hr.add( tr=tr )
+                    trs.append( tr)
                     all+=tr
+                # html rendering...
+                hr.add("<h3>%s</h3>"%f.name)
+                hr.add( "<i style='float:inherit'>%s req(s) moy = %s</i>" % (len(times),sum(times,datetime.timedelta())/len(times)) )
+                for tr in trs:
+                    hr.add( tr=tr )
+
+                    
 
             ok,total=len([i for i in all if i]),len(all)
 
             hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
-            hr.add( "<div class='info'><i>%s</i><b>%s</b></div>" % ( str(datetime.datetime.now())[:16], " ".join(varenvs) ) )
+            hr.add( "<div class='info'><span>%s</span><b>%s</b></div>" % ( str(datetime.datetime.now())[:16], " ".join(varenvs) ) )
 
             hr.save( fn )
 
