@@ -563,6 +563,8 @@ div {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
 span.title {cursor:pointer;}
 span.title:hover {background:#EEE;}
 i {float:right;color:#AAA}
+i.bad {color:orange}
+i.good {color:green}
 ul {margin:0px;}
 div.hide {background:inherit}
 div.hide > ul > span {display:none}
@@ -697,8 +699,9 @@ def main(params):
                     trs.append( tr)
                     all+=tr
                 # html rendering...
+                avg = sum(times,datetime.timedelta())/len(times)
                 hr.add("<h3>%s</h3>"%f.name)
-                hr.add( "<i style='float:inherit'>%s req(s) avg = %s</i>" % (len(times),sum(times,datetime.timedelta())/len(times)) )
+                hr.add( "<i style='float:inherit'>%s req(s) avg = %s</i>" % (len(times),avg) )
                 for tr in trs:
                     hr.add( tr=tr )
 
