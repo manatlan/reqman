@@ -245,7 +245,7 @@ class TestResult(list):
 
     def __str__(self):
         ll=[""]
-        ll.append( cy("*")+u" %s --> %s " % (self.req,cw(str(self.res)) if self.res else cr(u"Not callable") ) )
+        ll.append( cy("*")+u" %s --> %s" % (self.req,cw(str(self.res)) if self.res else cr(u"Not callable") ))
         for t in self:
             ll.append( u"  - %s: %s" % ( cg("OK") if t==1 else cr("KO"),t.name ) )
         txt = os.linesep.join(ll)
@@ -420,7 +420,9 @@ class Req(object):
             except ValueError:
                 socket.setdefaulttimeout( None )
 
+            t1=datetime.datetime.now()
             res=http( req )
+            res.time=datetime.datetime.now()-t1
             if self.save and isinstance(res,Response):
                 dest=txtReplace(cenv,self.save)
                 if dest.lower().startswith("file://"):
@@ -560,6 +562,7 @@ pre {padding:4px;border:1px solid black;background:white !important;overflow-x:a
 div {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
 span.title {cursor:pointer;}
 span.title:hover {background:#EEE;}
+span > i {float:right}
 ul {margin:0px;}
 div.hide {background:inherit}
 div.hide > ul > span {display:none}
@@ -573,7 +576,7 @@ h3 {color:blue;}
         if tr is not None and tr.req and tr.res:
             html =u"""
 <div class="hide">
-    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b></span>
+    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b> <i>(%s)</i></span>
     <ul>
         <span>
             <pre title="the request">%s %s<hr/>%s<hr/>%s</pre>
@@ -587,6 +590,7 @@ h3 {color:blue;}
                 tr.req.method,
                 tr.req.path,
                 tr.res.status or tr.res,
+                tr.res.time,
 
                 tr.req.method,
                 tr.req.url,

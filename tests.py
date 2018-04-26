@@ -373,6 +373,7 @@ class Tests_Req(unittest.TestCase):
         r=reqman.Req("get","https://github.com/")
         s=r.test()
         self.assertEqual(s.res.status, 200)
+        self.assertTrue(s.res.time)
 
     def test_simplest_env(self):
         env=dict(root="https://github.com/")
