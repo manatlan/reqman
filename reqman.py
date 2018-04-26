@@ -698,7 +698,7 @@ def main(params):
                     all+=tr
                 # html rendering...
                 hr.add("<h3>%s</h3>"%f.name)
-                hr.add( "<i style='float:inherit'>%s req(s) moy = %s</i>" % (len(times),sum(times,datetime.timedelta())/len(times)) )
+                hr.add( "<i style='float:inherit'>%s req(s) avg = %s</i>" % (len(times),sum(times,datetime.timedelta())/len(times)) )
                 for tr in trs:
                     hr.add( tr=tr )
 

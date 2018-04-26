@@ -14,7 +14,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * https/ssl ok
    * headers inherits
    * tests inherits
-   * unittests coverage
+   * timed requests + average times
    * html tests renderer (with request/response contents)
    * encoding aware
    * cookie handling
