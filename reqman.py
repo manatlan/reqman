@@ -51,7 +51,7 @@ def u(txt):
 
 def dict_merge(dct, merge_dct):
     """ merge 'merge_dct' in --> dct """
-    for k, _ in merge_dct.iteritems():
+    for k, v in merge_dct.iteritems():
         if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], collections.Mapping)):
             dict_merge(dct[k], merge_dct[k])
         else:
@@ -87,7 +87,7 @@ def jpath(elem, path):
                     return len(elem.keys())
                 else:
                     elem= elem.get(i,NotFound)
-        except (ValueError,IndexError):
+        except (ValueError,IndexError) as e:
             return NotFound
     return elem
 
@@ -257,7 +257,7 @@ def getVar(env,var):
     elif "|" in var:
         key,method=var.split("|",1)
 
-        content = env.get(key,key)     # resolv keys else use it as a value !!!!!
+        content = env.get(key,key)     # resolv keys else use it a value !!!!!
         for m in method.split("|"):
             content=transform(content,env,m)
         return content
@@ -270,14 +270,12 @@ def getVar(env,var):
     else:
         raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
 
-def DYNAMIC(x): return ""   # will be overriden by the exec statement later ! (just to prevent VS warns)
+
 
 def transform(content,env,methodName):
     if methodName:
-        code=getVar(env,methodName)
-        if code is NotFound:
-            raise RMException("Can't find method "+methodName+" in : "+ ", ".join(env.keys()))
-        else:
+        if methodName in env:
+            code=getVar(env,methodName)
             try:
                 exec "def DYNAMIC(x):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in globals()
             except Exception as e:
@@ -296,6 +294,8 @@ def transform(content,env,methodName):
             finally:
                 if transform.path:
                     os.chdir(curdir)
+        else:
+            raise RMException("Can't find method "+methodName+" in : "+ ", ".join(env.keys()))
     return content
 
 transform.path=None # change cd cwd for transform methods when executed
@@ -316,7 +316,7 @@ class Req(object):
 
         def rep(txt,escapeString=False):
             if cenv and txt and isinstance(txt,basestring):
-                for vvar in re.findall(r"{{[^}]+}}",txt)+re.findall("<<[^>]+>>",txt):
+                for vvar in re.findall("\{\{[^\}]+\}\}",txt)+re.findall("<<[^>]+>>",txt):
                     var=vvar[2:-2]
 
                     try:
@@ -397,7 +397,8 @@ class Req(object):
             body=apply(self.body, jrep )
             body=json.dumps( body ) # and convert to string !
         else:
-            body=rep(self.body,True) #body is a string, so we should ensure escaping string in string !
+            #~ body=rep(self.body,True) #body is a string, so we should ensure escaping string in string !
+            body=rep(self.body,False) #NO MORE ^^
 
         req=Request(h.scheme,h.hostname,h.port,self.method,path,body,headers)
         if h.hostname:
@@ -509,7 +510,7 @@ class Reqs(list):
 ## Helpers
 ###########################################################################
 def listFiles(path,filters=(".yml",".rml") ):
-    for folder, _, files in os.walk(path):
+    for folder, subs, files in os.walk(path):
         for filename in files:
             if filename.lower().endswith( filters ):
                 yield os.path.join(folder,filename)

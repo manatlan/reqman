@@ -312,7 +312,7 @@ class Tests_CookieStore(unittest.TestCase):
 
         c["cidf2"]="malz2"
         headers=[ ("user-Agent","yo"),("content-type","text/html") ]
-        for _,v in c.iteritems():
+        for k,v in c.iteritems():
             headers.append(tuple(v.output().split(": ",1)))
         #------------------------------------------------------
 
@@ -329,7 +329,7 @@ class Tests_CookieStore(unittest.TestCase):
 class Tests_ReqRespCookie(unittest.TestCase):
     def test_1cookie(self):
         reqman.COOKIEJAR.clear()
-        reqman.Response(200,"ok",{"Set-Cookie":"cook=1"},"http://localhost/")   # set the cookie !
+        res=reqman.Response(200,"ok",{"Set-Cookie":"cook=1"},"http://localhost/")   # set the cookie !
 
         hr=reqman.Request("http","localhost","80","GET","/",None).headers
         self.assertTrue( "Cookie" in hr )
@@ -338,7 +338,7 @@ class Tests_ReqRespCookie(unittest.TestCase):
 
     def test_2cookies(self):
         reqman.COOKIEJAR.clear()
-        reqman.Response(200,"ok",[ ("Set-Cookie","cook1=1"),("Set-Cookie","cook2=2; Path=/p2")],"http://localhost/")   # set the cookie !
+        res=reqman.Response(200,"ok",[ ("Set-Cookie","cook1=1"),("Set-Cookie","cook2=2; Path=/p2")],"http://localhost/")   # set the cookie !
 
         self.assertEqual( len(reqman.COOKIEJAR), 2)
 
@@ -356,12 +356,12 @@ class Tests_ReqRespCookie(unittest.TestCase):
 
     def test_cookie_override(self):
         reqman.COOKIEJAR.clear()
-        reqman.Response(200,"ok",{"Set-Cookie":"cook=1"},"http://blahblah.com/")   # set the cookie !
+        res=reqman.Response(200,"ok",{"Set-Cookie":"cook=1"},"http://blahblah.com/")   # set the cookie !
 
         hr=reqman.Request("http","blahblah.com","80","GET","/",None).headers
         self.assertEqual( hr["Cookie"],"cook=1" )
 
-        reqman.Response(200,"ok",{"Set-Cookie":"cook=2"},"http://blahblah.com/")   # set the cookie !
+        res=reqman.Response(200,"ok",{"Set-Cookie":"cook=2"},"http://blahblah.com/")   # set the cookie !
         hr=reqman.Request("http","blahblah.com","80","GET","/",None).headers
         self.assertEqual( hr["Cookie"],"cook=2" )
 
@@ -1566,7 +1566,7 @@ class Tests_params_NEW(unittest.TestCase):
 
         tr=l[0].test({})
 
-        self.assertEqual( tr.req.body, "line1\\nline2\\nline3\\n" )
+        self.assertEqual( tr.req.body, "line1\nline2\nline3\n" )
 
     def test_yml_params_escape_string2(self):
 
@@ -1585,7 +1585,7 @@ class Tests_params_NEW(unittest.TestCase):
 
         tr=l[0].test({})
 
-        self.assertEqual( tr.req.body, "startline1\\nline2\\nline3\\nend" )
+        self.assertEqual( tr.req.body, "startline1\nline2\nline3\nend" )
 
     def test_yml_params_escape_string3(self):
 
@@ -1599,7 +1599,7 @@ class Tests_params_NEW(unittest.TestCase):
 
         tr=l[0].test({"myvar":"aaa\nbbb"})
 
-        self.assertEqual( tr.req.body, "startaaa\\nbbbend" )
+        self.assertEqual( tr.req.body, "startaaa\nbbbend" )
 
 
     def test_yml_params_escape_string4(self):
@@ -1622,7 +1622,7 @@ class Tests_params_NEW(unittest.TestCase):
 
         tr=l[0].test({"var":"aaa\nbbb"})
 
-        self.assertEqual( tr.req.body, "start\\naaa\\nbbb\\nend\\n" )
+        self.assertEqual( tr.req.body, "start\naaa\nbbb\nend\n" )
 
     #~ @only
     def test_yml_prog_embeded_call(self):
