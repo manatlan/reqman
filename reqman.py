@@ -310,7 +310,7 @@ def objReplace(env,txt): # same as txtReplace() but for "object" (json'able)
         obj=json.loads(obj)
     except:
         pass
-    return obj    
+    return obj
 
 def txtReplace(env,txt):
     if env and txt and isinstance(txt,basestring):
@@ -694,7 +694,7 @@ def main(params):
                 trs=[]
                 for t in f:
                     tr=t.test( env ) #TODO: colorful output !
-                    times.append( tr.res.time )
+                    if tr.res: times.append( tr.res.time )
                     print tr
                     trs.append( tr)
                     all+=tr
@@ -705,7 +705,7 @@ def main(params):
                 for tr in trs:
                     hr.add( tr=tr )
 
-                    
+
 
             ok,total=len([i for i in all if i]),len(all)
 
