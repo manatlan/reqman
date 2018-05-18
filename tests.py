@@ -373,7 +373,7 @@ class Tests_Req(unittest.TestCase):
         r=reqman.Req("get","https://github.com/")
         s=r.test()
         self.assertEqual(s.res.status, 200)
-        self.assertTrue(s.res.time)
+        self.assertTrue(s.res.time != None)
 
     def test_simplest_env(self):
         env=dict(root="https://github.com/")
@@ -616,7 +616,7 @@ class Tests_Req(unittest.TestCase):
         s=l[0].test(env)
         self.assertEqual( s.req.path, '/{"a": 42, "b": 13}' )
 
-    def test_var_complex_transform_in_call(self): 
+    def test_var_complex_transform_in_call(self):
         f=StringIO("""
 - context:
     - proc:
@@ -982,6 +982,27 @@ class Tests_Reqs(unittest.TestCase):
     - json.mydict.0:        null
     - json.0:               null
 
+"""
+        f=StringIO(y)
+        l=reqman.Reqs(f)
+
+        s=l[0].test( dict(root="https://github.com:443/"))
+        self.assertTrue( all(s) )
+
+    def test_yml_tests_list(self):
+
+        y="""
+- GET: /test_json
+  tests:
+    - content-type:
+        - application/json
+        - application/text
+    - json.mydict.name:
+        - jack
+        - jim
+    - status:
+        - 200
+        - 201
 """
         f=StringIO(y)
         l=reqman.Reqs(f)

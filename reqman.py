@@ -221,23 +221,31 @@ class TestResult(list):
         for test in tests:
             what,value = test.keys()[0],test.values()[0]
 
-            val = "null" if value is None else "true" if value is True else "false" if value is False else value
-
-            testname = "%s = %s" % (what,val)
-            testnameKO = "%s != %s" % (what,val)
-            if what=="status":  result = int(value)==(self.res.status and int(self.res.status))
-            elif what=="content": result = value in unicode(self.res.content)
+            #------------- find the cmp method
+            if what=="content":     cmp = lambda x: x in unicode(self.res.content)
+            elif what=="status":    cmp = lambda x: int(x)==(self.res.status and int(self.res.status))
             elif what.startswith("json."):
                 try:
                     jzon=json.loads( unicode(self.res.content) )
-                    val=jpath(jzon,what[5:])
-                    val=None if val == NotFound else val
+                    v=jpath(jzon,what[5:])
+                    v=None if v == NotFound else v
 
-                    result = (value == val)
+                    cmp = lambda x: x == v
                 except:
-                    result=False
-            else: result = (value in self.res.headers.get(what,""))
-            #TODO: test if header is just present
+                    cmp = lambda x: False
+            else: cmp = lambda x: x in self.res.headers.get(what,"")    #TODO: test if header is just present
+            #-------------
+
+            if type(value)==list:
+                val = " ,".join( [unicode(i) for i in value] )
+                testname = "%s in [%s]" % (what,val)
+                testnameKO = "%s not in [%s]" % (what,val)
+                result = any( [cmp(i) for i in value] )
+            else:
+                val = "null" if value is None else "true" if value is True else "false" if value is False else value
+                testname = "%s = %s" % (what,val)
+                testnameKO = "%s != %s" % (what,val)
+                result = cmp(value)
 
             results.append( Test(result,testname,testnameKO) )
 
@@ -555,21 +563,23 @@ class HtmlRender(list):
         list.__init__(self,[u"""
 <meta charset="utf-8">
 <style>
+body {font-family: sans-serif;font-size:90%}
 .ok {color:green}
 .ko {color:red}
 hr {padding:0px;margin:0px;height: 1px;border: 0;color: #CCC;background-color: #CCC;}
 pre {padding:4px;border:1px solid black;background:white !important;overflow-x:auto;width:100%;max-height:300px;margin:2px;}
-div {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
 span.title {cursor:pointer;}
 span.title:hover {background:#EEE;}
 i {float:right;color:#AAA}
 i.bad {color:orange}
 i.good {color:green}
-ul {margin:0px;}
-div.hide {background:inherit}
-div.hide > ul > span {display:none}
+ol,ul {margin:0px;}
+ol {padding:0px;}
+ol > li {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
+li.hide {background:inherit}
+li.hide > ul > span {display:none}
 h3 {color:blue;margin:8 0 0 0;padding:0px}
-.info {position:fixed;top:0px;right:0px;background:rgba(1,1,1,0.2);border-radius:4px;text-align:right}
+.info {position:fixed;top:0px;right:0px;background:rgba(1,1,1,0.2);border-radius:4px;text-align:right;padding:4px}
 .info > * {display:block}
 </style>
 """])
@@ -577,7 +587,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
     def add(self,html=None,tr=None):
         if tr is not None and tr.req and tr.res:
             html =u"""
-<div class="hide">
+<li class="hide">
     <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b> <i>%s</i></span>
     <ul>
         <span>
@@ -587,7 +597,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
         </span>
         %s
     </ul>
-</div>
+</li>
             """ % (
                 tr.req.method,
                 tr.req.path,
@@ -701,9 +711,11 @@ def main(params):
                 # html rendering...
                 avg = sum(times,datetime.timedelta())/len(times)
                 hr.add("<h3>%s</h3>"%f.name)
+                hr.add("<ol>")
                 hr.add( "<i style='float:inherit'>%s req(s) avg = %s</i>" % (len(times),avg) )
                 for tr in trs:
                     hr.add( tr=tr )
+                hr.add("</ol>")
 
 
 
@@ -732,4 +744,4 @@ def main(params):
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
-    #execfile("tests.py")
+    #~ execfile("tests.py")
