@@ -196,11 +196,37 @@
     - content:  </body>           # assert that "<body>" is in the content
 
 #--------------------------------------------
+# tests value can be a yaml list
+# (and, it's the main job of reqman)
+- GET: /
+  tests:                  
+    - status:                     # so the http status can be
+              - 200               # 200        \__ the test is valid if one is valid
+              - 302               # or 302     /
+
+#--------------------------------------------
 # and if your respone is pure json, you can test its content using prefix "json."
 - GET: /
-  tests:                  # "tests" is a list of tests !
-    - status: 200                 # "status" is a special key, the http status is 200 OK
-    - json.result:                ok    # assert response = {"result":"ok"}
+  tests:                          
+    - status:       200           
+    - json.result:  ok            # assert response = {"result":"ok"}
+
+#--------------------------------------------
+# and you can index arrays in json's response
+- GET: /
+  tests:                          
+    - status:         200           
+    - json.result.1:  2           # assert response = {"result":[1,2,3]}
+#--------------------------------------------
+# and you can guess size array in json's response, with special attribute ".size"
+- GET: /
+  tests:                          
+    - status:            200           
+    - json.result.size:  3        # assert response = {"result":[1,2,3]}
+
+#--------------
+# should continue
+
 
 # TODO: more here !
 
