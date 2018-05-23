@@ -532,9 +532,10 @@ class Reqs(list):
 ###########################################################################
 def listFiles(path,filters=(".yml",".rml") ):
     for folder, subs, files in os.walk(path):
-        for filename in files:
-            if filename.lower().endswith( filters ):
-                yield os.path.join(folder,filename)
+        if not os.path.basename(folder).startswith( (".","_")):
+            for filename in files:
+                if filename.lower().endswith( filters ):
+                    yield os.path.join(folder,filename)
 
 
 def loadEnv( fd, varenvs=[] ):
