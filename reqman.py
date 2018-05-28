@@ -532,7 +532,7 @@ class Reqs(list):
 ###########################################################################
 def listFiles(path,filters=(".yml",".rml") ):
     for folder, subs, files in os.walk(path):
-        if not os.path.basename(folder).startswith( (".","_")):
+        if folder in [".",".."] or (not os.path.basename(folder).startswith( (".","_"))):
             for filename in files:
                 if filename.lower().endswith( filters ):
                     yield os.path.join(folder,filename)
