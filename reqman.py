@@ -353,7 +353,7 @@ def txtReplace(env,txt):
 
 
 class Req(object):
-    def __init__(self,method,path,body=None,headers={},tests=[],saves=None,params={}):  # body = str ou dict ou None
+    def __init__(self,method,path,body=None,headers={},tests=[],saves=[],params={}):  # body = str ou dict ou None
         self.method=method.upper()
         self.path=path
         self.body=body
