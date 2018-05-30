@@ -287,7 +287,7 @@ def transform(content,env,methodName):
         if methodName in env:
             code=getVar(env,methodName)
             try:
-                exec "def DYNAMIC(x):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in globals()
+                exec "def DYNAMIC(x,ENV):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in globals()
             except Exception as e:
                 raise RMException("Error in declaration of method "+methodName+" : "+str(e))
             try:
@@ -298,7 +298,7 @@ def transform(content,env,methodName):
                 if transform.path:
                     curdir = os.getcwd()
                     os.chdir( transform.path )
-                content=DYNAMIC( x )
+                content=DYNAMIC( x,env )
             except Exception as e:
                 raise RMException("Error in execution of method "+methodName+" : "+str(e))
             finally:
@@ -353,13 +353,13 @@ def txtReplace(env,txt):
 
 
 class Req(object):
-    def __init__(self,method,path,body=None,headers={},tests=[],save=None,params={}):  # body = str ou dict ou None
+    def __init__(self,method,path,body=None,headers={},tests=[],saves=None,params={}):  # body = str ou dict ou None
         self.method=method.upper()
         self.path=path
         self.body=body
         self.headers=headers
         self.tests=tests
-        self.save=save
+        self.saves=saves
         self.params=params
 
     def test(self,env=None):
@@ -431,20 +431,27 @@ class Req(object):
             t1=datetime.datetime.now()
             res=http( req )
             res.time=datetime.datetime.now()-t1
-            if self.save and isinstance(res,Response):
-                dest=txtReplace(cenv,self.save)
-                if dest.lower().startswith("file://"):
-                    name=dest[7:]
-                    try:
-                        with open(name,"wb+") as fid:
-                            fid.write(res.content.toBinary())
-                    except Exception as e:
-                        raise RMException("Save to file '%s' error : %s" % (name,e))
-                else:
-                    try:
-                        env[ dest ]=json.loads(unicode(res.content))
-                    except:
-                        env[ dest ]=unicode(res.content)
+            if isinstance(res,Response) and self.saves:
+
+                self.saves=self.saves if type(self.saves)==list else [self.saves] # ensure we've got a list                    
+
+                for save in self.saves:
+                    dest=txtReplace(cenv,save)
+                    if dest.lower().startswith("file://"):
+                        name=dest[7:]
+                        try:
+                            with open(name,"wb+") as fid:
+                                fid.write(res.content.toBinary())
+                        except Exception as e:
+                            raise RMException("Save to file '%s' error : %s" % (name,e))
+                    else:
+                        if dest:
+                            try:
+                                env[ dest ]=json.loads(unicode(res.content))
+                                cenv[ dest ]=json.loads(unicode(res.content))
+                            except:
+                                env[ dest ]=unicode(res.content)
+                                cenv[ dest ]=unicode(res.content)
 
             return TestResult(req,res,tests)
         else:
@@ -516,7 +523,7 @@ class Reqs(list):
                     verbs=list(KNOWNVERBS.intersection( d.keys() ))
                     if verbs:
                         verb=verbs[0]
-                        ll.append( Req(verb,d[verb],d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",None),d.get("params",{})) )
+                        ll.append( Req(verb,d[verb],d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",[]),d.get("params",{})) )
                     else:
                         raise RMException("Unknown verbs (%s) in '%s'" % (d.keys(),fd.name))
 

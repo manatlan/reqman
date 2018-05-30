@@ -1208,6 +1208,7 @@ class Tests_env_save(unittest.TestCase):
         self.assertEqual( env, {'jo': 'the content'} )
 
 
+
     #~ def test_save_var_to_file_denied(self):  # Works on Windows ;-(
         #~ f=StringIO("""
 #~ - GET: http://supersite.fr/rien
@@ -1244,6 +1245,24 @@ class Tests_env_save(unittest.TestCase):
         l[0].test(env)
         self.assertTrue( os.path.isfile("aeff.txt") )
         self.assertEqual( open("aeff.txt","rb").read(), BINARY )
+
+    def test_save_var_to_multiple(self):
+        f=StringIO("""
+- justdoit:
+    GET: http://supersite.fr/rien
+    save:
+        - var1
+        - var2
+
+- call: justdoit
+""")
+        l=reqman.Reqs(f)
+
+        env={}
+        l[0].test(env)
+        self.assertEqual( env["var1"], 'the content' )
+        self.assertEqual( env["var2"], 'the content' )
+
 
     def setUp(self):
         self.tearDown()
