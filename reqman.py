@@ -418,7 +418,15 @@ class Req(object):
             tests+=self.tests                               # override with self tests
 
             try:
-                tests=[{test.keys()[0]:txtReplace(cenv,test.values()[0])} for test in tests]    # replace vars
+                ntests=[]
+                for test in tests:
+                    key,val = test.keys()[0],test.values()[0]
+                    if type(val)==list:
+                        val=[txtReplace(cenv,i) for i in val]
+                    else:
+                        val=txtReplace(cenv,val)
+                    ntests.append( {key: val } )
+                tests=ntests
             except AttributeError:
                 raise RMException("'tests:' should be a list of mono key/value pairs (ex: '- status: 200')")
 
@@ -717,7 +725,7 @@ def main(params):
                     trs.append( tr)
                     all+=tr
                 # html rendering...
-                avg = sum(times,datetime.timedelta())/len(times)
+                avg = sum(times,datetime.timedelta())/len(times) if len(times) else 0
                 hr.add("<h3>%s</h3>"%f.name)
                 hr.add("<ol>")
                 hr.add( "<i style='float:inherit'>%s req(s) avg = %s</i>" % (len(times),avg) )
