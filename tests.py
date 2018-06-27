@@ -1072,27 +1072,6 @@ class Tests_Reqs(unittest.TestCase):
         t=l[0].test( dict(root="https://github.com:443/"))
         self.assertTrue( all(s) ) # ensure all tests are substitued (and match results)
 
-    def test_yml_tests_list_substitutes(self):
-
-        s="""
-- GET: /test_json
-  tests:
-    - content-type:
-        - <<p1>>
-        - "{{p2}}"
-    - content: <<p1>>
-  params:
-    p1: application
-    p2: json
-    p3: john
-"""
-        l=reqman.Reqs(StringIO(s))
-        self.assertTrue( {'content': '<<p1>>'} in l[0].tests )
-        self.assertTrue( {'content-type': ['<<p1>>', '{{p2}}']} in l[0].tests, )
-
-        t=l[0].test( dict(root="https://github.com:443/"))
-        self.assertTrue( all(s) ) # ensure all tests are substitued (and match results)
-
 class Tests_Conf(unittest.TestCase):
 
     def test_env_override_root(self):
