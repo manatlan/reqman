@@ -458,7 +458,11 @@ class Req(object):
             try:
                 ntests=[]
                 for test in tests:
+<<<<<<< HEAD
                     key,val = list(test.keys())[0],list(test.values())[0]
+=======
+                    key,val = test.keys()[0],test.values()[0]
+>>>>>>> 289c9e870fa1e9341cf0c6ec71cf22cc61c59444
                     if type(val)==list:
                         val=[txtReplace(cenv,i) for i in val]
                     else:
