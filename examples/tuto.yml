@@ -89,7 +89,9 @@
   body: <<message|encode>>
   params:
     message: I'm the message
-    encode: return x.encode("base64")    # 'x' is the input (here; content of message ;-)
+    encode: |
+      import base64
+      return str(base64.b64encode(bytes(x, 'utf-8')),"utf8")    # 'x' is the input (here; content of message ;-)
 
 #--------------------------------------------
 # alternativly you can call a method without input, like that :

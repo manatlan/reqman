@@ -10,9 +10,9 @@
     - status: 200
 
 - POST: /
-  body: "{{var|rot13}}"
+  body: "{{var|double}}"
   params: # overriding the "rot13" method (see original in reqman.conf)
-    rot13: return x.encode("base64")
+    double: return x*3
     var: I'm reqman
   tests:
     - status: 404

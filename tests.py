@@ -1,41 +1,81 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import unittest
 import reqman
 import json
 import os
 import socket
-from StringIO import StringIO
+from io import StringIO,BytesIO
 
 fwp = lambda x:x.replace("\\","/") # fake windows path
 
 ONLYs=[]
 def only(f):
-    ONLYs.append(f.func_name)
+    ONLYs.append(f.__name__)
     return f
 
-BINARY="".join([chr(i) for i in range(255,0,-1)])
+BINARY= bytes( list(range(255,0,-1)) )
 
 ################################################################## mock
 def mockHttp(q):
     if q.path=="/test_cookie":
-        return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock","Set-Cookie":"mycookie=myval"},q.url)
+        return reqman.Response( 200, "the content", {"Content-Type":"text/plain","server":"mock","Set-Cookie":"mycookie=myval"},q.url)
     elif q.path=="/test_binary":
-        return reqman.Response( 200, BINARY, {"content-type":"audio/mpeg","server":"mock"},q.url)
+        return reqman.Response( 200, BINARY, {"Content-Type":"audio/mpeg","server":"mock"},q.url)
     elif q.path=="/test_json":
         my=dict(
             mydict=dict(name="jack"),
             mylist=["aaa",42,dict(name="john")],
         )
-        return reqman.Response( 200, json.dumps(my), {"content-type":"application/json","server":"mock"}, q.url)
+        return reqman.Response( 200, json.dumps(my), {"Content-Type":"application/json","server":"mock"}, q.url)
     elif q.path=="/test_error":
         return reqman.ResponseError( "My Error" )
     else:
-        return reqman.Response( 200, "the content", {"content-type":"text/plain","server":"mock"}, q.url)
+        return reqman.Response( 200, "the content", {"Content-Type":"text/plain","server":"mock"}, q.url)
 
-reqman_http = reqman.http
-reqman.http = mockHttp
+reqman_http = reqman.dohttp
+reqman.dohttp = mockHttp
 ##################################################################
+
+class Tests_content(unittest.TestCase):
+
+    def test_content(self):
+        x=reqman.Content("ooo")
+        self.assertEqual( str(x), "ooo" )
+        self.assertTrue( "o" in x )
+        self.assertEqual( x.toBinary(), b"ooo" )
+        self.assertTrue( "o" in x )
+
+        x=reqman.Content(b"ooo")
+        self.assertEqual( str(x), "ooo" )
+        self.assertTrue( "o" in x )
+        self.assertEqual( x.toBinary(), b"ooo" )
+        self.assertTrue( "o" in x )
+
+        x=reqman.Content("oéo")
+        self.assertEqual( str(x), "oéo" )
+        self.assertTrue( "é" in x )
+        self.assertEqual( x.toBinary(), bytes("oéo","utf8") )
+        self.assertTrue( "é" in x )
+
+        x=reqman.Content( BINARY )
+        self.assertTrue( "BINARY SIZE" in x )
+        self.assertEqual( x.toBinary(), BINARY )
+
+    def test_content_encoded(self):
+        b=bytes("oéo","utf8")
+        x=reqman.Content( b )
+        self.assertEqual( x.toBinary(), b )
+        self.assertEqual( str(x), "oéo" )
+        self.assertTrue( "é" in x )
+
+        b=bytes("oéo","cp1252")
+        x=reqman.Content( b )
+        self.assertEqual( x.toBinary(), b )
+        self.assertEqual( str(x), "oéo" )
+        self.assertTrue( "é" in x )
+
+
 
 class Tests_jpath(unittest.TestCase):
 
@@ -256,9 +296,9 @@ class Tests_transform(unittest.TestCase):
     def test_b_aba(self):
         env={
             "var": "hello",
-            "trans": "return x and x.encode('rot13')",
+            "trans": "return x and x*2",
         }
-        self.assertEqual( reqman.transform("xxx",env,"trans"), "kkk" )
+        self.assertEqual( reqman.transform("xxx",env,"trans"), "xxxxxx" )
         self.assertEqual( reqman.transform(None,env,"trans"), None )
         self.assertRaises(reqman.RMException, lambda: reqman.transform("xxx",env,"trans2") )
         self.assertRaises(reqman.RMException, lambda: reqman.transform(None,env,"trans2") )
@@ -294,29 +334,31 @@ class Tests_getVar(unittest.TestCase):
     def test_baba_trans(self):
         env={
             "var": "hello",
-            "trans": "return x.encode('rot13')",
+            "trans": "return x*2",
         }
         self.assertEqual( reqman.getVar(env,"var"), "hello" )
-        self.assertEqual( reqman.getVar(env,"var|trans"), "uryyb" )
+        self.assertEqual( reqman.getVar(env,"var|trans"), "hellohello" )
         self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"var|unknown") )
 
 class Tests_CookieStore(unittest.TestCase):
+
     def test(self):
-        import Cookie
+        import http.cookies
         CJ=reqman.CookieStore()
 
         #------------------------------------------------------ create a cookie using "Cookie"
-        c = Cookie.SimpleCookie()
+        c = http.cookies.SimpleCookie()
         c["cidf"]="malz"
         c["cidf"]["path"]="/yo"
 
         c["cidf2"]="malz2"
         headers=[ ("user-Agent","yo"),("content-type","text/html") ]
-        for k,v in c.iteritems():
+        for k,v in c.items():
             headers.append(tuple(v.output().split(": ",1)))
         #------------------------------------------------------
 
         CJ.saveCookie(headers,'http://localhost')
+
         self.assertEqual( CJ.getCookieHeaderForUrl('http://localhost/yo') , {'Cookie': 'cidf=malz; cidf2=malz2'} )
         self.assertEqual( CJ.getCookieHeaderForUrl('http://localhost/') , {'Cookie': 'cidf2=malz2'} )
         self.assertEqual( CJ.getCookieHeaderForUrl('http://mama.com/') , {} )
@@ -707,17 +749,17 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( len(l), 1)
 
     def test_encoding_yml(self):
-        f=StringIO(u"GET: https://github.com/\nbody: héhé")
+        f=StringIO("GET: https://github.com/\nbody: héhé")
         l=reqman.Reqs(f)
-        self.assertEqual( type(l[0].body),unicode)
+        self.assertEqual( type(l[0].body),str)
 
-        f=StringIO(u"GET: https://github.com/\nbody: héhé".encode("utf8"))
+        f= BytesIO( u"GET: https://github.com/\nbody: héhé".encode("utf-8") )
         l=reqman.Reqs(f)
-        self.assertEqual( type(l[0].body),unicode)
+        self.assertEqual( type(l[0].body),str)
 
-        f=StringIO(u"GET: https://github.com/\nbody: héhé".encode("cp1252"))
+        f=BytesIO( u"GET: https://github.com/\nbody: héhé".encode("cp1252") )
         l=reqman.Reqs(f)
-        self.assertEqual( type(l[0].body),unicode)
+        self.assertEqual( type(l[0].body),str)
 
 
     def test_yml(self):
@@ -959,7 +1001,6 @@ class Tests_Reqs(unittest.TestCase):
         )
 
         s=get.test(env)
-        self.assertTrue( "-->" in str(s))   #TODO: not super ;-)
         self.assertEqual( s.req.host, "github.com")
         self.assertEqual( s.req.protocol, "https")
         self.assertEqual( s.req.port, 443)
@@ -973,7 +1014,7 @@ class Tests_Reqs(unittest.TestCase):
         y="""
 - GET: /test_json
   tests:
-    - content-type:         application/json
+    - CoNtEnt-tYpE:         application/json
     - json.mylist.0:        aaa
     - json.mylist.1:        42
     - json.mylist.2.name:   john
@@ -1009,6 +1050,27 @@ class Tests_Reqs(unittest.TestCase):
 
         s=l[0].test( dict(root="https://github.com:443/"))
         self.assertTrue( all(s) )
+
+    def test_yml_tests_list_substitutes(self):
+
+        s="""
+- GET: /test_json
+  tests:
+    - content-type:
+        - <<p1>>
+        - "{{p2}}"
+    - content: <<p1>>
+  params:
+    p1: application
+    p2: json
+    p3: john
+"""
+        l=reqman.Reqs(StringIO(s))
+        self.assertTrue( {'content': '<<p1>>'} in l[0].tests )
+        self.assertTrue( {'content-type': ['<<p1>>', '{{p2}}']} in l[0].tests, )
+
+        t=l[0].test( dict(root="https://github.com:443/"))
+        self.assertTrue( all(s) ) # ensure all tests are substitued (and match results)
 
 class Tests_Conf(unittest.TestCase):
 
@@ -1130,7 +1192,7 @@ class Tests_env_save(unittest.TestCase):
         env={}
         l[0].test(env)
 
-        self.assertEqual( env, {'newVar': u'the content'} )
+        self.assertEqual( env, {'newVar': 'the content'} )
 
     def test_create_json_var(self):
         f=StringIO("""
@@ -1152,9 +1214,9 @@ class Tests_env_save(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={"newVar":"old value"}
-        self.assertEqual( env, {'newVar': u'old value'} )
+        self.assertEqual( env, {'newVar': 'old value'} )
         l[0].test(env)
-        self.assertEqual( env, {'newVar': u'the content'} )
+        self.assertEqual( env, {'newVar': 'the content'} )
 
     def test_reuse_var_created(self):
         f=StringIO("""
@@ -1187,7 +1249,7 @@ class Tests_env_save(unittest.TestCase):
 
         env={}
         l[0].test(env)
-        self.assertEqual( env, {'var': u'the content'} )
+        self.assertEqual( env, {'var': 'the content'} )
 
         self.assertRaises(reqman.RMException, lambda: l[1].test(env))
 
@@ -1209,15 +1271,15 @@ class Tests_env_save(unittest.TestCase):
 
 
 
-    #~ def test_save_var_to_file_denied(self):  # Works on Windows ;-(
-        #~ f=StringIO("""
-#~ - GET: http://supersite.fr/rien
-  #~ save: file:///at_root
-#~ """)
-        #~ l=reqman.Reqs(f)
+    def test_save_var_to_file_denied(self):  # Works on Windows ;-(
+        f=StringIO("""
+- GET: http://supersite.fr/rien
+  save: file:///nimp/nawak/unknown/path/to/nowhere
+""")
+        l=reqman.Reqs(f)
 
-        #~ env={}
-        #~ self.assertRaises(reqman.RMException, lambda: l[0].test(env))
+        env={}
+        self.assertRaises(reqman.RMException, lambda: l[0].test(env))
 
 
     def test_save_var_to_file_txt(self):
@@ -1231,7 +1293,11 @@ class Tests_env_save(unittest.TestCase):
         self.assertFalse( os.path.isfile("aeff.txt") )
         l[0].test(env)
         self.assertTrue( os.path.isfile("aeff.txt") )
-        self.assertEqual( file("aeff.txt").read(), "the content" )
+
+        with open("aeff.txt") as fid:
+            content=fid.read()
+
+        self.assertEqual( content, "the content" )
 
     def test_save_var_to_file_bin(self):
         f=StringIO("""
@@ -1244,7 +1310,10 @@ class Tests_env_save(unittest.TestCase):
         self.assertFalse( os.path.isfile("aeff.txt") )
         l[0].test(env)
         self.assertTrue( os.path.isfile("aeff.txt") )
-        self.assertEqual( open("aeff.txt","rb").read(), BINARY )
+
+        with open("aeff.txt","rb") as fid:
+            content=fid.read()
+        self.assertEqual( content, BINARY )
 
     def test_save_var_to_multiple(self):
         f=StringIO("""
@@ -1854,7 +1923,7 @@ class Tests_TRANSFORM(unittest.TestCase):
     def test_trans_var(self):
         env=dict(
             root="https://github.com/",
-            trans="return x.encode('rot13')",
+            trans="return x*2",
         )
 
         y="""
@@ -1867,12 +1936,12 @@ class Tests_TRANSFORM(unittest.TestCase):
         r=l[0]
         self.assertEqual(r.body,"{{var|trans}}")
         s=r.test(env)
-        self.assertEqual(s.req.body,"uryyb")
+        self.assertEqual(s.req.body,"hellohello")
 
     def test_trans_chainable(self):
         env=dict(
             root="https://github.com/",
-            trans="return x.encode('rot13')",
+            trans="return x*2",
         )
 
         y="""
@@ -1885,7 +1954,7 @@ class Tests_TRANSFORM(unittest.TestCase):
         r=l[0]
         self.assertEqual(r.body,"{{var|trans|trans}}")
         s=r.test(env)
-        self.assertEqual(s.req.body,"hello")
+        self.assertEqual(s.req.body,"hellohellohellohello")
 
 
     def test_call_without_param(self):     # NEW
@@ -1937,12 +2006,12 @@ class Tests_resolver_with_rc(unittest.TestCase):
     def test_rc(self):
         rc,ll = reqman.resolver(["jo/f1.yml"])
         self.assertTrue( "reqman.conf" in rc )
-        self.assertEquals( len(ll),1 )
+        self.assertEqual( len(ll),1 )
 
     def test_rc2(self):
         rc,ll = reqman.resolver(["jack/f1.yml"])
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
-        self.assertEquals( len(ll),1 )
+        self.assertEqual( len(ll),1 )
 
 class Tests_resolver_without_rc(unittest.TestCase):
 
@@ -1963,27 +2032,30 @@ class Tests_resolver_without_rc(unittest.TestCase):
     def test_rc(self):
         rc,ll = reqman.resolver(["jo/f1.yml"])
         self.assertTrue( rc is None )   # no reqman.conf at root !
-        self.assertEquals( len(ll),1 )
+        self.assertEqual( len(ll),1 )
 
     def test_rc2(self):
         rc,ll = reqman.resolver(["jack/f1.yml"])
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
-        self.assertEquals( len(ll),1 )
+        self.assertEqual( len(ll),1 )
 
     def test_rc3(self):
         rc,ll = reqman.resolver(["jo/f1.yml","jack/f1.yml"])
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
-        self.assertEquals( len(ll),2 )
-        self.assertEquals( ll,['jack/f1.yml', 'jo/f1.yml'] )    # sorted
+        self.assertEqual( len(ll),2 )
+        self.assertEqual( ll,['jack/f1.yml', 'jo/f1.yml'] )    # sorted
 
     #~ @only
     def test_rml(self):
         rc,ll = reqman.resolver(["jim/f1.rml"])
         self.assertTrue( "jim/reqman.conf" in fwp(rc) )
-        self.assertEquals( len(ll),1 )
+        self.assertEqual( len(ll),1 )
 
+#region
 
 class Tests_play(unittest.TestCase):
+
+#endregion
 
     def test_call_proc_from_rc(self):
 
@@ -2027,7 +2099,7 @@ BEGIN:
 if __name__ == '__main__':
 
     if ONLYs:
-        print "*** WARNING *** skip some tests !"
+        print("*** WARNING *** skip some tests !")
         def load_tests(loader, tests, pattern):
             suite = unittest.TestSuite()
             for c in tests._tests:

@@ -1,5 +1,5 @@
 - POST: /
-  body: "{{var|rot13}}"   # "Hello world" is computed in the method "rot13" declared in reqman.conf
+  body: "{{var|double}}"   # "Hello world" is computed in the method "rot13" declared in reqman.conf
   params:
     var: Hello world
   tests:

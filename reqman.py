@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # #############################################################################
 #    Copyright (C) 2018 manatlan manatlan[at]gmail(dot)com
@@ -15,7 +15,28 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 import yaml         # see "pip install pyaml"
-import os,json,sys,httplib,urllib,ssl,sys,urlparse,glob,cgi,socket,re,copy,collections,xml.dom.minidom,Cookie,cookielib,urllib2,mimetools,StringIO,datetime
+import encodings
+import os
+import json
+import string
+import sys
+import ssl
+import glob
+import cgi
+import socket
+import re
+import copy
+import collections
+import io
+import datetime
+import email
+import xml.dom.minidom
+import http.cookies
+import http.cookiejar
+import http.client
+import urllib.request
+import urllib.parse
+import urllib.error
 
 class NotFound: pass
 class RMException(Exception):pass
@@ -35,23 +56,20 @@ try: # colorama is optionnal
 except:
     cy=cr=cg=cb=cw=lambda t: t
 
-def u(txt):
-    """ decode txt to unicode """
-    if txt and isinstance(txt,basestring):
-        if type(txt) != unicode:
-            try:
-                return txt.decode("utf8")
-            except:
-                try:
-                    return txt.decode("cp1252")
-                except:
-                    return unicode(txt)
-    return txt
+
+def yamlLoad(fd):    # fd is an io thing
+    b=fd.read()
+    if type(b)==bytes:
+        try:
+            b=str(b,"utf8")
+        except:
+            b=str(b,"cp1252")
+    return yaml.load( b )
 
 
 def dict_merge(dct, merge_dct):
     """ merge 'merge_dct' in --> dct """
-    for k, v in merge_dct.iteritems():
+    for k, v in merge_dct.items():
         if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], collections.Mapping)):
             dict_merge(dct[k], merge_dct[k])
         else:
@@ -84,7 +102,7 @@ def jpath(elem, path):
                     elem= elem[ int(i) ]
             elif type(elem)==dict:
                 if i=="size":
-                    return len(elem.keys())
+                    return len(list(elem.keys()))
                 else:
                     elem= elem.get(i,NotFound)
         except (ValueError,IndexError) as e:
@@ -97,20 +115,27 @@ def jpath(elem, path):
 ## http request/response
 ###########################################################################
 
-class CookieStore(cookielib.CookieJar):
+class CookieStore(http.cookiejar.CookieJar):
     """ Manage cookiejar for httplib-like """
     def saveCookie(self,headers,url):
-        if type(headers)==dict: headers=headers.items()
+        if type(headers)==dict: headers=list(headers.items())
+
         class FakeResponse:
-            def __init__(self, headers=[]):
-                """headers: list of RFC822-style 'Key: value' strings"""
-                self._headers = mimetools.Message(StringIO.StringIO("\n".join(headers)))
+            def __init__(self, headers=[], url=None):
+                """
+                headers: list of RFC822-style 'Key: value' strings
+                """
+                m = email.message_from_string( "\n".join(headers) )
+                self._headers = m
+                self._url = url
             def info(self): return self._headers
-        response = FakeResponse( [ ": ".join([k,v]) for k,v in headers] )
-        self.extract_cookies(response, urllib2.Request(url) )
+
+
+        response = FakeResponse( [ ": ".join([k,v]) for k,v in headers], url )
+        self.extract_cookies(response, urllib.request.Request(url) )
 
     def getCookieHeaderForUrl(self,url):
-        r=urllib2.Request(url)
+        r=urllib.request.Request(url)
         self.add_cookie_header(r)
         return dict(r.header_items())
 
@@ -127,32 +152,42 @@ class Request:
         self.body=body
         self.headers={}
 
-        self.url="%s://%s%s" % (
-            self.protocol,
-            (self.host or "")+(":%s"%self.port if self.port else ""),
-            self.path
-        )
+        if self.protocol:
+            self.url="%s://%s%s" % (
+                self.protocol,
+                (self.host or "")+(":%s"%self.port if self.port else ""),
+                self.path
+            )
 
-        self.headers = COOKIEJAR.getCookieHeaderForUrl( self.url )
+            self.headers = COOKIEJAR.getCookieHeaderForUrl( self.url )
+        else:
+            self.url=None
 
         self.headers.update(headers)
-
 
     def __repr__(self):
         return cy(self.method)+" "+self.path
 
 class Content:
     def __init__(self,content):
-        self.__content=content
-    def __unicode__(self):
-        try:
-            return u(self.__content)
-        except:
-            return "*** BINARY SIZE(%s) ***" % len(self.__content) #TODO: not great for non-response body
+        self.__b=content if type(content)==bytes else bytes( content,"utf8" )
+
     def toBinary(self):
-        return self.__content
+        return self.__b
+
+    def __repr__(self):
+        try:
+            return str(self.__b,"utf8") # try as utf8 ...
+        except:
+            try:
+                return str(self.__b,"cp1252")  # try as cp1252 ...
+            except:
+                # fallback to a *** binary representation ***
+                return "*** BINARY SIZE(%s) ***" % len(self.__b)
+
     def __contains__(self, key):
-        return key in self.__unicode__()
+        return key in str(self)
+
 
 class Response:
     def __init__(self,status,body,headers,url):
@@ -160,7 +195,6 @@ class Response:
         self.content = Content(body)
         self.headers = dict(headers)    # /!\ cast list of 2-tuple to dict ;-(
                                         # eg: if multiple "set-cookie" -> only the last is kept
-
         COOKIEJAR.saveCookie( headers, url )
 
     def __repr__(self):
@@ -175,12 +209,12 @@ class ResponseError:
         return "ERROR: %s" % (self.content)
 
 
-def http(r):
+def dohttp(r):
     try:
         if r.protocol and r.protocol.lower()=="https":
-            cnx=httplib.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
+            cnx=http.client.HTTPSConnection(r.host,r.port,context=ssl._create_unverified_context()) #TODO: ability to setup a verified ssl context ?
         else:
-            cnx=httplib.HTTPConnection(r.host,r.port)
+            cnx=http.client.HTTPConnection(r.host,r.port)
         enc=lambda x: x.replace(" ","%20")
         cnx.request(r.method,enc(r.path),r.body,r.headers)
         rr=cnx.getresponse()
@@ -191,7 +225,7 @@ def http(r):
     except socket.error:
         #raise RMException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
         return ResponseError("Server is down ?!")
-    except httplib.BadStatusLine:
+    except http.client.BadStatusLine:
         #A subclass of HTTPException. Raised if a server responds with a HTTP status code that we don’t understand.
         #Presumably, the server closed the connection before sending a valid response.
         # raise RMException("Server closed the connection (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
@@ -217,27 +251,31 @@ class TestResult(list):
     def __init__(self,req,res,tests):
         self.req=req
         self.res=res
+
+        insensitiveHeaders= {k.lower():v for k,v in self.res.headers.items()} if self.res else {}
+
         results=[]
         for test in tests:
-            what,value = test.keys()[0],test.values()[0]
+            what,value = list(test.keys())[0],list(test.values())[0]
 
             #------------- find the cmp method
-            if what=="content":     cmp = lambda x: x in unicode(self.res.content)
+            if what=="content":     cmp = lambda x: x in str(self.res.content)
             elif what=="status":    cmp = lambda x: int(x)==(self.res.status and int(self.res.status))
             elif what.startswith("json."):
                 try:
-                    jzon=json.loads( unicode(self.res.content) )
+                    jzon=json.loads( str(self.res.content) )
                     v=jpath(jzon,what[5:])
                     v=None if v == NotFound else v
 
                     cmp = lambda x: x == v
                 except:
                     cmp = lambda x: False
-            else: cmp = lambda x: x in self.res.headers.get(what,"")    #TODO: test if header is just present
+            else:
+                cmp = lambda x: x in insensitiveHeaders.get(what.lower(),"")    #TODO: test if header is just present
             #-------------
 
             if type(value)==list:
-                val = " ,".join( [unicode(i) for i in value] )
+                val = " ,".join( [str(i) for i in value] )
                 testname = "%s in [%s]" % (what,val)
                 testnameKO = "%s not in [%s]" % (what,val)
                 result = any( [cmp(i) for i in value] )
@@ -251,13 +289,13 @@ class TestResult(list):
 
         list.__init__(self,results)
 
-    def __str__(self):
+    def __repr__(self):
         ll=[""]
-        ll.append( cy("*")+u" %s --> %s" % (self.req,cw(str(self.res)) if self.res else cr(u"Not callable") ))
+        ll.append( cy("*")+" %s --> %s" % (self.req,cw(str(self.res)) if self.res else cr("Not callable") ))
         for t in self:
-            ll.append( u"  - %s: %s" % ( cg("OK") if t==1 else cr("KO"),t.name ) )
-        txt = os.linesep.join(ll)
-        return txt.encode( sys.stdout.encoding if sys.stdout.encoding else "utf8")
+            ll.append( "  - %s: %s" % ( cg("OK") if t==1 else cr("KO"),t.name ) )
+        txt = "\n".join(ll)
+        return txt
 
 def getVar(env,var):
     if var in env:
@@ -275,10 +313,10 @@ def getVar(env,var):
     elif "." in var:
         val=jpath(env,var)
         if val is NotFound:
-            raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
+            raise RMException("Can't resolve "+var+" in : "+ ", ".join(list(env.keys())))
         return txtReplace(env,val)
     else:
-        raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
+        raise RMException("Can't resolve "+var+" in : "+ ", ".join(list(env.keys())))
 
 
 
@@ -287,7 +325,7 @@ def transform(content,env,methodName):
         if methodName in env:
             code=getVar(env,methodName)
             try:
-                exec "def DYNAMIC(x,ENV):\n" + ("\n".join(["  "+i for i in code.splitlines()])) in globals()
+                exec("def DYNAMIC(x,ENV):\n" + ("\n".join(["  "+i for i in code.splitlines()])), globals())
             except Exception as e:
                 raise RMException("Error in declaration of method "+methodName+" : "+str(e))
             try:
@@ -305,7 +343,7 @@ def transform(content,env,methodName):
                 if transform.path:
                     os.chdir(curdir)
         else:
-            raise RMException("Can't find method "+methodName+" in : "+ ", ".join(env.keys()))
+            raise RMException("Can't find method "+methodName+" in : "+ ", ".join(list(env.keys())))
 
     return content
 
@@ -321,7 +359,7 @@ def objReplace(env,txt): # same as txtReplace() but for "object" (json'able)
     return obj
 
 def txtReplace(env,txt):
-    if env and txt and isinstance(txt,basestring):
+    if env and txt and isinstance(txt,str):
         for vvar in re.findall("\{\{[^\}]+\}\}",txt)+re.findall("<<[^>]+>>",txt):
             var=vvar[2:-2]
 
@@ -331,21 +369,21 @@ def txtReplace(env,txt):
                 raise RMException("Recursion trouble for '%s'" % var)
 
             if val is NotFound:
-                raise RMException("Can't resolve "+var+" in : "+ ", ".join(env.keys()))
+                raise RMException("Can't resolve "+var+" in : "+ ", ".join(list(env.keys())))
             else:
-                if val is None:
-                    val=""
-                elif val is True:
-                    val="true"
-                elif val is False:
-                    val="false"
-                elif isinstance(val,basestring):
-                    if type(val)==unicode: val=val.encode("utf8")   #TODO: do better here
-                elif type(val) in [list,dict]:
-                    val=json.dumps(val)
-                else: #int, float, ...
-                    val=json.dumps(val)
+                if type(val) != str:
+                    if val is None:
+                        val=""
+                    elif val is True:
+                        val="true"
+                    elif val is False:
+                        val="false"
+                    elif type(val) in [list,dict]:
+                        val=json.dumps(val)
+                    else: #int, float, ...
+                        val=json.dumps(val)
 
+                #~ txt=txt.replace( vvar , str(val, "utf-8") if type(val)!=str else val )
                 txt=txt.replace( vvar , val )
 
     return txt
@@ -369,7 +407,7 @@ class Req(object):
         # path ...
         path = txtReplace(cenv,self.path)
         if cenv and (not path.strip().lower().startswith("http")) and ("root" in cenv):
-            h=urlparse.urlparse( cenv["root"] )
+            h=urllib.parse.urlparse( cenv["root"] )
             if h.path and h.path[-1]=="/":
                 if path[0]=="/":
                     path=h.path + path[1:]
@@ -378,7 +416,7 @@ class Req(object):
             else:
                 path=h.path + path
         else:
-            h=urlparse.urlparse( path )
+            h=urllib.parse.urlparse( path )
             path = h.path + ("?"+h.query if h.query else "")
 
         # headers ...
@@ -388,10 +426,10 @@ class Req(object):
         except ValueError:
             raise RMException("'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')")
 
-        headers={ k:txtReplace(cenv,v) for k,v in headers.items() if v is not None}
+        headers={ k:txtReplace(cenv,v) for k,v in list(headers.items()) if v is not None}
 
         # body ...
-        if self.body and not isinstance(self.body,basestring):
+        if self.body and not isinstance(self.body,str):
 
             def jrep(x): # "json rep"
                 return objReplace(cenv,x)
@@ -406,7 +444,7 @@ class Req(object):
                     return method(body)
             #================================
 
-            body=apply(self.body, jrep )
+            body=apply( self.body, jrep )
             body=json.dumps( body ) # and convert to string !
         else:
             body=txtReplace(cenv,self.body)
@@ -418,7 +456,15 @@ class Req(object):
             tests+=self.tests                               # override with self tests
 
             try:
-                tests=[{test.keys()[0]:txtReplace(cenv,test.values()[0])} for test in tests]    # replace vars
+                ntests=[]
+                for test in tests:
+                    key,val = list(test.keys())[0],list(test.values())[0]
+                    if type(val)==list:
+                        val=[txtReplace(cenv,i) for i in val]
+                    else:
+                        val=txtReplace(cenv,val)
+                    ntests.append( {key: val } )
+                tests=ntests
             except AttributeError:
                 raise RMException("'tests:' should be a list of mono key/value pairs (ex: '- status: 200')")
 
@@ -429,11 +475,11 @@ class Req(object):
                 socket.setdefaulttimeout( None )
 
             t1=datetime.datetime.now()
-            res=http( req )
+            res=dohttp( req )
             res.time=datetime.datetime.now()-t1
             if isinstance(res,Response) and self.saves:
 
-                self.saves=self.saves if type(self.saves)==list else [self.saves] # ensure we've got a list                    
+                self.saves=self.saves if type(self.saves)==list else [self.saves] # ensure we've got a list
 
                 for save in self.saves:
                     dest=txtReplace(cenv,save)
@@ -447,11 +493,11 @@ class Req(object):
                     else:
                         if dest:
                             try:
-                                env[ dest ]=json.loads(unicode(res.content))
-                                cenv[ dest ]=json.loads(unicode(res.content))
+                                env[ dest ]=json.loads(str(res.content))
+                                cenv[ dest ]=json.loads(str(res.content))
                             except:
-                                env[ dest ]=unicode(res.content)
-                                cenv[ dest ]=unicode(res.content)
+                                env[ dest ]=str(res.content)
+                                cenv[ dest ]=str(res.content)
 
             return TestResult(req,res,tests)
         else:
@@ -467,7 +513,7 @@ class Reqs(list):
         self.name = fd.name.replace("\\","/") if hasattr(fd,"name") else "String"
         if not hasattr(fd,"name"): setattr(fd,"name","<string>")
         try:
-            l=yaml.load( u(fd.read()) )
+            l=yamlLoad(fd)
         except Exception as e:
             raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
 
@@ -486,7 +532,7 @@ class Reqs(list):
                     dict_merge(env,self.env)
                     dict_merge(env,d.get("params",{}))  # add current params (to find proc)
 
-                    if "call" in d.keys():
+                    if "call" in list(d.keys()):
                         callContent=objReplace(env,d["call"])
 
                         callnames = callContent if type(callContent)==list else [ callContent ]   # make a list ;-)
@@ -501,7 +547,7 @@ class Reqs(list):
                                 ncommands=[]
                                 for command in commands:
                                     q = copy.deepcopy( command )
-                                    if KNOWNVERBS.intersection( q.keys() ) or "call" in q.keys():
+                                    if KNOWNVERBS.intersection( list(q.keys()) ) or "call" in list(q.keys()):
                                         # merge passed params with action only ! (avoid merging with proc declaration)
                                         dict_merge(q,d)
                                     ncommands.append( q )
@@ -511,8 +557,8 @@ class Reqs(list):
                             else:
                                 raise RMException("call a not defined procedure '%s' in '%s'" % (callname,fd.name))
                         continue
-                    elif len(d.keys())==1: # a declaration of a procedure ?
-                        callname=d.keys()[0]
+                    elif len(list(d.keys()))==1: # a declaration of a procedure ?
+                        callname=list(d.keys())[0]
                         if type(d[callname]) in [dict,list]:    # dict is one call, list is a list of dict (multiple calls) -> so it's a procedure
                             procedures[callname] = d[callname]        # save it
                             continue  # just declare and nothing yet
@@ -520,12 +566,12 @@ class Reqs(list):
                             # it's, perhaps, a single command (ex: "- GET: /")
                             pass
 
-                    verbs=list(KNOWNVERBS.intersection( d.keys() ))
+                    verbs=list(KNOWNVERBS.intersection( list(d.keys()) ))
                     if verbs:
                         verb=verbs[0]
                         ll.append( Req(verb,d[verb],d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",[]),d.get("params",{})) )
                     else:
-                        raise RMException("Unknown verbs (%s) in '%s'" % (d.keys(),fd.name))
+                        raise RMException("Unknown verbs (%s) in '%s'" % (list(d.keys()),fd.name))
 
             return ll
 
@@ -549,9 +595,9 @@ def loadEnv( fd, varenvs=[] ):
     if fd:
         if not hasattr(fd,"name"): setattr(fd,"name","")
         try:
-            env=yaml.load( u(fd.read()) ) if fd else {}
+            env=yamlLoad( fd ) if fd else {}
             if fd.name:
-                print cw("Use '%s'" % fd.name)
+                print(cw("Use '%s'" % fd.name))
                 transform.path = os.path.dirname(fd.name) # change path when executing transform methods, according the path of reqman.conf
         except Exception as e:
             raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
@@ -568,7 +614,7 @@ def loadEnv( fd, varenvs=[] ):
 
 class HtmlRender(list):
     def __init__(self):
-        list.__init__(self,[u"""
+        list.__init__(self,["""
 <meta charset="utf-8">
 <style>
 body {font-family: sans-serif;font-size:90%}
@@ -594,13 +640,13 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
 
     def add(self,html=None,tr=None):
         if tr is not None and tr.req and tr.res:
-            html =u"""
+            html ="""
 <li class="hide">
     <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b> <i>%s</i></span>
     <ul>
         <span>
             <pre title="the request">%s %s<hr/>%s<hr/>%s</pre>
-            -
+            -> %s
             <pre title="the response">%s<hr/>%s</pre>
         </span>
         %s
@@ -614,18 +660,20 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
 
                 tr.req.method,
                 tr.req.url,
-                u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.req.headers.items()]),
-                cgi.escape( prettify( u(tr.req.body or "")) ),
+                "\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.req.headers.items())]),
+                cgi.escape( prettify( str(tr.req.body) or "") ),
 
-                u"\n".join([u"<b>%s</b>: %s" %(k,v) for k,v in tr.res.headers.items()]),
-                cgi.escape( prettify( u(unicode(tr.res.content) or "")) ),
+                tr.res.status or "",
 
-                u"".join([u"<li class='%s'>%s</li>" % (t and u"ok" or u"ko",cgi.escape(t.name)) for t in tr ]),
+                "\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.res.headers.items())]),
+                cgi.escape( prettify( str(tr.res.content) or "") ),
+
+                "".join(["<li class='%s'>%s</li>" % (t and "ok" or "ko",cgi.escape(t.name)) for t in tr ]),
                 )
         if html: self.append( html )
 
     def save(self,name):
-        open(name,"w+").write( os.linesep.join(self).encode("utf8") )
+        open(name,"w+").write( os.linesep.join(self) )
 
 def resolver(params):
     """ return tuple (reqman.conf,ymls) finded with params """
@@ -672,12 +720,12 @@ def resolver(params):
 
 def makeReqs(reqs,env):
     if env and ("BEGIN" in env):
-        r=StringIO.StringIO("call: BEGIN")
+        r=io.StringIO("call: BEGIN")
         r.name="BEGIN (reqman.conf)"
         reqs = [ Reqs(r,env) ] + reqs
 
     if env and ("END" in env):
-        r=StringIO.StringIO("call: END")
+        r=io.StringIO("call: END")
         r.name="END (reqman.conf)"
         reqs = reqs + [ Reqs(r,env) ]
 
@@ -694,30 +742,30 @@ def main(params):
         rc,ymls=resolver(params)
 
         # load env !
-        env=loadEnv( file(rc) if rc else None, varenvs )
+        env=loadEnv( open(rc,"r") if rc else None, varenvs )
 
         fn="reqman.html"
 
 
-        reqs=makeReqs([Reqs(file(i),env) for i in ymls],env)
+        reqs=makeReqs([Reqs(open(i,"r"),env) for i in ymls],env)
 
         if reqs:
             # and make tests
             all=[]
             hr=HtmlRender()
             for f in reqs:
-                print
-                print "TESTS:",cb(f.name)
+                print()
+                print("TESTS:",cb(f.name))
                 times=[]
                 trs=[]
                 for t in f:
                     tr=t.test( env ) #TODO: colorful output !
                     if tr.res: times.append( tr.res.time )
-                    print tr
+                    print( tr )
                     trs.append( tr)
                     all+=tr
                 # html rendering...
-                avg = sum(times,datetime.timedelta())/len(times)
+                avg = sum(times,datetime.timedelta())/len(times) if len(times) else 0
                 hr.add("<h3>%s</h3>"%f.name)
                 hr.add("<ol>")
                 hr.add( "<i style='float:inherit'>%s req(s) avg = %s</i>" % (len(times),avg) )
@@ -734,22 +782,22 @@ def main(params):
 
             hr.save( fn )
 
-            print
-            print "RESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total))
+            print()
+            print("RESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
             return total - ok
         else:
-            print "ERROR: No tests found !"
+            print("ERROR: No tests found !")
             return -1
 
     except RMException as e:
-        print
-        print "ERROR: %s" % e
+        print()
+        print("ERROR: %s" % e)
         return -1
     except KeyboardInterrupt as e:
-        print
-        print "ERROR: process interrupted"
+        print()
+        print("ERROR: process interrupted")
         return -1
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
-    #~ execfile("tests.py")
+    #~ exec(open("tests.py").read())
