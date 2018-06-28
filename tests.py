@@ -4,8 +4,13 @@ import unittest
 import reqman
 import json
 import os
+import re
 import socket
 from io import StringIO,BytesIO
+from contextlib import redirect_stdout
+import tempfile
+import shutil
+
 
 fwp = lambda x:x.replace("\\","/") # fake windows path
 
@@ -30,6 +35,8 @@ def mockHttp(q):
         return reqman.Response( 200, json.dumps(my), {"Content-Type":"application/json","server":"mock"}, q.url)
     elif q.path=="/test_error":
         return reqman.ResponseError( "My Error" )
+    elif q.path=="/test_500":
+        return reqman.Response( 500, "Server Error", {"Content-Type":"text/plain","server":"mock"}, q.url)
     else:
         return reqman.Response( 200, "the content", {"Content-Type":"text/plain","server":"mock"}, q.url)
 
@@ -908,7 +915,6 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( ex( l[0].test(env) ), ('https', 'github.com', '/explore') )
         self.assertEqual( ex( l[1].test(env) ), ('https', 'github.fr', '/explore') )
 
-
     def test_yml_http_error(self):  # bas status line / server down / timeout
 
         y="""
@@ -1049,7 +1055,7 @@ class Tests_Reqs(unittest.TestCase):
         l=reqman.Reqs(f)
 
         s=l[0].test( dict(root="https://github.com:443/"))
-        self.assertTrue( all(s) )  
+        self.assertTrue( all(s) )
 
     def test_yml_tests_list_substitutes(self):
 
@@ -1883,20 +1889,6 @@ class Tests_params_NEW(unittest.TestCase):
 
 
 
-# ~ class Tests_main(unittest.TestCase):# minimal test ;-( ... to increase % coverage
-
-#     ~ #TODO: test command line more !
-
-#     ~ def test_command_line_bad(self):
-#         ~ self.assertEqual(reqman.main(["unknown_param"]),-1)  # bad param
-#         ~ self.assertEqual(reqman.main(["examples","-unknown"]),-1)  # unknown switch
-#         ~ self.assertEqual(reqman.main(["examples/tests.yml","-unknown"]),-1)  # unknown switch
-#         ~ self.assertEqual(reqman.main(["tests.py"]),-1)  # not a yaml file
-
-#     ~ def test_command_line(self):
-#         ~ if os.path.isfile("reqman.html"): os.unlink("reqman.html")
-#         ~ self.assertEqual(reqman.main(["examples/tests.yml"]),3)  # 2 bad tests
-#         ~ self.assertTrue( os.path.isfile("reqman.html") )
 
 # ~ class Tests_real_http(unittest.TestCase):
 
@@ -1982,7 +1974,7 @@ class Tests_TRANSFORM(unittest.TestCase):
         self.assertEqual( s.req.path, "/42" )
 
 
-class Tests_resolver_with_rc(unittest.TestCase):
+class Tests_resolver_with_rc(unittest.TestCase):        # could be replaced with Tests_CommandLine
 
     def setUp(self):
         reqman.os.path.isfile = lambda x: reqman.os.path.realpath(x) in [reqman.os.path.realpath(i) for i in [
@@ -2013,7 +2005,7 @@ class Tests_resolver_with_rc(unittest.TestCase):
         self.assertTrue( "jack/reqman.conf" in fwp(rc) )
         self.assertEqual( len(ll),1 )
 
-class Tests_resolver_without_rc(unittest.TestCase):
+class Tests_resolver_without_rc(unittest.TestCase): # could be replaced with Tests_CommandLine
 
     def setUp(self):
         reqman.os.path.isfile = lambda x: reqman.os.path.realpath(x) in [reqman.os.path.realpath(i) for i in [
@@ -2051,11 +2043,8 @@ class Tests_resolver_without_rc(unittest.TestCase):
         self.assertTrue( "jim/reqman.conf" in fwp(rc) )
         self.assertEqual( len(ll),1 )
 
-#region
 
 class Tests_play(unittest.TestCase):
-
-#endregion
 
     def test_call_proc_from_rc(self):
 
@@ -2096,6 +2085,308 @@ BEGIN:
         ll=reqman.makeReqs([rs],env)
         self.assertEqual( len(ll), 2)
 
+
+
+###########################################################################
+class Tests_CommandLine(unittest.TestCase):
+###########################################################################
+
+    def reqman(self,*args):
+        f = StringIO()
+        with redirect_stdout(f):
+            ret=reqman.main( list(args) )
+        return ret,f.getvalue()
+
+    def setUp(self):
+        self.precdir = os.getcwd()
+        self.dtemp = tempfile.mkdtemp()
+        os.chdir( self.dtemp )
+
+    def tearDown(self):
+        os.chdir( self.precdir )
+        shutil.rmtree(self.dtemp)
+
+    def create(self,name,content):
+        """ create a file in the context dir (see setup/tearDown)"""
+        filename=os.path.join(self.dtemp,name)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, "w") as f:
+            f.write(content)
+        return filename
+
+    def test_command_line_bad(self):
+        r,o=self.reqman( "unknown_param" )
+        self.assertTrue( r==-1)
+        self.assertTrue( "ERROR: bad param" in o)
+
+        r,o=self.reqman( "examples","-unknown" )
+        self.assertTrue( r==-1)
+        self.assertTrue( "ERROR: bad param" in o)
+
+
+    def test_empty_call(self):
+        r,o=self.reqman()
+        self.assertEqual( r,-1 )
+        self.assertTrue( "USAGE" in o)
+        self.assertTrue( reqman.__version__ in o)
+
+    def test_no_scenars_ko(self):
+        f=self.create("sub/readme.txt","hello world")
+
+        r,o=self.reqman( "." )
+        self.assertEqual( r,-1 )
+
+        r,o=self.reqman( "sub" )
+        self.assertEqual( r,-1 )
+
+    def test_bad_yml_syntax(self):
+        self.create("scenar.yml","- gfsdgfd\njo:")
+
+        r,o=self.reqman( "." )
+
+        self.assertEqual( r,-1 )
+        self.assertTrue( "ERROR: YML syntax" in o)
+        self.assertFalse( os.path.isfile("reqman.html") )   # ret==-1 -> no html
+
+    def test_simplest_scenar_yml_scan(self):
+        self.create("scenar.yml","GET: http://myserver.com/")
+
+        r,o=self.reqman( "." )
+
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertTrue( "200" in o)                        # but callable, coz absolute path without reqman.conf
+        self.assertTrue( os.path.isfile("reqman.html") )    # a html is rendered
+
+    def test_simplest_scenar_rml_scan(self):
+        self.create("scenar.rml","GET: http://myserver.com/")
+
+        r,o=self.reqman( "." )
+
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertTrue( "200" in o)                        # but callable, coz absolute path without reqman.conf
+        self.assertTrue( os.path.isfile("reqman.html") )    # a html is rendered
+
+
+    def test_relative_path_without_rc(self):
+        self.create("scenar.yml","- GET: /xxxx")
+
+        r,o=self.reqman( "." )
+
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertTrue( "Not callable" in o)               # but not callable, coz relative path without reqman.conf
+        self.assertTrue( os.path.isfile("reqman.html") )    # a html is rendered
+
+    def test_absolute_path_without_rc(self):
+        self.create("scenar.yml","- GET: http://myserver.com/")
+
+        r,o=self.reqman( "." )
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertTrue( "200" in o)                        # but callable, coz absolute path without reqman.conf
+        self.assertTrue( os.path.isfile("reqman.html") )    # a html is rendered
+
+    def test_relative_path_with_rc(self):
+        self.create("scenar.yml","- GET: /xxxx")
+        self.create("reqman.conf","root: http://myserver.com")
+
+        r,o=self.reqman( "." )
+
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertTrue( "200" in o)                        # but callable, coz relative path with reqman.conf
+        self.assertTrue( os.path.isfile("reqman.html") )    # a html is rendered
+
+    def test_rc_at_root_and_sub_scenar(self):
+        self.create("sub/scenar.yml","- GET: /xxxx")
+        self.create("reqman.conf","root: http://myserver.com")
+
+        r,o=self.reqman( "sub" )
+        self.assertTrue( "Using 'reqman.conf'" in o)
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertTrue( "200" in o)                        # but callable, coz relative path with reqman.conf
+        self.assertTrue( os.path.isfile("reqman.html") )    # a html is rendered
+
+
+        r,o=self.reqman( "." )
+        self.assertTrue( "Using 'reqman.conf'" in o)
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertTrue( "200" in o)                        # but callable, coz relative path with reqman.conf
+        self.assertTrue( os.path.isfile("reqman.html") )    # a html is rendered
+
+    def test_scenar_in_hidden_sub1(self):
+        self.create("_sub/scenar.yml","- GET: /xxxx")
+        self.create("reqman.conf","root: http://myserver.com")
+
+        r,o=self.reqman( "." )
+        self.assertEqual( r,-1 )                #can't be scanned
+
+        r,o=self.reqman( "_sub/scenar.yml" )
+        self.assertTrue( "Using 'reqman.conf'" in o)
+        self.assertEqual( r,0 )                 # direct ok
+
+    def test_scenar_in_hidden_sub2(self):
+        self.create(".sub/scenar.yml","- GET: /xxxx")
+        self.create("reqman.conf","root: http://myserver.com")
+
+        r,o=self.reqman( "." )
+        self.assertEqual( r,-1 )                #can't be scanned
+
+        r,o=self.reqman( ".sub/scenar.yml" )
+        self.assertEqual( r,0 )                 # direct ok
+
+    def test_scenar_with_another_ext(self):
+        self.create("scenar.txt","- GET: /xxxx")
+        self.create("reqman.conf","root: http://myserver.com")
+
+        r,o=self.reqman( "." )
+        self.assertEqual( r,-1 )
+
+        r,o=self.reqman( "scenar.txt" )
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertTrue( "200" in o)                        # but callable, coz relative path with reqman.conf
+        self.assertTrue( os.path.isfile("reqman.html") )    # a html is rendered
+
+    def test_reqman_rendering_stdout_and_html(self):
+        self.create("scenar.rml","- GET: http://kif.nimp/\n"*3 + "- GET: http://error.com/test_500")
+        r,o=self.reqman( "." )
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertEqual( o.count("-->"),4 )                # 4 req
+
+        with open("reqman.html","r") as fid:
+            buf=fid.read()
+        self.assertEqual( buf.count("<b>GET</b>"), 4)
+        self.assertTrue( "<title>Result: 0/0</title>" in buf)
+
+        r,o=self.reqman( "--ko","." )
+        self.assertEqual( r,0 )                             # all is ok
+        self.assertEqual( o.count("-->"),0 )                # "not failed" so no displayed
+
+    def test_reqman_rendering_tests(self):
+        s="""
+- GET: http://kif.nimp/
+  tests:
+     - status: 200
+     - server: mock
+
+- GET: http://kif.nimp2/
+  tests:
+     - status: 222
+     - server: mock
+"""
+        self.create("scenar.rml",s)
+
+        r,o=self.reqman( "." )
+        self.assertEqual( r,1 )                             # 1 test failed !
+        self.assertEqual( o.count("-->"),2 )                # 2 reqs!
+        self.assertTrue("RESULT" in o)
+        self.assertTrue("3/4" in o)
+
+        r,o=self.reqman( ".","--ko" )
+        self.assertEqual( r,1 )                             # 1 test failed !
+        self.assertEqual( o.count("-->"),1 )                # 2 reqs, but one is displayed
+        self.assertTrue("RESULT" in o)
+        self.assertTrue("3/4" in o)
+
+
+    def test_reqman_USAGE_with_rc(self):
+        self.create("reqman.conf","""
+root: http://site1.com
+
+toto:
+    root: http://site2.com
+        """)
+        r,o=self.reqman()
+
+        self.assertTrue( "Using 'reqman.conf'" in o)
+        self.assertEqual( r,-1 )
+        self.assertTrue( "USAGE" in o)
+        self.assertTrue( reqman.__version__ in o)
+        self.assertTrue( "http://site1.com" in o)
+        self.assertTrue( "http://site2.com" in o)
+
+
+        # we make a subfolder "sub"
+        self.create("sub/readme.txt","hello world")
+
+
+        # try with sub folder
+        r,o=self.reqman("sub")
+
+        self.assertTrue( "Using 'reqman.conf'" in o)
+        self.assertEqual( r,-1 )
+        self.assertTrue( "USAGE" in o)
+        self.assertTrue( reqman.__version__ in o)
+        self.assertTrue( "http://site1.com" in o)
+        self.assertTrue( "http://site2.com" in o)
+
+
+        #go in "sub" dir
+        os.chdir("sub")
+
+        # without params
+        # reqman will search the rc in backyards
+        r,o=self.reqman()
+        self.assertTrue( re.search("Using '\.\..reqman\.conf'", o ) )
+        self.assertEqual( r,-1 )
+        self.assertTrue( "USAGE" in o)
+        self.assertTrue( reqman.__version__ in o)
+        self.assertTrue( "http://site1.com" in o)
+        self.assertTrue( "http://site2.com" in o)
+
+        # try with scan .
+        # reqman will search the rc in backyards
+        r,o=self.reqman(".")
+
+        self.assertTrue( re.search("Using '\.\..reqman\.conf'", o ) )
+        self.assertEqual( r,-1 )
+        self.assertTrue( "USAGE" in o)
+        self.assertTrue( reqman.__version__ in o)
+        self.assertTrue( "http://site1.com" in o)
+        self.assertTrue( "http://site2.com" in o)
+
+    def test_reqman_multiple_switch(self):
+        self.create("reqman.conf","""
+root: http://localhost
+
+folder: fo1
+file: fi1
+
+overfo:
+    folder: fo2
+    root: http://server
+
+overfi:
+    file: fi2
+        """)
+        self.create("scenar.rml","GET: /{{folder}}/{{file}}")
+
+        r,o=self.reqman(".")
+        self.assertTrue( "/fo1/fi1" in o)
+
+        r,o=self.reqman(".","-overfo")
+        self.assertTrue( "/fo2/fi1" in o)
+
+        r,o=self.reqman(".","-overfo","-overfi")
+        self.assertTrue( "/fo2/fi2" in o)
+
+        r,o=self.reqman()
+        self.assertTrue( "http://localhost" in o)   # root is displayed in usage
+        self.assertTrue( "overfo" in o)              # but root switch are here too
+        self.assertTrue( "overfi" not in o)          # but non-root switch not
+
+    # @only
+    def test_reqman_create(self):
+        r,o=self.reqman("new","https://jkif.com:80/action?state=a")
+        self.assertTrue( "Create reqman.conf" in o)
+        self.assertTrue( "Create 0010_test.rml" in o)
+
+        r,o=self.reqman("new","https://willBeLost:99/action?state=b")
+        self.assertTrue( "Create 0020_test.rml" in o)
+
+        r,o=self.reqman(".")
+        self.assertTrue( "./0010_test.rml" in o)
+        self.assertTrue( "./0020_test.rml" in o)
+        self.assertTrue( o.count("-->")==2)
+        self.assertTrue( "2/2" in o)
+        # print( open("reqman.html","r").read())
 if __name__ == '__main__':
 
     if ONLYs:

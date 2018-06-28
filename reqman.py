@@ -22,7 +22,7 @@ import string
 import sys
 import ssl
 import glob
-import cgi
+import html as cgi
 import socket
 import re
 import copy
@@ -40,6 +40,8 @@ import urllib.error
 
 class NotFound: pass
 class RMException(Exception):pass
+
+__version__="1.0.0 BETA"
 
 ###########################################################################
 ## Utilities
@@ -592,12 +594,13 @@ def listFiles(path,filters=(".yml",".rml") ):
 
 
 def loadEnv( fd, varenvs=[] ):
+    transform.path=None
     if fd:
         if not hasattr(fd,"name"): setattr(fd,"name","")
         try:
             env=yamlLoad( fd ) if fd else {}
             if fd.name:
-                print(cw("Use '%s'" % fd.name))
+                print(cw("Using '%s'" % os.path.relpath(fd.name)))
                 transform.path = os.path.dirname(fd.name) # change path when executing transform methods, according the path of reqman.conf
         except Exception as e:
             raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
@@ -673,13 +676,11 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
         if html: self.append( html )
 
     def save(self,name):
-        open(name,"w+").write( os.linesep.join(self) )
+        with open(name,"w+") as fid:
+            fid.write( os.linesep.join(self) )
 
 def resolver(params):
     """ return tuple (reqman.conf,ymls) finded with params """
-    # sort params as yml files
-    if not params: params=["."]
-
     ymls=[]
     paths=[]
 
@@ -693,7 +694,6 @@ def resolver(params):
         else:
             raise RMException("bad param: %s" % p) #TODO: better here
 
-
     # choose first reqman.conf under choosen files
     rc=None
     folders=list(set(paths))
@@ -703,7 +703,11 @@ def resolver(params):
             rc=os.path.join(f,"reqman.conf")
 
     #if not, take the first reqman.conf in backwards
-    if rc is None and folders:
+    if rc is None:
+
+        if not folders:
+            folders="."
+
         current = os.path.realpath(folders[0])
         while 1:
             rc=os.path.join( current,"reqman.conf" )
@@ -719,39 +723,95 @@ def resolver(params):
     return rc,ymls
 
 def makeReqs(reqs,env):
-    if env and ("BEGIN" in env):
-        r=io.StringIO("call: BEGIN")
-        r.name="BEGIN (reqman.conf)"
-        reqs = [ Reqs(r,env) ] + reqs
+    if reqs:
+        if env and ("BEGIN" in env):
+            r=io.StringIO("call: BEGIN")
+            r.name="BEGIN (reqman.conf)"
+            reqs = [ Reqs(r,env) ] + reqs
 
-    if env and ("END" in env):
-        r=io.StringIO("call: END")
-        r.name="END (reqman.conf)"
-        reqs = reqs + [ Reqs(r,env) ]
+        if env and ("END" in env):
+            r=io.StringIO("call: END")
+            r.name="END (reqman.conf)"
+            reqs = reqs + [ Reqs(r,env) ]
 
     return reqs
 
-def main(params):
+def create(url):
+    """ return a (reqman.conf, yml_file) based on the test 'url' """
+    hp=urllib.parse.urlparse( url )
+    if hp and hp.scheme and hp.hostname:
+        root="%s://%s" % (hp.scheme,hp.hostname) + (hp.port and ":%s"%hp.port or "")
+        rc=u"""
+root: %(root)s
+headers:
+    User-Agent: reqman (https://github.com/manatlan/reqman)
+""" % locals()
+    else:
+        root=""
+        rc=None
+
+    path= hp.path + ("?"+hp.query if hp.query else "")
+
+    yml=u"""
+# test created for "%(root)s%(path)s" !
+
+- GET: %(path)s
+  tests:
+    - status: 200
+""" % locals()
+    return rc,yml
+
+def main(params=[]):
     try:
+        if len(params)==2 and params[0].lower()=="new":
+            ## CREATE USAGE
+            rc,yml=create(params[1])
+            if rc:
+                if not os.path.isfile("reqman.conf"):
+                    print("Create","reqman.conf")
+                    with open("reqman.conf","w") as fid: fid.write(rc)
+
+            ff=glob.glob("*_test.rml")
+            yname = "%04d_test.rml" % ((len(ff)+1)*10)
+
+            print("Create",yname)
+            with open(yname,"w") as fid: fid.write(yml)
+
+            return 0
+
         # search for a specific env var (starting with "-")
-        varenvs=[]
-        for varenv in [i for i in params if i.startswith("-")]:
-            params.remove( varenv )
-            varenvs.append( varenv[1:] )
+        switchs=[]
+        for switch in [i for i in params if i.startswith("-")]:
+            params.remove( switch )
+            switchs.append( switch[1:] )
+
+        if "-ko" in switchs:
+            switchs.remove("-ko")
+            onlyFailedTests=True
+        else:
+            onlyFailedTests=False
 
         rc,ymls=resolver(params)
 
         # load env !
-        env=loadEnv( open(rc,"r") if rc else None, varenvs )
+        if rc:
+            with open(rc,"r") as fid:
+                env=loadEnv( fid, switchs )
+        else:
+            env=loadEnv( None, switchs )
 
         fn="reqman.html"
 
+        ll=[]
+        for i in ymls:
+            with open(i,"r") as fid:
+                ll.append( Reqs(fid,env) )
 
-        reqs=makeReqs([Reqs(open(i,"r"),env) for i in ymls],env)
+        reqs=makeReqs(ll,env)
 
         if reqs:
             # and make tests
-            all=[]
+            alltr=[]
             hr=HtmlRender()
             for f in reqs:
                 print()
@@ -761,9 +821,13 @@ def main(params):
                 for t in f:
                     tr=t.test( env ) #TODO: colorful output !
                     if tr.res: times.append( tr.res.time )
-                    print( tr )
+                    if onlyFailedTests:
+                        if not all(tr):
+                            print( tr )
+                    else:
+                        print( tr )
                     trs.append( tr)
-                    all+=tr
+                    alltr+=tr
                 # html rendering...
                 avg = sum(times,datetime.timedelta())/len(times) if len(times) else 0
                 hr.add("<h3>%s</h3>"%f.name)
@@ -775,18 +839,42 @@ def main(params):
 
 
 
-            ok,total=len([i for i in all if i]),len(all)
+            ok,total=len([i for i in alltr if i]),len(alltr)
 
             hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
-            hr.add( "<div class='info'><span>%s</span><b>%s</b></div>" % ( str(datetime.datetime.now())[:16], " ".join(varenvs) ) )
+            hr.add( "<div class='info'><span>%s</span><b>%s</b></div>" % ( str(datetime.datetime.now())[:16], " ".join(switchs) ) )
 
             hr.save( fn )
 
-            print()
-            print("RESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
+            if total:
+                print()
+                print("RESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
             return total - ok
         else:
-            print("ERROR: No tests found !")
+
+            print("""USAGE TEST   : reqman [--opt] [-switch] <folder|file>...
+USAGE CREATE : reqman new <url>
+Version %s
+Test a http service with pre-made scenarios, whose are simple yaml files
+(More info on https://github.com/manatlan/reqman)
+
+  <folder|file> : yml scenario or folder of yml scenario
+                  (as many as you want)
+
+  [opt]
+           --ko : limit standard output to failed tests (ko) only
+""" % __version__)
+
+            if env:
+                print("""  [switch]      : default to "%s" """ % env.get("root",None) )
+                for k,v in env.items():
+                    root=v.get("root",None) if type(v)==dict else None
+                    if root:
+                        print("""%15s : "%s" """ % ("-"+k,root))
+            else:
+                print("""  [switch]      : pre-made 'switch' defined in a reqman.conf""")
+
+
             return -1
 
     except RMException as e:
