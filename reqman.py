@@ -261,10 +261,12 @@ class TestResult(list):
         for test in tests:
             what,value = list(test.keys())[0],list(test.values())[0]
 
+            multi=False
             #------------- find the cmp method
             if what=="content":     cmp = lambda x: x in str(self.res.content)
             elif what=="status":    cmp = lambda x: int(x)==(self.res.status and int(self.res.status))
             elif what.startswith("json."):
+                multi=True
                 try:
                     jzon=json.loads( str(self.res.content) )
                     v=jpath(jzon,what[5:])
@@ -278,10 +280,22 @@ class TestResult(list):
             #-------------
 
             if type(value)==list:
-                val = " ,".join( [str(i) for i in value] )
-                testname = "%s in [%s]" % (what,val)
-                testnameKO = "%s not in [%s]" % (what,val)
-                result = any( [cmp(i) for i in value] )
+                if multi:
+                    matchAll=cmp(value)
+                    val = " ,".join( [str(i) for i in value] )
+                    if matchAll:
+                        testname = "%s = [%s]" % (what,val)
+                        testnameKO = "%s != [%s]" % (what,val)
+                        result = matchAll
+                    else:
+                        testname = "%s in [%s]" % (what,val)
+                        testnameKO = "%s not in [%s]" % (what,val)
+                        result = any( [cmp(i) for i in value] ) or matchAll
+                else:
+                    val = " ,".join( [str(i) for i in value] )
+                    testname = "%s in [%s]" % (what,val)
+                    testnameKO = "%s not in [%s]" % (what,val)
+                    result = any( [cmp(i) for i in value] )
             else:
                 val = "null" if value is None else "true" if value is True else "false" if value is False else value
                 testname = "%s = %s" % (what,val)

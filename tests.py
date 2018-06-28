@@ -27,6 +27,8 @@ def mockHttp(q):
         return reqman.Response( 200, "the content", {"Content-Type":"text/plain","server":"mock","Set-Cookie":"mycookie=myval"},q.url)
     elif q.path=="/test_binary":
         return reqman.Response( 200, BINARY, {"Content-Type":"audio/mpeg","server":"mock"},q.url)
+    elif q.path=="/pingpong":
+        return reqman.Response( 200, q.body, {"Content-Type":"audio/mpeg","server":"mock"},q.url)
     elif q.path=="/test_json":
         my=dict(
             mydict=dict(name="jack"),
@@ -2389,6 +2391,25 @@ overfi:
         # print( open("reqman.html","r").read())
 
         #TODO: continue here !!!
+
+    def test_json_match_all_any(self):
+        self.create("scenar.rml","""
+POST: http://jo/pingpong
+body: {"result":[1,2]}
+tests:
+    - json.result.size: 2
+    - json.result.0: 1
+    - json.result.1: 2
+    - json.result: [1,2]        #match All !
+    - json.result:              #match All !
+        - 1
+        - 2
+    - json.result:              #match Any !
+        - [1,2]
+        - "kkkk"
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( o.count("OK")==6)
 
 if __name__ == '__main__':
 
