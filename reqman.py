@@ -383,6 +383,8 @@ def txtReplace(env,txt):
                         val="false"
                     elif type(val) in [list,dict]:
                         val=json.dumps(val)
+                    elif type(val) == bytes:
+                        val=str(val,"utf8") #TODO: good ? NEED MORE TESTS !!!!!
                     else: #int, float, ...
                         val=json.dumps(val)
 
