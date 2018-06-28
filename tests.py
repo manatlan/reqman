@@ -2409,7 +2409,8 @@ tests:
         - "kkkk"
 """)
         r,o=self.reqman(".")
-        self.assertTrue( o.count("OK")==6)
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==6)          # all is ok
 
 if __name__ == '__main__':
 
