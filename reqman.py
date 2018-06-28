@@ -42,6 +42,7 @@ class NotFound: pass
 class RMException(Exception):pass
 
 __version__="1.0.0 BETA"
+REQMAN_CONF="reqman.conf"
 
 ###########################################################################
 ## Utilities
@@ -699,8 +700,8 @@ def resolver(params):
     folders=list(set(paths))
     folders.sort( key=lambda i: i.count("/")+i.count("\\"))
     for f in folders:
-        if os.path.isfile( os.path.join(f,"reqman.conf") ):
-            rc=os.path.join(f,"reqman.conf")
+        if os.path.isfile( os.path.join(f,REQMAN_CONF) ):
+            rc=os.path.join(f,REQMAN_CONF)
 
     #if not, take the first reqman.conf in backwards
     if rc is None:
@@ -710,7 +711,7 @@ def resolver(params):
 
         current = os.path.realpath(folders[0])
         while 1:
-            rc=os.path.join( current,"reqman.conf" )
+            rc=os.path.join( current,REQMAN_CONF )
             if os.path.isfile(rc): break
             next = os.path.realpath(os.path.join(current,".."))
             if next == current:
@@ -726,12 +727,12 @@ def makeReqs(reqs,env):
     if reqs:
         if env and ("BEGIN" in env):
             r=io.StringIO("call: BEGIN")
-            r.name="BEGIN (reqman.conf)"
+            r.name="BEGIN (%s)" % REQMAN_CONF
             reqs = [ Reqs(r,env) ] + reqs
 
         if env and ("END" in env):
             r=io.StringIO("call: END")
-            r.name="END (reqman.conf)"
+            r.name="END (%s)" % REQMAN_CONF
             reqs = reqs + [ Reqs(r,env) ]
 
     return reqs
@@ -767,9 +768,9 @@ def main(params=[]):
             ## CREATE USAGE
             rc,yml=create(params[1])
             if rc:
-                if not os.path.isfile("reqman.conf"):
-                    print("Create","reqman.conf")
-                    with open("reqman.conf","w") as fid: fid.write(rc)
+                if not os.path.isfile(REQMAN_CONF):
+                    print("Create",REQMAN_CONF)
+                    with open(REQMAN_CONF,"w") as fid: fid.write(rc)
 
             ff=glob.glob("*_test.rml")
             yname = "%04d_test.rml" % ((len(ff)+1)*10)
@@ -872,7 +873,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
                     if root:
                         print("""%15s : "%s" """ % ("-"+k,root))
             else:
-                print("""  [switch]      : pre-made 'switch' defined in a reqman.conf""")
+                print("""  [switch]      : pre-made 'switch' defined in a %s""" % REQMAN_CONF)
 
 
             return -1
