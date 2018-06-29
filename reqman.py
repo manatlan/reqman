@@ -14,6 +14,7 @@
 #
 # https://github.com/manatlan/reqman
 # #############################################################################
+
 import yaml         # see "pip install pyaml"
 import encodings
 import os
@@ -41,7 +42,7 @@ import urllib.error
 class NotFound: pass
 class RMException(Exception):pass
 
-__version__="1.0.0 BETA"
+__version__="0.9.9.1"
 REQMAN_CONF="reqman.conf"
 
 ###########################################################################
@@ -261,12 +262,12 @@ class TestResult(list):
         for test in tests:
             what,value = list(test.keys())[0],list(test.values())[0]
 
-            multi=False
+            canMatchAll=False
             #------------- find the cmp method
             if what=="content":     cmp = lambda x: x in str(self.res.content)
             elif what=="status":    cmp = lambda x: int(x)==(self.res.status and int(self.res.status))
             elif what.startswith("json."):
-                multi=True
+                canMatchAll=True
                 try:
                     jzon=json.loads( str(self.res.content) )
                     v=jpath(jzon,what[5:])
@@ -280,7 +281,7 @@ class TestResult(list):
             #-------------
 
             if type(value)==list:
-                if multi:
+                if canMatchAll:
                     matchAll=cmp(value)
                     val = " ,".join( [str(i) for i in value] )
                     if matchAll:
@@ -407,6 +408,33 @@ def txtReplace(env,txt):
 
     return txt
 
+def warn(*m):
+    print("***WARNING***",*m)
+
+def getTests(y):
+    """ Get defined tests as list ok dict key:value """
+    if y:
+        tests=y.get("tests",[])
+        if type(tests)==dict:
+             warn("'tests:' should be a list of mono key/value pairs (ex: '- status: 200')")
+             tests = [ {k:v} for k,v in tests.items()]
+
+        return tests
+    else:
+        return []
+
+def getHeaders(y):
+    """ Get defined headers as dict """
+    if y:
+        headers=y.get("headers",{})
+        if type(headers)==list:
+             warn("'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')")
+             headers= { list(d.keys())[0]:list(d.values())[0] for d in headers}
+
+        return headers
+    else:
+        return {}
+
 
 
 class Req(object):
@@ -439,11 +467,8 @@ class Req(object):
             path = h.path + ("?"+h.query if h.query else "")
 
         # headers ...
-        headers=cenv.get("headers",{}).copy() if cenv else {}
-        try:
-            headers.update(self.headers)                        # override with self headers
-        except ValueError:
-            raise RMException("'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')")
+        headers=getHeaders(cenv).copy() if cenv else {}
+        headers.update(self.headers)                        # override with self headers
 
         headers={ k:txtReplace(cenv,v) for k,v in list(headers.items()) if v is not None}
 
@@ -471,21 +496,18 @@ class Req(object):
         req=Request(h.scheme,h.hostname,h.port,self.method,path,body,headers)
         if h.hostname:
 
-            tests=[]+cenv.get("tests",[]) if cenv else []
+            tests=getTests(cenv)
             tests+=self.tests                               # override with self tests
 
-            try:
-                ntests=[]
-                for test in tests:
-                    key,val = list(test.keys())[0],list(test.values())[0]
-                    if type(val)==list:
-                        val=[txtReplace(cenv,i) for i in val]
-                    else:
-                        val=txtReplace(cenv,val)
-                    ntests.append( {key: val } )
-                tests=ntests
-            except AttributeError:
-                raise RMException("'tests:' should be a list of mono key/value pairs (ex: '- status: 200')")
+            ntests=[]
+            for test in tests:
+                key,val = list(test.keys())[0],list(test.values())[0]
+                if type(val)==list:
+                    val=[txtReplace(cenv,i) for i in val]
+                else:
+                    val=txtReplace(cenv,val)
+                ntests.append( {key: val } )
+            tests=ntests
 
             timeout=cenv.get("timeout",None)
             try:
@@ -588,9 +610,9 @@ class Reqs(list):
                     verbs=list(KNOWNVERBS.intersection( list(d.keys()) ))
                     if verbs:
                         verb=verbs[0]
-                        ll.append( Req(verb,d[verb],d.get("body",None),d.get("headers",[]),d.get("tests",[]),d.get("save",[]),d.get("params",{})) )
+                        ll.append( Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),d.get("params",{})) )
                     else:
-                        raise RMException("Unknown verbs (%s) in '%s'" % (list(d.keys()),fd.name))
+                        raise RMException("Unknown verb (%s) in '%s'" % (list(d.keys()),fd.name))
 
             return ll
 
@@ -696,6 +718,21 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
         with open(name,"w+") as fid:
             fid.write( os.linesep.join(self) )
 
+
+def findRCUp(fromHere):
+    """Find the rc in upwards folders"""
+    current = os.path.realpath(fromHere)
+    while 1:
+        rc=os.path.join( current,REQMAN_CONF )
+        if os.path.isfile(rc): break
+        next = os.path.realpath(os.path.join(current,".."))
+        if next == current:
+            rc=None
+            break
+        else:
+            current=next
+    return rc
+
 def resolver(params):
     """ return tuple (reqman.conf,ymls) finded with params """
     ymls=[]
@@ -721,20 +758,7 @@ def resolver(params):
 
     #if not, take the first reqman.conf in backwards
     if rc is None:
-
-        if not folders:
-            folders="."
-
-        current = os.path.realpath(folders[0])
-        while 1:
-            rc=os.path.join( current,REQMAN_CONF )
-            if os.path.isfile(rc): break
-            next = os.path.realpath(os.path.join(current,".."))
-            if next == current:
-                rc=None
-                break
-            else:
-                current=next
+        rc=findRCUp(folders[0] if folders else ".")
 
     ymls.sort( key = lambda x: x.lower() )
     return rc,ymls
@@ -769,10 +793,10 @@ headers:
 
     path= hp.path + ("?"+hp.query if hp.query else "")
 
-    yml=u"""
-# test created for "%(root)s%(path)s" !
+    yml=u"""# test created for "%(root)s%(path)s" !
 
 - GET: %(path)s
+#- GET: %(root)s%(path)s
   tests:
     - status: 200
 """ % locals()
@@ -782,11 +806,18 @@ def main(params=[]):
     try:
         if len(params)==2 and params[0].lower()=="new":
             ## CREATE USAGE
-            rc,yml=create(params[1])
+            rc=findRCUp(".")
             if rc:
-                if not os.path.isfile(REQMAN_CONF):
+                print(cw("Using '%s'" % os.path.relpath(rc)))
+
+            conf,yml=create(params[1])
+            if conf:
+                if not rc:
                     print("Create",REQMAN_CONF)
-                    with open(REQMAN_CONF,"w") as fid: fid.write(rc)
+                    with open(REQMAN_CONF,"w") as fid: fid.write(conf)
+            else:
+                if not rc:
+                    raise RMException("there is no '%s', you shoul provide a full url !" % REQMAN_CONF)
 
             ff=glob.glob("*_test.rml")
             yname = "%04d_test.rml" % ((len(ff)+1)*10)

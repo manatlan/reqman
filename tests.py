@@ -11,7 +11,6 @@ from contextlib import redirect_stdout
 import tempfile
 import shutil
 
-
 fwp = lambda x:x.replace("\\","/") # fake windows path
 
 ONLYs=[]
@@ -28,7 +27,7 @@ def mockHttp(q):
     elif q.path=="/test_binary":
         return reqman.Response( 200, BINARY, {"Content-Type":"audio/mpeg","server":"mock"},q.url)
     elif q.path=="/pingpong":
-        return reqman.Response( 200, q.body, {"Content-Type":"audio/mpeg","server":"mock"},q.url)
+        return reqman.Response( 200, q.body or "", {"Content-Type":"audio/mpeg","server":"mock"},q.url)
     elif q.path=="/test_json":
         my=dict(
             mydict=dict(name="jack"),
@@ -831,7 +830,7 @@ class Tests_Reqs(unittest.TestCase):
 
         self.assertEqual( post.path, "/{{a_var}}")
         self.assertEqual( post.body, "{{a_var}}")
-        self.assertEqual( post.headers, [])
+        self.assertEqual( post.headers, {})
 
         self.assertEqual( put.path, "/")
         self.assertEqual( put.body, {"var": 1, "txt": "{{a_var}}"})
@@ -1170,22 +1169,6 @@ fdsq:
 """)
         self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f) )
 
-
-    def test_yml_bad_tests(self):
-        f=StringIO("""
-- GET: http://jim.com
-  tests:
-      badkey: bad
-""")
-        self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f)[0].test({}) )  #  should be a list of mono key/value pairs (
-
-    def test_yml_bad_headers(self):
-        f=StringIO("""
-- GET: http://jim.com
-  headers:
-      - badkey: bad
-""")
-        self.assertRaises(reqman.RMException, lambda: reqman.Reqs(f)[0].test({}) )  #should be a dict
 
 
 class Tests_env_save(unittest.TestCase):
@@ -2374,13 +2357,14 @@ overfi:
         self.assertTrue( "overfo" in o)              # but root switch are here too
         self.assertTrue( "overfi" not in o)          # but non-root switch not
 
-    # @only
     def test_reqman_create(self):
         r,o=self.reqman("new","https://jkif.com:80/action?state=a")
+        self.assertFalse( "Using" in o)
         self.assertTrue( "Create reqman.conf" in o)
         self.assertTrue( "Create 0010_test.rml" in o)
 
         r,o=self.reqman("new","https://willBeLost:99/action?state=b")
+        self.assertTrue( "Using" in o)
         self.assertTrue( "Create 0020_test.rml" in o)
 
         r,o=self.reqman(".")
@@ -2388,9 +2372,30 @@ overfi:
         self.assertTrue( "./0020_test.rml" in o)
         self.assertTrue( o.count("-->")==2)
         self.assertTrue( "2/2" in o)
-        # print( open("reqman.html","r").read())
 
-        #TODO: continue here !!!
+        with open("reqman.html","r") as f: h=f.read()
+        self.assertTrue( "GET https://jkif.com:80/action?state=a" in h)
+        self.assertTrue( "GET https://jkif.com:80/action?state=b" in h)
+        self.assertFalse( "GET https://willBeLost:99/action?state=b" in h)  # full url will be lost ;-( (coz root/rc is already defined)
+
+    def test_reqman_create_bad(self):
+        r,o=self.reqman("new","not_an_url")
+        self.assertEqual(r,-1)
+        self.assertFalse( "Using" in o)
+        self.assertTrue("you shoul provide a full url",o)
+
+    def test_reqman_create_in_sub_and_existing_rc_up(self):
+        self.create("reqman.conf","""root: http://localhost""")
+        self.create("sub/readme.txt","""just for create this dir""")
+        os.chdir("sub")
+
+        r,o=self.reqman("new","not_an_url")
+        self.assertEqual(r,0)
+        self.assertTrue( "Using" in o)
+        self.assertTrue( "Create 0010_test.rml" in o)
+        self.assertFalse( "Create reqman.conf" in o)
+
+
 
     def test_json_match_all_any(self):
         self.create("scenar.rml","""
@@ -2411,6 +2416,42 @@ tests:
         r,o=self.reqman(".")
         self.assertTrue( r==0 )                     # 0 error !
         self.assertTrue( o.count("OK")==6)          # all is ok
+
+    def test_scenar_tests_in_list_or_dict(self):
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: {"result":[1,2]}
+  tests:                                    # original/better form
+    - status: 200
+    - content: result
+
+- POST: http://jo/pingpong
+  body: {"result":[1,2]}
+  tests:                                    # accepted form
+    status: 200
+    content: result
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( "***WARNING*** 'tests:' should be a list" in o )   # a warn is displayed
+        self.assertTrue( o.count("OK")==4)          # all is ok
+
+    def test_scenar_headers_in_list_or_dict(self):
+        self.create("scenar.rml","""
+- GET: http://jo/
+  headers:                                  # original/better form
+    content-type: text/plain
+    message: hello
+
+- GET: http://jo/
+  headers:                                  # accepted form
+    - content-type: text/plain
+    - message: hello
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( "***WARNING*** 'headers:' should be filled" in o )   # a warn is displayed
+        self.assertTrue( o.count("-->")==2)          # all req are ok
+
+
 
 if __name__ == '__main__':
 
