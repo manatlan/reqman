@@ -42,7 +42,7 @@ import urllib.error
 class NotFound: pass
 class RMException(Exception):pass
 
-__version__="0.9.9.1"
+__version__="0.9.9.2"
 REQMAN_CONF="reqman.conf"
 
 ###########################################################################
@@ -703,12 +703,12 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 tr.req.method,
                 tr.req.url,
                 "\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.req.headers.items())]),
-                cgi.escape( prettify( str(tr.req.body) or "") ),
+                cgi.escape( prettify( str(tr.req.body or "") ) ),
 
                 tr.res.status or "",
 
                 "\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.res.headers.items())]),
-                cgi.escape( prettify( str(tr.res.content) or "") ),
+                cgi.escape( prettify( str(tr.res.content or "")) ),
 
                 "".join(["<li class='%s'>%s</li>" % (t and "ok" or "ko",cgi.escape(t.name)) for t in tr ]),
                 )
