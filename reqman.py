@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.3"
+__version__="0.9.9.4"
 
 import yaml         # see "pip install pyaml"
 import encodings
@@ -292,7 +292,13 @@ class TestResult(list):
 
             canMatchAll=False
             #------------- find the cmp method
-            if what=="content":     cmp = lambda x: x in str(self.res.content)
+            if what=="content":
+                def cmp(x):
+                    try:
+                        j=lambda x: json.dumps(json.loads(str(x)),sort_keys=True)
+                        return j(x)==j(self.res.content)
+                    except Exception as e:
+                        return x in str(self.res.content)
             elif what=="status":
                 def cmp(x):
                     try:

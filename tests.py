@@ -2544,6 +2544,26 @@ overfi:
 #         r,o=self.reqman(".")
 #         print(o)
 
+    def test_json_compare_content(self):
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: |
+    {
+        "a_list": [1, 2, false, null, 99, 0.5],
+        "a_dict": {"z":true, "a":1, "b": {"x":12,"s":1.1}, "c": [1,2,3],"d": null}
+    }
+  tests:
+    - content: |
+        {
+            "a_dict" : {"z":true,"a":1,"b":{"x":12,"s":1.1},"c":[1,2,3],"d":null},
+            "a_list" : [1,2,false,null,99,0.5]
+        }
+
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==1)          # all is ok
+
 if __name__ == '__main__':
 
     if ONLYs:
