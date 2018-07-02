@@ -10,7 +10,7 @@
 
 #--------------------------------------------
 # the simplest call !
-# (you won't need a reqman.conf !)
+# (you won't need a reqman.conf (because the uri is absolute))
 - GET: https://google.com
 
 #--------------------------------------------
@@ -58,7 +58,7 @@
     Content-Type: application/json        # best practice, but not needed
   body:
     name:         jo                      # \_ It's exactlly like previous request ^^
-    age:          42                      # /
+    age:          42                      # /  (more readable)
 
 #--------------------------------------------
 # You can override vars, with params (here, you won't need a reqman.conf)
@@ -72,6 +72,11 @@
   body: <<message>>
   params:
     message: I'm the message
+
+
+#TODO: talk about special params 'timeout' !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#TODO: talk about special params 'timeout' !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#TODO: talk about special params 'timeout' !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #--------------------------------------------
 # if you want to declare multiline text in your message
@@ -92,6 +97,11 @@
     encode: |
       import base64
       return str(base64.b64encode(bytes(x, 'utf-8')),"utf8")    # 'x' is the input (here; content of message ;-)
+
+#--------------------------------------------
+# IMPORTANT NOTE :
+# - you can make a global method, by declaring it in the reqman.conf, so you can use
+#   it in all your tests !
 
 #--------------------------------------------
 # alternativly you can call a method without input, like that :
@@ -175,15 +185,10 @@
     caller: return x * ["proc2"]
 
 #--------------------------------------------
-# TODO  !!!!!!
-# TODO  !!!!!!
-# Procedures can be declared in reqman.conf !
-# methods can be declared in reqman.conf !
-# But there's more : BEGIN & END 's procedures called at start, and at exit
-# TODO  !!!!!!
-# TODO  !!!!!!
-
-
+# IMPORTANT NOTE : 
+#  - You can make a global procedure, if you declare it in the reqman.conf
+#  - There are special procedures whose are called at the beginning (name it 'BEGIN'),
+#    and at the ending (name it 'END'), of the tests !
 
 #--------------------------------------------
 # But requests without tests are useless
@@ -195,11 +200,10 @@
     - content-type: html          # the response content type is html, for sure
     - content-type: text          # so it's text, for sure
     - content:  <body>            # "content" is a special key : assert that "<body>" is in the content
-    - content:  </body>           # assert that "<body>" is in the content
+    - content:  </body>           # assert that "</body>" is in the content
 
 #--------------------------------------------
 # tests value can be a yaml list
-# (and, it's the main job of reqman)
 - GET: /
   tests:                  
     - status:                     # so the http status can be
@@ -211,7 +215,16 @@
 - GET: /
   tests:                          
     - status:       200           
-    - json.result:  ok            # assert response = {"result":"ok"}
+    - json.result:  ok            # assuming response = {"result":"ok"}
+
+#--------------------------------------------
+# obviously, you can use comparator (for status/json.* only) using syntax: ". op value" (op in =,!=,<,>,<=,>=)
+# (but not recommended : stay simple and stupid ... comparators doesn't work in yaml list ^^)
+- GET: /
+  tests:                          
+    - status:       . < 400           
+    - status:       . >= 200           
+    - json.result:  . != ko            # assert response = {"result":"ok"}
 
 #--------------------------------------------
 # and you can index arrays in json's response

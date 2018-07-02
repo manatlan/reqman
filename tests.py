@@ -2396,27 +2396,6 @@ overfi:
         self.assertFalse( "Create reqman.conf" in o)
 
 
-
-    def test_json_match_all_any(self):
-        self.create("scenar.rml","""
-POST: http://jo/pingpong
-body: {"result":[1,2]}
-tests:
-    - json.result.size: 2
-    - json.result.0: 1
-    - json.result.1: 2
-    - json.result: [1,2]        #match All !
-    - json.result:              #match All !
-        - 1
-        - 2
-    - json.result:              #match Any !
-        - [1,2]
-        - "kkkk"
-""")
-        r,o=self.reqman(".")
-        self.assertTrue( r==0 )                     # 0 error !
-        self.assertTrue( o.count("OK")==6)          # all is ok
-
     def test_scenar_tests_in_list_or_dict(self):
         self.create("scenar.rml","""
 - POST: http://jo/pingpong
@@ -2451,7 +2430,119 @@ tests:
         self.assertTrue( "***WARNING*** 'headers:' should be filled" in o )   # a warn is displayed
         self.assertTrue( o.count("-->")==2)          # all req are ok
 
+    def test_json_match_all_any(self):
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: {"result":[1,2]}
+  tests:
+    - json.result.size: 2
+    - json.result.0: 1
+    - json.result.1: 2
+    - json.result: [1,2]        #match All !
+    - json.result:              #match All !
+        - 1
+        - 2
+    - json.result:              #match Any !
+        - [1,2]
+        - "kkkk"
 
+
+- POST: http://jo/pingpong
+  body: {"result":1}
+  tests:
+    - json.result: [1,2]        #match any !
+    - json.result:              #match any !
+        - 1
+        - 2
+
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==8)          # all is ok
+
+    def test_json_compare_dict_list(self):
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: |
+    {
+        "a_dict":{"z":true,"a":1,"b":{"x":12,"s":1.1},"c":[1,2,3],"d":null},
+        "a_list": [1,2,false,null,99,0.5]
+    }
+  tests:
+    - json.a_dict:  {"z":true,"a":1,"b":{"x":12,"s":1.1},"c":[1,2,3],"d":null}
+    - json.a_list:  [1,2,false,null,99,0.5]
+
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==2)          # all is ok
+
+    def test_tests_compare_operators(self): # only json.* & status !
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: {"v":42}
+  tests:
+    - json.v: 42            # \
+    - json.v: .=42          # |---> that's (EXACTLY) the same !!!
+    - json.v: .==42         # /
+
+    - json.v: .!=12
+    - json.v: .>12
+    - json.v: .<62
+    - json.v: .>=42
+    - json.v: .<=42
+
+    - status: .!=400
+    - status: .<201
+    - status: .>=200
+
+    - status: . =200
+    - status: . = 200
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==12)          # all is ok
+
+        self.create("scenar.rml","""
+- GET: http://jo/kif
+  tests:
+    - status: kokoko
+    - status: .={'kkko':78}
+    - status: .!={kkko:78}
+    - status: .!>10                     # use < !
+    - status: .!!=12
+    - status: ..=200
+    - status: .!={xxx]
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==7 )                     # 0 error !
+        self.assertTrue( o.count("KO")==7)          # all is ok
+
+        self.create("scenar.rml","""
+- proc:
+    GET: http://jo/kif
+    tests:
+        - status: .!=<<vmax>>
+        - status: .><<vmin>>
+        - status: .<<<vmax>>        # triple < !!
+- call: proc
+  params:
+    vmax: 400
+    vmin: 150
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==3)          # all is ok
+
+        self.create("scenar.rml","""
+- GET: http://jo/kif
+  tests:
+    - status: 
+        - . < 300
+        - .=200
+""")
+        r,o=self.reqman(".")
+        print(o)
 
 if __name__ == '__main__':
 

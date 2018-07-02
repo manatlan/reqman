@@ -15,6 +15,8 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
+__version__="0.9.9.3"
+
 import yaml         # see "pip install pyaml"
 import encodings
 import os
@@ -42,7 +44,6 @@ import urllib.error
 class NotFound: pass
 class RMException(Exception):pass
 
-__version__="0.9.9.2"
 REQMAN_CONF="reqman.conf"
 
 ###########################################################################
@@ -195,7 +196,7 @@ class Content:
 
 class Response:
     def __init__(self,status,body,headers,url):
-        self.status = status
+        self.status = int(status)
         self.content = Content(body)
         self.headers = dict(headers)    # /!\ cast list of 2-tuple to dict ;-(
                                         # eg: if multiple "set-cookie" -> only the last is kept
@@ -224,15 +225,12 @@ def dohttp(r):
         rr=cnx.getresponse()
         return Response( rr.status,rr.read(),rr.getheaders(), r.url )
     except socket.timeout:
-        #raise RMException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
         return ResponseError("Response timeout")
     except socket.error:
-        #raise RMException("Server is down (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
         return ResponseError("Server is down ?!")
     except http.client.BadStatusLine:
         #A subclass of HTTPException. Raised if a server responds with a HTTP status code that we don’t understand.
         #Presumably, the server closed the connection before sending a valid response.
-        # raise RMException("Server closed the connection (%s)?" % ((r.host+":%s" % r.port) if r.port else r.host))
         return ResponseError("Server closed the connection")
 
 
@@ -251,6 +249,34 @@ class Test(int):
             s.name = nameKO
         return s
 
+
+def getValOpe(v):
+    try:
+        if type(v)== str and v.startswith("."):
+            g=re.match("^\. *([!=<>]{1,2}) *(.+)$",v)
+            if g:
+                op,v=g.groups()
+                vv= yaml.load( v )
+                if op == "==":              #not needed really, but just for compatibility
+                    return vv,lambda a,b: b==a,"=","!="
+                elif op=="=":              #not needed really, but just for compatibility
+                    return vv,lambda a,b: b==a,"=","!="
+                elif op=="!=":
+                    return vv,lambda a,b: b!=a,"!=","="
+                elif op==">=":
+                    return vv,lambda a,b: b>=a,">=","<"
+                elif op=="<=":
+                    return vv,lambda a,b: b<=a,"<=",">"
+                elif op==">":
+                    return vv,lambda a,b: b>a,">","<="
+                elif op=="<":
+                    return vv,lambda a,b: b<a,"<",">="
+    except (yaml.scanner.ScannerError,yaml.constructor.ConstructorError,yaml.parser.ParserError):
+        pass
+
+    return v,lambda a,b: a==b,"=","!="
+
+
 class TestResult(list):
     def __init__(self,req,res,tests):
         self.req=req
@@ -262,10 +288,18 @@ class TestResult(list):
         for test in tests:
             what,value = list(test.keys())[0],list(test.values())[0]
 
+            value,ope,opOK,opKO = getValOpe(value)
+
             canMatchAll=False
             #------------- find the cmp method
             if what=="content":     cmp = lambda x: x in str(self.res.content)
-            elif what=="status":    cmp = lambda x: int(x)==(self.res.status and int(self.res.status))
+            elif what=="status":
+                def cmp(x):
+                    try:
+                        return ope( int(x), self.res.status )
+                    except (ValueError,TypeError):
+                        return False
+
             elif what.startswith("json."):
                 canMatchAll=True
                 try:
@@ -273,10 +307,10 @@ class TestResult(list):
                     v=jpath(jzon,what[5:])
                     v=None if v == NotFound else v
 
-                    cmp = lambda x: x == v
+                    cmp = lambda x : ope(x,v)
                 except:
                     cmp = lambda x: False
-            else:
+            else: # headers
                 cmp = lambda x: x in insensitiveHeaders.get(what.lower(),"")    #TODO: test if header is just present
             #-------------
 
@@ -299,8 +333,8 @@ class TestResult(list):
                     result = any( [cmp(i) for i in value] )
             else:
                 val = "null" if value is None else "true" if value is True else "false" if value is False else value
-                testname = "%s = %s" % (what,val)
-                testnameKO = "%s != %s" % (what,val)
+                testname = "%s %s %s" % (what,opOK,val)
+                testnameKO = "%s %s %s" % (what,opKO,val)
                 result = cmp(value)
 
             results.append( Test(result,testname,testnameKO) )
@@ -378,7 +412,7 @@ def objReplace(env,txt): # same as txtReplace() but for "object" (json'able)
 
 def txtReplace(env,txt):
     if env and txt and isinstance(txt,str):
-        for vvar in re.findall("\{\{[^\}]+\}\}",txt)+re.findall("<<[^>]+>>",txt):
+        for vvar in re.findall("\{\{[^\}]+\}\}",txt)+re.findall("<<[^><]+>>",txt):
             var=vvar[2:-2]
 
             try:
@@ -936,4 +970,4 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
-    #~ exec(open("tests.py").read())
+    # exec(open("tests.py").read())
