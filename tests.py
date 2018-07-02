@@ -2555,7 +2555,7 @@ overfi:
   tests:
     - content: |
         {
-            "a_dict" : {"z":true,"a":1,"b":{"x":12,"s":1.1},"c":[1,2,3],"d":null},
+            "a_dict" : {"d":null,"z":true,"a":1,"b":{"s":1.1,"x":12},"c":[1,2,3]},
             "a_list" : [1,2,false,null,99,0.5]
         }
 
