@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.4"
+__version__="0.9.9.5"
 
 import yaml         # see "pip install pyaml"
 import encodings
@@ -58,7 +58,7 @@ try: # colorama is optionnal
     cg=lambda t: Fore.GREEN+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
     cb=lambda t: Fore.CYAN+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
     cw=lambda t: Fore.WHITE+Style.BRIGHT + t + Fore.RESET+Style.RESET_ALL if t else None
-except:
+except ImportError:
     cy=cr=cg=cb=cw=lambda t: t
 
 
@@ -67,7 +67,7 @@ def yamlLoad(fd):    # fd is an io thing
     if type(b)==bytes:
         try:
             b=str(b,"utf8")
-        except:
+        except UnicodeDecodeError:
             b=str(b,"cp1252")
     return yaml.load( b )
 
@@ -183,10 +183,10 @@ class Content:
     def __repr__(self):
         try:
             return str(self.__b,"utf8") # try as utf8 ...
-        except:
+        except UnicodeDecodeError:
             try:
                 return str(self.__b,"cp1252")  # try as cp1252 ...
-            except:
+            except UnicodeDecodeError:
                 # fallback to a *** binary representation ***
                 return "*** BINARY SIZE(%s) ***" % len(self.__b)
 
@@ -195,11 +195,12 @@ class Content:
 
 
 class Response:
-    def __init__(self,status,body,headers,url):
+    def __init__(self,status,body,headers,url,info=None):
         self.status = int(status)
         self.content = Content(body)
         self.headers = dict(headers)    # /!\ cast list of 2-tuple to dict ;-(
                                         # eg: if multiple "set-cookie" -> only the last is kept
+        self.info=info
         COOKIEJAR.saveCookie( headers, url )
 
     def __repr__(self):
@@ -223,7 +224,14 @@ def dohttp(r):
         enc=lambda x: x.replace(" ","%20")
         cnx.request(r.method,enc(r.path),r.body,r.headers)
         rr=cnx.getresponse()
-        return Response( rr.status,rr.read(),rr.getheaders(), r.url )
+
+        info="%s %s %s" % (
+            {10:"HTTP/1.0",11:"HTTP/1.1"}.get(rr.version,"HTTP/?"),
+            rr.status,
+            rr.reason,
+        )
+
+        return Response( rr.status,rr.read(),rr.getheaders(), r.url, info )
     except socket.timeout:
         return ResponseError("Response timeout")
     except socket.error:
@@ -277,6 +285,11 @@ def getValOpe(v):
     return v,lambda a,b: a==b,"=","!="
 
 
+def strjs( x ):
+    #~ val = ", ".join( [str(i) for i in value] )
+    #~ val = "null" if value is None else "true" if value is True else "false" if value is False else value
+    return json.dumps(x)
+
 class TestResult(list):
     def __init__(self,req,res,tests):
         self.req=req
@@ -293,12 +306,14 @@ class TestResult(list):
             canMatchAll=False
             #------------- find the cmp method
             if what=="content":
+                canMatchAll=True
                 def cmp(x):
+                    """ true if json content are the same or if x is in content """
                     try:
                         j=lambda x: json.dumps(json.loads(str(x)),sort_keys=True)
-                        return j(x)==j(self.res.content)
-                    except Exception as e:
-                        return x in str(self.res.content)
+                        if j(x)==j(self.res.content): return True
+                    except json.decoder.JSONDecodeError:
+                        return str(x) in str(self.res.content)
             elif what=="status":
                 def cmp(x):
                     try:
@@ -314,46 +329,34 @@ class TestResult(list):
                     v=None if v == NotFound else v
 
                     cmp = lambda x : ope(x,v)
-                except:
+                except Exception as e:
                     cmp = lambda x: False
             else: # headers
-                cmp = lambda x: x in insensitiveHeaders.get(what.lower(),"")    #TODO: test if header is just present
+                cmp = lambda x: str(x) in insensitiveHeaders.get(what.lower(),"")    #TODO: test if header is just present
             #-------------
 
             if type(value)==list:
+                opOK,opKO="in","not in"
                 if canMatchAll:
-                    matchAll=cmp(value)
-                    val = " ,".join( [str(i) for i in value] )
-                    if matchAll:
-                        testname = "%s = [%s]" % (what,val)
-                        testnameKO = "%s != [%s]" % (what,val)
-                        result = matchAll
-                    else:
-                        testname = "%s in [%s]" % (what,val)
-                        testnameKO = "%s not in [%s]" % (what,val)
-                        result = any( [cmp(i) for i in value] ) or matchAll
-                else:
-                    val = " ,".join( [str(i) for i in value] )
-                    testname = "%s in [%s]" % (what,val)
-                    testnameKO = "%s not in [%s]" % (what,val)
+                    result = cmp(value) or any( [cmp(i) for i in value] ) # matchAll or any
+                else: # just match any
                     result = any( [cmp(i) for i in value] )
             else:
-                val = "null" if value is None else "true" if value is True else "false" if value is False else value
-                testname = "%s %s %s" % (what,opOK,val)
-                testnameKO = "%s %s %s" % (what,opKO,val)
                 result = cmp(value)
 
-            results.append( Test(result,testname,testnameKO) )
+            results.append( Test(result,
+                    "%s %s %s" % (what,opOK,strjs(value)),      # test name OK
+                    "%s %s %s" % (what,opKO,strjs(value))       # test name KO
+            ))
 
         list.__init__(self,results)
 
     def __repr__(self):
         ll=[""]
-        ll.append( cy("*")+" %s --> %s" % (self.req,cw(str(self.res)) if self.res else cr("Not callable") ))
+        ll.append( cy("*")+" %s --> %s" % (self.req,cw(str(self.res)) if self.res else cr("Not callable") ) )
         for t in self:
             ll.append( "  - %s: %s" % ( cg("OK") if t==1 else cr("KO"),t.name ) )
-        txt = "\n".join(ll)
-        return txt
+        return "\n".join(ll)
 
 def getVar(env,var):
     if var in env:
@@ -388,7 +391,7 @@ def transform(content,env,methodName):
                 raise RMException("Error in declaration of method "+methodName+" : "+str(e))
             try:
                 x=json.loads(content)
-            except:
+            except (json.decoder.JSONDecodeError,TypeError):
                 x=content
             try:
                 if transform.path:
@@ -412,7 +415,7 @@ def objReplace(env,txt): # same as txtReplace() but for "object" (json'able)
     obj=txtReplace(env,txt)
     try:
         obj=json.loads(obj)
-    except:
+    except (json.decoder.JSONDecodeError,TypeError):
         pass
     return obj
 
@@ -576,7 +579,7 @@ class Req(object):
                             try:
                                 env[ dest ]=json.loads(str(res.content))
                                 cenv[ dest ]=json.loads(str(res.content))
-                            except:
+                            except json.decoder.JSONDecodeError:
                                 env[ dest ]=str(res.content)
                                 cenv[ dest ]=str(res.content)
 
@@ -745,7 +748,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 "\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.req.headers.items())]),
                 cgi.escape( prettify( str(tr.req.body or "") ) ),
 
-                tr.res.status or "",
+                tr.res.info or "",
 
                 "\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.res.headers.items())]),
                 cgi.escape( prettify( str(tr.res.content or "")) ),
@@ -976,4 +979,4 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
-    # exec(open("tests.py").read())
+    #~ exec(open("tests.py").read())
