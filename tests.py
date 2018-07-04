@@ -27,7 +27,7 @@ def mockHttp(q):
     elif q.path=="/test_binary":
         return reqman.Response( 200, BINARY, {"Content-Type":"audio/mpeg","server":"mock"},q.url)
     elif q.path=="/pingpong":
-        return reqman.Response( 200, q.body or "", {"Content-Type":"audio/mpeg","server":"mock"},q.url)
+        return reqman.Response( 200, q.body or "", {"Content-Type":"text/plain","server":"mock"},q.url)
     elif q.path=="/test_json":
         my=dict(
             mydict=dict(name="jack"),
@@ -2477,13 +2477,63 @@ overfi:
         self.assertTrue( r==0 )                     # 0 error !
         self.assertTrue( o.count("OK")==2)          # all is ok
 
+
+    def test_content_matchs(self):
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: |
+    {
+        "a_list": [1, 2, false, null, 99, 0.5],
+        "a_dict": {"z":true, "a":1, "b": {"x":12,"s":1.1}, "c": [1,2,3],"d": null}
+    }
+  tests:
+    - content: |
+        {
+            "a_dict" : {"d":null,"z":true,"a":1,"b":{"s":1.1,"x":12},"c":[1,2,3]},
+            "a_list" : [1,2,false,null,99,0.5]
+        }
+
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==1)          # all is ok
+
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: [1,2]
+  tests:
+    - content:
+        - 1
+        - 2
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==1)          # all is ok
+
+
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: bla bla kiki top
+  tests:
+    - content: kiki                 # control partial content
+    - content:                      # list of control partial content
+        - blo
+        - bla
+        - pot
+    - content: bla bla kiki top     # full compare
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==3)          # all is ok
+
+
     def test_tests_compare_operators(self): # only json.* & status !
         self.create("scenar.rml","""
 - POST: http://jo/pingpong
   body: {"v":42}
   tests:
     - json.v: 42            # \
-    - json.v: .=42          # |---> that's (EXACTLY) the same !!!
+    - json.v: .=42          #  |---> that's (EXACTLY) the same !!!
     - json.v: .==42         # /
 
     - json.v: .!=12
@@ -2534,35 +2584,18 @@ overfi:
         self.assertTrue( r==0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
 
-#         self.create("scenar.rml","""
-# - GET: http://jo/kif
-#   tests:
-#     - status: 
-#         - . < 300
-#         - .=200
-# """)
-#         r,o=self.reqman(".")
-#         print(o)
+        #~ self.create("scenar.rml","""
+#~ - GET: http://jo/kif
+  #~ tests:
+     #~ - status:
+         #~ - . < 300
+         #~ - .=200
+#~ """)
+        #~ r,o=self.reqman(".")
+        #~ print(o)
 
-    def test_json_compare_content(self):
-        self.create("scenar.rml","""
-- POST: http://jo/pingpong
-  body: |
-    {
-        "a_list": [1, 2, false, null, 99, 0.5],
-        "a_dict": {"z":true, "a":1, "b": {"x":12,"s":1.1}, "c": [1,2,3],"d": null}
-    }
-  tests:
-    - content: |
-        {
-            "a_dict" : {"d":null,"z":true,"a":1,"b":{"s":1.1,"x":12},"c":[1,2,3]},
-            "a_list" : [1,2,false,null,99,0.5]
-        }
+    #~ @only
 
-""")
-        r,o=self.reqman(".")
-        self.assertTrue( r==0 )                     # 0 error !
-        self.assertTrue( o.count("OK")==1)          # all is ok
 
 if __name__ == '__main__':
 
@@ -2571,7 +2604,7 @@ if __name__ == '__main__':
         def load_tests(loader, tests, pattern):
             suite = unittest.TestSuite()
             for c in tests._tests:
-                suite.addTests( [t for t in c._tests if t._testMethodName in ONLYs])
+                suite.addTests( [t for t in c._tests if t._testMethodName in ONLYs] )
             return suite
 
     unittest.main( )
