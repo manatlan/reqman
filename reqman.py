@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.5"
+__version__="0.9.9.51"
 
 import yaml         # see "pip install pyaml"
 import encodings
@@ -211,6 +211,8 @@ class ResponseError:
         self.status = None
         self.content = m
         self.headers = {}
+
+        self.info=""
     def __repr__(self):
         return "ERROR: %s" % (self.content)
 
