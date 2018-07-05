@@ -918,8 +918,6 @@ def main(params=[]):
         else:
             env=loadEnv( None, switchs )
 
-        fn="reqman.html"
-
         ll=[]
         for i in ymls:
             with open(i,"r") as fid:
