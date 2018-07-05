@@ -3,7 +3,7 @@
             # delete all
             - DELETE: /
               tests:
-                - status: 200
+                - status: 201
                 - json.ok: true
 
             # Create u0
@@ -43,7 +43,7 @@
             # delete all
             - DELETE: /
               tests:
-                - status: 200
+                - status: 201
                 - json.ok: true
 
             # retrieve all data

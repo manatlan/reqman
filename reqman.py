@@ -699,9 +699,8 @@ def loadEnv( fd, varenvs=[] ):
             dict_merge(env,env[name] )
     return env
 
-class HtmlRender(list):
-    def __init__(self):
-        list.__init__(self,["""
+def render(reqs,switchs):
+    h="""
 <meta charset="utf-8">
 <style>
 body {font-family: sans-serif;font-size:90%}
@@ -723,11 +722,15 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
 .info {position:fixed;top:0px;right:0px;background:rgba(1,1,1,0.2);border-radius:4px;text-align:right;padding:4px}
 .info > * {display:block}
 </style>
-"""])
+"""    
+    alltr=[]
+    for f in reqs:
+        times=[tr.res.time for tr in f.trs if tr.res]
 
-    def add(self,html=None,tr=None):
-        if tr is not None and tr.req and tr.res:
-            html ="""
+        reqs=""
+        for tr in f.trs:
+            alltr+=tr
+            reqs +="""
 <li class="hide">
     <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%(method)s</b> %(path)s : <b>%(status)s</b> <i>%(time)s</i></span>
     <ul>
@@ -742,25 +745,48 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             """ % dict(
                 method=tr.req.method,
                 path=tr.req.path,
-                status=tr.res.status or tr.res,
-                time=tr.res.time,
+                status=tr.res.status if tr.res else "",
+                time=tr.res.time if tr.res else "",
 
                 url=tr.req.url,
                 qheaders="\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.req.headers.items())]),
                 qbody=cgi.escape( prettify( str(tr.req.body or "") ) ),
 
-                info=tr.res.info or "",
+                info=tr.res.info if tr.res else "",
 
-                rheaders="\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.res.headers.items())]),
-                rbody=cgi.escape( prettify( str(tr.res.content or "")) ),
+                rheaders="\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.res.headers.items())]) if tr.res else "",
+                rbody=cgi.escape( prettify( str(tr.res.content or "")) ) if tr.res else "",
 
                 tests="".join(["<li class='%s'>%s</li>" % (t and "ok" or "ko",cgi.escape(t.name)) for t in tr ]),
                 )
-        if html: self.append( html )
 
-    def save(self,name):
-        with open(name,"w+") as fid:
-            fid.write( os.linesep.join(self) )
+        avg = sum(times,datetime.timedelta())/len(times) if len(times) else 0
+        h+="""<h3>%(filename)s</h3>
+        <ol>
+            <i style='float:inherit'>%(nb)s req(s) avg = %(avg)s</i>
+            %(reqs)s
+        </ol>""" % dict(
+            filename=f.name,
+            nb=len(times),
+            avg=avg,
+            reqs=reqs
+        )
+
+    ok,total=len([i for i in alltr if i]),len(alltr)
+
+    h+= """<title>Result: %(ok)s/%(total)s</title>
+    <div class='info'><span>%(today)s</span><b>%(switchs)s</b></div>""" % dict(
+            ok=ok,
+            total=total,
+            today=str(datetime.datetime.now())[:16], 
+            switchs=" ".join(switchs)          
+    )
+
+
+    with open("reqman.html","w+") as fid:
+        fid.write( h )
+
+    return ok,total
 
 
 def findRCUp(fromHere):
@@ -903,44 +929,22 @@ def main(params=[]):
 
         if reqs:
             # and make tests
-            alltr=[]
-            hr=HtmlRender()
             for f in reqs:
-                print()
-                print("TESTS:",cb(f.name))
-                times=[]
-                trs=[]
+                f.trs=[]
+                print("\nTESTS:",cb(f.name))
                 for t in f:
                     tr=t.test( env ) #TODO: colorful output !
-                    if tr.res: times.append( tr.res.time )
                     if onlyFailedTests:
                         if not all(tr):
                             print( tr )
                     else:
                         print( tr )
-                    trs.append( tr)
-                    alltr+=tr
-                # html rendering...
-                avg = sum(times,datetime.timedelta())/len(times) if len(times) else 0
-                hr.add("<h3>%s</h3>"%f.name)
-                hr.add("<ol>")
-                hr.add( "<i style='float:inherit'>%s req(s) avg = %s</i>" % (len(times),avg) )
-                for tr in trs:
-                    hr.add( tr=tr )
-                hr.add("</ol>")
+                    f.trs.append( tr)
 
-
-
-            ok,total=len([i for i in alltr if i]),len(alltr)
-
-            hr.add( "<title>Result: %s/%s</title>" % (ok,total) )
-            hr.add( "<div class='info'><span>%s</span><b>%s</b></div>" % ( str(datetime.datetime.now())[:16], " ".join(switchs) ) )
-
-            hr.save( fn )
+            ok,total=render(reqs,switchs)
 
             if total:
-                print()
-                print("RESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
+                print("\nRESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
             return total - ok
         else:
 
