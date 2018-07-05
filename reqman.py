@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.51"
+__version__="0.9.9.52"
 
 import yaml         # see "pip install pyaml"
 import encodings
@@ -597,6 +597,7 @@ class Reqs(list):
     def __init__(self,fd,env=None):
         self.env=env or {}    # just for proc finding
         self.name = fd.name.replace("\\","/") if hasattr(fd,"name") else "String"
+        self.trs=[]
         if not hasattr(fd,"name"): setattr(fd,"name","<string>")
         try:
             l=yamlLoad(fd)
@@ -927,23 +928,27 @@ def main(params=[]):
 
         if reqs:
             # and make tests
-            for f in reqs:
-                f.trs=[]
-                print("\nTESTS:",cb(f.name))
-                for t in f:
-                    tr=t.test( env ) #TODO: colorful output !
-                    if onlyFailedTests:
-                        if not all(tr):
+
+            try:
+                for f in reqs:
+                    f.trs=[]
+                    print("\nTESTS:",cb(f.name))
+                    for t in f:
+                        tr=t.test( env ) #TODO: colorful output !
+                        if onlyFailedTests:
+                            if not all(tr):
+                                print( tr )
+                        else:
                             print( tr )
-                    else:
-                        print( tr )
-                    f.trs.append( tr)
+                        f.trs.append( tr)
+            except KeyboardInterrupt as e:
+                raise
+            finally:
+                ok,total=render(reqs,switchs)
 
-            ok,total=render(reqs,switchs)
-
-            if total:
-                print("\nRESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
-            return total - ok
+                if total:
+                    print("\nRESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
+                return total - ok
         else:
 
             print("""USAGE TEST   : reqman [--option] [-switch] <folder|file>...
@@ -972,12 +977,10 @@ Test a http service with pre-made scenarios, whose are simple yaml files
             return -1
 
     except RMException as e:
-        print()
-        print("ERROR: %s" % e)
+        print("\nERROR: %s" % e)
         return -1
     except KeyboardInterrupt as e:
-        print()
-        print("ERROR: process interrupted")
+        print("\nERROR: process interrupted")
         return -1
 
 if __name__=="__main__":
