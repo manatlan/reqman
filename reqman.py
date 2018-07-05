@@ -729,33 +729,32 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
         if tr is not None and tr.req and tr.res:
             html ="""
 <li class="hide">
-    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%s</b> %s : <b>%s</b> <i>%s</i></span>
+    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%(method)s</b> %(path)s : <b>%(status)s</b> <i>%(time)s</i></span>
     <ul>
         <span>
-            <pre title="the request">%s %s<hr/>%s<hr/>%s</pre>
-            -> %s
-            <pre title="the response">%s<hr/>%s</pre>
+            <pre title="the request">%(method)s %(url)s<hr/>%(qheaders)s<hr/>%(qbody)s</pre>
+            -> %(info)s
+            <pre title="the response">%(rheaders)s<hr/>%(rbody)s</pre>
         </span>
-        %s
+        %(tests)s
     </ul>
 </li>
-            """ % (
-                tr.req.method,
-                tr.req.path,
-                tr.res.status or tr.res,
-                tr.res.time,
+            """ % dict(
+                method=tr.req.method,
+                path=tr.req.path,
+                status=tr.res.status or tr.res,
+                time=tr.res.time,
 
-                tr.req.method,
-                tr.req.url,
-                "\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.req.headers.items())]),
-                cgi.escape( prettify( str(tr.req.body or "") ) ),
+                url=tr.req.url,
+                qheaders="\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.req.headers.items())]),
+                qbody=cgi.escape( prettify( str(tr.req.body or "") ) ),
 
-                tr.res.info or "",
+                info=tr.res.info or "",
 
-                "\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.res.headers.items())]),
-                cgi.escape( prettify( str(tr.res.content or "")) ),
+                rheaders="\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.res.headers.items())]),
+                rbody=cgi.escape( prettify( str(tr.res.content or "")) ),
 
-                "".join(["<li class='%s'>%s</li>" % (t and "ok" or "ko",cgi.escape(t.name)) for t in tr ]),
+                tests="".join(["<li class='%s'>%s</li>" % (t and "ok" or "ko",cgi.escape(t.name)) for t in tr ]),
                 )
         if html: self.append( html )
 
@@ -945,7 +944,7 @@ def main(params=[]):
             return total - ok
         else:
 
-            print("""USAGE TEST   : reqman [--opt] [-switch] <folder|file>...
+            print("""USAGE TEST   : reqman [--option] [-switch] <folder|file>...
 USAGE CREATE : reqman new <url>
 Version %s
 Test a http service with pre-made scenarios, whose are simple yaml files
@@ -954,7 +953,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
   <folder|file> : yml scenario or folder of yml scenario
                   (as many as you want)
 
-  [opt]
+  [option]
            --ko : limit standard output to failed tests (ko) only
 """ % __version__)
 
