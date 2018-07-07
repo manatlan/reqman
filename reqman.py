@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.52"
+__version__="0.9.9.53"
 
 import yaml         # see "pip install pyaml"
 import encodings
@@ -25,7 +25,7 @@ import string
 import sys
 import ssl
 import glob
-import html as cgi
+import html
 import socket
 import re
 import copy
@@ -751,14 +751,14 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
 
                 url=tr.req.url,
                 qheaders="\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.req.headers.items())]),
-                qbody=cgi.escape( prettify( str(tr.req.body or "") ) ),
+                qbody=html.escape( prettify( str(tr.req.body or "") ) ),
 
                 info=tr.res.info if tr.res else "",
 
                 rheaders="\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.res.headers.items())]) if tr.res else "",
-                rbody=cgi.escape( prettify( str(tr.res.content or "")) ) if tr.res else "",
+                rbody=html.escape( prettify( str(tr.res.content or "")) ) if tr.res else "",
 
-                tests="".join(["<li class='%s'>%s</li>" % (t and "ok" or "ko",cgi.escape(t.name)) for t in tr ]),
+                tests="".join(["<li class='%s'>%s</li>" % (t and "ok" or "ko",html.escape(t.name)) for t in tr ]),
                 )
 
         avg = sum(times,datetime.timedelta())/len(times) if len(times) else 0

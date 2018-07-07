@@ -2584,17 +2584,18 @@ overfi:
         self.assertTrue( r==0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
 
-        #~ self.create("scenar.rml","""
-#~ - GET: http://jo/kif
-  #~ tests:
-     #~ - status:
-         #~ - . < 300
-         #~ - .=200
-#~ """)
-        #~ r,o=self.reqman(".")
-        #~ print(o)
+#     @only
+#     def test_next_feature(self): # only json.* & status !
+#         self.create("scenar.rml","""
+# - GET: http://jo/kif
+#   tests:
+#      - status:
+#          - . < 300
+#          - 400
+# """)
+#         r,o=self.reqman(".")
+#         print(o)
 
-    #~ @only
 
 
 if __name__ == '__main__':
