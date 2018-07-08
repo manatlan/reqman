@@ -2584,6 +2584,18 @@ overfi:
         self.assertTrue( r==0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
 
+    def test_content_ambiguity_trouble_fixed(self):
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: { result: true }
+  tests:
+     - status: 200
+     - content: "true"
+""")
+        r,o=self.reqman(".")
+        self.assertTrue( r==0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==2)          # all is ok
+
 #     @only
 #     def test_next_feature(self): # only json.* & status !
 #         self.create("scenar.rml","""

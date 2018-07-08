@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.53"
+__version__="0.9.9.6"
 
 import yaml         # see "pip install pyaml"
 import encodings
@@ -40,6 +40,7 @@ import http.client
 import urllib.request
 import urllib.parse
 import urllib.error
+import traceback
 
 class NotFound: pass
 class RMException(Exception):pass
@@ -315,7 +316,8 @@ class TestResult(list):
                         j=lambda x: json.dumps(json.loads(str(x)),sort_keys=True)
                         if j(x)==j(self.res.content): return True
                     except json.decoder.JSONDecodeError:
-                        return str(x) in str(self.res.content)
+                        pass
+                    return str(x) in str(self.res.content)
             elif what=="status":
                 def cmp(x):
                     try:
@@ -929,26 +931,23 @@ def main(params=[]):
         if reqs:
             # and make tests
 
-            try:
-                for f in reqs:
-                    f.trs=[]
-                    print("\nTESTS:",cb(f.name))
-                    for t in f:
-                        tr=t.test( env ) #TODO: colorful output !
-                        if onlyFailedTests:
-                            if not all(tr):
-                                print( tr )
-                        else:
+            for f in reqs:
+                f.trs=[]
+                print("\nTESTS:",cb(f.name))
+                for t in f:
+                    tr=t.test( env ) #TODO: colorful output !
+                    if onlyFailedTests:
+                        if not all(tr):
                             print( tr )
-                        f.trs.append( tr)
-            except KeyboardInterrupt as e:
-                raise
-            finally:
-                ok,total=render(reqs,switchs)
+                    else:
+                        print( tr )
+                    f.trs.append( tr)
 
-                if total:
-                    print("\nRESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
-                return total - ok
+            ok,total=render(reqs,switchs)
+
+            if total:
+                print("\nRESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
+            return total - ok
         else:
 
             print("""USAGE TEST   : reqman [--option] [-switch] <folder|file>...
@@ -978,6 +977,9 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
     except RMException as e:
         print("\nERROR: %s" % e)
+        return -1
+    except Exception as e:
+        print(traceback.format_exc(),"\nERROR: %s" % e)
         return -1
     except KeyboardInterrupt as e:
         print("\nERROR: process interrupted")
