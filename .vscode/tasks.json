@@ -1,0 +1,21 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build targz",
+            "type": "shell",
+            "command": "rm dist/*.tar.gz && python3 setup.py sdist",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "pypi upload",
+            "type": "shell",
+            "command": "/home/manatlan/.local/bin/twine upload dist/reqman-*.tar.gz"
+        }
+    ]
+}
