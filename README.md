@@ -2,7 +2,7 @@
 Reqman is the postman killer ;-)
 
 Create your http(s)-tests in simple yaml files, and run them with command line, against various environments.
-**reqman** is a python3 simple file (need [PyYAML](https://pypi.org/project/PyYAML/) dependency). The [changelog](/changelog) !
+**reqman** is a python3 simple file (need [PyYAML](https://pypi.org/project/PyYAML/) dependency). The [changelog](https://github.com/manatlan/reqman/blob/master/changelog) !
 
 **Features**
    * Light (simple py3 file, 900 lines of code, and x3 lines for unittests, in TDD mind)
@@ -22,7 +22,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * color output in console (when [colorama](https://pypi.org/project/colorama/) is present)
    * variables can be computed/transformed (in a chain way)
    * tests files extension : .yml or .rml (ReqManLanguage)
-   * generate conf/rml (with new command)
+   * generate conf/rml (with 'new' command)
    * versionning
 
 **and soon**
@@ -43,7 +43,7 @@ Will run all yml files in the folder example
     $ reqman.py example *.yml yo/my_tests.yml
 Will run all yml files in the folder example + all yml files in current folder + the tests in _yo/my_tests.yml_
 
-**reqman** can use a [reqman.conf](/examples/reqman.conf) (which is a yaml file too), to use key/value variables, which can be very handly for the tests ;-). **reqman** will use the first _reqman.conf_ available in the path. Variables will be automatically loaded, and fully available in the tests.
+**reqman** can use a [reqman.conf](https://github.com/manatlan/reqman/blob/master/examples/reqman.conf) (which is a yaml file too), to use key/value variables, which can be very handly for the tests ;-). **reqman** will use the first _reqman.conf_ available in the path. Variables will be automatically loaded, and fully available in the tests.
 
 There are 5 specials (and optionnals) vars :
 
@@ -76,7 +76,7 @@ Here is a yaml, with multiple tests (a list):
     - GET: /
     - GET: /explore
 
-But requests without tests are useless ... see [tests.yml](/examples/tests.yml).
+But requests without tests are useless ... see [tests.yml](https://github.com/manatlan/reqman/blob/master/examples/tests.yml).
 
 
 For each request you can set theses keys:
