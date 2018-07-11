@@ -11,13 +11,19 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": []
+            "problemMatcher": [],
+            "presentation": {
+                "panel": "new"
+            }            
         },
         {
             "label": "pypi upload",
             "type": "shell",
             "command": "/home/manatlan/.local/bin/twine upload dist/reqman-*.tar.gz",
-            "problemMatcher": []
+            "problemMatcher": [],
+            "presentation": {
+                "panel": "new"
+            }
         }
     ]
 }
