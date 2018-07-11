@@ -10,12 +10,14 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }
+            },
+            "problemMatcher": []
         },
         {
             "label": "pypi upload",
             "type": "shell",
-            "command": "/home/manatlan/.local/bin/twine upload dist/reqman-*.tar.gz"
+            "command": "/home/manatlan/.local/bin/twine upload dist/reqman-*.tar.gz",
+            "problemMatcher": []
         }
     ]
 }
