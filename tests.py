@@ -2465,7 +2465,7 @@ overfi:
 - POST: http://jo/pingpong
   body: |
     {
-        "a_dict":{"z":true,"a":1,"b":{"x":12,"s":1.1},"c":[1,2,3],"d":null},
+        "a_dict": {"z":true,"a":1,"b":{"x":12,"s":1.1},"c":[1,2,3],"d":null},
         "a_list": [1,2,false,null,99,0.5]
     }
   tests:
@@ -2474,7 +2474,7 @@ overfi:
 
 """)
         r,o=self.reqman(".")
-        self.assertTrue( r==0 )                     # 0 error !
+        self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==2)          # all is ok
 
 
@@ -2526,7 +2526,6 @@ overfi:
         self.assertTrue( r==0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
 
-
     def test_tests_compare_operators(self): # only json.* & status !
         self.create("scenar.rml","""
 - POST: http://jo/pingpong
@@ -2565,7 +2564,7 @@ overfi:
     - status: .!={xxx]
 """)
         r,o=self.reqman(".")
-        self.assertTrue( r==7 )                     # 0 error !
+        self.assertEqual( r,7 )                     # 0 error !
         self.assertTrue( o.count("KO")==7)          # all is ok
 
         self.create("scenar.rml","""
@@ -2593,20 +2592,20 @@ overfi:
      - content: "true"
 """)
         r,o=self.reqman(".")
-        self.assertTrue( r==0 )                     # 0 error !
+        self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==2)          # all is ok
 
-#     @only
-#     def test_next_feature(self): # only json.* & status !
-#         self.create("scenar.rml","""
-# - GET: http://jo/kif
-#   tests:
-#      - status:
-#          - . < 300
-#          - 400
-# """)
-#         r,o=self.reqman(".")
-#         print(o)
+    def test_matchAny_in_status(self): # only json.* & status !
+        self.create("scenar.rml","""
+- GET: http://jo/kif
+  tests:
+     - status:
+         - . < 300
+         - 400
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==1)          # all is ok
 
 
 

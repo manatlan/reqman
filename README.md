@@ -2,7 +2,7 @@
 Reqman is the postman killer ;-)
 
 Create your http(s)-tests in simple yaml files, and run them with command line, against various environments.
-**reqman** is a python3 simple file (need [pyaml](https://pypi.org/project/pyaml/) dependency). The [changelog](/changelog) !
+**reqman** is a python3 simple file (need [PyYAML](https://pypi.org/project/PyYAML/) dependency). The [changelog](/changelog) !
 
 **Features**
    * Light (simple py3 file, 900 lines of code, and x3 lines for unittests, in TDD mind)

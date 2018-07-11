@@ -1,3 +1,7 @@
+0.9.9.7 (11/07/2018)
+  - ctrl-c render the html output (again ;-)
+  - test system has been completly rewritten (comparators now works for all tests, and inside list too)
+  - use f-string now
 0.9.9.6 (08/07/2018)
   - ctrl-c break the html output (for now)
   - FIX: a Test() trouble (exception ignored)

@@ -15,9 +15,9 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.6"
+__version__="0.9.9.7"
 
-import yaml         # see "pip install pyaml"
+import yaml         # see "pip install pyyaml"
 import encodings
 import os
 import json
@@ -84,6 +84,9 @@ def dict_merge(dct, merge_dct):
             else:
                 dct[k] = merge_dct[k]
 
+
+def mkUrl(protocol,host,port):
+    return f'{protocol}://{host}{ f":{port}" if port else "" }'
 
 def prettify(txt,indentation=4):
     try:
@@ -159,12 +162,7 @@ class Request:
         self.headers={}
 
         if self.protocol:
-            self.url="%s://%s%s" % (
-                self.protocol,
-                (self.host or "")+(":%s"%self.port if self.port else ""),
-                self.path
-            )
-
+            self.url=mkUrl(self.protocol,self.host,self.port)+self.path
             self.headers = COOKIEJAR.getCookieHeaderForUrl( self.url )
         else:
             self.url=None
@@ -189,7 +187,7 @@ class Content:
                 return str(self.__b,"cp1252")  # try as cp1252 ...
             except UnicodeDecodeError:
                 # fallback to a *** binary representation ***
-                return "*** BINARY SIZE(%s) ***" % len(self.__b)
+                return f"*** BINARY SIZE({len(self.__b)}) ***"
 
     def __contains__(self, key):
         return key in str(self)
@@ -205,7 +203,7 @@ class Response:
         COOKIEJAR.saveCookie( headers, url )
 
     def __repr__(self):
-        return "%s" % (self.status)
+        return str(self.status)
 
 class ResponseError:
     def __init__(self,m):
@@ -215,7 +213,7 @@ class ResponseError:
 
         self.info=""
     def __repr__(self):
-        return "ERROR: %s" % (self.content)
+        return "ERROR: {self.content}"
 
 
 def dohttp(r):
@@ -228,11 +226,8 @@ def dohttp(r):
         cnx.request(r.method,enc(r.path),r.body,r.headers)
         rr=cnx.getresponse()
 
-        info="%s %s %s" % (
-            {10:"HTTP/1.0",11:"HTTP/1.1"}.get(rr.version,"HTTP/?"),
-            rr.status,
-            rr.reason,
-        )
+        version= {10:"HTTP/1.0",11:"HTTP/1.1"}.get(rr.version,"HTTP/?")
+        info=f"{version} {rr.status} {rr.reason}"
 
         return Response( rr.status,rr.read(),rr.getheaders(), r.url, info )
     except socket.timeout:
@@ -293,6 +288,7 @@ def strjs( x ):
     #~ val = "null" if value is None else "true" if value is True else "false" if value is False else value
     return json.dumps(x)
 
+
 class TestResult(list):
     def __init__(self,req,res,tests):
         self.req=req
@@ -304,53 +300,58 @@ class TestResult(list):
         for test in tests:
             what,value = list(test.keys())[0],list(test.values())[0]
 
-            value,ope,opOK,opKO = getValOpe(value)
+            testContains=False
 
-            canMatchAll=False
-            #------------- find the cmp method
+            # get the value to compare with value --> tvalue
             if what=="content":
-                canMatchAll=True
-                def cmp(x):
-                    """ true if json content are the same or if x is in content """
-                    try:
-                        j=lambda x: json.dumps(json.loads(str(x)),sort_keys=True)
-                        if j(x)==j(self.res.content): return True
-                    except json.decoder.JSONDecodeError:
-                        pass
-                    return str(x) in str(self.res.content)
+                testContains=True
+                tvalue=str(self.res.content)
             elif what=="status":
-                def cmp(x):
-                    try:
-                        return ope( int(x), self.res.status )
-                    except (ValueError,TypeError):
-                        return False
-
+                testContains=False
+                tvalue=self.res.status
             elif what.startswith("json."):
-                canMatchAll=True
+                testContains=False
                 try:
                     jzon=json.loads( str(self.res.content) )
-                    v=jpath(jzon,what[5:])
-                    v=None if v == NotFound else v
-
-                    cmp = lambda x : ope(x,v)
+                    tvalue=jpath(jzon,what[5:])
+                    tvalue=None if tvalue == NotFound else tvalue
                 except Exception as e:
-                    cmp = lambda x: False
+                    tvalue=None
             else: # headers
-                cmp = lambda x: str(x) in insensitiveHeaders.get(what.lower(),"")    #TODO: test if header is just present
-            #-------------
+                testContains=True
+                tvalue=insensitiveHeaders.get(what.lower(),"")
 
-            if type(value)==list:
-                opOK,opKO="in","not in"
-                if canMatchAll:
-                    result = cmp(value) or any( [cmp(i) for i in value] ) # matchAll or any
-                else: # just match any
-                    result = any( [cmp(i) for i in value] )
+            # test if all match as json (list, dict, str ...)
+            try:
+                j=lambda x: json.dumps(json.loads( x ) if type(x) in [str,bytes] else x,sort_keys=True)
+                matchAll = (j(value)==j(tvalue))
+            except json.decoder.JSONDecodeError as e:
+                matchAll = False
+
+            if matchAll:
+                test,opOK,opKO,val = True,"=","!=",value
             else:
-                result = cmp(value)
+                #ensure that we've got a list
+                values= [value] if type(value)!=list else value
 
-            results.append( Test(result,
-                    "%s %s %s" % (what,opOK,strjs(value)),      # test name OK
-                    "%s %s %s" % (what,opKO,strjs(value))       # test name KO
+                bool=False
+                for value in values:    # match any
+                    if testContains:
+                        value,ope,opOK,opKO = value,lambda x,c: x in c,"contains","doesn't contain"
+                    else:
+                        value,ope,opOK,opKO = getValOpe(value)
+
+                    bool = ope(value,tvalue)
+                    if bool: break
+
+                if len(values)==1:
+                    test,opOK,opKO,val = bool,opOK,opKO,value
+                else:
+                    test,opOK,opKO,val = bool,"matchs any","doesn't match any",values
+
+            results.append( Test(test,
+                    f"{what} {opOK} {strjs(val)}",   # test name OK
+                    f"{what} {opKO} {strjs(val)}",   # test name KO
             ))
 
         list.__init__(self,results)
@@ -361,6 +362,7 @@ class TestResult(list):
         for t in self:
             ll.append( "  - %s: %s" % ( cg("OK") if t==1 else cr("KO"),t.name ) )
         return "\n".join(ll)
+
 
 def getVar(env,var):
     if var in env:
@@ -378,10 +380,10 @@ def getVar(env,var):
     elif "." in var:
         val=jpath(env,var)
         if val is NotFound:
-            raise RMException("Can't resolve "+var+" in : "+ ", ".join(list(env.keys())))
+            raise RMException(f"Can't resolve {var} in : {', '.join(env.keys())}")
         return txtReplace(env,val)
     else:
-        raise RMException("Can't resolve "+var+" in : "+ ", ".join(list(env.keys())))
+        raise RMException(f"Can't resolve {var} in : {', '.join(env.keys())}")
 
 
 
@@ -392,7 +394,7 @@ def transform(content,env,methodName):
             try:
                 exec("def DYNAMIC(x,ENV):\n" + ("\n".join(["  "+i for i in code.splitlines()])), globals())
             except Exception as e:
-                raise RMException("Error in declaration of method "+methodName+" : "+str(e))
+                raise RMException(f"Error in declaration of method {methodName} : {e}")
             try:
                 x=json.loads(content)
             except (json.decoder.JSONDecodeError,TypeError):
@@ -403,12 +405,12 @@ def transform(content,env,methodName):
                     os.chdir( transform.path )
                 content=DYNAMIC( x,env )
             except Exception as e:
-                raise RMException("Error in execution of method "+methodName+" : "+str(e))
+                raise RMException(f"Error in execution of method {methodName} : {e}")
             finally:
                 if transform.path:
                     os.chdir(curdir)
         else:
-            raise RMException("Can't find method "+methodName+" in : "+ ", ".join(list(env.keys())))
+            raise RMException(f"Can't find method {methodName} in : {', '.join(env.keys())}")
 
     return content
 
@@ -431,10 +433,10 @@ def txtReplace(env,txt):
             try:
                 val=getVar(env,var)   #recursive here ! (if myvar="{{otherVar}}"", redo a pass to resolve otherVar)
             except RuntimeError:
-                raise RMException("Recursion trouble for '%s'" % var)
+                raise RMException(f"Recursion trouble for '{var}'")
 
             if val is NotFound:
-                raise RMException("Can't resolve "+var+" in : "+ ", ".join(list(env.keys())))
+                raise RMException(f"Can't resolve {var} in : {', '.join(env.keys())}" )
             else:
                 if type(val) != str:
                     if val is None:
@@ -577,7 +579,7 @@ class Req(object):
                             with open(name,"wb+") as fid:
                                 fid.write(res.content.toBinary())
                         except Exception as e:
-                            raise RMException("Save to file '%s' error : %s" % (name,e))
+                            raise RMException(f"Save to file '{name}' error : {e}")
                     else:
                         if dest:
                             try:
@@ -593,7 +595,7 @@ class Req(object):
             return TestResult(req,None,[])
 
     def __repr__(self):
-        return "<%s %s>" % (self.method,self.path)
+        return f"<{self.method} {self.path}>"
 
 class Reqs(list):
     def __init__(self,fd,env=None):
@@ -604,7 +606,7 @@ class Reqs(list):
         try:
             l=yamlLoad(fd)
         except Exception as e:
-            raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
+            raise RMException(f"YML syntax in {fd.name}\n{e}")
 
         procedures={}
 
@@ -644,7 +646,7 @@ class Reqs(list):
 
                                 continue
                             else:
-                                raise RMException("call a not defined procedure '%s' in '%s'" % (callname,fd.name))
+                                raise RMException(f"call a not defined procedure {callname}' in '{fd.name}'")
                         continue
                     elif len(list(d.keys()))==1: # a declaration of a procedure ?
                         callname=list(d.keys())[0]
@@ -660,7 +662,7 @@ class Reqs(list):
                         verb=verbs[0]
                         ll.append( Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),d.get("params",{})) )
                     else:
-                        raise RMException("Unknown verb (%s) in '%s'" % (list(d.keys()),fd.name))
+                        raise RMException(f"Unknown verb ({','.join(d.keys())}) in {fd.name}'")
 
             return ll
 
@@ -687,17 +689,17 @@ def loadEnv( fd, varenvs=[] ):
         try:
             env=yamlLoad( fd ) if fd else {}
             if fd.name:
-                print(cw("Using '%s'" % os.path.relpath(fd.name)))
+                print(cw(f"Using '{os.path.relpath(fd.name)}'" ))
                 transform.path = os.path.dirname(fd.name) # change path when executing transform methods, according the path of reqman.conf
         except Exception as e:
-            raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
+            raise RMException(f"""YML syntax in {fd.name or "<string>"}\n{e}0""")
 
     else:
         env={}
 
     for name in varenvs:
         if name not in env:
-            raise RMException("the switch '-%s' is unknown ?!" % name)
+            raise RMException(f"the switch '-{name}' is unknown ?!")
         else:
             dict_merge(env,env[name] )
     return env
@@ -725,7 +727,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
 .info {position:fixed;top:0px;right:0px;background:rgba(1,1,1,0.2);border-radius:4px;text-align:right;padding:4px}
 .info > * {display:block}
 </style>
-"""    
+"""
     alltr=[]
     for f in reqs:
         times=[tr.res.time for tr in f.trs if tr.res]
@@ -733,57 +735,46 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
         reqs=""
         for tr in f.trs:
             alltr+=tr
-            reqs +="""
+
+            qheaders="\n".join([f"<b>{k}</b>: {v}" for k,v in list(tr.req.headers.items())])
+            qbody=html.escape( prettify( str(tr.req.body or "") ) )
+
+            if tr.res:
+                status=tr.res.status
+                rtime=tr.res.time
+                info=tr.res.info
+                rheaders="\n".join([f"<b>{k}</b>: {v}" for k,v in list(tr.res.headers.items())])
+                rbody=html.escape( prettify( str(tr.res.content or "")) )
+            else:
+                status=rtime=info=rheaders=rbody=""
+
+            tests="".join([f"""<li class='{"ok" if t else "ko"}'>{html.escape(t.name)}</li>""" for t in tr ])
+
+            reqs +=f"""
 <li class="hide">
-    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>%(method)s</b> %(path)s : <b>%(status)s</b> <i>%(time)s</i></span>
+    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>{tr.req.method}</b> {tr.req.path} : <b>{status}</b> <i>{rtime}</i></span>
     <ul>
         <span>
-            <pre title="the request">%(method)s %(url)s<hr/>%(qheaders)s<hr/>%(qbody)s</pre>
-            -> %(info)s
-            <pre title="the response">%(rheaders)s<hr/>%(rbody)s</pre>
+            <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
+            -> {info}
+            <pre title="the response">{rheaders}<hr/>{rbody}</pre>
         </span>
-        %(tests)s
+        {tests}
     </ul>
 </li>
-            """ % dict(
-                method=tr.req.method,
-                path=tr.req.path,
-                status=tr.res.status if tr.res else "",
-                time=tr.res.time if tr.res else "",
-
-                url=tr.req.url,
-                qheaders="\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.req.headers.items())]),
-                qbody=html.escape( prettify( str(tr.req.body or "") ) ),
-
-                info=tr.res.info if tr.res else "",
-
-                rheaders="\n".join(["<b>%s</b>: %s" %(k,v) for k,v in list(tr.res.headers.items())]) if tr.res else "",
-                rbody=html.escape( prettify( str(tr.res.content or "")) ) if tr.res else "",
-
-                tests="".join(["<li class='%s'>%s</li>" % (t and "ok" or "ko",html.escape(t.name)) for t in tr ]),
-                )
+            """
 
         avg = sum(times,datetime.timedelta())/len(times) if len(times) else 0
-        h+="""<h3>%(filename)s</h3>
+        h+=f"""<h3>{f.name}</h3>
         <ol>
-            <i style='float:inherit'>%(nb)s req(s) avg = %(avg)s</i>
-            %(reqs)s
-        </ol>""" % dict(
-            filename=f.name,
-            nb=len(times),
-            avg=avg,
-            reqs=reqs
-        )
+            <i style='float:inherit'>{len(times)} req(s) avg = {avg}</i>
+            {reqs}
+        </ol>"""
 
     ok,total=len([i for i in alltr if i]),len(alltr)
 
-    h+= """<title>Result: %(ok)s/%(total)s</title>
-    <div class='info'><span>%(today)s</span><b>%(switchs)s</b></div>""" % dict(
-            ok=ok,
-            total=total,
-            today=str(datetime.datetime.now())[:16], 
-            switchs=" ".join(switchs)          
-    )
+    stamp = str(datetime.datetime.now())[:16]
+    h+= f"""<title>Result: {ok}/{total}</title><div class='info'><span>{stamp}</span><b>{" ".join(switchs)}</b></div>"""
 
 
     with open("reqman.html","w+") as fid:
@@ -819,7 +810,7 @@ def resolver(params):
             paths.append( os.path.dirname(p) )
             ymls.append(p)
         else:
-            raise RMException("bad param: %s" % p) #TODO: better here
+            raise RMException(f"bad param: {p}") #TODO: better here
 
     # choose first reqman.conf under choosen files
     rc=None
@@ -840,23 +831,24 @@ def makeReqs(reqs,env):
     if reqs:
         if env and ("BEGIN" in env):
             r=io.StringIO("call: BEGIN")
-            r.name="BEGIN (%s)" % REQMAN_CONF
+            r.name=f"BEGIN ({REQMAN_CONF})"
             reqs = [ Reqs(r,env) ] + reqs
 
         if env and ("END" in env):
             r=io.StringIO("call: END")
-            r.name="END (%s)" % REQMAN_CONF
+            r.name=f"END ({REQMAN_CONF})"
             reqs = reqs + [ Reqs(r,env) ]
 
     return reqs
+
 
 def create(url):
     """ return a (reqman.conf, yml_file) based on the test 'url' """
     hp=urllib.parse.urlparse( url )
     if hp and hp.scheme and hp.hostname:
-        root="%s://%s" % (hp.scheme,hp.hostname) + (hp.port and ":%s"%hp.port or "")
-        rc=u"""
-root: %(root)s
+        root=mkUrl(hp.scheme,hp.hostname,hp.port)
+        rc=f"""
+root: {root}
 headers:
     User-Agent: reqman (https://github.com/manatlan/reqman)
 """ % locals()
@@ -866,36 +858,38 @@ headers:
 
     path= hp.path + ("?"+hp.query if hp.query else "")
 
-    yml=u"""# test created for "%(root)s%(path)s" !
+    yml=f"""# test created for "{root}{path}" !
 
-- GET: %(path)s
-#- GET: %(root)s%(path)s
+- GET: {path}
+#- GET: {root}{path}
   tests:
     - status: 200
 """ % locals()
     return rc,yml
 
 def main(params=[]):
+    reqs=[]
+    switchs=[]
     try:
         if len(params)==2 and params[0].lower()=="new":
             ## CREATE USAGE
             rc=findRCUp(".")
             if rc:
-                print(cw("Using '%s'" % os.path.relpath(rc)))
+                print(cw(f"Using '{os.path.relpath(rc)}'"))
 
             conf,yml=create(params[1])
             if conf:
                 if not rc:
-                    print("Create",REQMAN_CONF)
+                    print(f"Create {REQMAN_CONF}")
                     with open(REQMAN_CONF,"w") as fid: fid.write(conf)
             else:
                 if not rc:
-                    raise RMException("there is no '%s', you shoul provide a full url !" % REQMAN_CONF)
+                    raise RMException(f"there is no '{REQMAN_CONF}', you shoul provide a full url !")
 
             ff=glob.glob("*_test.rml")
             yname = "%04d_test.rml" % ((len(ff)+1)*10)
 
-            print("Create",yname)
+            print(f"Create {yname}")
             with open(yname,"w") as fid: fid.write(yml)
 
             return 0
@@ -933,7 +927,7 @@ def main(params=[]):
 
             for f in reqs:
                 f.trs=[]
-                print("\nTESTS:",cb(f.name))
+                print(f"\nTESTS: {cb(f.name)}")
                 for t in f:
                     tr=t.test( env ) #TODO: colorful output !
                     if onlyFailedTests:
@@ -946,13 +940,13 @@ def main(params=[]):
             ok,total=render(reqs,switchs)
 
             if total:
-                print("\nRESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
+                print("\nRESULT: ",(cg if ok==total else cr)(f"{ok}/{total}"))
             return total - ok
         else:
 
-            print("""USAGE TEST   : reqman [--option] [-switch] <folder|file>...
+            print(f"""USAGE TEST   : reqman [--option] [-switch] <folder|file>...
 USAGE CREATE : reqman new <url>
-Version %s
+Version {__version__}
 Test a http service with pre-made scenarios, whose are simple yaml files
 (More info on https://github.com/manatlan/reqman)
 
@@ -961,27 +955,29 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
   [option]
            --ko : limit standard output to failed tests (ko) only
-""" % __version__)
+""")
 
             if env:
-                print("""  [switch]      : default to "%s" """ % env.get("root",None) )
+                print(f"""  [switch]      : default to "{env.get("root",None)}" """ )
                 for k,v in env.items():
                     root=v.get("root",None) if type(v)==dict else None
                     if root:
-                        print("""%15s : "%s" """ % ("-"+k,root))
+                        print(f"""{k:15} : "{root}" """)
             else:
-                print("""  [switch]      : pre-made 'switch' defined in a %s""" % REQMAN_CONF)
+                print(f"""  [switch]      : pre-made 'switch' defined in a {REQMAN_CONF}""")
 
 
             return -1
 
     except RMException as e:
-        print("\nERROR: %s" % e)
+        print(f"\nERROR: {e}")
         return -1
     except Exception as e:
-        print(traceback.format_exc(),"\nERROR: %s" % e)
+        print("\n**HERE IS A BUG**, please report it !")
+        print(traceback.format_exc(),f"\nERROR: {e}")
         return -1
     except KeyboardInterrupt as e:
+        render(reqs,switchs)
         print("\nERROR: process interrupted")
         return -1
 

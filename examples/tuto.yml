@@ -218,8 +218,8 @@
     - json.result:  ok            # assuming response = {"result":"ok"}
 
 #--------------------------------------------
-# obviously, you can use comparator (for status/json.* only) using syntax: ". op value" (op in =,!=,<,>,<=,>=)
-# (but not recommended : stay simple and stupid ... comparators doesn't work in yaml list ^^)
+# obviously, you can use comparator using syntax: ". op value" (op in =,!=,<,>,<=,>=)
+# (but not recommended : stay simple and stupid ...)
 - GET: /
   tests:                          
     - status:       . < 400           
