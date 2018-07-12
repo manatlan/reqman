@@ -29,19 +29,38 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * doc & examples ;-)
    * postman converter ?
 
-**Example**
+**Getting started : installation **
 
+If you are on an *nix platform, you can start with pip :
+
+    $ pip3 install reqman
+it will add the _reqman.py_ script in your path.
+
+If you are on microsoft windows, just download [reqman.exe](https://github.com/manatlan/reqman/tree/master/dist/reqman.exe), and add it in your path.
+
+**Getting started : let's go **
+
+Imagine thant you want to test the [json api from pypi.org](https://wiki.python.org/moin/PyPIJSON), to verify that [it finds me](https://pypi.org/pypi/reqman/json) ;-)
+
+You can start a new project in your folder, like that:
+
+    $ reqman.py new https://pypi.org/pypi/reqman/json
+It's the first start ; it will create a conf file _reqman.conf_ and a (basic) test file _0010_test.rml_.
+
+Now, you can run/test it :
     $ reqman.py .
-Will run all yml files in current folder (and children folders)
+It will scan your folder "." and run all test files (*.rml or *.yml) against the _reqman.conf_ ;-)
 
-    $ reqman.py *.yml
-Will run all tests in availables yml files
+It will show you what's happened in your console. And generate a _reqman.html_ with more details !
 
-    $ reqman.py example
-Will run all yml files in the folder example
+You can edit your rml file, and try the things available in this [tuto](https://github.com/manatlan/reqman/blob/master/examples/tuto.yml)
 
-    $ reqman.py example *.yml yo/my_tests.yml
-Will run all yml files in the folder example + all yml files in current folder + the tests in _yo/my_tests.yml_
+You can edit your _reqman.conf_ file, to add some magic ...
+
+--- CONTINUE HERE ---
+--- CONTINUE HERE ---
+--- CONTINUE HERE ---
+--- CONTINUE HERE ---
 
 **reqman** can use a [reqman.conf](https://github.com/manatlan/reqman/blob/master/examples/reqman.conf) (which is a yaml file too), to use key/value variables, which can be very handly for the tests ;-). **reqman** will use the first _reqman.conf_ available in the path. Variables will be automatically loaded, and fully available in the tests.
 
