@@ -34,13 +34,14 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
 If you are on an *nix platform, you can start with pip :
 
     $ pip3 install reqman
-it will add the _reqman.py_ script in your path.
+it will install the _reqman.py_ script in your path.
 
 If you are on microsoft windows, just download [reqman.exe](https://github.com/manatlan/reqman/tree/master/dist/reqman.exe), and add it in your path.
 
 ## Getting started : let's go
 
 Imagine that you want to test the [json api from pypi.org](https://wiki.python.org/moin/PyPIJSON), to verify that [it finds me](https://pypi.org/pypi/reqman/json) ;-)
+(if you are on windows, just replace _reqman.py_ with _reqman.exe_)
 
 You can start a new project in your folder, like that:
 
@@ -52,33 +53,41 @@ Now, you can run/test it :
     $ reqman.py .
 It will scan your folder "." and run all test files (*.rml or *.yml) against the _reqman.conf_ ;-)
 
-It will show you what's happened in your console. And generate a _reqman.html_ with more details !
+It will show you what's happened in your console. And generate a _reqman.html_ with more details (open it to have an idea)!
+
+If you edit the _reqman.conf_, you will see :
+
+    root: https://pypi.org
+    headers:
+        User-Agent: reqman (https://github.com/manatlan/reqman)
+
+the **root** is a _special var_ which will be prependded to all relative urls in your requests tests.
+the **headers** is a set of headers which will be added to all your requests.
+
+Change it to, and save it:
+
+    root: https://pypi.org
+    headers:
+        User-Agent: reqman (https://github.com/manatlan/reqman)
+    
+    test:
+        root: https://test.pypi.org
+
+Now, you have created your first _switch_. And try to run your tests like this:
+
+    $ reqman.py . -test
+It will run your tests against the _root_ defined in _test_ section ; and the test is KO, because _reqman_ doesn't exist on test.pypi.org !
+In fact; all declared things under _test_ will replace those at the top ! So you can declare multiple environments, with multiple switchs ! 
+(see a more complex [reqman.conf](https://github.com/manatlan/reqman/blob/master/examples/reqman.conf))
 
 You can edit your rml file, and try the things available in this [tuto](https://github.com/manatlan/reqman/blob/master/examples/tuto.yml)
 
-You can edit your _reqman.conf_ file, to add some magic ...
 
 --- CONTINUE HERE ---
 --- CONTINUE HERE ---
 --- CONTINUE HERE ---
 --- CONTINUE HERE ---
 
-**reqman** can use a [reqman.conf](https://github.com/manatlan/reqman/blob/master/examples/reqman.conf) (which is a yaml file too), to use key/value variables, which can be very handly for the tests ;-). **reqman** will use the first _reqman.conf_ available in the path. Variables will be automatically loaded, and fully available in the tests.
-
-There are 5 specials (and optionnals) vars :
-
-    root: http://github.com         # so you can write your tests without full url (ex: "GET: /")
-    headers:
-        content-type: application/json
-    tests:
-        - status: 200               # assert the status response is 200 OK
-        - content: GitHub           # assert that there will be the strinf "GitHub" in the response content
-        - content-type: text/html   # assert the content-type response header will contain "text/html"
-
-- **root** : is the root of the call request, needed if you omit the full url in reqman tests
-- **headers** : is a dict of headers, which will be appended to each requests
-- **tests** : is a list of mono key/value pair, to test the response, which will test each requests (some are specials: _status_ for the status, _content_ to test content inside ... others are for headers only !)
-- **BEGIN** / **END** : theses are procedures which will be runned at start, or at end of the tests. (useful to start/end a specific context)
 
 
 ## The Tests / [ry]ml file

@@ -6,7 +6,7 @@
         {
             "label": "build targz",
             "type": "shell",
-            "command": "rm dist/*.tar.gz && python3 setup.py sdist",
+            "command": "rm -f dist/*.tar.gz dist/*.whl && python3 setup.py sdist bdist_wheel",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -19,7 +19,7 @@
         {
             "label": "pypi upload",
             "type": "shell",
-            "command": "/home/manatlan/.local/bin/twine upload dist/reqman-*.tar.gz",
+            "command": "/home/manatlan/.local/bin/twine upload dist/reqman-*.tar.gz dist/reqman-*.whl",
             "problemMatcher": [],
             "presentation": {
                 "panel": "new"
