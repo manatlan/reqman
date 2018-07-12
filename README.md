@@ -47,6 +47,7 @@ You can start a new project in your folder, like that:
 
     $ reqman.py new https://pypi.org/pypi/reqman/json
 It's the first start ; it will create a conf file _reqman.conf_ and a (basic) test file _0010_test.rml_.
+(following 'new' command will just create another fresh rml file if a _reqman.conf_ exists)
 
 Now, you can run/test it :
 
