@@ -118,13 +118,9 @@ And you can check that 'colorama' exists on test.pypi.org, like that :
 As you can imagine, it's possible to make a lot of fun things easily. (see a more complex [reqman.conf](https://github.com/manatlan/reqman/blob/master/examples/reqman.conf))
 
 
-Now, you can edit your rml file, and try the things available in this [tuto](https://github.com/manatlan/reqman/blob/master/examples/tuto.yml)
+Now, you can edit your rml file, and try the things available in this [tuto](https://github.com/manatlan/reqman/blob/master/examples/tuto.yml).
 Organize your tests as you want : you can make many request in a rml file, you can make many files with many requests, you can make folders which contain many rml files.
 
-
---- CONTINUE HERE ---
---- CONTINUE HERE ---
---- CONTINUE HERE ---
---- CONTINUE HERE ---
+Use and abuse !
 
 
