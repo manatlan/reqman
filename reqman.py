@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.7"
+__version__="0.9.9.71"
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -213,7 +213,7 @@ class ResponseError:
 
         self.info=""
     def __repr__(self):
-        return "ERROR: {self.content}"
+        return f"ERROR: {self.content}"
 
 
 def dohttp(r):
@@ -962,7 +962,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
                 for k,v in env.items():
                     root=v.get("root",None) if type(v)==dict else None
                     if root:
-                        print(f"""{k:15} : "{root}" """)
+                        print(f"""{'-'+k:>15} : "{root}" """)
             else:
                 print(f"""  [switch]      : pre-made 'switch' defined in a {REQMAN_CONF}""")
 
