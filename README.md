@@ -78,9 +78,48 @@ Now, you have created your first _switch_. And try to run your tests like this:
     $ reqman.py . -test
 It will run your tests against the _root_ defined in _test_ section ; and the test is KO, because _reqman_ doesn't exist on test.pypi.org !
 In fact; all declared things under _test_ will replace those at the top ! So you can declare multiple environments, with multiple switchs ! 
-(see a more complex [reqman.conf](https://github.com/manatlan/reqman/blob/master/examples/reqman.conf))
 
-You can edit your rml file, and try the things available in this [tuto](https://github.com/manatlan/reqman/blob/master/examples/tuto.yml)
+But you can declare what you want, now edit _reqman.conf_ like this :
+
+    root: https://pypi.org
+    headers:
+        User-Agent: reqman (https://github.com/manatlan/reqman)
+    package: reqman
+    
+    test:
+        root: https://test.pypi.org
+
+You have declared a _var_ **package** ! let's edit the test file _0010_test.rml_ like this :
+
+    - GET: /pypi/<<package>>/json
+      tests:
+        - status: 200
+
+Now, your test will use the **package** var which was declared in _reqman.con_ ! So, you can create a _switch_ to change the package thru the command line, simply edit your _reqman.conf_ like that :
+
+    root: https://pypi.org
+    headers:
+        User-Agent: reqman (https://github.com/manatlan/reqman)
+    package: reqman
+
+    test:
+        root: https://test.pypi.org
+
+    colorama:
+        package: colorama
+
+Now, you can check that 'colorama' exists on pypi.org, like that :
+
+    $ reqman.py . -colorama
+And you can check that 'colorama' exists on test.pypi.org, like that :
+
+    $ reqman.py . -colorama -test
+
+As you can imagine, it's possible to make a lot of fun things easily. (see a more complex [reqman.conf](https://github.com/manatlan/reqman/blob/master/examples/reqman.conf))
+
+
+Now, you can edit your rml file, and try the things available in this [tuto](https://github.com/manatlan/reqman/blob/master/examples/tuto.yml)
+Organize your tests as you want : you can make many request in a rml file, you can make many files with many requests, you can make folders which contain many rml files.
 
 
 --- CONTINUE HERE ---
