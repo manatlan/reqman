@@ -29,7 +29,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * doc & examples ;-)
    * postman converter ?
 
-**Getting started : installation **
+## Getting started : installation
 
 If you are on an *nix platform, you can start with pip :
 
@@ -38,7 +38,7 @@ it will add the _reqman.py_ script in your path.
 
 If you are on microsoft windows, just download [reqman.exe](https://github.com/manatlan/reqman/tree/master/dist/reqman.exe), and add it in your path.
 
-**Getting started : let's go **
+## Getting started : let's go
 
 Imagine thant you want to test the [json api from pypi.org](https://wiki.python.org/moin/PyPIJSON), to verify that [it finds me](https://pypi.org/pypi/reqman/json) ;-)
 
