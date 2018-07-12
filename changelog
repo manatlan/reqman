@@ -1,3 +1,5 @@
+0.9.9.71 (12/07/2018)
+  - minor changes (output troubles in console)
 0.9.9.7 (11/07/2018)
   - ctrl-c render the html output (again ;-)
   - test system has been completly rewritten (comparators now works for all tests, and inside list too)
