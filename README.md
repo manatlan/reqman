@@ -40,7 +40,7 @@ If you are on microsoft windows, just download [reqman.exe](https://github.com/m
 
 ## Getting started : let's go
 
-Imagine thant you want to test the [json api from pypi.org](https://wiki.python.org/moin/PyPIJSON), to verify that [it finds me](https://pypi.org/pypi/reqman/json) ;-)
+Imagine that you want to test the [json api from pypi.org](https://wiki.python.org/moin/PyPIJSON), to verify that [it finds me](https://pypi.org/pypi/reqman/json) ;-)
 
 You can start a new project in your folder, like that:
 
@@ -48,6 +48,7 @@ You can start a new project in your folder, like that:
 It's the first start ; it will create a conf file _reqman.conf_ and a (basic) test file _0010_test.rml_.
 
 Now, you can run/test it :
+
     $ reqman.py .
 It will scan your folder "." and run all test files (*.rml or *.yml) against the _reqman.conf_ ;-)
 
