@@ -13,7 +13,8 @@
             },
             "problemMatcher": [],
             "presentation": {
-                "panel": "new"
+                "panel": "new",
+                "focus": true
             }            
         },
         {
@@ -22,7 +23,8 @@
             "command": "/home/manatlan/.local/bin/twine upload dist/reqman-*.tar.gz dist/reqman-*.whl",
             "problemMatcher": [],
             "presentation": {
-                "panel": "new"
+                "panel": "new",
+                "focus": true
             }
         }
     ]
