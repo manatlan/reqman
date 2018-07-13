@@ -710,44 +710,6 @@ class Tests_Req(unittest.TestCase):
         s=l[0].test(env)
         self.assertEqual( s.req.path, '/a/b' )
 
-#     def test_callmethod(self): #*NEW* (power tip !)
-#         f=StringIO("""
-# - context:
-#     - GET: https:/github.com
-
-# - call: <<3|tooMuch>>
-#   params:
-#      tooMuch: return x * ["context"]
-
-# """)
-#         l=reqman.Reqs(f)
-#         self.assertEqual( len(l), 3)
-
-#     def test_callmethod_glob(self): #*NEW* (power tip !)
-#         f=StringIO("""
-# - context:
-#     - GET: https:/github.com
-
-# - call: <<3|tooMuch>>
-
-# """)
-#         env=dict(tooMuch="""return x * ["context"]""")
-#         l=reqman.Reqs(f,env)
-#         self.assertEqual( len(l), 3)
-
-#     def test_callmethod_glob2(self): #*NEW* (power tip !)
-#         f=StringIO("""
-# - context:
-#     - GET: https:/github.com
-
-# - call: <<nb|tooMuch>>
-#   params:
-#     nb: 3
-
-# """)
-#         env=dict(tooMuch="""return x * ["context"]""")
-#         l=reqman.Reqs(f,env)
-#         self.assertEqual( len(l), 3)
 
 class Tests_Reqs(unittest.TestCase):
 
@@ -2636,6 +2598,26 @@ overfi:
         r,o=self.reqman(".")
         self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
+
+#     @only
+#     def test_FUTURE_foreach_dynamic_call(self): # only json.* & status !
+#         self.create("scenar.rml","""
+# - proc:
+#       GET: http://jo/
+#       tests:
+#         - status: 200
+#       params: <<liste>>
+
+# - call: proc
+#   params:
+#     liste:
+#         - val: 1
+#         - val: 2
+#         - val: 3
+# """)
+#         r,o=self.reqman(".")
+#         print(o)
+#         shutil.copy("reqman.html","/home/manatlan")
 
 #     @only
 #     def test_tuto(self): # only json.* & status !

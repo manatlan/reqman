@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.9" #params as list -> foreach param
+__version__="0.9.9.10" #prepare params dynamic
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -500,14 +500,6 @@ class Req(object):
         self.saves=saves
         self.params=params
 
-    @staticmethod
-    def create(method,path,body=None,headers={},tests=[],saves=[],params={}):
-        """Create 'Req' depending on params, return a list"""
-        if type(params)==list:
-            return [Req(method,path,body,headers,tests,saves,param) for param in params]
-        else:
-            return [Req(method,path,body,headers,tests,saves,params)]
-
     def test(self,env=None):
         cenv = env.copy() if env else {}    # current env
         cenv.update( self.params )          # override with self params
@@ -633,7 +625,10 @@ class Reqs(list):
                 for d in l:
                     env={}
                     dict_merge(env,self.env)
-                    # dict_merge(env,d.get("params",{}))  # add current params (to find proc)
+
+                    # params=d.get("params",{}) # NOT NEEDED ANYMORE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    # if type(params)==dict:
+                    #     dict_merge(env,params)  # add current params (to find proc)
 
                     if "call" in list(d.keys()):
                         callContent=objReplace(env,d["call"])
@@ -672,7 +667,20 @@ class Reqs(list):
                     verbs=list(KNOWNVERBS.intersection( list(d.keys()) ))
                     if verbs:
                         verb=verbs[0]
-                        ll.extend( Req.create(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),d.get("params",{})) )
+
+                        params=d.get("params",{})
+                        
+                        if type(params)==str:
+                            params=objReplace(env,params)
+
+                        if type(params)==list:
+                            rs= [Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),param) for param in params]
+                        elif type(params)==dict:
+                            rs= [Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),params)]
+                        else:
+                            raise RMException("params is unknown : '%s'" % params)
+
+                        ll.extend( rs )
                     else:
                         raise RMException("Unknown verb (%s) in '%s'" % (list(d.keys()),fd.name))
 
