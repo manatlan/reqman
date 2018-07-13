@@ -2557,7 +2557,7 @@ overfi:
         self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==2)          # all is ok
 
-    def test_matchAny_in_status(self): # only json.* & status !
+    def test_matchAny_in_status(self): 
         self.create("scenar.rml","""
 - GET: http://jo/kif
   tests:
@@ -2569,7 +2569,7 @@ overfi:
         self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==1)          # all is ok
 
-    def test_foreach(self): # only json.* & status !
+    def test_foreach(self):
         self.create("scenar.rml","""
 - GET: http://jo/<<val>>
   params:
@@ -2583,7 +2583,7 @@ overfi:
         self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
 
-    def test_foreach_call(self): # only json.* & status !
+    def test_foreach_call(self):
         self.create("scenar.rml","""
 - proc:
     GET: http://jo/<<val>>
@@ -2599,25 +2599,40 @@ overfi:
         self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
 
-#     @only
-#     def test_FUTURE_foreach_dynamic_call(self): # only json.* & status !
-#         self.create("scenar.rml","""
-# - proc:
-#       GET: http://jo/
-#       tests:
-#         - status: 200
-#       params: <<liste>>
 
-# - call: proc
-#   params:
-#     liste:
-#         - val: 1
-#         - val: 2
-#         - val: 3
-# """)
-#         r,o=self.reqman(".")
-#         print(o)
-#         shutil.copy("reqman.html","/home/manatlan")
+    def test_bad_foreach_dynamic_call(self):
+        self.create("reqman.conf","""liste: [1,2,3]""")
+        self.create("scenar.rml","""
+- GET: http://jo/
+  tests:
+    - status: 200
+  params: <<liste>>
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue("params is not dict or list" in o)
+
+
+    def test_bad_foreach_dynamic_call2(self):
+        self.create("scenar.rml","""
+- proc:
+      GET: http://jo/
+      tests:
+        - status: 200
+      params: <<liste>>
+
+- call: proc
+  params:
+    liste:
+        - val: 1
+        - val: 2
+        - val: 3
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue("params is not dict or list" in o)
+
+
 
 #     @only
 #     def test_tuto(self): # only json.* & status !

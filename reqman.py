@@ -647,8 +647,16 @@ class Reqs(list):
                                     q = copy.deepcopy( command )
                                     if KNOWNVERBS.intersection( list(q.keys()) ) or "call" in list(q.keys()):
                                         # merge passed params with action only ! (avoid merging with proc declaration)
+                                        pq=q.get("params",{})
+
+                                        # if type(pq)==str:
+                                        #     q["params"]=objReplace(env,pq)
+
+                                        if type(pq) not in [list,dict]:
+                                            raise RMException("params is not dict or list : '%s'" % pq)
                                         dict_merge(q,d)
                                     ncommands.append( q )
+
                                 ll+=feed(ncommands)    # *recursive*
 
                                 continue
@@ -670,15 +678,15 @@ class Reqs(list):
 
                         params=d.get("params",{})
                         
-                        if type(params)==str:
-                            params=objReplace(env,params)
+                        # if type(params)==str:
+                        #     params=objReplace(env,params)
 
                         if type(params)==list:
                             rs= [Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),param) for param in params]
                         elif type(params)==dict:
                             rs= [Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),params)]
                         else:
-                            raise RMException("params is unknown : '%s'" % params)
+                            raise RMException("params is not dict or list : '%s'" % params)
 
                         ll.extend( rs )
                     else:
