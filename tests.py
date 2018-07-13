@@ -2612,6 +2612,19 @@ overfi:
         self.assertEqual( r,-1 )
         self.assertTrue("params is not dict or list" in o)
 
+    def test_ok_foreach_dynamic_replace(self):
+        self.create("reqman.conf","""root: http://jo/\nkif: /2""")
+        self.create("scenar.rml","""
+- GET: <<path>>
+  tests:
+    - status: 200
+  params:
+    - path: /1
+    - path: <<kif>>
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( o.count("OK")==2)          # all is ok
 
     def test_bad_foreach_dynamic_call2(self):
         self.create("scenar.rml","""
