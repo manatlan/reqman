@@ -34,7 +34,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
 If you are on an *nix platform, you can start with pip :
 
     $ pip3 install reqman
-it will install the _reqman.py_ script in your path.
+it will install the _reqman.py_ script in your path (perhaps, you'll need to Add the path _~/.local/bin_ to the _PATH_ environment variable.)
 
 If you are on microsoft windows, just download [reqman.exe](https://github.com/manatlan/reqman/tree/master/dist/reqman.exe), and add it in your path.
 
