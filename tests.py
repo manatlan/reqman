@@ -710,44 +710,44 @@ class Tests_Req(unittest.TestCase):
         s=l[0].test(env)
         self.assertEqual( s.req.path, '/a/b' )
 
-    def test_callmethod(self): #*NEW* (power tip !)
-        f=StringIO("""
-- context:
-    - GET: https:/github.com
+#     def test_callmethod(self): #*NEW* (power tip !)
+#         f=StringIO("""
+# - context:
+#     - GET: https:/github.com
 
-- call: <<3|tooMuch>>
-  params:
-     tooMuch: return x * ["context"]
+# - call: <<3|tooMuch>>
+#   params:
+#      tooMuch: return x * ["context"]
 
-""")
-        l=reqman.Reqs(f)
-        self.assertEqual( len(l), 3)
+# """)
+#         l=reqman.Reqs(f)
+#         self.assertEqual( len(l), 3)
 
-    def test_callmethod_glob(self): #*NEW* (power tip !)
-        f=StringIO("""
-- context:
-    - GET: https:/github.com
+#     def test_callmethod_glob(self): #*NEW* (power tip !)
+#         f=StringIO("""
+# - context:
+#     - GET: https:/github.com
 
-- call: <<3|tooMuch>>
+# - call: <<3|tooMuch>>
 
-""")
-        env=dict(tooMuch="""return x * ["context"]""")
-        l=reqman.Reqs(f,env)
-        self.assertEqual( len(l), 3)
+# """)
+#         env=dict(tooMuch="""return x * ["context"]""")
+#         l=reqman.Reqs(f,env)
+#         self.assertEqual( len(l), 3)
 
-    def test_callmethod_glob2(self): #*NEW* (power tip !)
-        f=StringIO("""
-- context:
-    - GET: https:/github.com
+#     def test_callmethod_glob2(self): #*NEW* (power tip !)
+#         f=StringIO("""
+# - context:
+#     - GET: https:/github.com
 
-- call: <<nb|tooMuch>>
-  params:
-    nb: 3
+# - call: <<nb|tooMuch>>
+#   params:
+#     nb: 3
 
-""")
-        env=dict(tooMuch="""return x * ["context"]""")
-        l=reqman.Reqs(f,env)
-        self.assertEqual( len(l), 3)
+# """)
+#         env=dict(tooMuch="""return x * ["context"]""")
+#         l=reqman.Reqs(f,env)
+#         self.assertEqual( len(l), 3)
 
 class Tests_Reqs(unittest.TestCase):
 
@@ -2607,6 +2607,50 @@ overfi:
         self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==1)          # all is ok
 
+    def test_foreach(self): # only json.* & status !
+        self.create("scenar.rml","""
+- GET: http://jo/<<val>>
+  params:
+    - val: 1
+    - val: 2
+    - val: 3
+  tests:
+     - status: 200
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==3)          # all is ok
+
+    def test_foreach_call(self): # only json.* & status !
+        self.create("scenar.rml","""
+- proc:
+    GET: http://jo/<<val>>
+    tests:
+        - status: 200
+- call: proc
+  params:
+    - val: 1
+    - val: 2
+    - val: 3
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==3)          # all is ok
+
+#     @only
+#     def test_tuto(self): # only json.* & status !
+#         self.create("scenar.rml","""
+# - proc1:                   # this is a declaration !
+#     - proc2:               # this is a sub declaration !
+#       - GET: /nib
+#     - call:               # Call can be a list of procedures to call !!!
+#       - proc2
+#       - proc2
+
+# - call: proc1  # this will produce 2 gets !
+# """)
+#         r,o=self.reqman(".")
+#         print(o)
 
 
 if __name__ == '__main__':

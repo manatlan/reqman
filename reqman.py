@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.8" #f-string removals
+__version__="0.9.9.9" #params as list -> foreach param
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -500,6 +500,14 @@ class Req(object):
         self.saves=saves
         self.params=params
 
+    @staticmethod
+    def create(method,path,body=None,headers={},tests=[],saves=[],params={}):
+        """Create 'Req' depending on params, return a list"""
+        if type(params)==list:
+            return [Req(method,path,body,headers,tests,saves,param) for param in params]
+        else:
+            return [Req(method,path,body,headers,tests,saves,params)]
+
     def test(self,env=None):
         cenv = env.copy() if env else {}    # current env
         cenv.update( self.params )          # override with self params
@@ -625,7 +633,7 @@ class Reqs(list):
                 for d in l:
                     env={}
                     dict_merge(env,self.env)
-                    dict_merge(env,d.get("params",{}))  # add current params (to find proc)
+                    # dict_merge(env,d.get("params",{}))  # add current params (to find proc)
 
                     if "call" in list(d.keys()):
                         callContent=objReplace(env,d["call"])
@@ -664,7 +672,7 @@ class Reqs(list):
                     verbs=list(KNOWNVERBS.intersection( list(d.keys()) ))
                     if verbs:
                         verb=verbs[0]
-                        ll.append( Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),d.get("params",{})) )
+                        ll.extend( Req.create(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),d.get("params",{})) )
                     else:
                         raise RMException("Unknown verb (%s) in '%s'" % (list(d.keys()),fd.name))
 

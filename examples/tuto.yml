@@ -161,28 +161,15 @@
 - call: proc1  # this will produce 2 gets !
 
 #--------------------------------------------
-# or better, it could be written like this
+# but if you want to call the same request multiple times, it's better to use params as list
 
 - proc1:                   # this is a declaration !
-    - proc2:               # this is a sub declaration !
-      - GET: /nib
-    - call: <<|caller>>    # Call can be a list of procedures to call !!!
+    - GET: /the_same/<<val>>
 
-- call: proc1  # this will produce 2 gets !
-  params:
-    caller: return ["proc2","proc2"]
-
-#--------------------------------------------
-# or better (developper way), it could be written like this
-
-- proc1:                   # this is a declaration !
-    - proc2:               # this is a sub declaration !
-      - GET: /nib
-    - call: <<2|caller>>    # Call can be a list of procedures to call !!!
-
-- call: proc1  # this will produce 2 gets !
-  params:
-    caller: return x * ["proc2"]
+- call: proc1  # this will produce 2 gets ! one with val=1, one with val=2
+  params:      # "params" as list, is like a "foreach params"
+    - val: 1
+    - val: 2
 
 #--------------------------------------------
 # IMPORTANT NOTE : 
@@ -224,20 +211,20 @@
   tests:                          
     - status:       . < 400           
     - status:       . >= 200           
-    - json.result:  . != ko            # assert response = {"result":"ok"}
+    - json.result:  . != ko            # assuming response = {"result":"ok"}
 
 #--------------------------------------------
 # and you can index arrays in json's response
 - GET: /
   tests:                          
     - status:         200           
-    - json.result.1:  2           # assert response = {"result":[1,2,3]}
+    - json.result.1:  2           # assuming response = {"result":[1,2,3]}
 #--------------------------------------------
 # and you can guess size array in json's response, with special attribute ".size"
 - GET: /
   tests:                          
     - status:            200           
-    - json.result.size:  3        # assert response = {"result":[1,2,3]}
+    - json.result.size:  3        # assuming response = {"result":[1,2,3]}
 
 #--------------
 # should continue
