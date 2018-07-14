@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.11" #params is dict !
+__version__="0.9.9.12" #more rodust && dynamic foreach
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -528,8 +528,7 @@ class Req(object):
         # body ...
         if self.body and not isinstance(self.body,str):
 
-            def jrep(x): # "json rep"
-                return objReplace(cenv,x)
+            jrep=lambda x: objReplace(cenv,x) # "json rep"
 
             #================================
             def apply(body,method):
@@ -623,15 +622,21 @@ class Reqs(list):
                 l=[l] if type(l)==dict else l # ensure we've got a list
 
                 for d in l:
+                    #clone self.env -> env
                     env={}
                     dict_merge(env,self.env)
 
-                    # params=d.get("params",{}) # NOT NEEDED ANYMORE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    # if type(params)==dict:
-                    #     dict_merge(env,params)  # add current params (to find proc)
+                    # add params to current env
+                    params=d.get("params",{})
+                    if type(params)==dict:
+                        dict_merge(env,params)  # add current params (to find proc)
+                    else:
+                        raise RMException("params is not a dict : '%s'" % params)
 
+                    #check entries
                     if "call" in list(d.keys()):
-                        callContent=objReplace(env,d["call"])
+                        # callContent=objReplace(env,d["call"])
+                        callContent=d["call"]
 
                         callnames = callContent if type(callContent)==list else [ callContent ]   # make a list ;-)
                         del d["call"]
@@ -648,12 +653,14 @@ class Reqs(list):
                                     if KNOWNVERBS.intersection( list(q.keys()) ) or "call" in list(q.keys()):
                                         # merge passed params with action only ! (avoid merging with proc declaration)
                                         pq=q.get("params",{})
-
-                                        # if type(pq)==str:
-                                        #     q["params"]=objReplace(env,pq)
-
                                         if type(pq) != dict:
                                             raise RMException("params is not a dict : '%s'" % pq)
+
+                                        # # merge d in q (except foreach), thru dd clone
+                                        # dd={}
+                                        # dict_merge(dd,d)
+                                        # if "foreach" in dd: del dd["foreach"]
+                                        # dict_merge(q,dd)
                                         dict_merge(q,d)
                                     ncommands.append( q )
 
@@ -676,16 +683,15 @@ class Reqs(list):
                     if verbs:
                         verb=verbs[0]
 
-                        params=d.get("params",{})
-                        if type(params)!=dict:
-                            raise RMException("params is not a dict : '%s'" % params)
-
                         foreach=d.get("foreach",None)
 
-                        # if type(params)==str:
-                        #     params=objReplace(env,params)
+                        if foreach and type(foreach)==str:
+                            foreach=objReplace(env,foreach)
 
                         if foreach:
+                            if type(foreach)!=list:
+                                raise RMException("foreach is not a list : '%s'" % foreach)
+
                             for param in foreach:
                                 nparam={}
                                 dict_merge(nparam,params)
@@ -1021,4 +1027,4 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 if __name__=="__main__":
     sys.exit( main(sys.argv[1:]) )
-    #~ exec(open("tests.py").read())
+    # exec(open("tests.py").read())

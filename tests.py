@@ -2630,25 +2630,62 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==2)          # all is ok
 
-    def test_bad_foreach_dynamic_call2(self):
+    def test_ok_foreach_dynamic_call1(self):
         self.create("scenar.rml","""
 - proc:
-      GET: http://jo/
+      GET: http://jo/<<v1>>/<<v2>>/<<val>>
       tests:
         - status: 200
-      params: <<liste>>
+      params:
+        v1: 1
 
 - call: proc
+  foreach: <<liste>>
   params:
     liste:
         - val: 1
         - val: 2
         - val: 3
+    v2: 2
 """)
         r,o=self.reqman(".")
-        self.assertEqual( r,-1 )
-        self.assertTrue("params is not a dict" in o)
+        self.assertEqual( r,0 )
+        self.assertTrue( o.count("OK")==3)          # all is ok
 
+    def test_ok_foreach_dynamic_call2(self):    # the more complex exemple !!!!!!!
+        self.create("scenar.rml","""
+- proc:
+      GET: http://jo/<<v1>>/<<v2>>/<<val>>
+      tests:
+        - status: 200
+      params:
+        v1: 1
+
+- call: proc
+  foreach: <<3|mkliste>>
+  params:
+    mkliste: return x*[{'val':1},{'val':2},{'val':3}]
+    v2: 2
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( o.count("OK")==9)          # all is ok
+
+#     @only
+#     def test_FUTURE_foreach_in_foreach(self): 
+#         self.create("scenar.rml","""
+# - proc:
+#         GET: http://jo/<<path1>>/<<path2>>
+#         foreach: 
+#             - path2: a
+#             - path2: b
+# - call: proc
+#   foreach: 
+#     - path1: a
+#     - path1: b
+# """)
+#         r,o=self.reqman(".")
+#         print(o)
 
 
 #     @only
