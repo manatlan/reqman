@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.10" #prepare params dynamic
+__version__="0.9.9.11" #params is dict !
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -652,8 +652,8 @@ class Reqs(list):
                                         # if type(pq)==str:
                                         #     q["params"]=objReplace(env,pq)
 
-                                        if type(pq) not in [list,dict]:
-                                            raise RMException("params is not dict or list : '%s'" % pq)
+                                        if type(pq) != dict:
+                                            raise RMException("params is not a dict : '%s'" % pq)
                                         dict_merge(q,d)
                                     ncommands.append( q )
 
@@ -677,18 +677,23 @@ class Reqs(list):
                         verb=verbs[0]
 
                         params=d.get("params",{})
-                        
+                        if type(params)!=dict:
+                            raise RMException("params is not a dict : '%s'" % params)
+
+                        foreach=d.get("foreach",None)
+
                         # if type(params)==str:
                         #     params=objReplace(env,params)
 
-                        if type(params)==list:
-                            rs= [Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),param) for param in params]
-                        elif type(params)==dict:
-                            rs= [Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),params)]
+                        if foreach:
+                            for param in foreach:
+                                nparam={}
+                                dict_merge(nparam,params)
+                                dict_merge(nparam,param)
+                                ll.append( Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),nparam) )
                         else:
-                            raise RMException("params is not dict or list : '%s'" % params)
-
-                        ll.extend( rs )
+                            ll.append( Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),params) )
+                        
                     else:
                         raise RMException("Unknown verb (%s) in '%s'" % (list(d.keys()),fd.name))
 

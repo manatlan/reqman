@@ -2571,11 +2571,13 @@ overfi:
 
     def test_foreach(self):
         self.create("scenar.rml","""
-- GET: http://jo/<<val>>
-  params:
+- GET: http://jo/<<val2>>/<<val>>
+  foreach:
     - val: 1
     - val: 2
     - val: 3
+  params:
+    val2: hello
   tests:
      - status: 200
 """)
@@ -2586,11 +2588,13 @@ overfi:
     def test_foreach_call(self):
         self.create("scenar.rml","""
 - proc:
-    GET: http://jo/<<val>>
+    GET: http://jo/<<val2>>/<<val>>
     tests:
         - status: 200
+    params:
+      val2: hello
 - call: proc
-  params:
+  foreach:
     - val: 1
     - val: 2
     - val: 3
@@ -2610,7 +2614,7 @@ overfi:
 """)
         r,o=self.reqman(".")
         self.assertEqual( r,-1 )
-        self.assertTrue("params is not dict or list" in o)
+        self.assertTrue("params is not a dict" in o)
 
     def test_ok_foreach_dynamic_replace(self):
         self.create("reqman.conf","""root: http://jo/\nkif: /2""")
@@ -2618,7 +2622,7 @@ overfi:
 - GET: <<path>>
   tests:
     - status: 200
-  params:
+  foreach:
     - path: /1
     - path: <<kif>>
 """)
@@ -2643,7 +2647,7 @@ overfi:
 """)
         r,o=self.reqman(".")
         self.assertEqual( r,-1 )
-        self.assertTrue("params is not dict or list" in o)
+        self.assertTrue("params is not a dict" in o)
 
 
 

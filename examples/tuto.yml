@@ -161,13 +161,13 @@
 - call: proc1  # this will produce 2 gets !
 
 #--------------------------------------------
-# but if you want to call the same request multiple times, it's better to use params as list
+# but if you want to call the same request multiple times, you can use foreach
 
 - proc1:                   # this is a declaration !
     - GET: /the_same/<<val>>
 
 - call: proc1  # this will produce 2 gets ! one with val=1, one with val=2
-  params:      # "params" as list, is like a "foreach params"
+  foreach:      # it will iter with each item as "params"
     - val: 1
     - val: 2
 
