@@ -1418,7 +1418,6 @@ class Tests_procedures_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 6)
 
-
     def test_yml_call_procedures_as_list(self):
         y="""
 - jo:
@@ -1463,6 +1462,7 @@ class Tests_procedures_NEW(unittest.TestCase):
 - call: me
 """
         self.assertRaises(reqman.RMException, lambda: reqman.Reqs(StringIO(y)) )
+
 
     def test_yml_procedure_global(self):     # NEW
         y="""
@@ -1784,7 +1784,6 @@ class Tests_params_NEW(unittest.TestCase):
 
         self.assertEqual( tr.req.body, "start\naaa\nbbb\nend\n" )
 
-    #~ @only
     def test_yml_prog_embeded_call(self):
 
         y="""
@@ -2357,7 +2356,6 @@ overfi:
         self.assertTrue( "Create 0010_test.rml" in o)
         self.assertFalse( "Create reqman.conf" in o)
 
-
     def test_scenar_tests_in_list_or_dict(self):
         self.create("scenar.rml","""
 - POST: http://jo/pingpong
@@ -2671,21 +2669,25 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==9)          # all is ok
 
-#     @only
-#     def test_FUTURE_foreach_in_foreach(self): 
-#         self.create("scenar.rml","""
-# - proc:
-#         GET: http://jo/<<path1>>/<<path2>>
-#         foreach: 
-#             - path2: a
-#             - path2: b
-# - call: proc
-#   foreach: 
-#     - path1: a
-#     - path1: b
-# """)
-#         r,o=self.reqman(".")
-#         print(o)
+    def test_foreach_in_foreach(self): 
+        self.create("scenar.rml","""
+- proc:
+        GET: http://jo/<<path1>>/<<path2>>
+        foreach: 
+            - path2: a
+            - path2: b
+        tests:
+            - status: 200
+- call: proc
+  foreach: 
+    - path1: a
+    - path1: b
+  tests:
+    - content-type: text
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( o.count("OK")==8)          # all is ok
 
 
 #     @only
