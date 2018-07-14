@@ -2540,6 +2540,7 @@ overfi:
     vmin: 150
 """)
         r,o=self.reqman(".")
+
         self.assertTrue( r==0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
 
@@ -2653,11 +2654,14 @@ overfi:
     def test_ok_foreach_dynamic_call2(self):    # the more complex exemple !!!!!!!
         self.create("scenar.rml","""
 - proc:
-      GET: http://jo/<<v1>>/<<v2>>/<<val>>
+      GET: http://jo/<<v1>>/<<v2>>/<<val>>/<<v>>
       tests:
         - status: 200
       params:
         v1: 1
+      foreach:
+        - v: a
+        - v: b
 
 - call: proc
   foreach: <<3|mkliste>>
@@ -2667,7 +2671,7 @@ overfi:
 """)
         r,o=self.reqman(".")
         self.assertEqual( r,0 )
-        self.assertTrue( o.count("OK")==9)          # all is ok
+        self.assertTrue( o.count("OK")==18)          # all is ok
 
     def test_foreach_in_foreach(self): 
         self.create("scenar.rml","""
@@ -2689,6 +2693,77 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==8)          # all is ok
 
+    def test_bad_yml_multiple_action(self): 
+        self.create("scenar.rml","""
+- GET: http://jo/
+  POST: http://jo/
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue( "no action or too many" in o)          # all is ok
+
+    def test_bad_yml_multiple_same_action(self): 
+        self.create("scenar.rml","""
+- GET: http://s/jim
+  GET: http://s/jack        # it overrides ^^
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( "/jack" in o)          # all is ok
+
+    def test_invalid_keys(self): 
+        self.create("scenar.rml","""
+- GET: http://s/jim
+  kiki: kkk
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue( "Not a valid entry" in o)
+
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/jim
+  kiki: kkk
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue( "no action or too many" in o)
+
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/jim
+  body: kkk
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue( "no action or too many" in o)
+
+        self.create("scenar.rml","""
+- kif: http://s/jim
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue( "no action or too many" in o)
+
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/jim
+- call: proc
+  body: kkk
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue( "Not a valid entry" in o)
+
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/jim
+- call: proc
+  kiki: kkk
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue( "Not a valid entry" in o)
 
 #     @only
 #     def test_tuto(self): # only json.* & status !

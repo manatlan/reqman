@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.13" #new yaml feed'er
+__version__="0.9.9.13" #new yaml feed'er + controle
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -604,6 +604,12 @@ class Req(object):
     def __repr__(self):
         return "<%s %s>" % (self.method,self.path)
 
+def controle(keys,knowkeys):
+    for key in keys:
+        if key not in knowkeys:
+            raise RMException("Not a valid entry '%s'" % key)
+
+
 class Reqs(list):
     def __init__(self,fd,env=None):
         self.env=env or {}    # just for proc finding
@@ -615,99 +621,6 @@ class Reqs(list):
         except Exception as e:
             raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
 
-        procedures={}
-
-        def feed2(l):
-            """ recursive, return a list of <Req> (valids)"""
-            ll=[]
-
-            if l:
-                l=[l] if type(l)==dict else l # ensure we've got a list
-
-                for d in l:
-                    #clone self.env -> env
-                    env={}
-                    dict_merge(env,self.env)
-
-                    # add params to current env
-                    params=d.get("params",{})
-                    if type(params)==dict:
-                        dict_merge(env,params)  # add current params (to find proc)
-                    else:
-                        raise RMException("params is not a dict : '%s'" % params)
-
-                    #check entries
-                    if "call" in list(d.keys()):
-                        # callContent=objReplace(env,d["call"])
-                        callContent=d["call"]
-
-                        callnames = callContent if type(callContent)==list else [ callContent ]   # make a list ;-)
-                        del d["call"]
-
-                        for callname in callnames:
-                            commands = procedures[callname] if callname in procedures else self.env[callname] if callname in self.env else None # local proc in first !
-
-                            if commands:
-                                commands=[commands] if type(commands)==dict else commands # ensure we've got a list
-
-                                ncommands=[]
-                                for command in commands:
-                                    q = copy.deepcopy( command )
-                                    if KNOWNVERBS.intersection( list(q.keys()) ) or "call" in list(q.keys()):
-                                        # merge passed params with action only ! (avoid merging with proc declaration)
-                                        pq=q.get("params",{})
-                                        if type(pq) != dict:
-                                            raise RMException("params is not a dict : '%s'" % pq)
-
-                                        # # merge d in q (except foreach), thru dd clone
-                                        # dd={}
-                                        # dict_merge(dd,d)
-                                        # if "foreach" in dd: del dd["foreach"]
-                                        # dict_merge(q,dd)
-                                        dict_merge(q,d)
-                                    ncommands.append( q )
-
-                                ll+=feed2(ncommands)    # *recursive*
-
-                                continue
-                            else:
-                                raise RMException("call a not defined procedure '%s' in '%s'" % (callname,fd.name))
-                        continue
-                    elif len(list(d.keys()))==1: # a declaration of a procedure ?
-                        callname=list(d.keys())[0]
-                        if type(d[callname]) in [dict,list]:    # dict is one call, list is a list of dict (multiple calls) -> so it's a procedure
-                            procedures[callname] = d[callname]        # save it
-                            continue  # just declare and nothing yet
-                        else:
-                            # it's, perhaps, a single command (ex: "- GET: /")
-                            pass
-
-                    verbs=list(KNOWNVERBS.intersection( list(d.keys()) ))
-                    if verbs:
-                        verb=verbs[0]
-
-                        foreach=d.get("foreach",None)
-
-                        if foreach and type(foreach)==str:
-                            foreach=objReplace(env,foreach)
-
-                        if foreach:
-                            if type(foreach)!=list:
-                                raise RMException("foreach is not a list : '%s'" % foreach)
-
-                            for param in foreach:
-                                nparam={}
-                                dict_merge(nparam,params)
-                                dict_merge(nparam,param)
-                                ll.append( Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),nparam) )
-                        else:
-                            ll.append( Req(verb,d[verb],d.get("body",None),getHeaders(d),getTests(d),d.get("save",[]),params) )
-                        
-                    else:
-                        raise RMException("Unknown verb (%s) in '%s'" % (list(d.keys()),fd.name))
-
-            return ll
-
         procs={}
 
         def feed(l):
@@ -715,20 +628,21 @@ class Reqs(list):
 
             ll=[]
             for entry in l:
-                if entry is None: continue
+                if not entry: continue
                 env={}
                 dict_merge(env,self.env)
 
                 try:
-                    action= list((KNOWNVERBS|set(["call"])).intersection( list(entry.keys()) ))[0]
-                # except AttributeError:
-                #     raise RMException("No action in %s"%entry)
+                    action= list((KNOWNVERBS|set(["call"])).intersection( list(entry.keys()) ))
+                    if len(action)>1:
+                        raise IndexError
+                    else:
+                        action=action[0]
                 except IndexError:
                     action = None
 
                 if action is not None:
                     # a real action (call a proc or a requests)
-
                     headers=getHeaders(entry)
                     tests=getTests(entry)
                     params=entry.get("params",{})
@@ -745,6 +659,8 @@ class Reqs(list):
                         foreach=objReplace(env,foreach)
 
                     if action=="call":
+                        controle(entry.keys(),["headers","tests","params","foreach","save","call"])
+
                         procnames = entry["call"]
                         procnames=procnames if type(procnames)==list else [procnames]
 
@@ -755,21 +671,26 @@ class Reqs(list):
 
                             for param in foreach:
                                 for req in feed( content ):
-                                    rtests=[]+req.tests+tests
-                                    req.tests=rtests                        # merge tests
+                                    # merge tests
+                                    req.tests=[]+req.tests+tests            # clone/merge
 
+                                    # merge headers
                                     rheaders={}
-                                    dict_merge(rheaders,req.headers)         # merge headers
-                                    dict_merge(rheaders,headers)         # merge headers
+                                    dict_merge(rheaders,req.headers)        
+                                    dict_merge(rheaders,headers)
                                     req.headers=rheaders
 
+                                    # merge params
                                     rparams={}
-                                    dict_merge(rparams,req.params)           # merge params
-                                    dict_merge(rparams,params)           # merge params
-                                    if param: dict_merge(rparams,param)  # merge foreach param
+                                    dict_merge(rparams,req.params)          
+                                    dict_merge(rparams,params)
+                                    if param: dict_merge(rparams,param)     # merge foreach param
                                     req.params=rparams
+
                                     ll.append( req )
                     else:
+                        controle(entry.keys(),["headers","tests","params","foreach","save","body"]+list(KNOWNVERBS))
+
                         body=entry.get("body",None)
                         for param in foreach:
                             lparams={}
