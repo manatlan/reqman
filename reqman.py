@@ -633,6 +633,7 @@ class Reqs(list):
                 dict_merge(env,self.env)
 
                 try:
+                    if type(entry)!=dict: raise RMException("no actions for %s"%entry)
                     action= list((KNOWNVERBS|set(["call"])).intersection( list(entry.keys()) ))
                     if len(action)>1:
                         raise IndexError

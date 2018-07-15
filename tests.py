@@ -2830,6 +2830,34 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==2)          # all is ok
 
+    def test_BAD_call_bad_action_inside_proc(self): 
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/<<path>>
+    - hgfdhgf
+- call: proc
+  foreach:
+    - path: v1
+    - path: v2
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue( "no actions for" in o)
+
+#     def test_BAD_call_bad_action_inside_proc(self): 
+#         self.create("scenar.rml","""
+# - proc: 
+#     - GET: http://s/<<path>>
+#     - tests: 
+#         - status: 9999
+# - call: proc
+#   foreach:
+#     - path: v1
+#     - path: v2
+# """)
+#         r,o=self.reqman(".")    # SHOULD BE AN ERROR !!!!!!!!!!!!!!!!!!!
+#         self.assertEqual( r,-1 )
+#         self.assertTrue( "no actions for" in o)
 
 #     @only
 #     def test_tuto(self): # only json.* & status !
