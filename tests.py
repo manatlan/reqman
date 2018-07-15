@@ -2799,7 +2799,7 @@ overfi:
         self.create("scenar.rml","""
 - proc: 
     - GET: http://s/jim/<<v>>
-- call: proc
+- call: [proc,proc]
   foreach:
     - v: 1
     - <<noob>>
@@ -2811,7 +2811,7 @@ overfi:
 """)
         r,o=self.reqman(".")
         self.assertEqual( r,0 )
-        self.assertTrue( o.count("OK")==2)          # all is ok
+        self.assertTrue( o.count("OK")==4)          # all is ok
 
 
 #     @only
