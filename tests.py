@@ -2813,6 +2813,23 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==4)          # all is ok
 
+    def test_dynamic_status(self): 
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/<<path>>
+      tests:
+        - status: <<st>>
+- call: proc
+  foreach:
+    - st: 200
+      path: v1
+    - st: 200
+      path: v2
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( o.count("OK")==2)          # all is ok
+
 
 #     @only
 #     def test_tuto(self): # only json.* & status !
