@@ -1,3 +1,5 @@
+0.9.9.14 (15/07/2018)
+  - return of dynamic call++
 0.9.9.13 (14/07/2018)
   - new yaml feed'er, and foreach in foreach works
   - control keywords (more robust)

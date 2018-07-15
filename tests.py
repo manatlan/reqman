@@ -2765,6 +2765,55 @@ overfi:
         self.assertEqual( r,-1 )
         self.assertTrue( "Not a valid entry" in o)
 
+    def test_call_dynamic(self): 
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/jim
+- call: <<2|list>>
+  params:
+    list: return x * ['proc','proc']
+  tests:
+    status: 200
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( o.count("OK")==4)          # all is ok
+
+    def test_call_dynamic_inside(self): 
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/jim
+- call:
+    - proc
+    - <<pro>>
+  params:
+    pro: proc
+  tests:
+    status: 200
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( o.count("OK")==2)          # all is ok
+
+    def test_foreach_dynamic_inside(self): 
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/jim/<<v>>
+- call: proc
+  foreach:
+    - v: 1
+    - <<noob>>
+  params:
+    noob:
+        v: 2
+  tests:
+    status: 200
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( o.count("OK")==2)          # all is ok
+
+
 #     @only
 #     def test_tuto(self): # only json.* & status !
 #         self.create("scenar.rml","""

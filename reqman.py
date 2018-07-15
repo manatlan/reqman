@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.13" #new yaml feed'er + controle
+__version__="0.9.9.14" #return of dynamic calls
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -655,21 +655,26 @@ class Reqs(list):
                         raise RMException("params is not a dict : '%s'" % params)
 
                     if foreach and type(foreach)==str:
-                        print(env,foreach)
                         foreach=objReplace(env,foreach)
 
                     if action=="call":
                         controle(entry.keys(),["headers","tests","params","foreach","save","call"])
 
                         procnames = entry["call"]
+
+                        if procnames and type(procnames)==str:
+                            procnames=objReplace(env,procnames)
+
                         procnames=procnames if type(procnames)==list else [procnames]
 
                         for procname in procnames:
+                            procname=objReplace(env,procname)
                             content=procs.get(procname, env.get(procname, None))
                             if content is None:
                                 raise RMException("unknown procedure '%s' is %s" % (procname,procs.keys()))
 
                             for param in foreach:
+                                if type(param)==str: param=objReplace(env,param)
                                 for req in feed( content ):
                                     # merge tests
                                     req.tests=[]+req.tests+tests            # clone/merge
@@ -693,6 +698,7 @@ class Reqs(list):
 
                         body=entry.get("body",None)
                         for param in foreach:
+                            if type(param)==str: param=objReplace(env,param)
                             lparams={}
                             dict_merge(lparams,params)
                             if param: dict_merge(lparams,param)
