@@ -2842,7 +2842,21 @@ overfi:
 """)
         r,o=self.reqman(".")
         self.assertEqual( r,-1 )
-        self.assertTrue( "no actions for" in o)
+        self.assertTrue( "no action" in o)
+
+    def test_BAD_call_bad_action_inside_proc(self): 
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/<<path>>
+    - hgfdhgf: kkkk
+- call: proc
+  foreach:
+    - path: v1
+    - path: v2
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,-1 )
+        self.assertTrue( "no action" in o)
 
 #     def test_BAD_call_bad_action_inside_proc(self): 
 #         self.create("scenar.rml","""
