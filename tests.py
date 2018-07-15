@@ -2858,20 +2858,20 @@ overfi:
         self.assertEqual( r,-1 )
         self.assertTrue( "no action" in o)
 
-#     def test_BAD_call_bad_action_inside_proc(self): 
-#         self.create("scenar.rml","""
-# - proc: 
-#     - GET: http://s/<<path>>
-#     - tests: 
-#         - status: 9999
-# - call: proc
-#   foreach:
-#     - path: v1
-#     - path: v2
-# """)
-#         r,o=self.reqman(".")    # SHOULD BE AN ERROR !!!!!!!!!!!!!!!!!!!
-#         self.assertEqual( r,-1 )
-#         self.assertTrue( "no actions for" in o)
+    def test_BAD_call_bad_action_inside_proc(self): 
+        self.create("scenar.rml","""
+- proc: 
+    - GET: http://s/<<path>>
+    - tests:                      # he believe that's a proc
+        - status: 9999
+- call: proc
+  foreach:
+    - path: v1
+    - path: v2
+""")
+        r,o=self.reqman(".")    # SHOULD BE AN ERROR !!!!!!!!!!!!!!!!!!!
+        self.assertEqual( r,-1 )
+        self.assertTrue( "proc can't be named" in o)
 
 #     @only
 #     def test_tuto(self): # only json.* & status !

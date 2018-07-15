@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.14" #return of dynamic calls
+__version__="0.9.9.15" #avoid proc to be bad named
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -708,6 +708,8 @@ class Reqs(list):
                 elif len(entry)==1 and type(list(entry.values())[0]) in [list,dict]:
                     # a proc declared
                     procname,content= list(entry.items())[0]
+                    if procname in ["headers","tests","params","foreach","save","body"]:
+                        raise RMException("proc can't be named %s" % procname)
                     procs[procname]=content
                 else:
                     # no sense ?!
