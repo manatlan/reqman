@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.17" # fix
+__version__="0.9.9.18" # fix
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -749,20 +749,18 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             qbody=html.escape( prettify( str(tr.req.body or "") ) )
 
             if tr.res:
-                status=tr.res.status or ""
                 rtime=tr.res.time
                 info=tr.res.info
                 rheaders="\n".join(["<b>%s</b>: %s" % (k,v) for k,v in list(tr.res.headers.items())])
                 rbody=html.escape( prettify( str(tr.res.content or "")) )
             else:
-                status=rtime=rheaders=rbody=""
-                info=""
+                info=rtime=rheaders=rbody=""
 
             tests="".join(["""<li class='%s'>%s</li>""" % ("ok" if t else "ko",html.escape(t.name)) for t in tr ])
 
             reqs +="""
 <li class="hide">
-    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>{tr.req.method}</b> {tr.req.path} : <b>{status}</b> <i>{rtime}</i></span>
+    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>{tr.req.method}</b> {tr.req.path} : <b>{tr.res}</b> <i>{rtime}</i></span>
     <ul>
         <span>
             <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
