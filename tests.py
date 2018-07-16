@@ -3009,6 +3009,25 @@ overfi:
         self.assertTrue( "/jo3/42" in o)
         self.assertTrue( o.count("Not callable")==3)
 
+    def test_http_error(self):
+        self.create("scenar.rml","""
+- GET: http://s/test_error
+  tests:
+    - status: null
+    - status: .>=100
+    - status: .>100
+    - status: .<=100
+    - status: .<100
+    - status: .=100
+    - status: .!=100
+""")
+        r,o=self.reqman(".")
+        # self.assertEqual( r,0 )
+        # self.assertTrue( "/jo1/42" in o)
+        # self.assertTrue( "/jo2/42" in o)
+        # self.assertTrue( "/jo3/42" in o)
+        # self.assertTrue( o.count("Not callable")==3)
+
 
 #     @only
 #     def test_tuto(self): # only json.* & status !

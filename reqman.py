@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.19" # fix
+__version__="0.9.9.20" # fix
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -261,13 +261,13 @@ def getValOpe(v):
                 elif op=="!=":
                     return vv,lambda a,b: b!=a,"!=","="
                 elif op==">=":
-                    return vv,lambda a,b: b>=a,">=","<"
+                    return vv,lambda a,b: b!=None and a!=None and b>=a or False,">=","<"
                 elif op=="<=":
-                    return vv,lambda a,b: b<=a,"<=",">"
+                    return vv,lambda a,b: b!=None and a!=None and b<=a or False,"<=",">"
                 elif op==">":
-                    return vv,lambda a,b: b>a,">","<="
+                    return vv,lambda a,b: b!=None and a!=None and b>a or False,">","<="
                 elif op=="<":
-                    return vv,lambda a,b: b<a,"<",">="
+                    return vv,lambda a,b: b!=None and a!=None and b<a or False,"<",">="
     except (yaml.scanner.ScannerError,yaml.constructor.ConstructorError,yaml.parser.ParserError):
         pass
     return v,lambda a,b: a==b,"=","!="
