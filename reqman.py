@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.16" # win patterns
+__version__="0.9.9.17" # fix
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -749,7 +749,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             qbody=html.escape( prettify( str(tr.req.body or "") ) )
 
             if tr.res:
-                status=tr.res.status
+                status=tr.res.status or ""
                 rtime=tr.res.time
                 info=tr.res.info
                 rheaders="\n".join(["<b>%s</b>: %s" % (k,v) for k,v in list(tr.res.headers.items())])
