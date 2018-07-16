@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.18" # fix
+__version__="0.9.9.19" # fix
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -748,24 +748,35 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             qheaders="\n".join(["<b>%s</b>: %s" % (k,v) for k,v in list(tr.req.headers.items())])
             qbody=html.escape( prettify( str(tr.req.body or "") ) )
 
-            if tr.res:
+            if tr.res and tr.res.status is not None:
                 rtime=tr.res.time
                 info=tr.res.info
                 rheaders="\n".join(["<b>%s</b>: %s" % (k,v) for k,v in list(tr.res.headers.items())])
                 rbody=html.escape( prettify( str(tr.res.content or "")) )
+
+                hres="""
+                    <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
+                    -> {info}
+                    <pre title="the response">{rheaders}<hr/>{rbody}</pre>
+                """.format(**locals())
+
             else:
-                info=rtime=rheaders=rbody=""
+                rtime=""
+
+                hres="""
+                    <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
+                """.format(**locals())
+
 
             tests="".join(["""<li class='%s'>%s</li>""" % ("ok" if t else "ko",html.escape(t.name)) for t in tr ])
+
 
             reqs +="""
 <li class="hide">
     <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>{tr.req.method}</b> {tr.req.path} : <b>{tr.res}</b> <i>{rtime}</i></span>
     <ul>
         <span>
-            <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
-            -> {info}
-            <pre title="the response">{rheaders}<hr/>{rbody}</pre>
+            {hres}
         </span>
         {tests}
     </ul>
