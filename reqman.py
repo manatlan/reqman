@@ -15,16 +15,18 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="0.9.9.15" #avoid proc to be bad named
+__version__="0.9.9.16" # win patterns
 
 import yaml         # see "pip install pyyaml"
 import encodings
 import os
 import json
+import copy
 import string
 import sys
 import ssl
 import glob
+import itertools
 import html
 import socket
 import re
@@ -63,7 +65,6 @@ try: # colorama is optionnal
 except ImportError:
     cy=cr=cg=cb=cw=lambda t: t
 
-
 def yamlLoad(fd):    # fd is an io thing
     b=fd.read()
     if type(b)==bytes:
@@ -72,7 +73,6 @@ def yamlLoad(fd):    # fd is an io thing
         except UnicodeDecodeError:
             b=str(b,"cp1252")
     return yaml.load( b )
-
 
 def dict_merge(dct, merge_dct):
     """ merge 'merge_dct' in --> dct """
@@ -84,7 +84,6 @@ def dict_merge(dct, merge_dct):
                 dct[k] += merge_dct[k]
             else:
                 dct[k] = merge_dct[k]
-
 
 def mkUrl(protocol,host,port=None):
     port=":%s"%port if port else ""
@@ -100,8 +99,6 @@ def prettify(txt,indentation=4):
             return json.dumps( json.loads( txt ), indent=indentation, sort_keys=True )
         except:
             return txt
-
-
 
 def jpath(elem, path):
     for i in path.strip(".").split("."):
@@ -120,12 +117,9 @@ def jpath(elem, path):
             return NotFound
     return elem
 
-
-
 ###########################################################################
 ## http request/response
 ###########################################################################
-
 class CookieStore(http.cookiejar.CookieJar):
     """ Manage cookiejar for httplib-like """
     def saveCookie(self,headers,url):
@@ -141,7 +135,6 @@ class CookieStore(http.cookiejar.CookieJar):
                 self._url = url
             def info(self): return self._headers
 
-
         response = FakeResponse( [ ": ".join([k,v]) for k,v in headers], url )
         self.extract_cookies(response, urllib.request.Request(url) )
 
@@ -154,7 +147,6 @@ COOKIEJAR = CookieStore()
 
 class Request:
     def __init__(self,protocol,host,port,method,path,body=None,headers={}):
-
         self.protocol=protocol
         self.host=host
         self.port=port
@@ -194,7 +186,6 @@ class Content:
     def __contains__(self, key):
         return key in str(self)
 
-
 class Response:
     def __init__(self,status,body,headers,url,info=None):
         self.status = int(status)
@@ -212,11 +203,10 @@ class ResponseError:
         self.status = None
         self.content = m
         self.headers = {}
-
         self.info=""
+
     def __repr__(self):
         return "ERROR: %s" % (self.content)
-
 
 def dohttp(r):
     try:
@@ -244,12 +234,9 @@ def dohttp(r):
         #Presumably, the server closed the connection before sending a valid response.
         return ResponseError("Server closed the connection")
 
-
-
 ###########################################################################
 ## Reqs manage
 ###########################################################################
-
 class Test(int):
     """ a boolean with a name """
     def __new__(cls, value,nameOK,nameKO):
@@ -259,7 +246,6 @@ class Test(int):
         else:
             s.name = nameKO
         return s
-
 
 def getValOpe(v):
     try:
@@ -284,15 +270,10 @@ def getValOpe(v):
                     return vv,lambda a,b: b<a,"<",">="
     except (yaml.scanner.ScannerError,yaml.constructor.ConstructorError,yaml.parser.ParserError):
         pass
-
     return v,lambda a,b: a==b,"=","!="
 
-
 def strjs( x ):
-    #~ val = ", ".join( [str(i) for i in value] )
-    #~ val = "null" if value is None else "true" if value is True else "false" if value is False else value
     return json.dumps(x)
-
 
 class TestResult(list):
     def __init__(self,req,res,tests):
@@ -363,7 +344,7 @@ class TestResult(list):
 
     def __repr__(self):
         ll=[""]
-        ll.append( cy("*")+" %s --> %s" % (self.req,cw(str(self.res)) if self.res else cr("Not callable") ) )
+        ll.append( cy("*")+" %s --> %s" % (self.req, cw(str(self.res)) if self.res else cr("Not callable") ) )
         for t in self:
             ll.append( "  - %s: %s" % ( cg("OK") if t==1 else cr("KO"),t.name ) )
         return "\n".join(ll)
@@ -421,7 +402,6 @@ def transform(content,env,methodName):
 
 transform.path=None # change cd cwd for transform methods when executed
 
-
 def objReplace(env,txt): # same as txtReplace() but for "object" (json'able)
     obj=txtReplace(env,txt)
     try:
@@ -472,7 +452,6 @@ def getTests(y):
         if type(tests)==dict:
              warn("'tests:' should be a list of mono key/value pairs (ex: '- status: 200')")
              tests = [ {k:v} for k,v in tests.items()]
-
         return tests
     else:
         return []
@@ -484,12 +463,9 @@ def getHeaders(y):
         if type(headers)==list:
              warn("'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')")
              headers= { list(d.keys())[0]:list(d.values())[0] for d in headers}
-
         return headers
     else:
         return {}
-
-
 
 class Req(object):
     def __init__(self,method,path,body=None,headers={},tests=[],saves=[],params={}):  # body = str ou dict ou None
@@ -501,8 +477,8 @@ class Req(object):
         self.saves=saves
         self.params=params
 
-    # def clone(self):
-    #     return Req(self.method,self.path)
+    def clone(self):
+        return Req(self.method,self.path,copy.deepcopy(self.body),dict(self.headers),list(self.tests),list(self.saves),dict(self.params))
 
     def test(self,env=None):
         cenv = env.copy() if env else {}    # current env
@@ -526,7 +502,6 @@ class Req(object):
         # headers ...
         headers=getHeaders(cenv).copy() if cenv else {}
         headers.update(self.headers)                        # override with self headers
-
         headers={ k:txtReplace(cenv,v) for k,v in list(headers.items()) if v is not None}
 
         # body ...
@@ -553,7 +528,7 @@ class Req(object):
         if h.hostname:
 
             tests=getTests(cenv)
-            tests+=self.tests                               # override with self tests
+            tests+=self.tests                               # extends with self tests
 
             ntests=[]
             for test in tests:
@@ -575,9 +550,6 @@ class Req(object):
             res=dohttp( req )
             res.time=datetime.datetime.now()-t1
             if isinstance(res,Response) and self.saves:
-
-                self.saves=self.saves if type(self.saves)==list else [self.saves] # ensure we've got a list
-
                 for save in self.saves:
                     dest=txtReplace(cenv,save)
                     if dest.lower().startswith("file://"):
@@ -608,7 +580,6 @@ def controle(keys,knowkeys):
     for key in keys:
         if key not in knowkeys:
             raise RMException("Not a valid entry '%s'" % key)
-
 
 class Reqs(list):
     def __init__(self,fd,env=None):
@@ -648,7 +619,8 @@ class Reqs(list):
                     tests=getTests(entry)
                     params=entry.get("params",{})
                     foreach=entry.get("foreach",[None]) # at least one iteration !
-                    save=entry.get("save",[])
+                    saves=entry.get("save",[])
+                    saves=saves if type(saves)==list else [saves]
 
                     if type(params)==dict:
                         dict_merge(env,params)  # add current params (to find proc)
@@ -677,23 +649,14 @@ class Reqs(list):
                             for param in foreach:
                                 if type(param)==str: param=objReplace(env,param)
                                 for req in feed( content ):
-                                    # merge tests
-                                    req.tests=[]+req.tests+tests            # clone/merge
+                                    newreq = req.clone()
+                                    newreq.tests+=tests                         # merge tests
+                                    dict_merge(newreq.headers,headers)          # merge headers
+                                    dict_merge(newreq.params,params)            # merge params
+                                    if param: dict_merge(newreq.params,param)   # merge foreach param
+                                    newreq.saves+=saves                         # merge saves
 
-                                    # merge headers
-                                    rheaders={}
-                                    dict_merge(rheaders,req.headers)        
-                                    dict_merge(rheaders,headers)
-                                    req.headers=rheaders
-
-                                    # merge params
-                                    rparams={}
-                                    dict_merge(rparams,req.params)          
-                                    dict_merge(rparams,params)
-                                    if param: dict_merge(rparams,param)     # merge foreach param
-                                    req.params=rparams
-
-                                    ll.append( req )
+                                    ll.append( newreq )
                     else:
                         controle(entry.keys(),["headers","tests","params","foreach","save","body"]+list(KNOWNVERBS))
 
@@ -703,13 +666,13 @@ class Reqs(list):
                             lparams={}
                             dict_merge(lparams,params)
                             if param: dict_merge(lparams,param)
-                            ll.append( Req(action,entry[action],body,headers,tests,save,lparams) )
+                            ll.append( Req(action,entry[action],body,headers,tests,saves,lparams) )
 
                 elif len(entry)==1 and type(list(entry.values())[0]) in [list,dict]:
                     # a proc declared
                     procname,content= list(entry.items())[0]
                     if procname in ["headers","tests","params","foreach","save","body"]:
-                        raise RMException("proc can't be named %s" % procname)
+                        raise RMException("procedure can't be named %s" % procname)
                     procs[procname]=content
                 else:
                     # no sense ?!
@@ -718,8 +681,6 @@ class Reqs(list):
             return ll
 
         list.__init__(self,feed(l) )
-
-
 
 ###########################################################################
 ## Helpers
@@ -730,7 +691,6 @@ def listFiles(path,filters=(".yml",".rml") ):
             for filename in files:
                 if filename.lower().endswith( filters ):
                     yield os.path.join(folder,filename)
-
 
 def loadEnv( fd, varenvs=[] ):
     transform.path=None
@@ -743,7 +703,6 @@ def loadEnv( fd, varenvs=[] ):
                 transform.path = os.path.dirname(fd.name) # change path when executing transform methods, according the path of reqman.conf
         except Exception as e:
             raise RMException("YML syntax in %s\n%s"%(fd.name or "<string>",e))
-
     else:
         env={}
 
@@ -796,7 +755,8 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 rheaders="\n".join(["<b>%s</b>: %s" % (k,v) for k,v in list(tr.res.headers.items())])
                 rbody=html.escape( prettify( str(tr.res.content or "")) )
             else:
-                status=rtime=info=rheaders=rbody=""
+                status=rtime=rheaders=rbody=""
+                info=""
 
             tests="".join(["""<li class='%s'>%s</li>""" % ("ok" if t else "ko",html.escape(t.name)) for t in tr ])
 
@@ -831,7 +791,6 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             switchs=" ".join(switchs)
     )
 
-
     with open("reqman.html","w+") as fid:
         fid.write( h )
 
@@ -854,8 +813,10 @@ def findRCUp(fromHere):
 
 def resolver(params):
     """ return tuple (reqman.conf,ymls) finded with params """
-    ymls=[]
-    paths=[]
+    ymls,paths=[],[]
+
+    # expand list with file pattern matching (win needed)
+    params=list(itertools.chain.from_iterable([glob.glob(i) or [i] for i in params]))
 
     for p in params:
         if os.path.isdir(p):
@@ -979,7 +940,6 @@ def main(params=[]):
 
         if reqs:
             # and make tests
-
             for f in reqs:
                 f.trs=[]
                 print("\nTESTS:",cb(f.name))
@@ -998,7 +958,6 @@ def main(params=[]):
                 print("\nRESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
             return total - ok
         else:
-
             print("""USAGE TEST   : reqman [--option] [-switch] <folder|file>...
 USAGE CREATE : reqman new <url>
 Version %s
@@ -1020,8 +979,6 @@ Test a http service with pre-made scenarios, whose are simple yaml files
                         print("""%15s : "%s" """ % ("-"+k,root))
             else:
                 print("""  [switch]      : pre-made 'switch' defined in a %s""" % REQMAN_CONF)
-
-
             return -1
 
     except RMException as e:

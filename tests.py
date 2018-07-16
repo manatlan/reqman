@@ -7,7 +7,7 @@ import os
 import re
 import socket
 from io import StringIO,BytesIO
-from contextlib import redirect_stdout
+import contextlib
 import tempfile
 import shutil
 
@@ -18,7 +18,7 @@ def only(f):
     ONLYs.append(f.__name__)
     return f
 
-BINARY= bytes( list(range(255,0,-1)) )
+BINARY = bytes( list(range(255,0,-1)) )
 
 ################################################################## mock
 def mockHttp(q):
@@ -2032,16 +2032,34 @@ BEGIN:
         self.assertEqual( len(ll), 2)
 
 
-
+import inspect
 ###########################################################################
 class Tests_CommandLine(unittest.TestCase):
 ###########################################################################
 
     def reqman(self,*args):
-        f = StringIO()
-        with redirect_stdout(f):
-            ret=reqman.main( list(args) )
-        return ret,f.getvalue()
+
+        fn=inspect.stack()[1][3]
+
+
+        fo,fe = StringIO(),StringIO()
+        with contextlib.redirect_stderr(fe):
+            with contextlib.redirect_stdout(fo):
+                ret=reqman.main( list(args) )
+        txt=fo.getvalue()+fe.getvalue()
+
+        if fn in ONLYs:
+            if os.path.isfile("reqman.html"):
+                shutil.copy("reqman.html",self.precdir)
+                ir="reqman.html"
+            else:
+                ir=""
+
+            print("===================",fn)
+            print(txt)
+            print("==================>",ret,ir)
+
+        return ret,txt
 
     def setUp(self):
         self.precdir = os.getcwd()
@@ -2121,6 +2139,48 @@ class Tests_CommandLine(unittest.TestCase):
         self.assertEqual( r,0 )                             # all is ok
         self.assertTrue( "Not callable" in o)               # but not callable, coz relative path without reqman.conf
         self.assertTrue( os.path.isfile("reqman.html") )    # a html is rendered
+
+    def test_match_patterns(self):
+        self.create("s1.yml","- GET: /xxxx")
+        self.create("s2.yml","- GET: /xxxx")
+        self.create("t1.yml","- GET: /xxxx")
+
+        self.create("tmp/s1.yml","- GET: /xxxx")
+        self.create("tmp/s2.yml","- GET: /xxxx")
+        self.create("tmp/t2.yml","- GET: /xxxx")
+
+        self.create("tmp/new/z.yml","- GET: /xxxx")
+
+        r,o=self.reqman( "t*.yml" )
+        self.assertEqual( o.count("TESTS:"),1)
+
+        r,o=self.reqman( "s*.yml" )
+        self.assertEqual( o.count("TESTS:"),2)
+
+        r,o=self.reqman( "s?.yml" )
+        self.assertEqual( o.count("TESTS:"),2)
+
+        r,o=self.reqman( "*.yml" )
+        self.assertEqual( o.count("TESTS:"),3)
+
+        r,o=self.reqman( "*/*.yml" )
+        self.assertEqual( o.count("TESTS:"),3)
+
+        r,o=self.reqman( "*/??.yml" )
+        self.assertEqual( o.count("TESTS:"),3)
+
+        r,o=self.reqman( "*/*/*.yml" )
+        self.assertEqual( o.count("TESTS:"),1)
+
+        r,o=self.reqman( "*.yml","*/*.yml" )
+        self.assertEqual( o.count("TESTS:"),6)
+
+        r,o=self.reqman( "*" )
+        self.assertEqual( r,-1)
+        self.assertEqual( o.count("YML syntax"),1)
+
+
+
 
     def test_absolute_path_without_rc(self):
         self.create("scenar.yml","- GET: http://myserver.com/")
@@ -2540,7 +2600,6 @@ overfi:
     vmin: 150
 """)
         r,o=self.reqman(".")
-
         self.assertTrue( r==0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
 
@@ -2556,7 +2615,7 @@ overfi:
         self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==2)          # all is ok
 
-    def test_matchAny_in_status(self): 
+    def test_matchAny_in_status(self):
         self.create("scenar.rml","""
 - GET: http://jo/kif
   tests:
@@ -2583,6 +2642,24 @@ overfi:
         r,o=self.reqman(".")
         self.assertEqual( r,0 )                     # 0 error !
         self.assertTrue( o.count("OK")==3)          # all is ok
+
+    def test_foreach(self):
+        self.create("scenar.rml","""
+- POST: http://jo/pingpong
+  body: <<val>>
+  foreach:
+    - val: { 'ret': 'hello1' }
+    - val: { 'ret': 'hello2' }
+    - val: { 'ret': 'hello3' }
+  tests:
+     - status: 200
+     - json.ret: <<val.ret>>
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )                     # 0 error !
+        self.assertTrue( o.count("OK")==6)          # all is ok
+
+
 
     def test_foreach_call(self):
         self.create("scenar.rml","""
@@ -2673,17 +2750,17 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==18)          # all is ok
 
-    def test_foreach_in_foreach(self): 
+    def test_foreach_in_foreach(self):
         self.create("scenar.rml","""
 - proc:
         GET: http://jo/<<path1>>/<<path2>>
-        foreach: 
+        foreach:
             - path2: a
             - path2: b
         tests:
             - status: 200
 - call: proc
-  foreach: 
+  foreach:
     - path1: a
     - path1: b
   tests:
@@ -2693,7 +2770,7 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==8)          # all is ok
 
-    def test_bad_yml_multiple_action(self): 
+    def test_bad_yml_multiple_action(self):
         self.create("scenar.rml","""
 - GET: http://jo/
   POST: http://jo/
@@ -2702,7 +2779,7 @@ overfi:
         self.assertEqual( r,-1 )
         self.assertTrue( "no action or too many" in o)          # all is ok
 
-    def test_bad_yml_multiple_same_action(self): 
+    def test_bad_yml_multiple_same_action(self):
         self.create("scenar.rml","""
 - GET: http://s/jim
   GET: http://s/jack        # it overrides ^^
@@ -2711,7 +2788,7 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( "/jack" in o)          # all is ok
 
-    def test_invalid_keys(self): 
+    def test_invalid_keys(self):
         self.create("scenar.rml","""
 - GET: http://s/jim
   kiki: kkk
@@ -2721,7 +2798,7 @@ overfi:
         self.assertTrue( "Not a valid entry" in o)
 
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/jim
   kiki: kkk
 """)
@@ -2730,7 +2807,7 @@ overfi:
         self.assertTrue( "no action or too many" in o)
 
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/jim
   body: kkk
 """)
@@ -2746,7 +2823,7 @@ overfi:
         self.assertTrue( "no action or too many" in o)
 
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/jim
 - call: proc
   body: kkk
@@ -2756,7 +2833,7 @@ overfi:
         self.assertTrue( "Not a valid entry" in o)
 
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/jim
 - call: proc
   kiki: kkk
@@ -2765,9 +2842,9 @@ overfi:
         self.assertEqual( r,-1 )
         self.assertTrue( "Not a valid entry" in o)
 
-    def test_call_dynamic(self): 
+    def test_call_dynamic(self):
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/jim
 - call: <<2|list>>
   params:
@@ -2779,9 +2856,9 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==4)          # all is ok
 
-    def test_call_dynamic_inside(self): 
+    def test_call_dynamic_inside(self):
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/jim
 - call:
     - proc
@@ -2795,9 +2872,9 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==2)          # all is ok
 
-    def test_foreach_dynamic_inside(self): 
+    def test_foreach_dynamic_inside(self):
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/jim/<<v>>
 - call: [proc,proc]
   foreach:
@@ -2813,9 +2890,9 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==4)          # all is ok
 
-    def test_dynamic_status(self): 
+    def test_dynamic_status(self):
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/<<path>>
       tests:
         - status: <<st>>
@@ -2830,9 +2907,9 @@ overfi:
         self.assertEqual( r,0 )
         self.assertTrue( o.count("OK")==2)          # all is ok
 
-    def test_BAD_call_bad_action_inside_proc(self): 
+    def test_BAD_call_bad_action_inside_proc(self):
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/<<path>>
     - hgfdhgf
 - call: proc
@@ -2844,9 +2921,9 @@ overfi:
         self.assertEqual( r,-1 )
         self.assertTrue( "no action" in o)
 
-    def test_BAD_call_bad_action_inside_proc(self): 
+    def test_BAD_call_bad_action_inside_proc(self):
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/<<path>>
     - hgfdhgf: kkkk
 - call: proc
@@ -2858,20 +2935,80 @@ overfi:
         self.assertEqual( r,-1 )
         self.assertTrue( "no action" in o)
 
-    def test_BAD_call_bad_action_inside_proc(self): 
+    def test_BAD_call_bad_action_inside_proc(self):
         self.create("scenar.rml","""
-- proc: 
+- proc:
     - GET: http://s/<<path>>
-    - tests:                      # he believe that's a proc
+    - tests:                      # he can believe that's a proc
         - status: 9999
 - call: proc
   foreach:
     - path: v1
     - path: v2
 """)
-        r,o=self.reqman(".")    # SHOULD BE AN ERROR !!!!!!!!!!!!!!!!!!!
+        r,o=self.reqman(".")
         self.assertEqual( r,-1 )
-        self.assertTrue( "proc can't be named" in o)
+        self.assertTrue( "procedure can't be named" in o)
+
+    def test_multi_save_inherits(self):
+        self.create("scenar.rml","""
+- proc:
+    - POST: http://s/pingpong
+      body: 42
+      save: var1
+- call: proc
+  save: var2
+- GET: /jo1/<<var1>>
+- GET: /jo2/<<var2>>
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( "/jo1/42" in o)
+        self.assertTrue( "/jo2/42" in o)
+        self.assertTrue( o.count("Not callable")==2)
+
+    def test_multi_save_inherits2(self):
+        self.create("scenar.rml","""
+- proc:
+    - POST: http://s/pingpong
+      body: 42
+      save:
+        - var1
+        - var3
+- call: proc
+  save: var2
+- GET: /jo1/<<var1>>
+- GET: /jo2/<<var2>>
+- GET: /jo3/<<var3>>
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( "/jo1/42" in o)
+        self.assertTrue( "/jo2/42" in o)
+        self.assertTrue( "/jo3/42" in o)
+        self.assertTrue( o.count("Not callable")==3)
+
+    def test_multi_save_inherits3(self):
+        self.create("scenar.rml","""
+- proc:
+    - POST: http://s/pingpong
+      body: 42
+      save: var1
+- call: proc
+  save:
+    - var2
+    - var3
+- GET: /jo1/<<var1>>
+- GET: /jo2/<<var2>>
+- GET: /jo3/<<var3>>
+""")
+        r,o=self.reqman(".")
+        self.assertEqual( r,0 )
+        self.assertTrue( "/jo1/42" in o)
+        self.assertTrue( "/jo2/42" in o)
+        self.assertTrue( "/jo3/42" in o)
+        self.assertTrue( o.count("Not callable")==3)
+
 
 #     @only
 #     def test_tuto(self): # only json.* & status !

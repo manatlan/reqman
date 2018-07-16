@@ -1,3 +1,9 @@
+0.9.9.16 (16/07/2018)
+  - win patterns
+  - save inherits
+  - better html display when not callable
+  - tests++
+  - ★★
 0.9.9.15 (15/07/2018)
   - avoid proc to be bad named - "allez la france!!"
 0.9.9.14 (15/07/2018)
