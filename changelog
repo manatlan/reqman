@@ -1,3 +1,5 @@
+1.0.0.0 (19/07/2018)
+ - first release ;-) no change at all
 0.9.9.20 (16/07/2018)
  - fix: when None is present in <,<=,>,>= -> False
 0.9.9.19 (16/07/2018)
