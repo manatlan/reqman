@@ -58,21 +58,25 @@ It will show you what's happened in your console. And generate a _reqman.html_ w
 
 If you edit the _reqman.conf_, you will see :
 
-    root: https://pypi.org
-    headers:
-        User-Agent: reqman (https://github.com/manatlan/reqman)
+```yaml
+root: https://pypi.org
+headers:
+    User-Agent: reqman (https://github.com/manatlan/reqman)
+```
 
 the **root** is a _special var_ which will be prependded to all relative urls in your requests tests.
 the **headers** (which is a _special var_ too) is a set of _http headers_ which will be added to all your requests.
 
 Change it to, and save it:
 
-    root: https://pypi.org
-    headers:
-        User-Agent: reqman (https://github.com/manatlan/reqman)
-    
-    test:
-        root: https://test.pypi.org
+```yaml
+root: https://pypi.org
+headers:
+    User-Agent: reqman (https://github.com/manatlan/reqman)
+
+test:
+    root: https://test.pypi.org
+```
 
 Now, you have created your first _switch_. And try to run your tests like this:
 
@@ -82,32 +86,38 @@ In fact; all declared things under _test_ will replace those at the top ! So you
 
 But you can declare what you want, now edit _reqman.conf_ like this :
 
-    root: https://pypi.org
-    headers:
-        User-Agent: reqman (https://github.com/manatlan/reqman)
-    package: reqman
-    
-    test:
-        root: https://test.pypi.org
+```yaml
+root: https://pypi.org
+headers:
+    User-Agent: reqman (https://github.com/manatlan/reqman)
+package: reqman
+
+test:
+    root: https://test.pypi.org
+```
 
 You have declared a _var_ **package** ! let's edit the test file _0010_test.rml_ like this :
 
-    - GET: /pypi/<<package>>/json
-      tests:
-        - status: 200
+```yaml
+- GET: /pypi/<<package>>/json
+    tests:
+    - status: 200
+```
 
 Now, your test will use the **package** var which was declared in _reqman.conf_ ! So, you can create a _switch_ to change the package thru the command line, simply edit your _reqman.conf_ like that :
 
-    root: https://pypi.org
-    headers:
-        User-Agent: reqman (https://github.com/manatlan/reqman)
-    package: reqman
+```yaml
+root: https://pypi.org
+headers:
+    User-Agent: reqman (https://github.com/manatlan/reqman)
+package: reqman
 
-    test:
-        root: https://test.pypi.org
+test:
+    root: https://test.pypi.org
 
-    colorama:
-        package: colorama
+colorama:
+    package: colorama
+```
 
 Now, you can check that 'colorama' exists on pypi.org, like that :
 
