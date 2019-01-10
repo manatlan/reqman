@@ -20,6 +20,6 @@ setuptools.setup(
     ),
     install_requires=[
           'colorama',
-          'pyyaml == 3.13',
+          'pyyaml >= 4.2b1',
     ],    
 )
