@@ -152,12 +152,12 @@ class Tests_jpath(unittest.TestCase):
         self.assertEqual( reqman.jpath(d,"anone.var.cvx.vcx.fgsd") , None )
 
         self.assertEqual( reqman.jpath(d,"whos.0.pers1.name") , "jo" )
-
+        print("::::",reqman.jpath(d,"astring.size"))
         # test ".size"
         self.assertEqual( reqman.jpath(d,"whos.size") , 2 )         # 2 items in that list
         self.assertEqual( reqman.jpath(d,"whos.0.size") , 1 )       # one key in that dict
         self.assertEqual( reqman.jpath(d,"whos.0.pers1.size") , 2 ) # 2 keys in this dicts
-        self.assertEqual( reqman.jpath(d,"astring.size") , "hello" )    # unknown key for a string return content, see ^
+        self.assertEqual( reqman.jpath(d,"astring.size") , 5 )     # size of the string 
         self.assertEqual( reqman.jpath(d,"anumber.size") , 42 )    # unknown key for a number return content, see ^
         self.assertEqual( reqman.jpath(d,"abool.size") , True )    # unknown key for a bool return content, see ^
         self.assertEqual( reqman.jpath(d,"anone.size") , None )    # unknown key for a null return content, see ^

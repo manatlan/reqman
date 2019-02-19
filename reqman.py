@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="1.0.0.0" # first release
+__version__="1.0.1.0" # first release
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -113,6 +113,9 @@ def jpath(elem, path):
                     return len(list(elem.keys()))
                 else:
                     elem= elem.get(i,NotFound)
+            elif type(elem)==str:
+                if i=="size":
+                    return len(elem)
         except (ValueError,IndexError) as e:
             return NotFound
     return elem
