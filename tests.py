@@ -3045,6 +3045,37 @@ overfi:
 #         print(o)
 
 
+class Tests_DOCSTRING(unittest.TestCase):
+
+    def test_1(self):
+        y="""
+- GET: /
+"""
+        l=reqman.Reqs(StringIO(y))
+        assert l[0].doc is None
+
+    def test_2(self):
+        y="""
+- GET: /
+  doc: just for fun
+"""
+        l=reqman.Reqs(StringIO(y))
+        assert l[0].doc == "just for fun"
+
+    #~ def test_3(self):
+        #~ y="""
+#~ - sss:
+    #~ - GET: /
+      #~ doc: x<<msg>>x
+
+#~ - call:     sss
+  #~ params:
+    #~ msg: kiki
+
+#~ """
+        #~ l=reqman.Reqs(StringIO(y))
+        #~ assert l[0].doc == "xkikix", "WTF '%s' ?" % l[0].doc
+
 if __name__ == '__main__':
 
     if ONLYs:

@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="1.0.1.0" # first release
+__version__="1.0.1.1" # +doc
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -279,9 +279,10 @@ def strjs( x ):
     return json.dumps(x)
 
 class TestResult(list):
-    def __init__(self,req,res,tests):
+    def __init__(self,req,res,tests,doc=None):
         self.req=req
         self.res=res
+        self.doc=doc
 
         insensitiveHeaders= {k.lower():v for k,v in self.res.headers.items()} if self.res else {}
 
@@ -471,7 +472,7 @@ def getHeaders(y):
         return {}
 
 class Req(object):
-    def __init__(self,method,path,body=None,headers={},tests=[],saves=[],params={}):  # body = str ou dict ou None
+    def __init__(self,method,path,body=None,headers={},tests=[],saves=[],params={},doc=None):  # body = str ou dict ou None
         self.method=method.upper()
         self.path=path
         self.body=body
@@ -479,9 +480,10 @@ class Req(object):
         self.tests=tests
         self.saves=saves
         self.params=params
+        self.doc=doc
 
     def clone(self):
-        return Req(self.method,self.path,copy.deepcopy(self.body),dict(self.headers),list(self.tests),list(self.saves),dict(self.params))
+        return Req(self.method,self.path,copy.deepcopy(self.body),dict(self.headers),list(self.tests),list(self.saves),dict(self.params),self.doc)
 
     def test(self,env=None):
         cenv = env.copy() if env else {}    # current env
@@ -571,10 +573,10 @@ class Req(object):
                                 env[ dest ]=str(res.content)
                                 cenv[ dest ]=str(res.content)
 
-            return TestResult(req,res,tests)
+            return TestResult(req,res,tests,self.doc)
         else:
             # no hostname : no response, no tests ! (missing reqman.conf the root var ?)
-            return TestResult(req,None,[])
+            return TestResult(req,None,[],self.doc)
 
     def __repr__(self):
         return "<%s %s>" % (self.method,self.path)
@@ -661,7 +663,7 @@ class Reqs(list):
 
                                     ll.append( newreq )
                     else:
-                        controle(entry.keys(),["headers","tests","params","foreach","save","body"]+list(KNOWNVERBS))
+                        controle(entry.keys(),["headers","doc","tests","params","foreach","save","body"]+list(KNOWNVERBS))
 
                         body=entry.get("body",None)
                         for param in foreach:
@@ -669,7 +671,7 @@ class Reqs(list):
                             lparams={}
                             dict_merge(lparams,params)
                             if param: dict_merge(lparams,param)
-                            ll.append( Req(action,entry[action],body,headers,tests,saves,lparams) )
+                            ll.append( Req(action,entry[action],body,headers,tests,saves,lparams,entry.get("doc",None)) )
 
                 elif len(entry)==1 and type(list(entry.values())[0]) in [list,dict]:
                     # a proc declared
@@ -751,6 +753,9 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             qheaders="\n".join(["<b>%s</b>: %s" % (k,v) for k,v in list(tr.req.headers.items())])
             qbody=html.escape( prettify( str(tr.req.body or "") ) )
 
+            qdoc="<b>%s</b>" % tr.doc if tr.doc else ""
+
+
             if tr.res and tr.res.status is not None:
                 rtime=tr.res.time
                 info=tr.res.info
@@ -758,6 +763,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 rbody=html.escape( prettify( str(tr.res.content or "")) )
 
                 hres="""
+                    {qdoc}
                     <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
                     -> {info}
                     <pre title="the response">{rheaders}<hr/>{rbody}</pre>
@@ -767,6 +773,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 rtime=""
 
                 hres="""
+                    {qdoc}
                     <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
                 """.format(**locals())
 
