@@ -1,3 +1,5 @@
+1.0.1.1 (08/03/2019)
+ - add optionnal doc'string per request, which is displayed in html output
 1.0.1.0 (19/02/2019)
  - it's possible to test json str size now !
 1.0.0.0 (19/07/2018)
