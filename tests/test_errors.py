@@ -31,6 +31,54 @@ FILES=[
 - GET: http://x/x
   POST: http://x/x
 """),
+    dict(name="test7.yml",content="""
+- YOLO: http://x/x
+
+"""),
+
+    dict(name="test8.yml",content="""
+- tests:
+    - GET: http://x/x
+"""),
+
+    dict(name="test9.yml",content="""
+- tests
+    fsqfdsq: fdsq
+    - GET: http://x/x
+"""),
+
+    dict(name="test10.yml",content="""
+- GET: http://x/x
+  params:
+    - 1
+    - 2
+"""),
+
+    dict(name="test11.yml",content="""
+- proc:
+    - GET: http://x/x
+- call: proc
+  kiki: toto
+"""),
+
+    dict(name="test12.yml",content="""
+- GET: http://x/{{v}}
+  params:
+    v: <<42|kiki>>
+"""),
+
+    dict(name="test13.yml",content="""
+- GET: http://x/{{v}}
+  params:
+    v: <<dico.val>>
+"""),
+
+    dict(name="test14.yml",content="""
+- GET: http://x/{{v}}
+  params:
+    v: <<dico>>
+"""),
+
 
 ]
 
@@ -63,3 +111,44 @@ def test_6(client):
     x=client( "test6.yml" )
     assert x.code==-1
     assert "ERROR: no action or too many" in x.console
+
+def test_7(client):
+    x=client( "test7.yml" )
+    assert x.code==-1
+    assert "ERROR: no action or too many" in x.console
+
+def test_8(client):
+    x=client( "test8.yml" )
+    assert x.code==-1
+    assert "ERROR: procedure can't be named tests" in x.console
+
+def test_9(client):
+    x=client( "test9.yml" )
+    assert x.code==-1
+    assert "ERROR: YML syntax in" in x.console
+
+def test_10(client):
+    x=client( "test10.yml" )
+    assert x.code==-1
+    assert "ERROR: params is not a dict" in x.console
+
+def test_11(client):
+    x=client( "test11.yml" )
+    assert x.code==-1
+    assert "ERROR: Not a valid entry" in x.console
+
+def test_12(client):
+    x=client( "test12.yml" )
+    assert x.code==-1
+    assert "ERROR: Can't find method" in x.console
+
+def test_13(client):
+    x=client( "test13.yml" )
+    assert x.code==-1
+    assert "ERROR: Can't resolve" in x.console
+
+def test_14(client):
+    x=client( "test14.yml" )
+    assert x.code==-1
+    assert "ERROR: Can't resolve" in x.console
+

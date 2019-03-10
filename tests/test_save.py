@@ -35,7 +35,8 @@ FILES=[
   tests:
     - status: 500
   save: file://./aeff.html
-"""),]
+"""),
+]
 
 def test_save_text(client):
     x=client( "test.yml" )
