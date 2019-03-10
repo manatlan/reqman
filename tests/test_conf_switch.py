@@ -4,8 +4,8 @@ from context import client
 
 
 SERVER={
-    "GET http://jim/yo" : lambda q: dict( status=200, body="dsq"),
-    "GET http://jom/yo" : lambda q: dict( status=200, body="dsq"),
+    "GET http://jim/yo" : lambda q: dict( status=200, body="jim"),
+    "GET http://jom/yo" : lambda q: dict( status=200, body="jom"),
 }
 
 FILES=[

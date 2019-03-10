@@ -27,6 +27,11 @@ FILES=[
   params:
     yi: fdsqfsdqfd sfdsfdsq
 """),
+    dict(name="test6.yml",content="""
+- GET: http://x/x
+  POST: http://x/x
+"""),
+
 ]
 
 def test_1(client):
@@ -48,7 +53,13 @@ def test_4(client):
     x=client( "test4.yml" )
     assert x.code==-1
     assert "ERROR: Error in execution of method yi" in x.console
+
 def test_5(client):
     x=client( "test5.yml" )
     assert x.code==-1
     assert "ERROR: Error in declaration of method yi" in x.console
+
+def test_6(client):
+    x=client( "test6.yml" )
+    assert x.code==-1
+    assert "ERROR: no action or too many" in x.console
