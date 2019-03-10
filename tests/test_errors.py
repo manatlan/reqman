@@ -79,6 +79,13 @@ FILES=[
     v: <<dico>>
 """),
 
+    dict(name="test15.yml",content="""
+- GET: http://x/{{v}}
+  params:
+    v: <<dico>>
+    dico: <<v>>
+"""),
+
 
 ]
 
@@ -151,4 +158,9 @@ def test_14(client):
     x=client( "test14.yml" )
     assert x.code==-1
     assert "ERROR: Can't resolve" in x.console
+
+def test_15(client):
+    x=client( "test15.yml" )
+    assert x.code==-1
+    assert "ERROR: Recursion trouble" in x.console
 
