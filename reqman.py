@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__="1.0.1.1" # +doc
+__version__="1.0.1.2"
 
 import yaml         # see "pip install pyyaml"
 import encodings
@@ -975,6 +975,12 @@ def main(params=[]):
 
             if total:
                 print("\nRESULT: ",(cg if ok==total else cr)("%s/%s" % (ok,total)))
+            
+            # expose things inproc, for tests purpose only
+            main.total=total
+            main.ok=ok
+            main.env=env
+            main.reqs=reqs
             return total - ok
         else:
             print("""USAGE TEST   : reqman [--option] [-switch] <folder|file>...

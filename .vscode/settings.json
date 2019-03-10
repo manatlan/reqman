@@ -1,5 +1,10 @@
 {
     "python.pythonPath": "/usr/bin/python3",
+    "code-runner.clearPreviousOutput": true,
     "python.linting.pylintEnabled": false,
-    "code-runner.clearPreviousOutput": true
+    "python.unitTest.pyTestEnabled": true,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.unittestEnabled": true,
+    "python.formatting.provider": "black",
+    "python.unitTest.pyTestArgs": ["-s","--cov=reqman","--cov-report=html"]
 }

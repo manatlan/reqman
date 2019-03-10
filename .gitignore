@@ -103,3 +103,4 @@ ENV/
 cc.py
 pypi.txt
 pypi.txt
+.pytest_cache/
