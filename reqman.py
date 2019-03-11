@@ -429,7 +429,7 @@ def txtReplace(env,txt):
             else:
                 if type(val) != str:
                     if val is None:
-                        val=""
+                        val=""      #TODO: should be "null" !!!!
                     elif val is True:
                         val="true"
                     elif val is False:

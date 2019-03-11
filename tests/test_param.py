@@ -6,6 +6,7 @@ from context import client
 SERVER={
     "GET http://jim/42" : lambda q: dict( status=200, body="ok"),
     "GET http://jim/41" : lambda q: dict( status=200, body="ok"),
+    "POST http://jim/pingpong" : lambda q: dict( status=200, body=q.body),
 }
 
 FILES=[
@@ -62,6 +63,54 @@ FILES=[
     - status: 200
     - content: ok    
 """),
+
+    dict(name="test_param.yml",content="""
+- POST: http://jim/pingpong
+  body:
+    a_true: <<a_true>>
+    a_false: <<a_false>>
+    a_none: <<a_none>>
+    a_dict: <<a_dict>>
+    a_list: <<a_list>>
+    a_float: <<a_float>>
+  params:
+    a_true: True
+    a_false: False
+    a_none: null
+    a_list:
+        - 1
+        - 2
+        - 3
+    a_dict:
+        v: 42
+    a_float: 1.42
+  tests:
+    - status: 200
+    - json.a_true: True    
+    - json.a_false: False
+    - json.a_none: ""               # NOT TOP (should be null)
+    - json.a_list: [1,2,3]
+    - json.a_dict:
+            v: 42
+    - json.a_float: 1.42
+"""),
+
+    dict(name="test_not_really_an_error_param.yml",content="""
+- POST: http://jim/pingpong
+  body:
+    not_an_error: <<unknow>>
+  tests:
+    - status: 200
+"""),
+    dict(name="test_error_param.yml",content="""
+- POST: http://jim/pingpong
+  body:
+    an_error: <<v>>
+  params:
+    v: <<unknown>>  # in this case : it's an error
+  tests:
+    - status: 200
+"""),
 ]
 
 def test_simple(client):
@@ -93,3 +142,19 @@ def test_param_method(client):
     assert x.code==0
     assert x.inproc.total==2
     assert x.inproc.ok==2    
+
+def test_param_typed(client):
+    x=client( "test_param.yml" )
+    assert x.code==0
+
+def test_not_really_an_error_param(client):
+    x=client( "test_not_really_an_error_param.yml" )
+    assert x.code==0 # it works, param is not resolved, considered as is
+
+
+def test_error_param(client):
+    x=client( "test_error_param.yml" )
+    # with open("/home/manatlan/aeff.html","w+") as fid:
+    #     fid.write(x.html)
+    assert x.code==-1
+    assert "ERROR: Can't resolve unknown" in x.console
