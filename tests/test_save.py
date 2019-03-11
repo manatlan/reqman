@@ -7,6 +7,7 @@ SERVER={
     "GET http://jim/get_brut" : lambda q: dict( status=500, body="42"),
     "GET http://jim/get_json" : lambda q: dict( status=501, body=json.dumps(dict(value=42))),
     "GET http://jim/42" : lambda q: dict( status=200, body="ok"),
+    "GET http://jim/not_json" : lambda q: dict( status=200, body="fdsq fdsq : fdsq !"),
 }
 
 FILES=[
@@ -36,6 +37,12 @@ FILES=[
     - status: 500
   save: file://./aeff.html
 """),
+   dict(name="test10.yml",content="""
+- GET: http://jim/not_json
+  tests:
+    - status: 200
+  save: val
+"""),
 ]
 
 def test_save_text(client):
@@ -55,3 +62,7 @@ def test_save_file(client):
     assert x.code==0
     assert x.inproc.total==x.inproc.ok
     assert os.path.isfile("aeff.html")
+
+def test_save_not_json(client):
+    x=client( "test10.yml" )
+    assert x.code==0
