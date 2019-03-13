@@ -97,12 +97,12 @@ def test_1(client):
 def test_2(client):
     x=client( "test2.yml" )
     assert x.code==0
-    assert "GET <<yo>> --> Not callable" in x.console
+    assert "Not callable" in x.console
 
 def test_3(client):
     x=client( "test3.yml" )
     assert x.code==0
-    assert "GET <<42|yi>> --> Not callable" in x.console
+    assert "Not callable" in x.console
 
 def test_4(client):
     x=client( "test4.yml" )
