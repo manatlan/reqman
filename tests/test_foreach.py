@@ -19,9 +19,21 @@ FILES=[
         - v: 1
         - v: 2
 """),
+#     dict(name="test_error.yml",content="""
+# - GET: /yo
+#   tests:
+#     - status: 200
+#     - content: dsq
+#   foreach:
+#     - yolo
+
+# """),
 ]
 
 def test_1(client):
     x=client( "test.yml" )
     assert x.code==0 # all ok
     assert len(x.inproc.reqs[0])==2
+
+# def test_2(client):
+#     x=client( "test_error.yml" )

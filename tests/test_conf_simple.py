@@ -18,17 +18,16 @@ root: http://jim/
 
 - GET: yo
   tests:
-    - status: 200
+    - status: 300
 """),
+    dict(name="test2.yml",content="")
 ]
 
 def test_1(client):
-    x=client( "test.yml" )
-    assert x.code==0 # all tests ok
-    # assert x.console.count("GET /yo --> 200") == 2
+    x=client( "." )
+    assert x.code==1 # 1 error
 
 def test_2(client):
-    x=client( "test.yml","--ko")
-    assert x.code==0 # all tests ok
-    # assert x.console.count("GET /yo --> 200") == 0
+    x=client( ".","--ko")
+    assert x.code==1 # 1 error
 

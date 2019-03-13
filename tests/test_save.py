@@ -37,6 +37,12 @@ FILES=[
     - status: 500
   save: file://./aeff.html
 """),
+    dict(name="test4.yml",content="""
+- GET: http://jim/get_brut
+  tests:
+    - status: 500
+  save: file://
+"""),
    dict(name="test10.yml",content="""
 - GET: http://jim/not_json
   tests:
@@ -62,6 +68,14 @@ def test_save_file(client):
     assert x.code==0
     assert x.inproc.total==x.inproc.ok
     assert os.path.isfile("aeff.html")
+
+def test_save_bad_file(client):
+    x=client( "test4.yml" )
+    assert x.code==-1
+    assert "ERROR: Save to file" in x.console
+    # assert x.inproc.total==x.inproc.ok
+    # assert os.path.isfile("aeff.html")
+
 
 def test_save_not_json(client):
     x=client( "test10.yml" )
