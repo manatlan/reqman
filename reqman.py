@@ -111,7 +111,7 @@ def dict_merge(dct, merge_dct):
         if (
             k in dct
             and isinstance(dct[k], dict)
-            and isinstance(merge_dct[k], collections.Mapping)
+            and isinstance(merge_dct[k], collections.abc.Mapping)
         ):
             dict_merge(dct[k], merge_dct[k])
         else:
@@ -309,7 +309,7 @@ class Test(int):
 def getValOpe(v):
     try:
         if type(v) == str and v.startswith("."):
-            g = re.match("^\. *([!=<>]{1,2}) *(.+)$", v)
+            g = re.match(r"^\. *([!=<>]{1,2}) *(.+)$", v)
             if g:
                 op, v = g.groups()
                 vv = yaml.load(v)
@@ -539,7 +539,7 @@ def objReplace(env, txt):  # same as txtReplace() but for "object" (json'able)
 
 def txtReplace(env, txt):
     if env and txt and isinstance(txt, str):
-        for vvar in re.findall("\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt):
+        for vvar in re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt):
             var = vvar[2:-2]
 
             try:
@@ -856,6 +856,8 @@ class Reqs(list):
                         )
 
                         body = entry.get("body", None)
+                        doc=entry.get("doc", None)                                    
+
                         for param in foreach:
                             if type(param) == str:
                                 param = objReplace(env, param)
@@ -872,7 +874,7 @@ class Reqs(list):
                                     tests,
                                     saves,
                                     lparams,
-                                    entry.get("doc", None),
+                                    doc,
                                 )
                             )
 

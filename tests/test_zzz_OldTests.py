@@ -7,6 +7,7 @@ They are not needed (without them, we cover 96% ... with them : 97%)
 But they host some functionnal tests that are not covered by pytests ... yet
 
 those tests should be broken down in pytests versions !!!
+(SHOULD BE AT THE END, CURRENTLY, COZ THEY ARE DESTRUCTIVE)
 """
 import unittest,os,shutil,tempfile,contextlib,inspect,re,json,socket,time
 from io import StringIO,BytesIO
@@ -50,17 +51,6 @@ class Tests_CommandLine(unittest.TestCase):
             with contextlib.redirect_stdout(fo):
                 ret=reqman.main( list(args) )
         txt=fo.getvalue()+fe.getvalue()
-
-        # if fn in ONLYs:
-        #     if os.path.isfile("reqman.html"):
-        #         shutil.copy("reqman.html",self.precdir)
-        #         ir="reqman.html"
-        #     else:
-        #         ir=""
-
-        #     print("===================",fn)
-        #     print(txt)
-        #     print("==================>",ret,ir)
 
         return ret,txt
 
@@ -2807,33 +2797,3 @@ class Tests_content(unittest.TestCase):
 #         ~ self.assertRaises(reqman.RMException, lambda: reqman_http(r))
 
 
-class Tests_DOCSTRING(unittest.TestCase):
-
-    def test_1(self):
-        y="""
-- GET: /
-"""
-        l=reqman.Reqs(StringIO(y))
-        assert l[0].doc is None
-
-    def test_2(self):
-        y="""
-- GET: /
-  doc: just for fun
-"""
-        l=reqman.Reqs(StringIO(y))
-        assert l[0].doc == "just for fun"
-
-    #~ def test_3(self):
-        #~ y="""
-#~ - sss:
-    #~ - GET: /
-      #~ doc: x<<msg>>x
-
-#~ - call:     sss
-  #~ params:
-    #~ msg: kiki
-
-#~ """
-        #~ l=reqman.Reqs(StringIO(y))
-        #~ assert l[0].doc == "xkikix", "WTF '%s' ?" % l[0].doc
