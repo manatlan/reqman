@@ -1113,6 +1113,12 @@ class Tests_resolver_without_rc(unittest.TestCase): # could be replaced with Tes
 
 class Tests_TRANSFORM(unittest.TestCase):
 
+    def setUp(self):
+        self._old = reqman.dohttp
+        reqman.dohttp = mockHttp
+    def tearDown(self):
+        reqman.dohttp=self._old
+        
     def test_trans_var(self):
         env=dict(
             root="https://github.com/",
