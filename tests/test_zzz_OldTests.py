@@ -573,7 +573,7 @@ overfi:
   tests:
     - status: kokoko
     - status: .={'kkko':78}
-    - status: .!={kkko:78}
+    - status: .={kkko:78}
     - status: .!>10                     # use < !
     - status: .!!=12
     - status: ..=200
