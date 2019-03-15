@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # #############################################################################
-#    Copyright (C) 2018 manatlan manatlan[at]gmail(dot)com
+#    Copyright (C) 2018-2019 manatlan manatlan[at]gmail(dot)com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.0.1.2"
+__version__ = "1.1.0.0"
 
 import yaml  # see "pip install pyyaml"
 import encodings
@@ -49,8 +49,8 @@ class NotFound:
     pass
 
 
-class RMException(Exception):
-    pass
+class RMException(Exception): pass
+class RMNonPlayable(Exception): pass
 
 
 REQMAN_CONF = "reqman.conf"
@@ -257,6 +257,7 @@ class ResponseError:
         self.content = m
         self.headers = {}
         self.info = ""
+        self.time=None
 
     def __repr__(self):
         return "ERROR: %s" % (self.content)
@@ -474,12 +475,12 @@ def getVar(env, var):
     elif "." in var:
         val = jpath(env, var)
         if val is NotFound:
-            raise RMException(
+            raise RMNonPlayable(
                 "Can't resolve " + var + " in : " + ", ".join(list(env.keys()))
             )
         return txtReplace(env, val)
     else:
-        raise RMException(
+        raise RMNonPlayable(
             "Can't resolve " + var + " in : " + ", ".join(list(env.keys()))
         )
 
@@ -550,7 +551,7 @@ def txtReplace(env, txt):
                 raise RMException("Recursion trouble for '%s'" % var)
 
             if val is NotFound:
-                raise RMException(
+                raise RMNonPlayable(
                     "Can't resolve " + var + " in : " + ", ".join(list(env.keys()))
                 )
             else:
@@ -665,6 +666,20 @@ class Req(object):
             k: txtReplace(cenv, v) for k, v in list(headers.items()) if v is not None
         }
 
+        # fill tests ...
+        tests = getTests(cenv)
+        tests += self.tests  # extends with self tests
+
+        ntests = []
+        for test in tests:
+            key, val = list(test.keys())[0], list(test.values())[0]
+            if type(val) == list:
+                val = [txtReplace(cenv, i) for i in val]
+            else:
+                val = txtReplace(cenv, val)
+            ntests.append({key: val})
+        tests = ntests
+
         # body ...
         if self.body and not isinstance(self.body, str):
 
@@ -684,23 +699,16 @@ class Req(object):
             body = apply(self.body, jrep)
             body = json.dumps(body)  # and convert to string !
         else:
-            body = txtReplace(cenv, self.body)
+            try:
+                body = txtReplace(cenv, self.body)
+            except RMNonPlayable as e:
+                # return a TestResult Error ....
+                req = Request(h.scheme, h.hostname, h.port, self.method, path, self.body, headers)
+                res=ResponseError( str(e) )
+                return TestResult(req, res,  tests, self.doc)
 
         req = Request(h.scheme, h.hostname, h.port, self.method, path, body, headers)
         if h.hostname:
-
-            tests = getTests(cenv)
-            tests += self.tests  # extends with self tests
-
-            ntests = []
-            for test in tests:
-                key, val = list(test.keys())[0], list(test.values())[0]
-                if type(val) == list:
-                    val = [txtReplace(cenv, i) for i in val]
-                else:
-                    val = txtReplace(cenv, val)
-                ntests.append({key: val})
-            tests = ntests
 
             timeout = cenv.get("timeout", None)
             try:
@@ -964,7 +972,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
 """
     alltr = []
     for f in reqs:
-        times = [tr.res.time for tr in f.trs if tr.res]
+        times = [tr.res.time for tr in f.trs if tr.res and tr.res.time]
 
         reqs = ""
         for tr in f.trs:

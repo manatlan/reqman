@@ -1,3 +1,7 @@
+1.1.0.0 (15/03/2019)
+ - better (py)tested (97%cov)
+ - unresolved param non break the tests now (html output is created)
+ - py38 deprecated warning removed
 1.0.1.2 (10/03/2019)
  - expose internal things for the new (py)tests purpose only
 1.0.1.1 (08/03/2019)
