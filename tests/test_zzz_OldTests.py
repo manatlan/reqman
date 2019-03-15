@@ -1798,22 +1798,6 @@ class Tests_env_save(unittest.TestCase):
         s=l[1].test(env)
         self.assertEqual( s.req.headers["Authorizattion"], "Bearer the content" )
 
-    def test_bad_reuse_var_created(self):
-        f=StringIO("""
-- GET: http://supersite.fr/rien
-  save: var
-
-- POST: http://supersite.fr/rien/yo
-  headers:
-    Authorizattion: Bearer {{unknown_var}}
-""")
-        l=reqman.Reqs(f)
-
-        env={}
-        l[0].test(env)
-        self.assertEqual( env, {'var': 'the content'} )
-
-        self.assertRaises(reqman.RMException, lambda: l[1].test(env))
 
     def test_save_var_as_variable(self):
         f=StringIO("""
@@ -2715,13 +2699,13 @@ class Tests_getVar(unittest.TestCase):
             "var.x":"valx", #this is a var named "var.x" !!
             "mylist":[31,32,33]
         }
-        self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"nib") )
+        self.assertRaises(reqman.RMNonPlayable, lambda: reqman.getVar(env,"nib") )
         self.assertEqual( reqman.getVar(env,"var"), "val" )
         self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
         self.assertEqual( reqman.getVar(env,"mylist.0"), 31 )
         self.assertEqual( reqman.getVar(env,"mylist.1"), 32 )
         self.assertEqual( reqman.getVar(env,"mylist.2"), 33 )
-        self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"mylist.3") )
+        self.assertRaises(reqman.RMNonPlayable, lambda: reqman.getVar(env,"mylist.3") )
 
     def test_baba_dotted(self):
         env={
@@ -2730,8 +2714,8 @@ class Tests_getVar(unittest.TestCase):
         }
         self.assertEqual( reqman.getVar(env,"var.ssvar"), "val" )
         self.assertEqual( reqman.getVar(env,"var.x"), "valx" )
-        self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"var.nimp") )
-        self.assertRaises(reqman.RMException, lambda: reqman.getVar(env,"xxx") )
+        self.assertRaises(reqman.RMNonPlayable, lambda: reqman.getVar(env,"var.nimp") )
+        self.assertRaises(reqman.RMNonPlayable, lambda: reqman.getVar(env,"xxx") )
 
 
     def test_baba_trans(self):
