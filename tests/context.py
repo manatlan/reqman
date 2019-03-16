@@ -89,8 +89,8 @@ def client(request):
 def reqs(request):
     server = getattr(request.module, "SERVER", {})   
 
-    def caller(txt):
-        return reqman.Reqs( StringIO(txt) )
+    def caller(txt,env=None):
+        return reqman.Reqs( StringIO(txt),env )
 
     precdir = os.getcwd()
     os.chdir( tempfile.mkdtemp() )
