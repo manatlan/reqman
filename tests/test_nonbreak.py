@@ -4,9 +4,9 @@ from context import client
 import json,os,shutil
 
 SERVER={
-    "GET http://x/query" : lambda q: dict( status=200, body=json.dumps({"next":"continue"})),
-    "GET http://<<unknown>>/query" : lambda q: dict( status=200, body=json.dumps({"next":"continue"})),
-    "POST http://x/doit" : lambda q: dict( status=200, body=q.body),
+    "/query" : (200, json.dumps({"next":"continue"})),
+    "http://<<unknown>>/query" : (200, json.dumps({"next":"continue"})),
+    "/doit" : lambda q: (200, q.body),
 }
 
 FILES=[

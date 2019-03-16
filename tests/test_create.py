@@ -4,9 +4,9 @@ from context import client
 
 
 SERVER={
-    "GET http://jim/jo1" : lambda q: dict( status=200, body="42"),
-    "GET http://jim/jo2" : lambda q: dict( status=200, body="42"),
-    "GET http://jim/jo3" : lambda q: dict( status=200, body="42"),
+    "/jo1" : (200, "42"),
+    "/jo2" : (200, "42"),
+    "/jo3" : (200, "42"),
 }
 
 

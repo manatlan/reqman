@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 from context import client
 
-
 SERVER={
-    "GET http://jim/yo" : lambda q: dict( status=200, body="jim"),
-    "GET http://jom/yo" : lambda q: dict( status=200, body="jom"),
+    "http://jim/yo" : (200,"dsq"),
+    "http://jom/yo" : (200,"dsq"),
 }
 
 FILES=[

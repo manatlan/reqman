@@ -4,10 +4,10 @@ from context import client
 import os,json
 
 SERVER={
-    "GET http://jim/get_brut" : lambda q: dict( status=500, body="42"),
-    "GET http://jim/get_json" : lambda q: dict( status=501, body=json.dumps(dict(value=42))),
-    "GET http://jim/42" : lambda q: dict( status=200, body="ok"),
-    "GET http://jim/not_json" : lambda q: dict( status=200, body="fdsq fdsq : fdsq !"),
+    "/get_brut" : (500, "42"),
+    "/get_json" : (501, json.dumps(dict(value=42))),
+    "/42" :       (200, "ok"),
+    "/not_json" : (200, "fdsq fdsq : fdsq !"),
 }
 
 FILES=[

@@ -11,6 +11,30 @@ from io import StringIO
 
 
 
+#===============================================
+def runServerMockWith(server):
+    def mockHttp(q):
+        if q.path in server:
+            mock=server[q.path]
+        elif q.url in server:
+            mock=server[q.url]
+        else:
+            mock=None
+
+        if mock:
+            if "function" in str(type(mock)):
+                mock=mock(q)
+
+            if len(mock)==2:
+                status,body=mock
+                headers={"Content-Type":"text/plain","server":"mock"}
+            elif len(mock)==3:
+                status,body,headers=mock
+            return reqman.Response( status, body, headers, q.url)
+        else:
+            return reqman.Response( 404, "Not Found (fixture)", {"Content-Type":"text/plain","server":"mock"}, q.url)
+    return mockHttp
+#===============================================
 
     
 
@@ -53,19 +77,32 @@ def client(request):
         return r
 
     reqman_http = reqman.dohttp
-
-    def mockHttp(q):
-        hq="%s %s" % (q.method,q.url)
-        if hq in server:
-            params={"url":q.url,"headers":{}}
-            params.update( server[hq](q) )
-            return reqman.Response( **params )
-        else: # real world
-            return reqman_http(q)
-
-    reqman.dohttp = mockHttp
+    reqman.dohttp = runServerMockWith(server)
     yield tester
     reqman.dohttp = reqman_http
 
     os.chdir( precdir )
     shutil.rmtree(dtemp)
+
+
+@pytest.fixture(scope="function")
+def reqs(request):
+    server = getattr(request.module, "SERVER", {})   
+
+    def caller(txt):
+        return reqman.Reqs( StringIO(txt) )
+
+    precdir = os.getcwd()
+    os.chdir( tempfile.mkdtemp() )
+
+    prechttp = reqman.dohttp
+    reqman.dohttp = runServerMockWith(server)
+    yield caller
+    reqman.dohttp=prechttp
+
+    os.chdir( precdir )
+
+
+
+
+

@@ -5,15 +5,15 @@ import json
 
 
 SERVER={
-    "GET http://x/t" : lambda q: dict( status=200, body=json.dumps(dict(value=42,liste=[1,2,3],txt="hello",d={"a":"b"},b=True)) , headers={"Content-Type":"application/json"})
+    "/t" : (200, json.dumps(dict(value=42,liste=[1,2,3],txt="hello",d={"a":"b"},b=True)))
 }
 
 FILES=[
     dict(name="test2.yml",content="""
 - GET: http://x/t
   tests:
-    - Content-Type: application/json
-    - Content-Type: json
+    - Content-Type: text/plain
+    - Content-Type: text
     - status: <<ok>>
     - status: 200
     - status: .=200

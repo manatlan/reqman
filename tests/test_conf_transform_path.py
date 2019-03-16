@@ -4,7 +4,7 @@ from context import client
 import os
 
 SERVER={
-    "POST http://jim/yo" : lambda q: dict( status=200, body=q.body),
+    "/yo" : lambda q: (200, q.body),
 }
 
 FILES=[

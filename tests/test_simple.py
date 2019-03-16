@@ -4,7 +4,7 @@ from context import client
 
 
 SERVER={
-    "GET http://x/t" : lambda q: dict( status=200, body="dsq")
+    "/t" : (200,"dsq")
 }
 
 FILES=[
