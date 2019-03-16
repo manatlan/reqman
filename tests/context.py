@@ -22,8 +22,7 @@ def runServerMockWith(server):
             mock=None
 
         if mock:
-            if "function" in str(type(mock)):
-                mock=mock(q)
+            if callable(mock): mock=mock(q)
 
             if len(mock)==2:
                 status,body=mock
