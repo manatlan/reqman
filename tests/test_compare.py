@@ -5,11 +5,12 @@ import json
 
 
 SERVER={
-    "/t" : (200, json.dumps(dict(value=42,liste=[1,2,3],txt="hello",d={"a":"b"},b=True)))
+    "/t" : (200, json.dumps(dict(value=42,liste=[1,2,3],txt="hello",d={"a":"b"},b=True))),
+    "/tt" : (200, "i m not json"),
 }
 
 FILES=[
-    dict(name="test2.yml",content="""
+    dict(name="test1.yml",content="""
 - GET: http://x/t
   tests:
     - Content-Type: text/plain
@@ -43,11 +44,20 @@ FILES=[
   params:
     ok: 200
 """),
+    dict(name="test2.yml",content="""
+- GET: http://x/tt
+  tests:
+    - json.result: ok
+"""),
 ]
 
 def test_1(client):
-    x=client( "test2.yml" )
+    x=client( "test1.yml" )
     assert x.code==0 # 0 error
     assert x.inproc.total==x.inproc.ok
-    
-    # open("/home/manatlan/AEFF.html","w+").write(x.html)
+
+def test_2(client):
+    x=client( "test2.yml" )
+    assert x.code==1 # 1 error
+    assert x.inproc.total==1
+    assert x.inproc.ok==0

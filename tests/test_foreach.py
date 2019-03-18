@@ -4,12 +4,13 @@ from context import client
 
 
 SERVER={
-    "/yo" : ( 200, "dsq"),
+    "/1" : ( 200, "dsq"),
+    "/2" : ( 200, "dsq"),
 }
 
 FILES=[
     dict(name="test.yml",content="""
-- GET: http://xxx/yo
+- GET: http://xxx/<<v>>
   tests:
     - status: 200
     - content: dsq
@@ -20,7 +21,7 @@ FILES=[
         - v: 2
 """),
     dict(name="test2.yml",content="""
--   GET: http://xxx/yo
+-   GET: http://xxx/<<v>>
     tests:
         - status: 200
         - content: dsq
@@ -29,7 +30,7 @@ FILES=[
         mkliste: return x * [ {"v":1} ]
 """),
     dict(name="test3.yml",content="""
--   GET: http://xxx/yo
+-   GET: http://xxx/<<v>>
     tests:
         - status: 200
         - content: dsq
@@ -40,7 +41,7 @@ FILES=[
             v: 2
 """),
     dict(name="test4.yml",content="""
-- GET: http://xxx/yo
+- GET: http://xxx/<<v>>
   tests:
     - status: 200
     - content: dsq
