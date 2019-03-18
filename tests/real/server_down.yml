@@ -1,0 +1,8 @@
+
+- test:
+      - GET: http://fhdskjfdhkjsdlhfjlksfhfjklshfsjk/
+        tests:
+          - status: 200
+          - content: nimp
+
+- call: test

@@ -1,0 +1,10 @@
+
+- test:
+      - GET: https://manatlan.com/5secondsPlease
+        tests:
+          - status: 200
+          - content: OK
+
+- call: test
+  params:
+    timeout: 1000
