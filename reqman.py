@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.0.0"
+__version__ = "1.1.0.1"
 
 import yaml  # see "pip install pyyaml"
 import encodings
@@ -866,9 +866,13 @@ class Reqs(list):
                         body = entry.get("body", None)
                         doc=entry.get("doc", None)                                    
 
+                        if foreach and type(foreach)!=list:
+                            raise RMException("the foreach section is not a list ?!")
+
                         for param in foreach:
                             if type(param) == str:
                                 param = objReplace(env, param)
+
                             lparams = {}
                             dict_merge(lparams, params)
                             if param:
