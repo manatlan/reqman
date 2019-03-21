@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.1.0"
+__version__ = "1.1.2.0"
 
 import yaml  # see "pip install pyyaml"
 import encodings
@@ -791,7 +791,10 @@ class Reqs(list):
 
                 try:
                     if type(entry) != dict:
-                        raise RMException("no actions for %s" % entry)
+                        if type(entry)==str and entry=="break":
+                            break
+                        else:
+                            raise RMException("no actions for %s" % entry)
                     action = list(
                         (KNOWNVERBS | set(["call"])).intersection(list(entry.keys()))
                     )

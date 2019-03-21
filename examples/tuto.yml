@@ -29,6 +29,8 @@
 - TRACE: /
 - CONNECT: /
 
+#TODO: talk about special command 'break' !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 #--------------------------------------------
 # Thus, you can use send your headers as :
 - GET: /

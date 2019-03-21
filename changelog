@@ -1,3 +1,5 @@
+1.1.2.0 (18/03/2019)
+ - new "break" command, to forget following commands in a file
 1.1.1.0 (18/03/2019)
  - FIX: save and path break (unresolved param)
  - FIX: resolve param when in a param resolved in body
