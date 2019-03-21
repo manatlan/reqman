@@ -1,3 +1,8 @@
+1.1.1.0 (18/03/2019)
+ - FIX: save and path break (unresolved param)
+ - FIX: resolve param when in a param resolved in body
+ - better handle NonPlyable test (coz unresolved params)
+ - pytests 98%cov
 1.1.0.1 (18/03/2019)
  - FIX: test that foreach section is a list
 1.1.0.0 (15/03/2019)

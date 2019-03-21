@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.0.1"
+__version__ = "1.1.1.0"
 
 import yaml  # see "pip install pyyaml"
 import encodings
@@ -644,8 +644,15 @@ class Req(object):
         cenv = env.copy() if env else {}  # current env
         cenv.update(self.params)  # override with self params
 
+        err=None # to handle NonPlayable test (not a error anymore, a TestResult is returned)
+
         # path ...
-        path = txtReplace(cenv, self.path)
+        try:
+            path = txtReplace(cenv, self.path)
+        except RMNonPlayable as e:
+            path=self.path
+            err=e
+        
         if cenv and (not path.strip().lower().startswith("http")) and ("root" in cenv):
             h = urllib.parse.urlparse(cenv["root"])
             if h.path and h.path[-1] == "/":
@@ -682,7 +689,6 @@ class Req(object):
 
         # body ...
         if self.body and not isinstance(self.body, str):
-
             jrep = lambda x: objReplace(cenv, x)  # "json rep"
 
             # ================================
@@ -701,49 +707,53 @@ class Req(object):
         else:
             try:
                 body = txtReplace(cenv, self.body)
+                body = txtReplace(cenv, body)   #TODO: make something's better (to avoid this multiple call) ... here it's horrible, but needed for test_param/test_param_resolve
             except RMNonPlayable as e:
                 # return a TestResult Error ....
-                req = Request(h.scheme, h.hostname, h.port, self.method, path, self.body, headers)
-                res=ResponseError( str(e) )
-                return TestResult(req, res,  tests, self.doc)
+                body=self.body
 
-        req = Request(h.scheme, h.hostname, h.port, self.method, path, body, headers)
-        if h.hostname:
-
-            timeout = cenv.get("timeout", None)
-            try:
-                socket.setdefaulttimeout(timeout and float(timeout) / 1000.0)
-            except ValueError:
-                socket.setdefaulttimeout(None)
-
-            t1 = datetime.datetime.now()
-            res = dohttp(req)
-            res.time = datetime.datetime.now() - t1
-            if isinstance(res, Response) and self.saves:
-                for save in self.saves:
-                    dest = txtReplace(cenv, save)
-                    if dest.lower().startswith("file://"):
-                        name = dest[7:]
-                        try:
-                            with open(name, "wb+") as fid:
-                                fid.write(res.content.toBinary())
-                        except Exception as e:
-                            raise RMException(
-                                "Save to file '%s' error : %s" % (name, e)
-                            )
-                    else:
-                        if dest:
-                            try:
-                                env[dest] = json.loads(str(res.content))
-                                cenv[dest] = json.loads(str(res.content))
-                            except json.decoder.JSONDecodeError:
-                                env[dest] = str(res.content)
-                                cenv[dest] = str(res.content)
-
-            return TestResult(req, res, tests, self.doc)
+        if err:
+            req = Request(h.scheme, h.hostname, h.port, self.method, path, body, headers)
+            res=ResponseError( str(err) )
+            return TestResult(req, res,  tests, self.doc)
         else:
-            # no hostname : no response, no tests ! (missing reqman.conf the root var ?)
-            return TestResult(req, None, [], self.doc)
+            req = Request(h.scheme, h.hostname, h.port, self.method, path, body, headers)
+            if h.hostname:
+
+                timeout = cenv.get("timeout", None)
+                try:
+                    socket.setdefaulttimeout(timeout and float(timeout) / 1000.0)
+                except ValueError:
+                    socket.setdefaulttimeout(None)
+
+                t1 = datetime.datetime.now()
+                res = dohttp(req)
+                res.time = datetime.datetime.now() - t1
+                if isinstance(res, Response) and self.saves:
+                    for save in self.saves:
+                        dest = txtReplace(cenv, save)
+                        if dest.lower().startswith("file://"):
+                            name = dest[7:]
+                            try:
+                                with open(name, "wb+") as fid:
+                                    fid.write(res.content.toBinary())
+                            except Exception as e:
+                                raise RMException(
+                                    "Save to file '%s' error : %s" % (name, e)
+                                )
+                        else:
+                            if dest:
+                                try:
+                                    env[dest] = json.loads(str(res.content))
+                                    cenv[dest] = json.loads(str(res.content))
+                                except json.decoder.JSONDecodeError:
+                                    env[dest] = str(res.content)
+                                    cenv[dest] = str(res.content)
+
+                return TestResult(req, res, tests, self.doc)
+            else:
+                # no hostname : no response, no tests ! (missing reqman.conf the root var ?)
+                return TestResult(req, None, [], self.doc)
 
     def __repr__(self):
         return "<%s %s>" % (self.method, self.path)

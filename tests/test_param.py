@@ -111,6 +111,26 @@ FILES=[
   tests:
     - status: 200
 """),
+
+    dict(name="test_param_resolve_inside.yml",content="""
+- POST: http://jim/pingpong
+  body: <<data>>
+  params:
+    data:
+      myval: <<v>>
+      myval2: <<another>>
+      myres: <<3|stampfel>>
+    v: 42
+    another: <<another2>>
+    another2: <<v>>
+    stampfel: return x*"yo"
+  tests:
+    - status: 200
+    - json.myval: 42
+    - json.myval2: 42
+    - json.myres: yoyoyo
+    
+"""),
 ]
 
 def test_simple(client):
@@ -158,3 +178,10 @@ def test_error_param(client):
     #     fid.write(x.html)
     assert x.code==-1
     assert "ERROR: Can't resolve unknown" in x.console
+
+def test_param_resolve(client):
+    x=client( "test_param_resolve_inside.yml" )
+    with open("/home/manatlan/aeff.html","w+") as fid:
+        fid.write(x.html)
+    assert x.code==0
+    # assert "ERROR: Can't resolve unknown" in x.console

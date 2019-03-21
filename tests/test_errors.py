@@ -151,13 +151,11 @@ def test_12(client):
 
 def test_13(client):
     x=client( "test13.yml" )
-    assert x.code==-1
-    assert "ERROR: Can't resolve" in x.console
+    assert x.code==0        #no more an error
 
 def test_14(client):
     x=client( "test14.yml" )
-    assert x.code==-1
-    assert "ERROR: Can't resolve" in x.console
+    assert x.code==0        #no more an error
 
 def test_15(client):
     x=client( "test15.yml" )

@@ -5,6 +5,8 @@ import json,os,shutil
 
 SERVER={
     "/query" : (200, json.dumps({"next":"continue"})),
+    "/nimp" : (500, "E/R\\R:{']OR"),
+    "/continue" : (200, json.dumps({"next":"ok"})),
     "http://<<unknown>>/query" : (200, json.dumps({"next":"continue"})),
     "/doit" : lambda q: (200, q.body),
 }
@@ -77,6 +79,16 @@ FILES=[
 """),
 
 
+    dict(name="test_path_ko.yml",content="""
+- POST: http://x/nimp
+  tests:
+    - status: 200
+  save: r
+- GET: http://x/mycontent/xxx-<<r.result.0.val>>-<<r.result.1.val>>-{{yolo}}
+  tests:
+    - status: 200
+    - content: ok
+"""),
 ]
 
 def test_scenar(client):
@@ -109,9 +121,15 @@ def test_non_problematic(client):
 def test_scenar_break(client):
     x=client( "test_scenar_ko.yml" )
     assert os.path.isfile("reqman.html")            # a reqman.html is generated (the most important)
-    shutil.copy2("reqman.html",r"c:\reqman.html")   # make a copy for me
 
-    assert x.code==2                                # 2 errors (1 req non playable with 2 tests in error)
-    assert x.inproc.ok == 4
+    assert x.code==1                                # 1 errors (1 req non playable with 1 test in error)
+    assert x.inproc.ok == 5
     assert x.inproc.total == 6
     assert len(x.inproc.reqs[0])==3                 
+
+def test_path_break(client):
+    x=client("test_path_ko.yml")
+    assert x.code==3
+    assert x.inproc.ok == 0
+    assert x.inproc.total == 3
+
