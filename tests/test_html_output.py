@@ -21,7 +21,9 @@ def test_html_output(client):
     assert x.code==0 # 0 error
     assert x.inproc.total==2
     assert x.inproc.ok==2
+
     assert 'content contains "être"' in x.html
+    assert '-> MOCK 200' in x.html
 
     # with open("/home/manatlan/aeff.html","w+") as fid:
     #     fid.write(x.html)

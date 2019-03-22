@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.2.0"
+__version__ = "1.1.2.2"
 
 import yaml  # see "pip install pyyaml"
 import encodings

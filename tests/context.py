@@ -29,9 +29,9 @@ def runServerMockWith(server):
                 headers={"Content-Type":"text/plain","server":"mock"}
             elif len(mock)==3:
                 status,body,headers=mock
-            return reqman.Response( status, body, headers, q.url)
+            return reqman.Response( status, body, headers, q.url, "MOCK %s" % status)
         else:
-            return reqman.Response( 404, "Not Found (fixture)", {"Content-Type":"text/plain","server":"mock"}, q.url)
+            return reqman.Response( 404, "Not Found (fixture)", {"Content-Type":"text/plain","server":"mock"}, q.url,"MOCK 404")
     return mockHttp
 #===============================================
 

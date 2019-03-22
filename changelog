@@ -1,3 +1,5 @@
+1.1.2.2 (22/03/2019)
+ - FIX: pytest html output status with "MOCK"
 1.1.2.1 (22/03/2019)
  - FIX: html output non-encoded non-ascii chars
 1.1.2.0 (21/03/2019)
