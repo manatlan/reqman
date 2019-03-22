@@ -174,8 +174,6 @@ def test_not_really_an_error_param(client):
 
 def test_error_param(client):
     x=client( "test_error_param.yml" )
-    # with open("/home/manatlan/aeff.html","w+") as fid:
-    #     fid.write(x.html)
     assert x.code==-1
     assert "ERROR: Can't resolve unknown" in x.console
 

@@ -358,7 +358,7 @@ def getValOpe(v):
 
 
 def strjs(x):
-    return json.dumps(x)
+    return json.dumps(x,ensure_ascii=False)
 
 
 class TestResult(list):
@@ -998,7 +998,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             qheaders = "\n".join(
                 ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.req.headers.items())]
             )
-            qbody = html.escape(prettify(str(tr.req.body or "")))
+            qbody = prettify(str(tr.req.body or ""))
 
             qdoc = "<b>%s</b>" % tr.doc if tr.doc else ""
 
@@ -1008,7 +1008,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 rheaders = "\n".join(
                     ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.res.headers.items())]
                 )
-                rbody = html.escape(prettify(str(tr.res.content or "")))
+                rbody = prettify(str(tr.res.content or ""))
 
                 hres = """
                     {qdoc}
@@ -1032,7 +1032,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             tests = "".join(
                 [
                     """<li class='%s'>%s</li>"""
-                    % ("ok" if t else "ko", html.escape(t.name))
+                    % ("ok" if t else "ko", t.name)
                     for t in tr
                 ]
             )
@@ -1073,7 +1073,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
         switchs=" ".join(switchs),
     )
 
-    with open("reqman.html", "w+") as fid:
+    with open("reqman.html", "w+", encoding="utf_8") as fid:
         fid.write(h)
 
     return ok, total
