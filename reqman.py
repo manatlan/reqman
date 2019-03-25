@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.2.2"
+__version__ = "1.1.2.3"
 
 import yaml  # see "pip install pyyaml"
 import encodings
@@ -94,6 +94,20 @@ try:  # colorama is optionnal
 except ImportError:
     cy = cr = cg = cb = cw = lambda t: t
 
+def chardet(s):
+    """guess encoding of the string 's' -> cp1252 or utf8"""
+    u8="çàâäéèêëîïôûù"
+    cp=u8.encode("utf8").decode("cp1252")
+
+    cu8,ccp=0,0
+    for c in u8: cu8+=s.count(c)
+    for c in cp: ccp+=s.count(c)
+
+    if cu8>=ccp:
+        return "utf8"
+    else:
+        return "cp1252"
+
 
 def yamlLoad(fd):  # fd is an io thing
     b = fd.read()
@@ -102,6 +116,9 @@ def yamlLoad(fd):  # fd is an io thing
             b = str(b, "utf8")
         except UnicodeDecodeError:
             b = str(b, "cp1252")
+    else:
+        encoding=chardet(b)
+        b=b.encode(encoding).decode("utf8")
     return yaml.load(b)
 
 

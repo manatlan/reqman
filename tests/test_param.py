@@ -179,7 +179,5 @@ def test_error_param(client):
 
 def test_param_resolve(client):
     x=client( "test_param_resolve_inside.yml" )
-    with open("/home/manatlan/aeff.html","w+") as fid:
-        fid.write(x.html)
     assert x.code==0
     # assert "ERROR: Can't resolve unknown" in x.console
