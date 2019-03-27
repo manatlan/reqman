@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.2.3"
+__version__ = "1.1.2.4"
 
 import yaml  # see "pip install pyyaml"
 import encodings
@@ -1015,7 +1015,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             qheaders = "\n".join(
                 ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.req.headers.items())]
             )
-            qbody = prettify(str(tr.req.body or ""))
+            qbody = html.escape( prettify(str(tr.req.body or "")) )
 
             qdoc = "<b>%s</b>" % tr.doc if tr.doc else ""
 
@@ -1025,7 +1025,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 rheaders = "\n".join(
                     ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.res.headers.items())]
                 )
-                rbody = prettify(str(tr.res.content or ""))
+                rbody = html.escape( prettify(str(tr.res.content or "")) )
 
                 hres = """
                     {qdoc}
