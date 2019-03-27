@@ -1,3 +1,5 @@
+1.1.2.4 (27/03/2019)
+ - FIX: xml output in html wasn't escaped since 1.1.2.1
 1.1.2.3 (25/03/2019)
  - FIX: yaml encoding detection (utf8|cp1252)
 1.1.2.2 (22/03/2019)
