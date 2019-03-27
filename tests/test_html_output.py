@@ -27,7 +27,7 @@ FILES=[
 - GET: http://x/x
   tests:
     - status: 200
-    - content: Yolo
+    - content: <a>Yolo</a>
 """)
 ]
 
@@ -59,8 +59,8 @@ def test_html_output2(client):
 
 def test_html_output3(client):
     x=client( "test_xml.yml" )
-    with open("/home/manatlan/aeff.html","w+") as fid:
-        fid.write(x.html)
+    # with open("/home/manatlan/aeff.html","w+") as fid:
+    #     fid.write(x.html)
     assert x.code==0 # 0 error
     assert x.inproc.total==2
     assert x.inproc.ok==2
