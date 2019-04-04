@@ -179,7 +179,7 @@ class CookieStore(http.cookiejar.CookieJar):
         if type(headers) == dict:
             headers = list(headers.items())
 
-        class FakeResponse:
+        class FakeResponse(http.client.HTTPResponse):
             def __init__(self, headers=[], url=None):
                 """
                 headers: list of RFC822-style 'Key: value' strings
