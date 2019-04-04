@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import os,tempfile,shutil
+import os,tempfile,shutil,sys
+sys.path.append( os.path.dirname(os.path.dirname(__file__)) )
 import reqman
 import pytest,contextlib
 from io import StringIO
