@@ -1,4 +1,4 @@
-from context import reqman
+import reqman
 import os
 
 def test_1():

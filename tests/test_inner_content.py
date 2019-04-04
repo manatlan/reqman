@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from context import reqman
+import reqman
 
 def test_1():
     b=reqman.Content("héllo".encode("cp1252"))

@@ -1,5 +1,5 @@
-from context import reqman
 import os
+import reqman
 
 def test_jsonstore():
     yml=os.path.join(os.path.dirname(__file__),"real/jsonstore.yml")

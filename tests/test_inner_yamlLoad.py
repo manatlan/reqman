@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from context import reqman
+import reqman
 from io import BytesIO
 def test_1():
     fd=BytesIO("yo: éé".encode("cp1252"))

@@ -1,9 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-import sys,os,tempfile,shutil
-sys.path.append( os.path.dirname(os.path.dirname(__file__)) )
+import os,tempfile,shutil
 import reqman
 import pytest,contextlib
 from io import StringIO
@@ -53,7 +50,11 @@ def client(request):
             f.write(file["content"])
 
     def tester(*args):
-        class Ret():pass
+        class Ret():
+            code=None
+            console=None
+            html=None
+            inproc=None
         r=Ret()
 
         if os.path.isfile("reqman.html"):

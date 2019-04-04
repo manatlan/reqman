@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from context import reqman
+import reqman
 """
 This is the good old reqman tests, in unitest (the cover 94%)
 They are not needed (without them, we cover 96% ... with them : 97%)

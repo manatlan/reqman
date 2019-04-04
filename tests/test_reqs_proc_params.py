@@ -1,7 +1,7 @@
-from context import reqs,reqman
 import json,pytest
-SERVER={"/": (200,"hello")}
+import reqman
 
+SERVER={"/": (200,"hello")}
 
 def test_yml_procedures_call_with_diff_types(reqs):
 

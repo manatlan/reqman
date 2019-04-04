@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from context import reqman
+import reqman
 
 def test_1():
     d1={

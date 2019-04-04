@@ -1,4 +1,4 @@
-from context import reqman
+import reqman
 from io import StringIO
 def test_1():
     y="""

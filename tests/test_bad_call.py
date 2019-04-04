@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from context import client
 
 FILES=[
     dict(name="yo.txt",content="jkjkjk"),

@@ -43,14 +43,19 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import traceback
+from typing import Union, List, Dict
 
 
 class NotFound:
     pass
 
 
-class RMException(Exception): pass
-class RMNonPlayable(Exception): pass
+class RMException(Exception):
+    pass
+
+
+class RMNonPlayable(Exception):
+    pass
 
 
 REQMAN_CONF = "reqman.conf"
@@ -66,44 +71,30 @@ try:  # colorama is optionnal
 
     init()
 
-    cy = (
-        lambda t: Fore.YELLOW + Style.BRIGHT + t + Fore.RESET + Style.RESET_ALL
-        if t
-        else None
-    )
-    cr = (
-        lambda t: Fore.RED + Style.BRIGHT + t + Fore.RESET + Style.RESET_ALL
-        if t
-        else None
-    )
-    cg = (
-        lambda t: Fore.GREEN + Style.BRIGHT + t + Fore.RESET + Style.RESET_ALL
-        if t
-        else None
-    )
-    cb = (
-        lambda t: Fore.CYAN + Style.BRIGHT + t + Fore.RESET + Style.RESET_ALL
-        if t
-        else None
-    )
-    cw = (
-        lambda t: Fore.WHITE + Style.BRIGHT + t + Fore.RESET + Style.RESET_ALL
-        if t
-        else None
-    )
+    def colorize(color: int, t: str):
+        return color + Style.BRIGHT + t + Fore.RESET + Style.RESET_ALL if t else None
+
+    cy = lambda t: colorize(Fore.YELLOW, t)
+    cr = lambda t: colorize(Fore.RED, t)
+    cg = lambda t: colorize(Fore.GREEN, t)
+    cb = lambda t: colorize(Fore.CYAN, t)
+    cw = lambda t: colorize(Fore.WHITE, t)
 except ImportError:
     cy = cr = cg = cb = cw = lambda t: t
 
-def chardet(s):
+
+def chardet(s: str) -> str:
     """guess encoding of the string 's' -> cp1252 or utf8"""
-    u8="çàâäéèêëîïôûù"
-    cp=u8.encode("utf8").decode("cp1252")
+    u8 = "çàâäéèêëîïôûù"
+    cp = u8.encode("utf8").decode("cp1252")
 
-    cu8,ccp=0,0
-    for c in u8: cu8+=s.count(c)
-    for c in cp: ccp+=s.count(c)
+    cu8, ccp = 0, 0
+    for c in u8:
+        cu8 += s.count(c)
+    for c in cp:
+        ccp += s.count(c)
 
-    if cu8>=ccp:
+    if cu8 >= ccp:
         return "utf8"
     else:
         return "cp1252"
@@ -117,33 +108,33 @@ def yamlLoad(fd):  # fd is an io thing
         except UnicodeDecodeError:
             b = str(b, "cp1252")
     else:
-        encoding=chardet(b)
-        b=b.encode(encoding).decode("utf8")
+        encoding = chardet(b)
+        b = b.encode(encoding).decode("utf8")
     return yaml.load(b)
 
 
-def dict_merge(dct, merge_dct):
-    """ merge 'merge_dct' in --> dct """
-    for k, v in merge_dct.items():
+def dict_merge(dst: dict, src: dict) -> None:
+    """ merge dict 'src' in --> dst """
+    for k, v in src.items():
         if (
-            k in dct
-            and isinstance(dct[k], dict)
-            and isinstance(merge_dct[k], collections.abc.Mapping)
+            k in dst
+            and isinstance(dst[k], dict)
+            and isinstance(src[k], collections.abc.Mapping)
         ):
-            dict_merge(dct[k], merge_dct[k])
+            dict_merge(dst[k], src[k])
         else:
-            if k in dct and isinstance(dct[k], list) and isinstance(merge_dct[k], list):
-                dct[k] += merge_dct[k]
+            if k in dst and isinstance(dst[k], list) and isinstance(src[k], list):
+                dst[k] += src[k]
             else:
-                dct[k] = merge_dct[k]
+                dst[k] = src[k]
 
 
-def mkUrl(protocol, host, port=None):
+def mkUrl(protocol: str, host: str, port=None) -> str:
     port = ":%s" % port if port else ""
     return "{protocol}://{host}{port}".format(**locals())
 
 
-def prettify(txt, indentation=4):
+def prettify(txt: str, indentation: int = 4) -> str:
     try:
         x = xml.dom.minidom.parseString(txt).toprettyxml(indent=" " * indentation)
         x = "\n".join(
@@ -157,7 +148,7 @@ def prettify(txt, indentation=4):
             return txt
 
 
-def jpath(elem, path):
+def jpath(elem, path: str):
     for i in path.strip(".").split("."):
         try:
             if type(elem) == list:
@@ -184,7 +175,7 @@ def jpath(elem, path):
 class CookieStore(http.cookiejar.CookieJar):
     """ Manage cookiejar for httplib-like """
 
-    def saveCookie(self, headers, url):
+    def saveCookie(self, headers, url: str) -> None:
         if type(headers) == dict:
             headers = list(headers.items())
 
@@ -203,7 +194,7 @@ class CookieStore(http.cookiejar.CookieJar):
         response = FakeResponse([": ".join([k, v]) for k, v in headers], url)
         self.extract_cookies(response, urllib.request.Request(url))
 
-    def getCookieHeaderForUrl(self, url):
+    def getCookieHeaderForUrl(self, url: str) -> dict:
         r = urllib.request.Request(url)
         self.add_cookie_header(r)
         return dict(r.header_items())
@@ -213,7 +204,16 @@ COOKIEJAR = CookieStore()
 
 
 class Request:
-    def __init__(self, protocol, host, port, method, path, body=None, headers={}):
+    def __init__(
+        self,
+        protocol: str,
+        host: str,
+        port,
+        method: str,
+        path: str,
+        body=None,
+        headers: dict = {},
+    ):
         self.protocol = protocol
         self.host = host
         self.port = port
@@ -251,11 +251,15 @@ class Content:
                 # fallback to a *** binary representation ***
                 return "*** BINARY SIZE(%s) ***" % len(self.__b)
 
-    def __contains__(self, key):
+    def __contains__(self, key: str):
         return key in str(self)
 
 
-class Response:
+class BaseResponse:
+    time = None
+
+
+class Response(BaseResponse):
     def __init__(self, status, body, headers, url, info=None):
         self.status = int(status)
         self.content = Content(body)
@@ -268,19 +272,18 @@ class Response:
         return str(self.status)
 
 
-class ResponseError:
+class ResponseError(BaseResponse):
     def __init__(self, m):
         self.status = None
         self.content = m
         self.headers = {}
         self.info = ""
-        self.time=None
 
     def __repr__(self):
         return "ERROR: %s" % (self.content)
 
 
-def dohttp(r):
+def dohttp(r: Request) -> BaseResponse:
     try:
         if r.protocol and r.protocol.lower() == "https":
             cnx = http.client.HTTPSConnection(
@@ -315,7 +318,7 @@ def dohttp(r):
 class Test(int):
     """ a boolean with a name """
 
-    def __new__(cls, value, nameOK, nameKO):
+    def __new__(cls, value: int, nameOK: str, nameKO: str):
         s = super(Test, cls).__new__(cls, value)
         if value:
             s.name = nameOK
@@ -374,8 +377,8 @@ def getValOpe(v):
     return v, lambda a, b: a == b, "=", "!="
 
 
-def strjs(x):
-    return json.dumps(x,ensure_ascii=False)
+def strjs(x) -> str:
+    return json.dumps(x, ensure_ascii=False)
 
 
 class TestResult(list):
@@ -476,7 +479,7 @@ class TestResult(list):
         return "\n".join(ll)
 
 
-def getVar(env, var):
+def getVar(env: dict, var: str):
     if var in env:
         return txtReplace(env, env[var])
     elif "|" in var:
@@ -502,7 +505,11 @@ def getVar(env, var):
         )
 
 
-def transform(content, env, methodName):
+def DYNAMIC(x, env: dict):
+    pass  # will be overriden (see below vv)
+
+
+def transform(content, env: dict, methodName: str):
     if methodName:
         if methodName in env:
             code = getVar(env, methodName)
@@ -596,7 +603,7 @@ def warn(*m):
     print("***WARNING***", *m)
 
 
-def getTests(y):
+def getTests(y: dict) -> list:
     """ Get defined tests as list ok dict key:value """
     if y:
         tests = y.get("tests", [])
@@ -604,13 +611,13 @@ def getTests(y):
             warn(
                 "'tests:' should be a list of mono key/value pairs (ex: '- status: 200')"
             )
-            tests = [{k: v} for k, v in tests.items()]
+            tests = [{k: v} for k, v in dict(tests).items()]
         return tests
     else:
         return []
 
 
-def getHeaders(y):
+def getHeaders(y: dict) -> dict:
     """ Get defined headers as dict """
     if y:
         headers = y.get("headers", {})
@@ -657,19 +664,21 @@ class Req(object):
             self.doc,
         )
 
-    def test(self, env=None):
+    def test(self, env: dict = None) -> TestResult:
         cenv = env.copy() if env else {}  # current env
         cenv.update(self.params)  # override with self params
-
-        err=None # to handle NonPlayable test (not a error anymore, a TestResult is returned)
+        cenv = dict(cenv)
+        err = (
+            None
+        )  # to handle NonPlayable test (not a error anymore, a TestResult is returned)
 
         # path ...
         try:
             path = txtReplace(cenv, self.path)
         except RMNonPlayable as e:
-            path=self.path
-            err=e
-        
+            path = self.path
+            err = e
+
         if cenv and (not path.strip().lower().startswith("http")) and ("root" in cenv):
             h = urllib.parse.urlparse(cenv["root"])
             if h.path and h.path[-1] == "/":
@@ -724,17 +733,23 @@ class Req(object):
         else:
             try:
                 body = txtReplace(cenv, self.body)
-                body = txtReplace(cenv, body)   #TODO: make something's better (to avoid this multiple call) ... here it's horrible, but needed for test_param/test_param_resolve
+                body = txtReplace(
+                    cenv, body
+                )  # TODO: make something's better (to avoid this multiple call) ... here it's horrible, but needed for test_param/test_param_resolve
             except RMNonPlayable as e:
                 # return a TestResult Error ....
-                body=self.body
+                body = self.body
 
         if err:
-            req = Request(h.scheme, h.hostname, h.port, self.method, path, body, headers)
-            res=ResponseError( str(err) )
-            return TestResult(req, res,  tests, self.doc)
+            req = Request(
+                h.scheme, h.hostname, h.port, self.method, path, body, headers
+            )
+            res = ResponseError(str(err))
+            return TestResult(req, res, tests, self.doc)
         else:
-            req = Request(h.scheme, h.hostname, h.port, self.method, path, body, headers)
+            req = Request(
+                h.scheme, h.hostname, h.port, self.method, path, body, headers
+            )
             if h.hostname:
 
                 timeout = cenv.get("timeout", None)
@@ -776,7 +791,7 @@ class Req(object):
         return "<%s %s>" % (self.method, self.path)
 
 
-def controle(keys, knowkeys):
+def controle(keys: list, knowkeys: list):
     for key in keys:
         if key not in knowkeys:
             raise RMException("Not a valid entry '%s'" % key)
@@ -808,7 +823,7 @@ class Reqs(list):
 
                 try:
                     if type(entry) != dict:
-                        if type(entry)==str and entry=="break":
+                        if type(entry) == str and entry == "break":
                             break
                         else:
                             raise RMException("no actions for %s" % entry)
@@ -894,9 +909,9 @@ class Reqs(list):
                         )
 
                         body = entry.get("body", None)
-                        doc=entry.get("doc", None)                                    
+                        doc = entry.get("doc", None)
 
-                        if foreach and type(foreach)!=list:
+                        if foreach and type(foreach) != list:
                             raise RMException("the foreach section is not a list ?!")
 
                         for param in foreach:
@@ -945,7 +960,7 @@ class Reqs(list):
 ###########################################################################
 ## Helpers
 ###########################################################################
-def listFiles(path, filters=(".yml", ".rml")):
+def listFiles(path: str, filters=(".yml", ".rml")) -> str:
     for folder, subs, files in os.walk(path):
         if folder in [".", ".."] or (
             not os.path.basename(folder).startswith((".", "_"))
@@ -955,7 +970,7 @@ def listFiles(path, filters=(".yml", ".rml")):
                     yield os.path.join(folder, filename)
 
 
-def loadEnv(fd, varenvs=[]):
+def loadEnv(fd, varenvs: List[str] = []) -> dict:
     transform.path = None
     if fd:
         if not hasattr(fd, "name"):
@@ -980,7 +995,8 @@ def loadEnv(fd, varenvs=[]):
     return env
 
 
-def render(reqs, switchs):
+def render(reqs: List[Reqs], switchs: List[str]) -> (int, int):
+    # def render(reqs:list[Reqs], switchs:list) -> (int,int):
     h = """
 <meta charset="utf-8">
 <style>
@@ -1015,7 +1031,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             qheaders = "\n".join(
                 ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.req.headers.items())]
             )
-            qbody = html.escape( prettify(str(tr.req.body or "")) )
+            qbody = html.escape(prettify(str(tr.req.body or "")))
 
             qdoc = "<b>%s</b>" % tr.doc if tr.doc else ""
 
@@ -1025,7 +1041,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 rheaders = "\n".join(
                     ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.res.headers.items())]
                 )
-                rbody = html.escape( prettify(str(tr.res.content or "")) )
+                rbody = html.escape(prettify(str(tr.res.content or "")))
 
                 hres = """
                     {qdoc}
@@ -1048,8 +1064,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
 
             tests = "".join(
                 [
-                    """<li class='%s'>%s</li>"""
-                    % ("ok" if t else "ko", t.name)
+                    """<li class='%s'>%s</li>""" % ("ok" if t else "ko", t.name)
                     for t in tr
                 ]
             )
@@ -1096,7 +1111,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
     return ok, total
 
 
-def findRCUp(fromHere):
+def findRCUp(fromHere: str) -> Union[None, str]:
     """Find the rc in upwards folders"""
     current = os.path.realpath(fromHere)
     while 1:
@@ -1112,7 +1127,7 @@ def findRCUp(fromHere):
     return rc
 
 
-def resolver(params):
+def resolver(params: List) -> (Union[str, None], List[str]):
     """ return tuple (reqman.conf,ymls) finded with params """
     ymls, paths = [], []
 
@@ -1145,7 +1160,7 @@ def resolver(params):
     return rc, ymls
 
 
-def makeReqs(reqs, env):
+def makeReqs(reqs: List[Reqs], env: dict) -> List[Reqs]:
     if reqs:
         if env and ("BEGIN" in env):
             r = io.StringIO("call: BEGIN")
@@ -1160,7 +1175,7 @@ def makeReqs(reqs, env):
     return reqs
 
 
-def create(url):
+def create(url: str) -> (Union[str, None], str):
     """ return a (reqman.conf, yml_file) based on the test 'url' """
     hp = urllib.parse.urlparse(url)
     if hp and hp.scheme and hp.hostname:
@@ -1192,7 +1207,7 @@ headers:
     return rc, yml
 
 
-def main(params=[]):
+def main(params: List = []) -> int:
     reqs = []
     switchs = []
     try:

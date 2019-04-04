@@ -1,9 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from context import reqman
-
+import reqman
 def test_1():
-    assert reqman.prettify(None)== None 
+    assert reqman.prettify("")== ""
     assert reqman.prettify("yo")== "yo" 
     assert reqman.prettify("42")== "42" 
     assert reqman.prettify("{not good:json}")== "{not good:json}" 
