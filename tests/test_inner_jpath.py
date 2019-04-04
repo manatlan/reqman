@@ -27,7 +27,7 @@ def test_1():
         abool: true
         anone: null
 
-        """)
+        """,Loader=reqman.yaml.FullLoader)
         assert reqman.jpath(d,"tata") == reqman.NotFound 
         assert reqman.jpath(d,"toto.val1") == 100 
         assert reqman.jpath(d,"toto.val2") == 200 

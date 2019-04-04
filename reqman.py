@@ -110,7 +110,7 @@ def yamlLoad(fd):  # fd is an io thing
     else:
         encoding = chardet(b)
         b = b.encode(encoding).decode("utf8")
-    return yaml.load(b)
+    return yaml.load(b, Loader=yaml.FullLoader)
 
 
 def dict_merge(dst: dict, src: dict) -> None:
@@ -333,7 +333,7 @@ def getValOpe(v):
             g = re.match(r"^\. *([!=<>]{1,2}) *(.+)$", v)
             if g:
                 op, v = g.groups()
-                vv = yaml.load(v)
+                vv = yaml.load(v,Loader=yaml.FullLoader)
                 if op == "==":  # not needed really, but just for compatibility
                     return vv, lambda a, b: b == a, "=", "!="
                 elif op == "=":  # not needed really, but just for compatibility
