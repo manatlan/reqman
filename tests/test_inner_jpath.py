@@ -41,6 +41,7 @@ def test_1():
         assert reqman.jpath(d,"titi") == ['v1', {'v2': {'a': 1, 'b': 2}}] 
         assert reqman.jpath(d,"titi.0") == "v1" 
         assert reqman.jpath(d,"titi.1") == {'v2': {'a': 1, 'b': 2}} 
+        assert reqman.jpath(d,"titi.-1") == {'v2': {'a': 1, 'b': 2}} 
         assert reqman.jpath(d,"titi.1.v2") == {'a': 1, 'b': 2} 
         assert reqman.jpath(d,"titi.1.v2.b") ,2 
         assert reqman.jpath(d,"titi.2") == reqman.NotFound 
