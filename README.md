@@ -94,7 +94,7 @@ But you can declare what you want, now edit _reqman.conf_ like this :
     headers:
 
         User-Agent: reqman (https://github.com/manatlan/reqman)
-        
+
     package: reqman
 
     test:
@@ -103,24 +103,28 @@ But you can declare what you want, now edit _reqman.conf_ like this :
 
 You have declared a _var_ **package** ! let's edit the test file _0010_test.rml_ like this :
 
-    ```yaml
     - GET: /pypi/<<package>>/json
-    ____tests:
-    ____- status: 200
-    ```
+
+      tests:
+
+        - status: 200
 
 Now, your test will use the **package** var which was declared in _reqman.conf_ ! So, you can create a _switch_ to change the package thru the command line, simply edit your _reqman.conf_ like that :
 
     root: https://pypi.org
     headers:
-    ____User-Agent: reqman (https://github.com/manatlan/reqman)
+
+        User-Agent: reqman (https://github.com/manatlan/reqman)
+
     package: reqman
 
     test:
-    ____root: https://test.pypi.org
+
+        root: https://test.pypi.org
 
     colorama:
-    ____package: colorama
+    
+        package: colorama
 
 Now, you can check that 'colorama' exists on pypi.org, like that :
 
