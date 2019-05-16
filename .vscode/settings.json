@@ -2,11 +2,11 @@
     "python.pythonPath": "/usr/bin/python3",
     "code-runner.clearPreviousOutput": true,
     "python.linting.pylintEnabled": false,
-    "python.unitTest.pyTestEnabled": true,
-    "python.unitTest.nosetestsEnabled": false,
-    "python.unitTest.unittestEnabled": true,
+    "python.testing.pyTestEnabled": true,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.unittestEnabled": true,
     "python.formatting.provider": "black",
-    "python.unitTest.pyTestArgs": [
+    "python.testing.pyTestArgs": [
         "-s",
         "--cov=reqman",
         "--cov-report=html"
