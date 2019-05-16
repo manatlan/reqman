@@ -61,11 +61,10 @@ It will show you what's happened in your console. And generate a `reqman.html` w
 
 If you edit the `reqman.conf`, you will see :
 
-    ```yaml
     root: https://pypi.org
     headers:
-    ____User-Agent: reqman (https://github.com/manatlan/reqman)
-    ```
+
+        User-Agent: reqman (https://github.com/manatlan/reqman)
 
 the **root** is a `special var` which will be prependded to all relative urls in your requests tests.
 the **headers** (which is a `special var` too) is a set of `http headers` which will be added to all your requests.
@@ -123,7 +122,7 @@ Now, your test will use the **package** var which was declared in _reqman.conf_ 
         root: https://test.pypi.org
 
     colorama:
-    
+
         package: colorama
 
 Now, you can check that 'colorama' exists on pypi.org, like that :
