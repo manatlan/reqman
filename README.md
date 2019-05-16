@@ -35,25 +35,25 @@ If you are on an nix platform, you can start with pip :
 
     $ pip3 install reqman
 
-it will install the _reqman.py_ script in your path (perhaps, you'll need to Add the path `~/.local/bin` to the _PATH_ environment variable.)
+it will install the _reqman_ script in your path (perhaps, you'll need to Add the path `~/.local/bin` to the _PATH_ environment variable.)
 
 If you are on microsoft windows, just download [reqman.exe](https://github.com/manatlan/reqman/tree/master/dist/reqman.exe), and add it in your path.
 
 ## Getting started : let's go
 
 Imagine that you want to test the [json api from pypi.org](https://wiki.python.org/moin/PyPIJSON), to verify that [it finds me](https://pypi.org/pypi/reqman/json) ;-)
-(if you are on windows, just replace `reqman.py` with `reqman.exe`)
+(if you are on windows, just replace `reqman` with `reqman.exe`)
 
 You can start a new project in your folder, like that:
 
-    $ reqman.py new https://pypi.org/pypi/reqman/json
+    $ reqman new https://pypi.org/pypi/reqman/json
 
 It's the first start ; it will create a conf file _reqman.conf_ and a (basic) test file _0010_test.rml_. Theses files are [YAML](https://en.wikipedia.org/wiki/YAML), so ensure that your editor understand them !
 (Following 'new' command will just create another fresh rml file if a _reqman.conf_ exists)
 
 Now, you can run/test it :
 
-    $ reqman.py .
+    $ reqman .
 
 It will scan your folder "." and run all test files (`*.rml` or `*.yml`) against the _reqman.conf_ ;-)
 
@@ -127,11 +127,11 @@ colorama:
 
 Now, you can check that 'colorama' exists on pypi.org, like that :
 
-    $ reqman.py . -colorama
+    $ reqman . -colorama
 
 And you can check that 'colorama' exists on test.pypi.org, like that :
 
-    $ reqman.py . -colorama -test
+    $ reqman . -colorama -test
 
 As you can imagine, it's possible to make a lot of fun things easily. (see a more complex [reqman.conf](https://github.com/manatlan/reqman/blob/master/examples/reqman.conf))
 

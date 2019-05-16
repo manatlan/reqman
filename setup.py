@@ -4,8 +4,13 @@ from reqman import __version__
 setuptools.setup(
     name='reqman',    
     version=__version__,
-    scripts=['reqman.py'],
-
+    # scripts=['reqman.py'],
+    entry_points={
+        'console_scripts': [
+            'reqman = reqman:main',
+        ],
+    },
+    py_modules=["reqman"],
     author="manatlan",
     author_email="manatlan@gmail.com",
     description="Create your http(s)-tests in simple yaml files, and run them with command line, against various environments",
