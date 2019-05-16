@@ -1,3 +1,5 @@
+1.1.2.6: 
+ - just a correct README.md
 1.1.2.5: 
  - type hints (pyright under vscode)
  - fix: yaml warning without loader
