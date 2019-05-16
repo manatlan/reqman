@@ -1,6 +1,7 @@
-in progress: 
+1.1.2.5: 
  - type hints (pyright under vscode)
  - fix: yaml warning without loader
+ - fix: another unresolved params won't break the process
 1.1.2.4 (27/03/2019)
  - FIX: xml output in html wasn't escaped since 1.1.2.1
 1.1.2.3 (25/03/2019)
