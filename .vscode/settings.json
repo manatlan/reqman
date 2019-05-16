@@ -6,5 +6,15 @@
     "python.unitTest.nosetestsEnabled": false,
     "python.unitTest.unittestEnabled": true,
     "python.formatting.provider": "black",
-    "python.unitTest.pyTestArgs": ["-s","--cov=reqman","--cov-report=html"]
+    "python.unitTest.pyTestArgs": [
+        "-s",
+        "--cov=reqman",
+        "--cov-report=html"
+    ],
+    "python.testing.pyTestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pyTestEnabled": true
 }

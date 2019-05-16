@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.2.4"
+__version__ = "1.1.2.5"
 
 import yaml  # see "pip install pyyaml"
 import encodings
@@ -236,7 +236,7 @@ class Request:
 
 class Content:
     def __init__(self, content):
-        self.__b = content if type(content) == bytes else bytes(content, "utf8")
+        self.__b = content if type(content) == bytes else bytes(str(content), "utf8")
 
     def toBinary(self):
         return self.__b
@@ -728,8 +728,12 @@ class Req(object):
 
             # ================================
 
-            body = apply(self.body, jrep)
-            body = json.dumps(body)  # and convert to string !
+            try:
+                body = apply(self.body, jrep)
+                body = json.dumps(body)  # and convert to string !
+            except RMNonPlayable as e:
+                # return a TestResult Error ....
+                body = self.body
         else:
             try:
                 body = txtReplace(cenv, self.body)

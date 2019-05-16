@@ -102,12 +102,12 @@ FILES=[
   tests:
     - status: 200
 """),
-    dict(name="test_error_param.yml",content="""
+    dict(name="test_not_really_an_error_param2.yml",content="""
 - POST: http://jim/pingpong
   body:
     an_error: <<v>>
   params:
-    v: <<unknown>>  # in this case : it's an error
+    v: <<unknown>>  # in this case : it's NOT (anymore !!!!!!) an error
   tests:
     - status: 200
 """),
@@ -173,9 +173,9 @@ def test_not_really_an_error_param(client):
 
 
 def test_error_param(client):
-    x=client( "test_error_param.yml" )
-    assert x.code==-1
-    assert "ERROR: Can't resolve unknown" in x.console
+    x=client( "test_not_really_an_error_param2.yml" )
+    assert x.code==0
+    assert "ERROR: Can't resolve unknown" not in x.console
 
 def test_param_resolve(client):
     x=client( "test_param_resolve_inside.yml" )
