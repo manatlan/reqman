@@ -74,10 +74,12 @@ Change it to, and save it :
 
     root: https://pypi.org
     headers:
-    ____User-Agent: reqman (https://github.com/manatlan/reqman)
+
+        User-Agent: reqman (https://github.com/manatlan/reqman)
 
     test:
-    ____root: https://test.pypi.org
+
+        root: https://test.pypi.org
 
 Now, you have created your first _switch_. And try to run your tests like this:
 
@@ -90,11 +92,14 @@ But you can declare what you want, now edit _reqman.conf_ like this :
 
     root: https://pypi.org
     headers:
-    ____User-Agent: reqman (https://github.com/manatlan/reqman)
+
+        User-Agent: reqman (https://github.com/manatlan/reqman)
+        
     package: reqman
 
     test:
-    ____root: https://test.pypi.org
+
+        root: https://test.pypi.org
 
 You have declared a _var_ **package** ! let's edit the test file _0010_test.rml_ like this :
 
