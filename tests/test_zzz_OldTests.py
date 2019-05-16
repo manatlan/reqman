@@ -2347,7 +2347,7 @@ class Tests_Req(unittest.TestCase):
 
         env={}
         s=l[0].test(env)
-        self.assertEqual( s.req.path, "/" )
+        self.assertEqual( s.req.path, "/null" )
 
     def test_var_list(self):
         f=StringIO("""

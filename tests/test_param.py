@@ -88,7 +88,7 @@ FILES=[
     - status: 200
     - json.a_true: True    
     - json.a_false: False
-    - json.a_none: ""               # NOT TOP (should be null)
+    - json.a_none: null
     - json.a_list: [1,2,3]
     - json.a_dict:
             v: 42

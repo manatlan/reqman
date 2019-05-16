@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.2.6"
+__version__ = "1.1.3.0"
 
 import yaml  # see "pip install pyyaml"
 import encodings
@@ -581,7 +581,7 @@ def txtReplace(env, txt):
             else:
                 if type(val) != str:
                     if val is None:
-                        val = ""  # TODO: should be "null" !!!!
+                        val = "null"  # TODO: should be "null" !!!!
                     elif val is True:
                         val = "true"
                     elif val is False:
@@ -589,12 +589,14 @@ def txtReplace(env, txt):
                     elif type(val) in [list, dict]:
                         val = json.dumps(val)
                     elif type(val) == bytes:
-                        val = str(val, "utf8")  # TODO: good ? NEED MORE TESTS !!!!!
+                        val=val
                     else:  # int, float, ...
                         val = json.dumps(val)
 
-                # ~ txt=txt.replace( vvar , str(val, "utf-8") if type(val)!=str else val )
-                txt = txt.replace(vvar, val)
+                if type(val)!=bytes:
+                    txt = txt.replace(vvar, val)
+                else:
+                    return val # if bytes, return directly the bytes !!!
 
     return txt
 
@@ -737,9 +739,7 @@ class Req(object):
         else:
             try:
                 body = txtReplace(cenv, self.body)
-                body = txtReplace(
-                    cenv, body
-                )  # TODO: make something's better (to avoid this multiple call) ... here it's horrible, but needed for test_param/test_param_resolve
+                body = txtReplace(cenv, body)  # TODO: make something's better (to avoid this multiple call) ... here it's horrible, but needed for test_param/test_param_resolve
             except RMNonPlayable as e:
                 # return a TestResult Error ....
                 body = self.body
@@ -1035,7 +1035,8 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             qheaders = "\n".join(
                 ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.req.headers.items())]
             )
-            qbody = html.escape(prettify(str(tr.req.body or "")))
+            content=Content(tr.req.body)
+            qbody = html.escape(prettify(str(content or "")))
 
             qdoc = "<b>%s</b>" % tr.doc if tr.doc else ""
 
