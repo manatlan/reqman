@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.4.0"
+__version__ = "1.1.5.0"
 
 import yaml  # see "pip install pyyaml"
 import encodings
@@ -1338,7 +1338,9 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         print("\nERROR: process interrupted")
         return -1
 
+def run():
+    return main(sys.argv[1:])
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit( run() )
     # exec(open("tests.py").read())

@@ -1,3 +1,5 @@
+1.1.5.0: (16/05/2019) 
+ - FIX: reqman run as console script again ;-)
 1.1.4.0: (16/05/2019) 
  - reqman is now a module and a console script (reqman)
 1.1.3.0: (16/05/2019) 
