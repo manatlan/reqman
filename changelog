@@ -1,3 +1,5 @@
+1.1.6.0: (17/05/2019) 
+ - better handle NonPlayable test (coz unresolved params) .. should be ok now !
 1.1.5.0: (16/05/2019) 
  - FIX: reqman run as console script again ;-)
 1.1.4.0: (16/05/2019) 

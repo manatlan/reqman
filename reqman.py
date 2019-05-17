@@ -15,14 +15,12 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.5.0"
+__version__ = "1.1.6.0"
 
 import yaml  # see "pip install pyyaml"
-import encodings
 import os
 import json
 import copy
-import string
 import sys
 import ssl
 import glob
@@ -30,7 +28,6 @@ import itertools
 import html
 import socket
 import re
-import copy
 import collections
 import io
 import datetime
@@ -43,7 +40,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import traceback
-from typing import Union, List, Dict
+from typing import Union, List
 
 
 class NotFound:
@@ -333,7 +330,7 @@ def getValOpe(v):
             g = re.match(r"^\. *([!=<>]{1,2}) *(.+)$", v)
             if g:
                 op, v = g.groups()
-                vv = yaml.load(v,Loader=yaml.FullLoader)
+                vv = yaml.load(v, Loader=yaml.FullLoader)
                 if op == "==":  # not needed really, but just for compatibility
                     return vv, lambda a, b: b == a, "=", "!="
                 elif op == "=":  # not needed really, but just for compatibility
@@ -581,7 +578,7 @@ def txtReplace(env, txt):
             else:
                 if type(val) != str:
                     if val is None:
-                        val = "null"  # TODO: should be "null" !!!!
+                        val = "null"
                     elif val is True:
                         val = "true"
                     elif val is False:
@@ -589,14 +586,14 @@ def txtReplace(env, txt):
                     elif type(val) in [list, dict]:
                         val = json.dumps(val)
                     elif type(val) == bytes:
-                        val=val
+                        val = val  # keep BYTES !!!!!!!!!!!!!!
                     else:  # int, float, ...
                         val = json.dumps(val)
 
-                if type(val)!=bytes:
+                if type(val) != bytes:
                     txt = txt.replace(vvar, val)
                 else:
-                    return val # if bytes, return directly the bytes !!!
+                    return val  # if bytes, return directly the bytes !!!
 
     return txt
 
@@ -667,10 +664,16 @@ class Req(object):
         )
 
     def test(self, env: dict = None) -> TestResult:
+        def alwaysReplaceTxt(d, v):
+            try:
+                return txtReplace(d, v)
+            except RMNonPlayable as e:
+                return v
+
         cenv = env.copy() if env else {}  # current env
         cenv.update(self.params)  # override with self params
         cenv = dict(cenv)
-        err = (
+        errPath = (
             None
         )  # to handle NonPlayable test (not a error anymore, a TestResult is returned)
 
@@ -679,7 +682,7 @@ class Req(object):
             path = txtReplace(cenv, self.path)
         except RMNonPlayable as e:
             path = self.path
-            err = e
+            errPath = e  # to return a ResponseError on path replace trouble
 
         if cenv and (not path.strip().lower().startswith("http")) and ("root" in cenv):
             h = urllib.parse.urlparse(cenv["root"])
@@ -698,7 +701,9 @@ class Req(object):
         headers = getHeaders(cenv).copy() if cenv else {}
         headers.update(self.headers)  # override with self headers
         headers = {
-            k: txtReplace(cenv, v) for k, v in list(headers.items()) if v is not None
+            k: alwaysReplaceTxt(cenv, v)
+            for k, v in list(headers.items())
+            if v is not None
         }
 
         # fill tests ...
@@ -709,15 +714,14 @@ class Req(object):
         for test in tests:
             key, val = list(test.keys())[0], list(test.values())[0]
             if type(val) == list:
-                val = [txtReplace(cenv, i) for i in val]
+                val = [alwaysReplaceTxt(cenv, i) for i in val]
             else:
-                val = txtReplace(cenv, val)
+                val = alwaysReplaceTxt(cenv, val)
             ntests.append({key: val})
         tests = ntests
 
         # body ...
         if self.body and not isinstance(self.body, str):
-            jrep = lambda x: objReplace(cenv, x)  # "json rep"
 
             # ================================
             def apply(body, method):
@@ -727,28 +731,28 @@ class Req(object):
                     return {k: apply(v, method) for k, v in body.items()}
                 else:
                     return method(body)
-
             # ================================
 
             try:
+                jrep = lambda x: objReplace(cenv, x)  # "json rep"
                 body = apply(self.body, jrep)
                 body = json.dumps(body)  # and convert to string !
             except RMNonPlayable as e:
                 # return a TestResult Error ....
                 body = self.body
         else:
-            try:
-                body = txtReplace(cenv, self.body)
-                body = txtReplace(cenv, body)  # TODO: make something's better (to avoid this multiple call) ... here it's horrible, but needed for test_param/test_param_resolve
-            except RMNonPlayable as e:
-                # return a TestResult Error ....
-                body = self.body
+            body = self.body
+            while 1:
+                precBody = body
+                body = alwaysReplaceTxt(cenv, body)
+                if body == precBody:
+                    break
 
-        if err:
+        if errPath:
             req = Request(
                 h.scheme, h.hostname, h.port, self.method, path, body, headers
             )
-            res = ResponseError(str(err))
+            res = ResponseError(str(errPath))
             return TestResult(req, res, tests, self.doc)
         else:
             req = Request(
@@ -964,7 +968,7 @@ class Reqs(list):
 ###########################################################################
 ## Helpers
 ###########################################################################
-def listFiles(path: str, filters=(".yml", ".rml")) -> str:
+def listFiles(path: str, filters=(".yml", ".rml")):
     for folder, subs, files in os.walk(path):
         if folder in [".", ".."] or (
             not os.path.basename(folder).startswith((".", "_"))
@@ -1035,7 +1039,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             qheaders = "\n".join(
                 ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.req.headers.items())]
             )
-            content=Content(tr.req.body)
+            content = Content(tr.req.body)
             qbody = html.escape(prettify(str(content or "")))
 
             qdoc = "<b>%s</b>" % tr.doc if tr.doc else ""
@@ -1338,9 +1342,11 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         print("\nERROR: process interrupted")
         return -1
 
+
 def run():
     return main(sys.argv[1:])
 
+
 if __name__ == "__main__":
-    sys.exit( run() )
+    sys.exit(run())
     # exec(open("tests.py").read())
