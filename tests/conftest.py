@@ -65,16 +65,12 @@ def client(request):
         fo,fe = StringIO(),StringIO()
         with contextlib.redirect_stderr(fe):
             with contextlib.redirect_stdout(fo):
-                r.code=reqman.main( list(args) )
+                r=reqman.main( list(args) )
+        if r.code<0: r.html=None
         r.console=fo.getvalue()+fe.getvalue()
         print(r.console)
         
-        if os.path.isfile("reqman.html"):
-            with open("reqman.html") as fid:
-                r.html=fid.read()
-        else:
-            r.html=None
-        r.inproc=reqman.main
+        r.inproc=r
         return r
 
     reqman_http = reqman.dohttp

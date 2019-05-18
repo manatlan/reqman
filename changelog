@@ -1,3 +1,5 @@
+1.1.7.0: (18/05/2019) 
+ - module.main now returns something that is usefull when used as a lib
 1.1.6.0: (17/05/2019) 
  - better handle NonPlayable test (coz unresolved params) .. should be ok now !
 1.1.5.0: (16/05/2019) 

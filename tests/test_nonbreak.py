@@ -96,7 +96,7 @@ def test_scenar(client):
     assert x.code==0 # 0 error
     assert len(x.inproc.reqs[0])==3
     assert x.inproc.ok == x.inproc.total == 6
-    assert os.path.isfile("reqman.html")
+    assert x.html
 
 
 def test_non_problematic(client):
@@ -120,7 +120,7 @@ def test_non_problematic(client):
 
 def test_scenar_break(client):
     x=client( "test_scenar_ko.yml" )
-    assert os.path.isfile("reqman.html")            # a reqman.html is generated (the most important)
+    assert x.html            # a reqman.html is generated (the most important)
 
     assert x.code==1                                # 1 errors (1 req non playable with 1 test in error)
     assert x.inproc.ok == 5

@@ -36,6 +36,7 @@ def mockHttp(q):
     else:
         return reqman.Response( 200, "the content", {"Content-Type":"text/plain","server":"mock"}, q.url)
 
+import sys
 
 ###########################################################################
 class Tests_CommandLine(unittest.TestCase):
@@ -49,10 +50,11 @@ class Tests_CommandLine(unittest.TestCase):
         fo,fe = StringIO(),StringIO()
         with contextlib.redirect_stderr(fe):
             with contextlib.redirect_stdout(fo):
-                ret=reqman.main( list(args) )
+                sys.argv=["reqman.exe"]+list(args)
+                rc=reqman.run( )
         txt=fo.getvalue()+fe.getvalue()
 
-        return ret,txt
+        return rc,txt
 
     def setUp(self):
         self.precdir = os.getcwd()

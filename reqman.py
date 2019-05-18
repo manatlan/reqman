@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.6.0"
+__version__ = "1.1.7.0"
 
 import yaml  # see "pip install pyyaml"
 import os
@@ -1003,8 +1003,7 @@ def loadEnv(fd, varenvs: List[str] = []) -> dict:
     return env
 
 
-def render(reqs: List[Reqs], switchs: List[str]) -> (int, int):
-    # def render(reqs:list[Reqs], switchs:list) -> (int,int):
+def render(reqs: List[Reqs], switchs: List[str]) -> (int, int, str):
     h = """
 <meta charset="utf-8">
 <style>
@@ -1114,10 +1113,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
         switchs=" ".join(switchs),
     )
 
-    with open("reqman.html", "w+", encoding="utf_8") as fid:
-        fid.write(h)
-
-    return ok, total
+    return ok, total, h
 
 
 def findRCUp(fromHere: str) -> Union[None, str]:
@@ -1215,8 +1211,16 @@ headers:
     )
     return rc, yml
 
+class MainResponse:
+    def __init__(self,rc,html=None,env={},reqs=[],total=None,ok=None):
+        self.code=rc
+        self.html=html
+        self.env=env
+        self.reqs=reqs
+        self.total=total
+        self.ok=ok
 
-def main(params: List = []) -> int:
+def main(params: List = []) -> MainResponse:
     reqs = []
     switchs = []
     try:
@@ -1245,7 +1249,7 @@ def main(params: List = []) -> int:
             with open(yname, "w") as fid:
                 fid.write(yml)
 
-            return 0
+            return MainResponse(0)
 
         # search for a specific env var (starting with "-")
         switchs = []
@@ -1289,17 +1293,12 @@ def main(params: List = []) -> int:
                         print(tr)
                     f.trs.append(tr)
 
-            ok, total = render(reqs, switchs)
+            ok, total, html = render(reqs, switchs)
 
             if total:
                 print("\nRESULT: ", (cg if ok == total else cr)("%s/%s" % (ok, total)))
 
-            # expose things inproc, for tests purpose only
-            main.total = total
-            main.ok = ok
-            main.env = env
-            main.reqs = reqs
-            return total - ok
+            return MainResponse(total - ok,html,env,reqs,total,ok)
         else:
             print(
                 """USAGE TEST   : reqman [--option] [-switch] <folder|file>...
@@ -1328,25 +1327,30 @@ Test a http service with pre-made scenarios, whose are simple yaml files
                     """  [switch]      : pre-made 'switch' defined in a %s"""
                     % REQMAN_CONF
                 )
-            return -1
+            return MainResponse(-1,"bad usage")
 
     except RMException as e:
         print("\nERROR: %s" % e)
-        return -1
+        return MainResponse(-1,"ERROR: %s"%e)
     except Exception as e:
         print("\n**HERE IS A BUG**, please report it !")
         print(traceback.format_exc(), "\nERROR: %s" % e)
-        return -1
+        return MainResponse(-1,"BUG: %s"%e)
     except KeyboardInterrupt as e:
         render(reqs, switchs)
         print("\nERROR: process interrupted")
-        return -1
+        return MainResponse(-1,"ERROR: process interrupted")
 
 
 def run():
-    return main(sys.argv[1:])
+    m=main(sys.argv[1:])
+
+    if m.code>=0 and m.html:
+        with open("reqman.html", "w+", encoding="utf_8") as fid:
+            fid.write(m.html)
+
+    return m.code # aka rc
 
 
 if __name__ == "__main__":
     sys.exit(run())
-    # exec(open("tests.py").read())
