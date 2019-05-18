@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.7.0"
+__version__ = "1.1.8.0"
 
 import yaml  # see "pip install pyyaml"
 import os
@@ -1025,6 +1025,7 @@ li.hide > ul > span {display:none}
 h3 {color:blue;margin:8 0 0 0;padding:0px}
 .info {position:fixed;top:0px;right:0px;background:rgba(1,1,1,0.2);border-radius:4px;text-align:right;padding:4px}
 .info > * {display:block}
+p {margin:0px;padding:0px;color:#AAA;font-style: italic;}
 </style>
 """
     alltr = []
@@ -1041,7 +1042,7 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
             content = Content(tr.req.body)
             qbody = html.escape(prettify(str(content or "")))
 
-            qdoc = "<b>%s</b>" % tr.doc if tr.doc else ""
+            qdoc = "<p>%s</p>" % tr.doc if tr.doc else ""
 
             if tr.res and tr.res.status is not None:
                 rtime = tr.res.time
@@ -1052,7 +1053,6 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 rbody = html.escape(prettify(str(tr.res.content or "")))
 
                 hres = """
-                    {qdoc}
                     <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
                     -> {info}
                     <pre title="the response">{rheaders}<hr/>{rbody}</pre>
@@ -1064,7 +1064,6 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
                 rtime = ""
 
                 hres = """
-                    {qdoc}
                     <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
                 """.format(
                     **locals()
@@ -1072,14 +1071,14 @@ h3 {color:blue;margin:8 0 0 0;padding:0px}
 
             tests = "".join(
                 [
-                    """<li class='%s'>%s</li>""" % ("ok" if t else "ko", t.name)
+                    """<li class='%s'>%s</li>""" % ("ok" if t else "ko", html.escape(t.name))
                     for t in tr
                 ]
             )
 
             reqs += """
 <li class="hide">
-    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>{tr.req.method}</b> {tr.req.path} : <b>{tr.res}</b> <i>{rtime}</i></span>
+    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>{tr.req.method}</b> {tr.req.path} : <b>{tr.res}</b> <i>{rtime}</i>{qdoc}</span>
     <ul>
         <span>
             {hres}
