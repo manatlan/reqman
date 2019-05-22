@@ -22,6 +22,4 @@ FILES=[
 
 def test_1(client):
     x=client( "test1.yml" )
-    # assert x.code==0
-    with open("/home/manatlan/aeff.html","w+") as fid:
-        fid.write( x.html )
+    assert x.code==0
