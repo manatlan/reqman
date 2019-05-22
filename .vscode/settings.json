@@ -11,9 +11,6 @@
         "--cov=reqman",
         "--cov-report=html"
     ],
-    "python.testing.pyTestArgs": [
-        "tests"
-    ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pyTestEnabled": true

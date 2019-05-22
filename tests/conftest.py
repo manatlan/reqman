@@ -56,7 +56,6 @@ def client(request):
             console=None
             html=None
             inproc=None
-        r=Ret()
 
         if os.path.isfile("reqman.html"):
             os.unlink("reqman.html")
@@ -65,8 +64,10 @@ def client(request):
         fo,fe = StringIO(),StringIO()
         with contextlib.redirect_stderr(fe):
             with contextlib.redirect_stdout(fo):
-                r=reqman.main( list(args) )
-        if r.code<0: r.html=None
+                rc=reqman.commandLine( list(args) )
+
+        r=reqman.commandLine.mainReponse or Ret()  
+        r.code=rc        
         r.console=fo.getvalue()+fe.getvalue()
         print(r.console)
         

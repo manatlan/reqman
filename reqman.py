@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.1.8.0"
+__version__ = "1.2.0.0"
 
 import yaml  # see "pip install pyyaml"
 import os
@@ -1219,9 +1219,42 @@ class MainResponse:
         self.total=total
         self.ok=ok
 
-def main(params: List = []) -> MainResponse:
-    reqs = []
-    switchs = []
+from enum import Enum
+class OutputPrint(Enum):
+    NO = 0
+    YES = 1
+    ONLYKO = 2
+
+def testContent(content: str,env: dict={}):
+    """ test a yml 'content' against env (easy wrapper for main call )"""
+    reqs=[Reqs(io.StringIO(content), env)]
+    return main( reqs, env)    
+
+def main(ll,env: dict={}, outputPrint: OutputPrint = OutputPrint.NO, switchsForHtml=[]) -> MainResponse:
+    reqs = makeReqs(ll, env)
+
+    for f in reqs:
+        f.trs = []
+        if outputPrint!=OutputPrint.NO: print("\nTESTS:", cb(f.name))
+        for t in f:
+            tr = t.test(env)  # TODO: colorful output !
+            if outputPrint!=OutputPrint.NO:
+                if outputPrint==OutputPrint.ONLYKO:
+                    if not all(tr):
+                        print(tr)
+                else:
+                    print(tr)
+            f.trs.append(tr)
+
+    ok, total, html = render(reqs, switchsForHtml)
+
+    if outputPrint!=OutputPrint.NO and total:
+        print("\nRESULT: ", (cg if ok == total else cr)("%s/%s" % (ok, total)))
+
+    return MainResponse(total - ok,html,env,reqs,total,ok)
+
+def commandLine(params: List = []) -> int:
+    commandLine.mainReponse = None # for tests Purpose only !
     try:
         if len(params) == 2 and params[0].lower() == "new":
             ## CREATE USAGE
@@ -1248,108 +1281,86 @@ def main(params: List = []) -> MainResponse:
             with open(yname, "w") as fid:
                 fid.write(yml)
 
-            return MainResponse(0)
-
-        # search for a specific env var (starting with "-")
-        switchs = []
-        for switch in [i for i in params if i.startswith("-")]:
-            params.remove(switch)
-            switchs.append(switch[1:])
-
-        if "-ko" in switchs:
-            switchs.remove("-ko")
-            onlyFailedTests = True
+            return 0   
         else:
-            onlyFailedTests = False
+            switchs = []
+        
+            # search for a specific env var (starting with "-")
+            for switch in [i for i in params if i.startswith("-")]:
+                params.remove(switch)
+                switchs.append(switch[1:])
 
-        rc, ymls = resolver(params)
+            if "-ko" in switchs:
+                switchs.remove("-ko")
+                onlyFailedTests = True
+            else:
+                onlyFailedTests = False
 
-        # load env !
-        if rc:
-            with open(rc, "r") as fid:
-                env = loadEnv(fid, switchs)
-        else:
-            env = loadEnv(None, switchs)
+            rc, ymls = resolver(params)
 
-        ll = []
-        for i in ymls:
-            with open(i, "r") as fid:
-                ll.append(Reqs(fid, env))
+            # load env !
+            if rc:
+                with open(rc, "r") as fid:
+                    env = loadEnv(fid, switchs)
+            else:
+                env = loadEnv(None, switchs)
 
-        reqs = makeReqs(ll, env)
-
-        if reqs:
-            # and make tests
-            for f in reqs:
-                f.trs = []
-                print("\nTESTS:", cb(f.name))
-                for t in f:
-                    tr = t.test(env)  # TODO: colorful output !
-                    if onlyFailedTests:
-                        if not all(tr):
-                            print(tr)
-                    else:
-                        print(tr)
-                    f.trs.append(tr)
-
-            ok, total, html = render(reqs, switchs)
-
-            if total:
-                print("\nRESULT: ", (cg if ok == total else cr)("%s/%s" % (ok, total)))
-
-            return MainResponse(total - ok,html,env,reqs,total,ok)
-        else:
-            print(
-                """USAGE TEST   : reqman [--option] [-switch] <folder|file>...
+            ll = []
+            for i in ymls:
+                with open(i, "r") as fid:
+                    ll.append(Reqs(fid, env))
+            if ll:
+                m=main(ll,env,OutputPrint.ONLYKO if onlyFailedTests else OutputPrint.YES,switchs)
+                if m.code>=0 and m.html:
+                    with open("reqman.html", "w+", encoding="utf_8") as fid:
+                        fid.write(m.html)
+                commandLine.mainReponse = m # for tests Purpose only !
+                return m.code # aka rc
+            else:
+                print(
+                    """USAGE TEST   : reqman [--option] [-switch] <folder|file>...
 USAGE CREATE : reqman new <url>
 Version %s
 Test a http service with pre-made scenarios, whose are simple yaml files
 (More info on https://github.com/manatlan/reqman)
 
-  <folder|file> : yml scenario or folder of yml scenario
-                  (as many as you want)
+<folder|file> : yml scenario or folder of yml scenario
+                (as many as you want)
 
-  [option]
-           --ko : limit standard output to failed tests (ko) only
-"""
-                % __version__
-            )
-
-            if env:
-                print("""  [switch]      : default to "%s" """ % env.get("root", None))
-                for k, v in env.items():
-                    root = v.get("root", None) if type(v) == dict else None
-                    if root:
-                        print("""%15s : "%s" """ % ("-" + k, root))
-            else:
-                print(
-                    """  [switch]      : pre-made 'switch' defined in a %s"""
-                    % REQMAN_CONF
+[option]
+        --ko : limit standard output to failed tests (ko) only
+    """
+                    % __version__
                 )
-            return MainResponse(-1,"bad usage")
+
+                if env:
+                    print("""  [switch]      : default to "%s" """ % env.get("root", None))
+                    for k, v in env.items():
+                        root = v.get("root", None) if type(v) == dict else None
+                        if root:
+                            print("""%15s : "%s" """ % ("-" + k, root))
+                else:
+                    print(
+                        """  [switch]      : pre-made 'switch' defined in a %s"""
+                        % REQMAN_CONF
+                    )
+                return -1
+
 
     except RMException as e:
         print("\nERROR: %s" % e)
-        return MainResponse(-1,"ERROR: %s"%e)
+        return -1
     except Exception as e:
         print("\n**HERE IS A BUG**, please report it !")
         print(traceback.format_exc(), "\nERROR: %s" % e)
-        return MainResponse(-1,"BUG: %s"%e)
+        return -1
     except KeyboardInterrupt as e:
-        render(reqs, switchs)
+        # render(reqs, switchs)
         print("\nERROR: process interrupted")
-        return MainResponse(-1,"ERROR: process interrupted")
+        return -1
 
-
-def run():
-    m=main(sys.argv[1:])
-
-    if m.code>=0 and m.html:
-        with open("reqman.html", "w+", encoding="utf_8") as fid:
-            fid.write(m.html)
-
-    return m.code # aka rc
-
+def run(): #console_scripts for setup.py/commandLine
+    return commandLine(sys.argv[1:])
 
 if __name__ == "__main__":
     sys.exit(run())
