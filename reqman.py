@@ -280,7 +280,7 @@ class ResponseError(BaseResponse):
         return "ERROR: %s" % (self.content)
 
 
-def dohttp(r: Request) -> BaseResponse:
+def OLD_dohttp(r: Request) -> BaseResponse:
     try:
         if r.protocol and r.protocol.lower() == "https":
             cnx = http.client.HTTPSConnection(
@@ -307,6 +307,34 @@ def dohttp(r: Request) -> BaseResponse:
         # A subclass of HTTPException. Raised if a server responds with a HTTP status code that we don’t understand.
         # Presumably, the server closed the connection before sending a valid response.
         return ResponseError("Server closed the connection")
+
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+import httpcore,asyncio
+
+async def dohttp(r: Request) -> BaseResponse:
+    try:
+        rr = await httpcore.AsyncClient().request(
+            r.method,
+            r.url,
+            data=b"" if r.body == None else r.body.encode(),
+            headers=r.headers,
+            allow_redirects=False,
+            timeout=None
+        )
+        info = "%s %s %s" % (rr.protocol, rr.status_code, rr.reason_phrase)
+
+        return Response(rr.status_code, rr.content, dict(rr.headers), r.url, info)
+    except httpcore.exceptions.ReadTimeout:
+        return ResponseError("Response timeout")
+    except KeyError: # KeyError: <httpcore.dispatch.connection.HTTPConnection object at 0x7fadbf88e0f0>
+        return ResponseError("Response timeout")
+    except socket.gaierror:
+        return ResponseError("Server is down ?!")
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
 
 
 ###########################################################################
@@ -663,7 +691,7 @@ class Req(object):
             self.doc,
         )
 
-    def test(self, env: dict = None) -> TestResult:
+    async def test(self, env: dict = None) -> TestResult:
         def alwaysReplaceTxt(d, v):
             try:
                 return txtReplace(d, v)
@@ -731,6 +759,7 @@ class Req(object):
                     return {k: apply(v, method) for k, v in body.items()}
                 else:
                     return method(body)
+
             # ================================
 
             try:
@@ -767,7 +796,7 @@ class Req(object):
                     socket.setdefaulttimeout(None)
 
                 t1 = datetime.datetime.now()
-                res = dohttp(req)
+                res = await dohttp(req)
                 res.time = datetime.datetime.now() - t1
                 if isinstance(res, Response) and self.saves:
                     for save in self.saves:
@@ -1071,7 +1100,8 @@ p {margin:0px;padding:0px;color:#AAA;font-style: italic;}
 
             tests = "".join(
                 [
-                    """<li class='%s'>%s</li>""" % ("ok" if t else "ko", html.escape(t.name))
+                    """<li class='%s'>%s</li>"""
+                    % ("ok" if t else "ko", html.escape(t.name))
                     for t in tr
                 ]
             )
@@ -1210,36 +1240,45 @@ headers:
     )
     return rc, yml
 
+
 class MainResponse:
-    def __init__(self,rc,html=None,env={},reqs=[],total=None,ok=None):
-        self.code=rc
-        self.html=html
-        self.env=env
-        self.reqs=reqs
-        self.total=total
-        self.ok=ok
+    def __init__(self, rc, html=None, env={}, reqs=[], total=None, ok=None):
+        self.code = rc
+        self.html = html
+        self.env = env
+        self.reqs = reqs
+        self.total = total
+        self.ok = ok
+
 
 from enum import Enum
+
+
 class OutputPrint(Enum):
     NO = 0
     YES = 1
     ONLYKO = 2
 
-def testContent(content: str,env: dict={}):
-    """ test a yml 'content' against env (easy wrapper for main call )"""
-    reqs=[Reqs(io.StringIO(content), env)]
-    return main( reqs, env)    
 
-def main(ll,env: dict={}, outputPrint: OutputPrint = OutputPrint.NO, switchsForHtml=[]) -> MainResponse:
+async def testContent(content: str, env: dict = {}):
+    """ test a yml 'content' against env (easy wrapper for main call )"""
+    reqs = [Reqs(io.StringIO(content), env)]
+    return await main(reqs, env)
+
+
+async def main(
+    ll, env: dict = {}, outputPrint: OutputPrint = OutputPrint.NO, switchsForHtml=[]
+) -> MainResponse:
     reqs = makeReqs(ll, env)
 
     for f in reqs:
         f.trs = []
-        if outputPrint!=OutputPrint.NO: print("\nTESTS:", cb(f.name))
+        if outputPrint != OutputPrint.NO:
+            print("\nTESTS:", cb(f.name))
         for t in f:
-            tr = t.test(env)  # TODO: colorful output !
-            if outputPrint!=OutputPrint.NO:
-                if outputPrint==OutputPrint.ONLYKO:
+            tr = await t.test(env)  # TODO: colorful output !
+            if outputPrint != OutputPrint.NO:
+                if outputPrint == OutputPrint.ONLYKO:
                     if not all(tr):
                         print(tr)
                 else:
@@ -1248,13 +1287,14 @@ def main(ll,env: dict={}, outputPrint: OutputPrint = OutputPrint.NO, switchsForH
 
     ok, total, html = render(reqs, switchsForHtml)
 
-    if outputPrint!=OutputPrint.NO and total:
+    if outputPrint != OutputPrint.NO and total:
         print("\nRESULT: ", (cg if ok == total else cr)("%s/%s" % (ok, total)))
 
-    return MainResponse(total - ok,html,env,reqs,total,ok)
+    return MainResponse(total - ok, html, env, reqs, total, ok)
 
-def commandLine(params: List = []) -> int:
-    commandLine.mainReponse = None # for tests Purpose only !
+
+async def commandLine(params: List = []) -> int:
+    commandLine.mainReponse = None  # for tests Purpose only !
     try:
         if len(params) == 2 and params[0].lower() == "new":
             ## CREATE USAGE
@@ -1281,10 +1321,10 @@ def commandLine(params: List = []) -> int:
             with open(yname, "w") as fid:
                 fid.write(yml)
 
-            return 0   
+            return 0
         else:
             switchs = []
-        
+
             # search for a specific env var (starting with "-")
             for switch in [i for i in params if i.startswith("-")]:
                 params.remove(switch)
@@ -1310,12 +1350,17 @@ def commandLine(params: List = []) -> int:
                 with open(i, "r") as fid:
                     ll.append(Reqs(fid, env))
             if ll:
-                m=main(ll,env,OutputPrint.ONLYKO if onlyFailedTests else OutputPrint.YES,switchs)
-                if m.code>=0 and m.html:
+                m = await main(
+                    ll,
+                    env,
+                    OutputPrint.ONLYKO if onlyFailedTests else OutputPrint.YES,
+                    switchs,
+                )
+                if m.code >= 0 and m.html:
                     with open("reqman.html", "w+", encoding="utf_8") as fid:
                         fid.write(m.html)
-                commandLine.mainReponse = m # for tests Purpose only !
-                return m.code # aka rc
+                commandLine.mainReponse = m  # for tests Purpose only !
+                return m.code  # aka rc
             else:
                 print(
                     """USAGE TEST   : reqman [--option] [-switch] <folder|file>...
@@ -1334,7 +1379,9 @@ Test a http service with pre-made scenarios, whose are simple yaml files
                 )
 
                 if env:
-                    print("""  [switch]      : default to "%s" """ % env.get("root", None))
+                    print(
+                        """  [switch]      : default to "%s" """ % env.get("root", None)
+                    )
                     for k, v in env.items():
                         root = v.get("root", None) if type(v) == dict else None
                         if root:
@@ -1345,7 +1392,6 @@ Test a http service with pre-made scenarios, whose are simple yaml files
                         % REQMAN_CONF
                     )
                 return -1
-
 
     except RMException as e:
         print("\nERROR: %s" % e)
@@ -1359,8 +1405,18 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         print("\nERROR: process interrupted")
         return -1
 
-def run(): #console_scripts for setup.py/commandLine
-    return commandLine(sys.argv[1:])
+
+def run():  # console_scripts for setup.py/commandLine
+    return asyncio.run( commandLine(sys.argv[1:]) )
+
 
 if __name__ == "__main__":
     sys.exit(run())
+    # r=Request("https","www.google.com",443,"GET","/")
+    # x=dohttp(r)
+    # try:
+    #     httpcore.Client().get("https://www.google.com")
+    # except concurrent.futures._base.TimeoutError:
+    #     print(1)
+    # except httpcore.exceptions.ReadTimeout:
+    #     print(2)

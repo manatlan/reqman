@@ -1,3 +1,5 @@
+1.2.0.0: (22/05/2019)
+ - reqman as a module : now a simple reqman.testContent( yml: str, env: {}) -> MainReponse
 1.1.8.0: (18/05/2019) 
  - html escape test name
  - display doc line under the test for the reqman.html
