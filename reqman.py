@@ -312,7 +312,7 @@ def OLD_dohttp(r: Request) -> BaseResponse:
 ###############################################################################################################
 ###############################################################################################################
 import httpcore,asyncio
-XXX=httpcore.AsyncClient()
+XXX=httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None,verify=False))
 async def dohttp(r: Request,timeout=None) -> BaseResponse:
     try:
         rr = await XXX.request(
@@ -322,6 +322,7 @@ async def dohttp(r: Request,timeout=None) -> BaseResponse:
             headers=r.headers,
             allow_redirects=False,
             timeout=httpcore.TimeoutConfig(timeout)
+            
         )
         info = "%s %s %s" % (rr.protocol, rr.status_code, rr.reason_phrase)
 
@@ -1411,12 +1412,12 @@ def run():  # console_scripts for setup.py/commandLine
 
 
 if __name__ == "__main__":
-    # sys.exit(run())
+    sys.exit(run())
     # r=Request("https","www.manatlan.com",443,"GET","/")
     # x=asyncio.run( dohttp(r) )
-    try:
-        httpcore.Client().get("https://www.manatlan.com",timeout=httpcore.TimeoutConfig(5))
-    except concurrent.futures._base.TimeoutError:
-        print(1)
-    except httpcore.exceptions.ReadTimeout:
-        print(2)
+    # try:
+    #     httpcore.Client().get("https://www.manatlan.com",timeout=httpcore.TimeoutConfig(5))
+    # except concurrent.futures._base.TimeoutError:
+    #     print(1)
+    # except httpcore.exceptions.ReadTimeout:
+    #     print(2)
