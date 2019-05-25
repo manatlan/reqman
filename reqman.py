@@ -306,6 +306,10 @@ async def dohttp(r: Request, timeout=None) -> BaseResponse:
         return ResponseError("Response timeout")
     except httpcore.exceptions.ConnectTimeout:
         return ResponseError("Response timeout")
+    except httpcore.exceptions.Timeout:
+        return ResponseError("Response timeout")
+    except httpcore.exceptions.WriteTimeout:
+        return ResponseError("Response timeout")
     except KeyError:  # KeyError: <httpcore.dispatch.connection.HTTPConnection object at 0x7fadbf88e0f0>
         return ResponseError("Response timeout")
     except socket.gaierror:
