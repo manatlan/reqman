@@ -181,7 +181,7 @@ class CookieStore(http.cookiejar.CookieJar):
                 self._headers = m
                 self._url = url
 
-            def info(self)->dict:
+            def info(self):
                 return self._headers
 
         response = FakeResponse([": ".join([k, v]) for k, v in headers], url)
@@ -321,7 +321,7 @@ class Test(int):
     """ a boolean with a name """
 
     def __new__(cls, value: int, nameOK: str, nameKO: str):
-        s = super(Test, cls).__new__(cls, int(value))
+        s = super(Test, cls).__new__(cls, value)
         if value:
             s.name = nameOK
         else:
