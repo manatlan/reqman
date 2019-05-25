@@ -569,7 +569,7 @@ def transform(
 transform.path = None  # change cd cwd for transform methods when executed
 
 
-def objReplace(env, txt):  # same as txtReplace() but for "object" (json'able)
+def objReplace(env, txt:str) -> T.Any:  # same as txtReplace() but for "object" (json'able)
     obj = txtReplace(env, txt)
     try:
         obj = json.loads(obj)
@@ -578,7 +578,7 @@ def objReplace(env, txt):  # same as txtReplace() but for "object" (json'able)
     return obj
 
 
-def txtReplace(env, txt):
+def txtReplace(env, txt) -> T.Any:
     if env and txt and isinstance(txt, str):
         for vvar in re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt):
             var = vvar[2:-2]
