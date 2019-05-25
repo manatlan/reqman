@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.2.0.1 HC"
+__version__ = "1.2.0.1 HC" # 30%faster
 
 import asyncio
 import collections
