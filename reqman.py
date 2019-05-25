@@ -321,7 +321,7 @@ class Test(int):
     """ a boolean with a name """
 
     def __new__(cls, value: int, nameOK: str, nameKO: str):
-        s = super(Test, cls).__new__(cls, value)
+        s = super(Test, cls).__new__(cls, int(value))
         if value:
             s.name = nameOK
         else:
@@ -511,7 +511,7 @@ def DYNAMIC(x, env: dict) -> Union[str,None]:
     pass  # will be overriden (see below vv)
 
 
-def transform(content: str, env: dict, methodName: str) -> str:
+def transform(content: Union[str,None], env: dict, methodName: str) -> Union[str,None]:
     if methodName:
         if methodName in env:
             code = getVar(env, methodName)
@@ -526,7 +526,10 @@ def transform(content: str, env: dict, methodName: str) -> str:
                     "Error in declaration of method " + methodName + " : " + str(e)
                 )
             try:
-                x = json.loads(content)
+                if content is not None:
+                    x = json.loads(content)
+                else:
+                    x=None
             except (json.decoder.JSONDecodeError, TypeError):
                 x = content
             try:
