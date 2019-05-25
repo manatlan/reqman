@@ -1403,7 +1403,6 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         print(traceback.format_exc(), "\nERROR: %s" % e)
         return RC(-1)
     except KeyboardInterrupt as e:
-        # render(reqs, switchs)
         print("\nERROR: process interrupted")
         return RC(-1)
 
