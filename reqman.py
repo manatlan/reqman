@@ -1411,9 +1411,9 @@ def run():  # console_scripts for setup.py/commandLine
 
 
 if __name__ == "__main__":
-    sys.exit(run())
-    # r=Request("https","www.google.com",443,"GET","/")
-    # x=dohttp(r)
+    # sys.exit(run())
+    r=Request("https","www.manatlan.com",443,"GET","/")
+    x=asyncio.run( dohttp(r) )
     # try:
     #     httpcore.Client().get("https://www.google.com")
     # except concurrent.futures._base.TimeoutError:

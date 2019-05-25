@@ -16,7 +16,7 @@ fwp = lambda x:x.replace("\\","/") # fake windows path
 BINARY = bytes( list(range(255,0,-1)) )
 
 
-def mockHttp(q):
+async def mockHttp(q):
     if q.path=="/test_cookie":
         return reqman.Response( 200, "the content", {"Content-Type":"text/plain","server":"mock","Set-Cookie":"mycookie=myval"},q.url)
     elif q.path=="/test_binary":

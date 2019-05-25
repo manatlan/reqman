@@ -1,5 +1,6 @@
 import json,pytest
 import reqman
+import asyncio
 
 SERVER={"/": (200,"hello")}
 
@@ -27,10 +28,10 @@ def test_yml_procedures_call_with_diff_types(reqs):
     l=reqs(y)
     assert len(l), 2
 
-    r=l[0].test({})
+    r=asyncio.run( l[0].test({}) )
     assert json.loads(r.req.body), [1,2] 
 
-    r=l[1].test({})
+    r=asyncio.run( l[1].test({}) )
     assert json.loads(r.req.body), dict(a=1,b=2) 
 
 def test_yml_procedures_call_with_sub_diff_types(reqs):
@@ -76,16 +77,16 @@ def test_yml_procedures_call_with_sub_diff_types(reqs):
     l=reqs(y)
     assert len(l)== 4
 
-    r=l[0].test({})
+    r=asyncio.run( l[0].test({}))
     assert json.loads(r.req.body) == {'data': [1, 2]} 
 
-    r=l[1].test({})
+    r=asyncio.run(l[1].test({}))
     assert json.loads(r.req.body) ==  {'data': dict(a=1,b=2) } 
 
-    r=l[2].test({})
+    r=asyncio.run( l[2].test({}) )
     assert json.loads(r.req.body) == {'data': [1, 2]} 
 
-    r=l[3].test({})
+    r=asyncio.run( l[3].test({}) )
     assert json.loads(r.req.body) ==  {'data': dict(a=1,b=2) } 
 
 
