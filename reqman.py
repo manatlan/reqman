@@ -37,7 +37,7 @@ import http.client
 import urllib.request
 import urllib.parse
 import traceback
-from typing import Union, List
+from typing import Union, List, Type, Tuple
 
 
 class NotFound:
@@ -141,8 +141,7 @@ def prettify(txt: str, indentation: int = 4) -> str:
         except:
             return txt
 
-
-def jpath(elem, path: str):
+def jpath(elem, path: str) -> Union[int,Type[NotFound],str]:
     for i in path.strip(".").split("."):
         try:
             if type(elem) == list:
@@ -412,7 +411,7 @@ class TestResult(list):
                 try:
                     jzon = json.loads(str(self.res.content))
                     tvalue = jpath(jzon, what[5:])
-                    tvalue = None if tvalue == NotFound else tvalue
+                    tvalue = None if tvalue is NotFound else tvalue
                 except Exception as e:
                     tvalue = None
             else:  # headers
@@ -433,7 +432,7 @@ class TestResult(list):
             else:
                 # ensure that we've got a list
                 values = [value] if type(value) != list else value
-
+                opOK, opKO=None, None
                 bool = False
                 for value in values:  # match any
                     if testContains:
@@ -534,13 +533,15 @@ def transform(content, env: dict, methodName: str):
                 if transform.path:
                     curdir = os.getcwd()
                     os.chdir(transform.path)
+                else: 
+                    curdir=None
                 content = DYNAMIC(x, env)
             except Exception as e:
                 raise RMException(
                     "Error in execution of method " + methodName + " : " + str(e)
                 )
             finally:
-                if transform.path:
+                if curdir:
                     os.chdir(curdir)
         else:
             raise RMException(
@@ -1013,7 +1014,7 @@ def loadEnv(fd, varenvs: List[str] = []) -> dict:
     return env
 
 
-def render(reqs: List[Reqs], switchs: List[str]) -> (int, int, str):
+def render(reqs: List[Reqs], switchs: List[str]) -> Tuple[int, int, str]:
     h = """
 <meta charset="utf-8">
 <style>
@@ -1042,7 +1043,7 @@ p {margin:0px;padding:0px;color:#AAA;font-style: italic;}
     for f in reqs:
         times = [tr.res.time for tr in f.trs if tr.res and tr.res.time]
 
-        reqs = ""
+        hreqs = ""
         for tr in f.trs:
             alltr += tr
 
@@ -1087,7 +1088,7 @@ p {margin:0px;padding:0px;color:#AAA;font-style: italic;}
                 ]
             )
 
-            reqs += """
+            hreqs += """
 <li class="hide">
     <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>{tr.req.method}</b> {tr.req.path} : <b>{tr.res}</b> <i>{rtime}</i>{qdoc}</span>
     <ul>
@@ -1110,7 +1111,7 @@ p {margin:0px;padding:0px;color:#AAA;font-style: italic;}
             f.name,
             len(times),
             avg,
-            reqs,
+            hreqs,
         )
 
     ok, total = len([i for i in alltr if i]), len(alltr)
@@ -1129,6 +1130,7 @@ p {margin:0px;padding:0px;color:#AAA;font-style: italic;}
 def findRCUp(fromHere: str) -> Union[None, str]:
     """Find the rc in upwards folders"""
     current = os.path.realpath(fromHere)
+    rc=None
     while 1:
         rc = os.path.join(current, REQMAN_CONF)
         if os.path.isfile(rc):
@@ -1142,7 +1144,7 @@ def findRCUp(fromHere: str) -> Union[None, str]:
     return rc
 
 
-def resolver(params: List) -> (Union[str, None], List[str]):
+def resolver(params: List) -> Tuple[Union[str, None], List[str]]:
     """ return tuple (reqman.conf,ymls) finded with params """
     ymls, paths = [], []
 
@@ -1190,19 +1192,17 @@ def makeReqs(reqs: List[Reqs], env: dict) -> List[Reqs]:
     return reqs
 
 
-def create(url: str) -> (Union[str, None], str):
+def create(url: str) -> Tuple[ Union[None,str], str]:
     """ return a (reqman.conf, yml_file) based on the test 'url' """
     hp = urllib.parse.urlparse(url)
     if hp and hp.scheme and hp.hostname:
         root = mkUrl(hp.scheme, hp.hostname, hp.port)
-        rc = (
-            """
+        rc ="""
 root: %(root)s
 headers:
     User-Agent: reqman (https://github.com/manatlan/reqman)
-"""
-            % locals()
-        )
+"""% locals()
+        
     else:
         root = ""
         rc = None
@@ -1219,7 +1219,7 @@ headers:
 """
         % locals()
     )
-    return rc, yml
+    return ( rc, yml )
 
 
 class MainResponse:
@@ -1269,9 +1269,9 @@ async def main(
     ok, total, html = render(reqs, switchsForHtml)
 
     if outputPrint != OutputPrint.NO and total:
-        print("\nRESULT: ", (cg if ok == total else cr)("%s/%s" % (ok, total)))
+        print("\nRESULT: ", (cg if int(ok) == int(total) else cr)("%s/%s" % (ok, total)))
 
-    return MainResponse(total - ok, html, env, reqs, total, ok)
+    return MainResponse(int(total) - int(ok), html, env, reqs, total, ok)
 
 
 async def commandLine(params: List = []) -> int:
@@ -1321,7 +1321,7 @@ async def commandLine(params: List = []) -> int:
 
             # load env !
             if rc:
-                with open(rc, "r") as fid:
+                with open(str(rc), "r") as fid:
                     env = loadEnv(fid, switchs)
             else:
                 env = loadEnv(None, switchs)
