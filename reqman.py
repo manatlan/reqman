@@ -336,6 +336,7 @@ class Test(int):
         return s
 
 
+
 def getValOpe(v):
     try:
         if type(v) == str and v.startswith("."):
@@ -1246,6 +1247,14 @@ class MainResponse:
         self.total = total
         self.ok = ok
 
+class RC(int):
+    """ a int with a details/mainResponse """
+    def __new__(cls, value: int, details: MainResponse = None):
+        s = super(RC, cls).__new__(cls, value)
+        s.details = details
+        return s
+
+
 
 class OutputPrint(Enum):
     NO = 0
@@ -1288,8 +1297,7 @@ async def main(
     return MainResponse(int(total) - int(ok), html, env, reqs, total, ok)
 
 
-async def commandLine(params: T.List[str] = []) -> int:
-    commandLine.mainReponse = None  # for tests Purpose only !
+async def commandLine(params: T.List[str] = []) -> RC:
     try:
         if len(params) == 2 and params[0].lower() == "new":
             ## CREATE USAGE
@@ -1316,7 +1324,7 @@ async def commandLine(params: T.List[str] = []) -> int:
             with open(yname, "w") as fid:
                 fid.write(yml)
 
-            return 0
+            return RC(0)
         else:
             switchs = []
 
@@ -1354,8 +1362,7 @@ async def commandLine(params: T.List[str] = []) -> int:
                 if m.code >= 0 and m.html:
                     with open("reqman.html", "w+", encoding="utf_8") as fid:
                         fid.write(m.html)
-                commandLine.mainReponse = m  # for tests Purpose only !
-                return m.code  # aka rc
+                return RC(m.code,m)  # aka rc
             else:
                 print(
                     """USAGE TEST   : reqman [--option] [-switch] <folder|file>...
@@ -1386,19 +1393,19 @@ Test a http service with pre-made scenarios, whose are simple yaml files
                         """  [switch]      : pre-made 'switch' defined in a %s"""
                         % REQMAN_CONF
                     )
-                return -1
+                return RC(-1)
 
     except RMException as e:
         print("\nERROR: %s" % e)
-        return -1
+        return RC(-1)
     except Exception as e:
         print("\n**HERE IS A BUG**, please report it !")
         print(traceback.format_exc(), "\nERROR: %s" % e)
-        return -1
+        return RC(-1)
     except KeyboardInterrupt as e:
         # render(reqs, switchs)
         print("\nERROR: process interrupted")
-        return -1
+        return RC(-1)
 
 
 def run() -> int:  # console_scripts for setup.py/commandLine

@@ -66,7 +66,7 @@ def client(request):
             with contextlib.redirect_stdout(fo):
                 rc=asyncio.run( reqman.commandLine( list(args) ) )
 
-        r=reqman.commandLine.mainReponse or Ret()  
+        r=rc.details or Ret()  
         r.code=rc        
         r.console=fo.getvalue()+fe.getvalue()
         print(r.console)
