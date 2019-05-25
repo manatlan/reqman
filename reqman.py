@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.2.0.0"
+__version__ = "1.2.0.1 HC"
 
 import yaml  # see "pip install pyyaml"
 import os
@@ -314,7 +314,8 @@ def OLD_dohttp(r: Request) -> BaseResponse:
 ###############################################################################################################
 import httpcore,asyncio
 XXX=httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None,verify=False))
-print(dir(XXX))
+# XXX=httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None,verify=False),cookies=COOKIEJAR)
+
 async def dohttp(r: Request,timeout=None) -> BaseResponse:
     try:
         rr = await XXX.request(
