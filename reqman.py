@@ -1408,7 +1408,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 
 def run() -> int:  # console_scripts for setup.py/commandLine
-    return asyncio.run(commandLine(sys.argv[1:]))
+    return int( asyncio.run( commandLine(sys.argv[1:]) ) )
 
 
 if __name__ == "__main__":
