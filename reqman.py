@@ -22,7 +22,6 @@ import os
 import json
 import copy
 import sys
-import ssl
 import glob
 import itertools
 import html
@@ -33,12 +32,10 @@ import io
 import datetime
 import email
 import xml.dom.minidom
-import http.cookies
 import http.cookiejar
 import http.client
 import urllib.request
 import urllib.parse
-import urllib.error
 import traceback
 from typing import Union, List
 
@@ -281,42 +278,16 @@ class ResponseError(BaseResponse):
         return "ERROR: %s" % (self.content)
 
 
-def OLD_dohttp(r: Request) -> BaseResponse:
-    try:
-        if r.protocol and r.protocol.lower() == "https":
-            cnx = http.client.HTTPSConnection(
-                r.host, r.port, context=ssl._create_unverified_context()
-            )  # TODO: ability to setup a verified ssl context ?
-        else:
-            cnx = http.client.HTTPConnection(r.host, r.port)
-        enc = lambda x: x.replace(" ", "%20")
-        cnx.request(r.method, enc(r.path), r.body, r.headers)
-        rr = cnx.getresponse()
-
-        info = "%s %s %s" % (
-            {10: "HTTP/1.0", 11: "HTTP/1.1"}.get(rr.version, "HTTP/?"),
-            rr.status,
-            rr.reason,
-        )
-
-        return Response(rr.status, rr.read(), rr.getheaders(), r.url, info)
-    except socket.timeout:
-        return ResponseError("Response timeout")
-    except socket.error:
-        return ResponseError("Server is down ?!")
-    except http.client.BadStatusLine:
-        # A subclass of HTTPException. Raised if a server responds with a HTTP status code that we don’t understand.
-        # Presumably, the server closed the connection before sending a valid response.
-        return ResponseError("Server closed the connection")
-
 ###############################################################################################################
 ###############################################################################################################
 ###############################################################################################################
-import httpcore,asyncio
-XXX=httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None,verify=False))
+import httpcore, asyncio
+
+XXX = httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None, verify=False))
 # XXX=httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None,verify=False),cookies=COOKIEJAR)
 
-async def dohttp(r: Request,timeout=None) -> BaseResponse:
+
+async def dohttp(r: Request, timeout=None) -> BaseResponse:
     try:
         rr = await XXX.request(
             r.method,
@@ -324,8 +295,7 @@ async def dohttp(r: Request,timeout=None) -> BaseResponse:
             data=b"" if r.body == None else r.body.encode(),
             headers=r.headers,
             allow_redirects=False,
-            timeout=httpcore.TimeoutConfig(timeout)
-            
+            timeout=httpcore.TimeoutConfig(timeout),
         )
         info = "%s %s %s" % (rr.protocol, rr.status_code, rr.reason_phrase)
 
@@ -334,10 +304,12 @@ async def dohttp(r: Request,timeout=None) -> BaseResponse:
         return ResponseError("Response timeout")
     except httpcore.exceptions.ConnectTimeout:
         return ResponseError("Response timeout")
-    except KeyError: # KeyError: <httpcore.dispatch.connection.HTTPConnection object at 0x7fadbf88e0f0>
+    except KeyError:  # KeyError: <httpcore.dispatch.connection.HTTPConnection object at 0x7fadbf88e0f0>
         return ResponseError("Response timeout")
     except socket.gaierror:
         return ResponseError("Server is down ?!")
+
+
 ###############################################################################################################
 ###############################################################################################################
 ###############################################################################################################
@@ -698,7 +670,7 @@ class Req(object):
         )
 
     def stest(self, env: dict = None) -> TestResult:
-        return asyncio.run( self.test(env) )
+        return asyncio.run(self.test(env))
 
     async def test(self, env: dict = None) -> TestResult:
         def alwaysReplaceTxt(d, v):
@@ -800,7 +772,7 @@ class Req(object):
 
                 timeout = cenv.get("timeout", None)
                 try:
-                    timeout=timeout and float(timeout) / 1000.0 or None
+                    timeout = timeout and float(timeout) / 1000.0 or None
                 except ValueError:
                     pass
 
@@ -1416,7 +1388,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 
 def run():  # console_scripts for setup.py/commandLine
-    return asyncio.run( commandLine(sys.argv[1:]) )
+    return asyncio.run(commandLine(sys.argv[1:]))
 
 
 if __name__ == "__main__":
@@ -1424,8 +1396,11 @@ if __name__ == "__main__":
     # r=Request("https","www.manatlan.com",443,"GET","/")
     # x=asyncio.run( dohttp(r) )
     from http.cookiejar import Cookie, CookieJar
-    cj=CookieJar()
+
+    cj = CookieJar()
     try:
-        httpcore.Client().get("https://www.manatlan.com",timeout=httpcore.TimeoutConfig(5),cookies=cj)
+        httpcore.Client().get(
+            "https://www.manatlan.com", timeout=httpcore.TimeoutConfig(5), cookies=cj
+        )
     except httpcore.exceptions.ReadTimeout:
         print(2)

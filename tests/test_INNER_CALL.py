@@ -1,7 +1,7 @@
-import os
-import reqman,io
+import asyncio
+import reqman
 
-async def test_innercall():
+def test_innercall():
     f="""- GET: http://example.com/t"""
-    x=await reqman.testContent( f )
+    x=asyncio.run( reqman.testContent( f ) )
     assert x.code==0
