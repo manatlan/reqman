@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import reqman
+import reqman,asyncio
 """
 This is the good old reqman tests, in unitest (the cover 94%)
 They are not needed (without them, we cover 96% ... with them : 97%)
@@ -2271,7 +2271,7 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="https://github.com/")
 
         r=reqman.Req("Get","/test_cookie")  # --> return a cookie header
-        s=r.test(env)
+        s=asyncio.run( r.test(env) )
         self.assertEqual(s.res.headers["Set-Cookie"], "mycookie=myval")
 
         c=list(reqman.COOKIEJAR)[0]
@@ -2279,7 +2279,7 @@ class Tests_Req(unittest.TestCase):
         self.assertEqual( c.value, "myval" )
 
         r=reqman.Req("Get","/")
-        s=r.test(env)
+        s=asyncio.run( r.test(env) )
         self.assertEqual(s.req.headers["Cookie"], "mycookie=myval") # assert that the cookie persist when sending
 
 

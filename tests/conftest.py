@@ -11,7 +11,7 @@ from io import StringIO
 
 #===============================================
 def runServerMockWith(server):
-    async def mockHttp(q):
+    async def mockHttp(q,timeout=None):
         if q.path in server:
             mock=server[q.path]
         elif q.url in server:

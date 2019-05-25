@@ -312,16 +312,16 @@ def OLD_dohttp(r: Request) -> BaseResponse:
 ###############################################################################################################
 ###############################################################################################################
 import httpcore,asyncio
-
-async def dohttp(r: Request) -> BaseResponse:
+XXX=httpcore.AsyncClient()
+async def dohttp(r: Request,timeout=None) -> BaseResponse:
     try:
-        rr = await httpcore.AsyncClient().request(
+        rr = await XXX.request(
             r.method,
             r.url,
             data=b"" if r.body == None else r.body.encode(),
             headers=r.headers,
             allow_redirects=False,
-            timeout=None
+            timeout=httpcore.TimeoutConfig(timeout)
         )
         info = "%s %s %s" % (rr.protocol, rr.status_code, rr.reason_phrase)
 
@@ -791,12 +791,12 @@ class Req(object):
 
                 timeout = cenv.get("timeout", None)
                 try:
-                    socket.setdefaulttimeout(timeout and float(timeout) / 1000.0)
+                    timeout=timeout and float(timeout) / 1000.0 or None
                 except ValueError:
-                    socket.setdefaulttimeout(None)
+                    pass
 
                 t1 = datetime.datetime.now()
-                res = await dohttp(req)
+                res = await dohttp(req, timeout)
                 res.time = datetime.datetime.now() - t1
                 if isinstance(res, Response) and self.saves:
                     for save in self.saves:
@@ -1412,11 +1412,11 @@ def run():  # console_scripts for setup.py/commandLine
 
 if __name__ == "__main__":
     # sys.exit(run())
-    r=Request("https","www.manatlan.com",443,"GET","/")
-    x=asyncio.run( dohttp(r) )
-    # try:
-    #     httpcore.Client().get("https://www.google.com")
-    # except concurrent.futures._base.TimeoutError:
-    #     print(1)
-    # except httpcore.exceptions.ReadTimeout:
-    #     print(2)
+    # r=Request("https","www.manatlan.com",443,"GET","/")
+    # x=asyncio.run( dohttp(r) )
+    try:
+        httpcore.Client().get("https://www.manatlan.com",timeout=httpcore.TimeoutConfig(5))
+    except concurrent.futures._base.TimeoutError:
+        print(1)
+    except httpcore.exceptions.ReadTimeout:
+        print(2)
