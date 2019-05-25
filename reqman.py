@@ -198,6 +198,7 @@ class CookieStore(http.cookiejar.CookieJar):
 
 
 COOKIEJAR = CookieStore()
+# COOKIEJAR = http.cookiejar.CookieJar()
 
 
 class Request:
@@ -313,6 +314,7 @@ def OLD_dohttp(r: Request) -> BaseResponse:
 ###############################################################################################################
 import httpcore,asyncio
 XXX=httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None,verify=False))
+print(dir(XXX))
 async def dohttp(r: Request,timeout=None) -> BaseResponse:
     try:
         rr = await XXX.request(
@@ -328,6 +330,8 @@ async def dohttp(r: Request,timeout=None) -> BaseResponse:
 
         return Response(rr.status_code, rr.content, dict(rr.headers), r.url, info)
     except httpcore.exceptions.ReadTimeout:
+        return ResponseError("Response timeout")
+    except httpcore.exceptions.ConnectTimeout:
         return ResponseError("Response timeout")
     except KeyError: # KeyError: <httpcore.dispatch.connection.HTTPConnection object at 0x7fadbf88e0f0>
         return ResponseError("Response timeout")
@@ -1415,9 +1419,9 @@ if __name__ == "__main__":
     sys.exit(run())
     # r=Request("https","www.manatlan.com",443,"GET","/")
     # x=asyncio.run( dohttp(r) )
-    # try:
-    #     httpcore.Client().get("https://www.manatlan.com",timeout=httpcore.TimeoutConfig(5))
-    # except concurrent.futures._base.TimeoutError:
-    #     print(1)
-    # except httpcore.exceptions.ReadTimeout:
-    #     print(2)
+    from http.cookiejar import Cookie, CookieJar
+    cj=CookieJar()
+    try:
+        httpcore.Client().get("https://www.manatlan.com",timeout=httpcore.TimeoutConfig(5),cookies=cj)
+    except httpcore.exceptions.ReadTimeout:
+        print(2)
