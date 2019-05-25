@@ -697,6 +697,9 @@ class Req(object):
             self.doc,
         )
 
+    def stest(self, env: dict = None) -> TestResult:
+        return asyncio.run( self.test(env) )
+
     async def test(self, env: dict = None) -> TestResult:
         def alwaysReplaceTxt(d, v):
             try:

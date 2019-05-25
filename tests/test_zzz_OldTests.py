@@ -16,7 +16,7 @@ fwp = lambda x:x.replace("\\","/") # fake windows path
 BINARY = bytes( list(range(255,0,-1)) )
 
 
-async def mockHttp(q):
+async def mockHttp(q,timeout=None):
     if q.path=="/test_cookie":
         return reqman.Response( 200, "the content", {"Content-Type":"text/plain","server":"mock","Set-Cookie":"mycookie=myval"},q.url)
     elif q.path=="/test_binary":
@@ -1136,7 +1136,7 @@ class Tests_TRANSFORM(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         r=l[0]
         self.assertEqual(r.body,"{{var|trans}}")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.req.body,"hellohello")
 
     def test_trans_chainable(self):
@@ -1154,7 +1154,7 @@ class Tests_TRANSFORM(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         r=l[0]
         self.assertEqual(r.body,"{{var|trans|trans}}")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.req.body,"hellohellohellohello")
 
 
@@ -1167,7 +1167,7 @@ class Tests_TRANSFORM(unittest.TestCase):
         env={}
 
         l=reqman.Reqs(StringIO(y),env)
-        s=l[0].test()
+        s=l[0].stest()
         self.assertEqual( s.req.path, "/1OK2" )
 
     def test_call_with_value(self):     # NEW
@@ -1179,7 +1179,7 @@ class Tests_TRANSFORM(unittest.TestCase):
         env={}
 
         l=reqman.Reqs(StringIO(y),env)
-        s=l[0].test()
+        s=l[0].stest()
         self.assertEqual( s.req.path, "/42" )
 
 
@@ -1204,7 +1204,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( l[0].path, "/{{myvar}}")
 
         env={}
-        tr=l[0].test(env)
+        tr=l[0].stest(env)
 
         self.assertEqual( tr.req.path, "/hello" )
 
@@ -1220,7 +1220,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( l[0].path, "/{{myvar}}")
 
         env={"myvar":"not this"}
-        tr=l[0].test(env)
+        tr=l[0].stest(env)
 
         self.assertEqual( tr.req.path, "/this one" )
 
@@ -1237,7 +1237,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( l[0].path, "/")
 
         env={"root":"http://not_this.com"}
-        tr=l[0].test(env)
+        tr=l[0].stest(env)
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.host, "this_one.net" )
 
@@ -1254,7 +1254,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( len(l), 1)
         self.assertEqual( l[0].path, "/{{myvar}}")
 
-        tr=l[0].test( dict(root="http://fake.com") )
+        tr=l[0].stest( dict(root="http://fake.com") )
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo" )
 
@@ -1273,7 +1273,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( len(l), 1)
         self.assertEqual( l[0].path, "/{{myvar}}")
 
-        tr=l[0].test( dict(root="http://fake.com") )
+        tr=l[0].stest( dict(root="http://fake.com") )
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo" )
 
@@ -1290,7 +1290,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( len(l), 1)
         self.assertEqual( l[0].path, "/{{myvar}}")
 
-        tr=l[0].test( dict(root="http://fake.com") )
+        tr=l[0].stest( dict(root="http://fake.com") )
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo" )
 
@@ -1327,13 +1327,13 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( l[0].path, "/{{myvar}}/{{myvar2}}")
         self.assertEqual( l[1].path, "/{{myvar}}/{{myvar2}}")
 
-        tr=l[0].test( dict(root="http://fake.com") )
+        tr=l[0].stest( dict(root="http://fake.com") )
         self.assertEqual( len(tr), 2)
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo/end" )
         self.assertEqual( tr.req.headers, {'myheader': 'myheader','myheader2': 'myheader2'} )
 
-        tr=l[1].test( dict(root="http://fake.com") )
+        tr=l[1].stest( dict(root="http://fake.com") )
         self.assertEqual( len(tr), 2)
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bongi/end" )
@@ -1355,7 +1355,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( len(l), 1)
         self.assertEqual( l[0].path, "/{{myvar}}/{{myvar2}}")
 
-        tr=l[0].test( dict(root="http://fake.com") )
+        tr=l[0].stest( dict(root="http://fake.com") )
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bingo/bongi" )
 
@@ -1375,7 +1375,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( len(l), 1)
         self.assertEqual( l[0].path, "/{{myvar}}")
 
-        tr=l[0].test( dict(root="http://fake.com",a_val="bongi") )
+        tr=l[0].stest( dict(root="http://fake.com",a_val="bongi") )
 
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bongi" )
@@ -1397,7 +1397,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( len(l), 1)
         self.assertEqual( l[0].path, "/<<myvar>>")
 
-        tr=l[0].test( dict(root="http://fake.com",a_val="bongi") )
+        tr=l[0].stest( dict(root="http://fake.com",a_val="bongi") )
 
         self.assertEqual( tr.res.status, 200)
         self.assertEqual( tr.req.path, "/bongi" )
@@ -1414,7 +1414,7 @@ class Tests_params_NEW(unittest.TestCase):
         self.assertEqual( len(l), 1)
         self.assertEqual( l[0].path, "/{{my}}")
 
-        self.assertRaises(reqman.RMException, lambda: l[0].test({}) )     #reccursion error !!!
+        self.assertRaises(reqman.RMException, lambda: l[0].stest({}) )     #reccursion error !!!
 
 
     def test_yml_params_escape_string1(self):
@@ -1432,7 +1432,7 @@ class Tests_params_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 1)
 
-        tr=l[0].test({})
+        tr=l[0].stest({})
 
         self.assertEqual( tr.req.body, "line1\nline2\nline3\n" )
 
@@ -1451,7 +1451,7 @@ class Tests_params_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 1)
 
-        tr=l[0].test({})
+        tr=l[0].stest({})
 
         self.assertEqual( tr.req.body, "startline1\nline2\nline3\nend" )
 
@@ -1465,7 +1465,7 @@ class Tests_params_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 1)
 
-        tr=l[0].test({"myvar":"aaa\nbbb"})
+        tr=l[0].stest({"myvar":"aaa\nbbb"})
 
         self.assertEqual( tr.req.body, "startaaa\nbbbend" )
 
@@ -1488,7 +1488,7 @@ class Tests_params_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 1)
 
-        tr=l[0].test({"var":"aaa\nbbb"})
+        tr=l[0].stest({"var":"aaa\nbbb"})
 
         self.assertEqual( tr.req.body, "start\naaa\nbbb\nend\n" )
 
@@ -1514,7 +1514,7 @@ class Tests_params_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 4)
 
-        mp=[i.test().req.path for i in l]
+        mp=[i.stest().req.path for i in l]
         self.assertEqual( mp, ['/1/1', '/1/2', '/2/1', '/2/2'] )
 
     def test_yml_call_embeded_declaration(self):
@@ -1538,7 +1538,7 @@ class Tests_params_NEW(unittest.TestCase):
         l=reqman.Reqs(StringIO(y))
         self.assertEqual( len(l), 4)
 
-        mp=[i.test().req.path for i in l]
+        mp=[i.stest().req.path for i in l]
         self.assertEqual( mp, ['/1/1', '/1/2', '/2/1', '/2/2'] )
 
 
@@ -1566,7 +1566,7 @@ class Tests_env_save(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        l[0].test(env)
+        l[0].stest(env)
 
         self.assertEqual( env, {'newVar': 'the content'} )
 
@@ -1578,7 +1578,7 @@ class Tests_env_save(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        l[0].test(env)
+        l[0].stest(env)
 
         self.assertEqual( env, {'newVar': {"mylist": ["aaa", 42, {"name": "john"}], "mydict": {"name": "jack"}} } )
 
@@ -1591,7 +1591,7 @@ class Tests_env_save(unittest.TestCase):
 
         env={"newVar":"old value"}
         self.assertEqual( env, {'newVar': 'old value'} )
-        l[0].test(env)
+        l[0].stest(env)
         self.assertEqual( env, {'newVar': 'the content'} )
 
     def test_reuse_var_created(self):
@@ -1606,10 +1606,10 @@ class Tests_env_save(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        l[0].test(env)
+        l[0].stest(env)
         self.assertEqual( env, {'var': 'the content'} )
 
-        s=l[1].test(env)
+        s=l[1].stest(env)
         self.assertEqual( s.req.headers["Authorizattion"], "Bearer the content" )
 
 
@@ -1626,7 +1626,7 @@ class Tests_env_save(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        l[0].test(env)
+        l[0].stest(env)
         self.assertEqual( env, {'jo': 'the content'} )
 
 
@@ -1639,7 +1639,7 @@ class Tests_env_save(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        self.assertRaises(reqman.RMException, lambda: l[0].test(env))
+        self.assertRaises(reqman.RMException, lambda: l[0].stest(env))
 
 
 #     def test_save_var_to_file_txt(self):
@@ -1651,7 +1651,7 @@ class Tests_env_save(unittest.TestCase):
 
 #         env={}
 #         self.assertFalse( os.path.isfile("aeff.txt") )
-#         l[0].test(env)
+#         l[0].stest(env)
 
 #         self.assertTrue( os.path.isfile("aeff.txt") )
 
@@ -1669,7 +1669,7 @@ class Tests_env_save(unittest.TestCase):
 
 #         env={}
 #         self.assertFalse( os.path.isfile("aeff.txt") )
-#         l[0].test(env)
+#         l[0].stest(env)
 
 #         self.assertTrue( os.path.isfile("aeff.txt") )
 
@@ -1690,7 +1690,7 @@ class Tests_env_save(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        l[0].test(env)
+        l[0].stest(env)
         self.assertEqual( env["var1"], 'the content' )
         self.assertEqual( env["var2"], 'the content' )
 
@@ -1889,7 +1889,7 @@ class Tests_Reqs(unittest.TestCase):
             a_var="explore",
         )
 
-        s=get.test(env)
+        s=get.stest(env)
         self.assertEqual( s.req.host, "github.com")
         self.assertEqual( s.req.protocol, "https")
         self.assertEqual( s.req.port, None)
@@ -1897,7 +1897,7 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s.req.body, None)
         self.assertEqual( s.req.headers,  {'h1': 'my h1', 'h2': 'my h2'})
 
-        s=post.test(env)
+        s=post.stest(env)
         self.assertEqual( s.req.host, "github.com")
         self.assertEqual( s.req.protocol, "https")
         self.assertEqual( s.req.port, None)
@@ -1905,7 +1905,7 @@ class Tests_Reqs(unittest.TestCase):
         self.assertEqual( s.req.body, "explore")
         self.assertEqual( s.req.headers,  {'h1': 'my h1'})
 
-        s=put.test(env)
+        s=put.stest(env)
         self.assertEqual( s.req.host, "github.com")
         self.assertEqual( s.req.protocol, "https")
         self.assertEqual( s.req.port, None)
@@ -1935,10 +1935,10 @@ class Tests_Reqs(unittest.TestCase):
             pool=dict(var="val_from_pool")
         )
 
-        tr=get1.test(env)
+        tr=get1.stest(env)
         self.assertEqual( tr.req.path, "/val")
 
-        tr=get2.test(env)
+        tr=get2.stest(env)
         self.assertEqual( tr.req.path, "/val_from_pool")
 
     def test_yml_root_env_override(self):
@@ -1958,8 +1958,8 @@ class Tests_Reqs(unittest.TestCase):
 
         ex=lambda x: (x.req.protocol, x.req.host, x.req.path)
 
-        self.assertEqual( ex( l[0].test(env) ), ('https', 'github.com', '/explore') )
-        self.assertEqual( ex( l[1].test(env) ), ('https', 'github.fr', '/explore') )
+        self.assertEqual( ex( l[0].stest(env) ), ('https', 'github.com', '/explore') )
+        self.assertEqual( ex( l[1].stest(env) ), ('https', 'github.fr', '/explore') )
 
     def test_yml_http_error(self):  # bas status line / server down / timeout
 
@@ -1974,7 +1974,7 @@ class Tests_Reqs(unittest.TestCase):
             root="https://github.com:443/",
             tests=[dict(server="mock")],
         )
-        s=get.test(env)
+        s=get.stest(env)
         self.assertEqual( s.req.host, "github.com")
         self.assertTrue( isinstance(s.res, reqman.ResponseError) )
 
@@ -1986,8 +1986,8 @@ class Tests_Reqs(unittest.TestCase):
             root="https://github.com:443/",
             tests=[dict(server="mock")],
         )
-        get.test(env)
-        self.assertEqual( socket.getdefaulttimeout(), None )
+        get.stest(env)
+        # self.assertEqual( socket.getdefaulttimeout(), None )
 
 
     def test_yml_http_timeout_set(self):
@@ -1997,16 +1997,16 @@ class Tests_Reqs(unittest.TestCase):
             timeout="200",
             tests=[dict(server="mock")],
         )
-        get.test(env)
-        self.assertEqual( socket.getdefaulttimeout(), 0.2 )
+        get.stest(env)
+        # self.assertEqual( socket.getdefaulttimeout(), 0.2 )
 
         # and ... timeout is resetted to default
         env=dict(
             root="https://github.com:443/",
             tests=[dict(server="mock")],
         )
-        get.test(env)
-        self.assertEqual( socket.getdefaulttimeout(), None )
+        get.stest(env)
+        # self.assertEqual( socket.getdefaulttimeout(), None )
 
 
     def test_yml_http_timeout_set_default(self):
@@ -2016,7 +2016,7 @@ class Tests_Reqs(unittest.TestCase):
             timeout=None,
             tests=[dict(server="mock")],
         )
-        get.test(env)
+        get.stest(env)
         self.assertEqual( socket.getdefaulttimeout(), None )
 
     def test_yml_http_timeout_set_bad(self):
@@ -2026,7 +2026,7 @@ class Tests_Reqs(unittest.TestCase):
             timeout="DHSJHDHSSFSDFFD",
             tests=[dict(server="mock")],
         )
-        get.test(env)
+        get.stest(env)
         self.assertEqual( socket.getdefaulttimeout(), None )
 
 
@@ -2052,7 +2052,7 @@ class Tests_Reqs(unittest.TestCase):
             tests=[dict(server="mock")],
         )
 
-        s=get.test(env)
+        s=get.stest(env)
         self.assertEqual( s.req.host, "github.com")
         self.assertEqual( s.req.protocol, "https")
         self.assertEqual( s.req.port, 443)
@@ -2079,7 +2079,7 @@ class Tests_Reqs(unittest.TestCase):
         f=StringIO(y)
         l=reqman.Reqs(f)
 
-        s=l[0].test( dict(root="https://github.com:443/"))
+        s=l[0].stest( dict(root="https://github.com:443/"))
         self.assertTrue( all(s) )
 
     def test_yml_tests_list(self):
@@ -2100,7 +2100,7 @@ class Tests_Reqs(unittest.TestCase):
         f=StringIO(y)
         l=reqman.Reqs(f)
 
-        s=l[0].test( dict(root="https://github.com:443/"))
+        s=l[0].stest( dict(root="https://github.com:443/"))
         self.assertTrue( all(s) )
 
     def test_yml_tests_list_substitutes(self):
@@ -2121,7 +2121,7 @@ class Tests_Reqs(unittest.TestCase):
         self.assertTrue( {'content': '<<p1>>'} in l[0].tests )
         self.assertTrue( {'content-type': ['<<p1>>', '{{p2}}']} in l[0].tests, )
 
-        t=l[0].test( dict(root="https://github.com:443/"))
+        t=l[0].stest( dict(root="https://github.com:443/"))
         self.assertTrue( all(s) ) # ensure all tests are substitued (and match results)
 
 
@@ -2134,7 +2134,7 @@ class Tests_Req(unittest.TestCase):
 
     def test_noenv(self):
         r=reqman.Req("get","https://github.com/")
-        s=r.test()
+        s=r.stest()
         self.assertEqual(s.res.status, 200)
         self.assertTrue(s.res.time != None)
 
@@ -2142,14 +2142,14 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="https://github.com/")
 
         r=reqman.Req("Get","/")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.res.status, 200)
 
     def test_simplest_env_with_root_as_url(self):
         env=dict(root="https://github.com/path1")
         r=reqman.Req("Get","/path2")
         self.assertEqual(r.path, "/path2")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.req.host, "github.com")
         self.assertEqual(s.req.path, "/path1/path2")
         self.assertEqual(s.req.url, "https://github.com/path1/path2")
@@ -2159,7 +2159,7 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="https://github.com/path1/")
         r=reqman.Req("Get","/path2")
         self.assertEqual(r.path, "/path2")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.req.host, "github.com")
         self.assertEqual(s.req.path, "/path1/path2")
         self.assertEqual(s.req.url, "https://github.com/path1/path2")
@@ -2169,7 +2169,7 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="https://github.com/path1/")
         r=reqman.Req("Get","path2")
         self.assertEqual(r.path, "path2")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.req.host, "github.com")
         self.assertEqual(s.req.path, "/path1/path2")
         self.assertEqual(s.req.url, "https://github.com/path1/path2")
@@ -2180,7 +2180,7 @@ class Tests_Req(unittest.TestCase):
 
         r=reqman.Req("Get","path2")
         self.assertEqual(r.path, "path2")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.req.host, "github.com")
         self.assertEqual(s.req.path, "/path1path2")
         self.assertEqual(s.req.url, "https://github.com/path1path2")
@@ -2192,7 +2192,7 @@ class Tests_Req(unittest.TestCase):
 
         r=reqman.Req("Get","/toto tata")
         self.assertEqual(r.path, "/toto tata")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.req.path, "/toto tata")  #the real call is "/toto%20tata"
         self.assertEqual(s.res.status, 200)
 
@@ -2202,7 +2202,7 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="https://github.com/")
 
         r=reqman.Req("Get","{{root}}/") # {{root}} it not needed, it's implicit ... but u can, if u want ;-)
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.res.status, 200)
 
 
@@ -2210,14 +2210,14 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="http://github.com/")
 
         r=reqman.Req("GeT","/")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.res.status, 200)
 
     def test_env_headers_inheritance(self):
         env=dict(root="https://github.com/",headers=dict(h1="my h1"))
 
         r=reqman.Req("GET","/",headers=dict(h2="my h2"))
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual("h1" in s.req.headers, True)
         self.assertEqual("h2" in s.req.headers, True)
 
@@ -2225,7 +2225,7 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="https://github.com/",headers=dict(h1="my h1",h2="my h2"))
 
         r=reqman.Req("GET","/",headers=dict(h1=None))   # remove h1
-        s=r.test(env)
+        s=r.stest(env)
         self.assertFalse("h1" in s.req.headers)
         self.assertTrue("h2" in s.req.headers)
 
@@ -2239,7 +2239,7 @@ class Tests_Req(unittest.TestCase):
                     dict(content="content"),
                     dict(server="mock")
         ])
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.res.status, 200)
         self.assertEqual( len(s), 3)
         self.assertTrue( all(s) )
@@ -2252,7 +2252,7 @@ class Tests_Req(unittest.TestCase):
                     dict(content="content"),
                     dict(server="{{myserver}}")
         ])
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.res.status, 200)
         self.assertEqual( len(s), 3)
         self.assertTrue( all(s) )
@@ -2261,7 +2261,7 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="https://github.com/",a_var="explore")
 
         r=reqman.Req("GET","/{{a_var}}")
-        s=r.test(env)
+        s=r.stest(env)
         self.assertEqual(s.res.status, 200)
         self.assertEqual("content" in s.res.content, True)
 
@@ -2271,7 +2271,7 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="https://github.com/")
 
         r=reqman.Req("Get","/test_cookie")  # --> return a cookie header
-        s=asyncio.run( r.test(env) )
+        s=r.stest(env) 
         self.assertEqual(s.res.headers["Set-Cookie"], "mycookie=myval")
 
         c=list(reqman.COOKIEJAR)[0]
@@ -2279,7 +2279,7 @@ class Tests_Req(unittest.TestCase):
         self.assertEqual( c.value, "myval" )
 
         r=reqman.Req("Get","/")
-        s=asyncio.run( r.test(env) )
+        s=r.stest(env)
         self.assertEqual(s.req.headers["Cookie"], "mycookie=myval") # assert that the cookie persist when sending
 
 
@@ -2287,7 +2287,7 @@ class Tests_Req(unittest.TestCase):
         env=dict(root="https://github.com/")
 
         r=reqman.Req("Get","/test_binary")  # --> return binary
-        s=r.test(env)
+        s=r.stest(env)
         self.assertTrue( "*** BINARY" in s.res.content)
 
 
@@ -2300,7 +2300,7 @@ class Tests_Req(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        s=l[0].test(env)
+        s=l[0].stest(env)
         self.assertEqual( s.req.path, "/0.7823" )
 
     def test_var_int(self):
@@ -2312,7 +2312,7 @@ class Tests_Req(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        s=l[0].test(env)
+        s=l[0].stest(env)
         self.assertEqual( s.req.path, "/42" )
 
     def test_var_true(self):
@@ -2324,7 +2324,7 @@ class Tests_Req(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        s=l[0].test(env)
+        s=l[0].stest(env)
         self.assertEqual( s.req.path, "/true" )
 
     def test_var_false(self):
@@ -2336,7 +2336,7 @@ class Tests_Req(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        s=l[0].test(env)
+        s=l[0].stest(env)
         self.assertEqual( s.req.path, "/false" )
 
     def test_var_None(self):
@@ -2348,7 +2348,7 @@ class Tests_Req(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        s=l[0].test(env)
+        s=l[0].stest(env)
         self.assertEqual( s.req.path, "/null" )
 
     def test_var_list(self):
@@ -2362,7 +2362,7 @@ class Tests_Req(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        s=l[0].test(env)
+        s=l[0].stest(env)
         self.assertEqual( s.req.path, "/[13, 42]" )
 
     def test_var_dict(self):
@@ -2376,7 +2376,7 @@ class Tests_Req(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        s=l[0].test(env)
+        s=l[0].stest(env)
         self.assertEqual( s.req.path, '/{"a": 42, "b": 13}' )
 
     def test_var_complex_transform_in_call(self):
@@ -2398,7 +2398,7 @@ class Tests_Req(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        s=l[0].test(env)
+        s=l[0].stest(env)
         self.assertEqual( s.req.path, '/a/b' )
 
     def test_var_complex_transform_in_call2(self): # a real case I met ;-)
@@ -2420,7 +2420,7 @@ class Tests_Req(unittest.TestCase):
         l=reqman.Reqs(f)
 
         env={}
-        s=l[0].test(env)
+        s=l[0].stest(env)
         self.assertEqual( s.req.path, '/a/b' )
 
 
