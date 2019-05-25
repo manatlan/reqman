@@ -189,7 +189,7 @@ class CookieStore(http.cookiejar.CookieJar):
                 self._headers = m
                 self._url = url
 
-            def info(self) :
+            def info(self):
                 return self._headers
 
         response = FakeResponse([": ".join([k, v]) for k, v in headers], url)
@@ -328,7 +328,7 @@ class Test(int):
     """ a boolean with a name """
 
     def __new__(cls, value: int, nameOK: str, nameKO: str):
-        s = super(Test, cls).__new__(cls,value)
+        s = super(Test, cls).__new__(cls, value)
         if value:
             s.name = nameOK
         else:
@@ -569,7 +569,7 @@ def transform(
 transform.path = None  # change cd cwd for transform methods when executed
 
 
-def objReplace(env, txt:str) -> T.Any:  # same as txtReplace() but for "object" (json'able)
+def objReplace(env: dict, txt: str) -> T.Any:  # same as txtReplace() but for "object" (json'able)
     obj = txtReplace(env, txt)
     try:
         obj = json.loads(obj)
@@ -578,7 +578,7 @@ def objReplace(env, txt:str) -> T.Any:  # same as txtReplace() but for "object" 
     return obj
 
 
-def txtReplace(env, txt) -> T.Any:
+def txtReplace(env: dict, txt) -> T.Any:
     if env and txt and isinstance(txt, str):
         for vvar in re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt):
             var = vvar[2:-2]
