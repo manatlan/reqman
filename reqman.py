@@ -37,7 +37,7 @@ import http.client
 import urllib.request
 import urllib.parse
 import traceback
-from typing import Union, List, Type, Tuple
+from typing import Union, List, Type, Tuple, IO, Iterator, Any
 
 
 class NotFound:
@@ -65,7 +65,7 @@ try:  # colorama is optionnal
 
     init()
 
-    def colorize(color: int, t: str):
+    def colorize(color: int, t: str) -> Union[str,None]:
         return color + Style.BRIGHT + t + Fore.RESET + Style.RESET_ALL if t else None
 
     cy = lambda t: colorize(Fore.YELLOW, t)
@@ -94,7 +94,7 @@ def chardet(s: str) -> str:
         return "cp1252"
 
 
-def yamlLoad(fd):  # fd is an io thing
+def yamlLoad(fd) -> dict:  # fd is an io thing
     b = fd.read()
     if type(b) == bytes:
         try:
@@ -173,7 +173,7 @@ class CookieStore(http.cookiejar.CookieJar):
             headers = list(headers.items())
 
         class FakeResponse(http.client.HTTPResponse):
-            def __init__(self, headers=[], url=None):
+            def __init__(self, headers=[], url=None)->None:
                 """
                 headers: list of RFC822-style 'Key: value' strings
                 """
@@ -181,7 +181,7 @@ class CookieStore(http.cookiejar.CookieJar):
                 self._headers = m
                 self._url = url
 
-            def info(self):
+            def info(self)->dict:
                 return self._headers
 
         response = FakeResponse([": ".join([k, v]) for k, v in headers], url)
@@ -207,7 +207,7 @@ class Request:
         path: str,
         body=None,
         headers: dict = {},
-    ):
+    ) -> None:
         self.protocol = protocol
         self.host = host
         self.port = port
@@ -224,18 +224,18 @@ class Request:
 
         self.headers.update(headers)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return cy(self.method) + " " + self.path
 
 
 class Content:
-    def __init__(self, content):
+    def __init__(self, content) -> None:
         self.__b = content if type(content) == bytes else bytes(str(content), "utf8")
 
-    def toBinary(self):
+    def toBinary(self) -> bytes:
         return self.__b
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         try:
             return str(self.__b, "utf8")  # try as utf8 ...
         except UnicodeDecodeError:
@@ -245,7 +245,7 @@ class Content:
                 # fallback to a *** binary representation ***
                 return "*** BINARY SIZE(%s) ***" % len(self.__b)
 
-    def __contains__(self, key: str):
+    def __contains__(self, key: str) -> bool:
         return key in str(self)
 
 
@@ -254,7 +254,7 @@ class BaseResponse:
 
 
 class Response(BaseResponse):
-    def __init__(self, status, body, headers, url, info=None):
+    def __init__(self, status, body, headers, url, info=None) -> None:
         self.status = int(status)
         self.content = Content(body)
         self.headers = dict(headers)  # /!\ cast list of 2-tuple to dict ;-(
@@ -262,18 +262,18 @@ class Response(BaseResponse):
         self.info = info
         COOKIEJAR.saveCookie(headers, url)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.status)
 
 
 class ResponseError(BaseResponse):
-    def __init__(self, m):
+    def __init__(self, m) -> None:
         self.status = None
         self.content = m
         self.headers = {}
         self.info = ""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "ERROR: %s" % (self.content)
 
 
@@ -384,7 +384,7 @@ def strjs(x) -> str:
 
 
 class TestResult(list):
-    def __init__(self, req, res, tests, doc=None):
+    def __init__(self, req, res, tests, doc=None) -> None:
         self.req = req
         self.res = res
         self.doc = doc
@@ -469,7 +469,7 @@ class TestResult(list):
 
         list.__init__(self, results)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         ll = [""]
         ll.append(
             cy("*")
@@ -481,7 +481,7 @@ class TestResult(list):
         return "\n".join(ll)
 
 
-def getVar(env: dict, var: str):
+def getVar(env: dict, var: str) -> Any:
     if var in env:
         return txtReplace(env, env[var])
     elif "|" in var:
@@ -507,11 +507,11 @@ def getVar(env: dict, var: str):
         )
 
 
-def DYNAMIC(x, env: dict):
+def DYNAMIC(x, env: dict) -> Union[str,None]:
     pass  # will be overriden (see below vv)
 
 
-def transform(content, env: dict, methodName: str):
+def transform(content: str, env: dict, methodName: str) -> str:
     if methodName:
         if methodName in env:
             code = getVar(env, methodName)
@@ -810,14 +810,14 @@ class Req(object):
         return "<%s %s>" % (self.method, self.path)
 
 
-def controle(keys: list, knowkeys: list):
+def controle(keys: list, knowkeys: list) -> None:
     for key in keys:
         if key not in knowkeys:
             raise RMException("Not a valid entry '%s'" % key)
 
 
 class Reqs(list):
-    def __init__(self, fd, env=None):
+    def __init__(self, fd: IO, env: dict=None) -> None:
         self.env = env or {}  # just for proc finding
         self.name = fd.name.replace("\\", "/") if hasattr(fd, "name") else "String"
         self.trs = []
@@ -979,7 +979,7 @@ class Reqs(list):
 ###########################################################################
 ## Helpers
 ###########################################################################
-def listFiles(path: str, filters=(".yml", ".rml")):
+def listFiles(path: str, filters=(".yml", ".rml")) -> Iterator[str]:
     for folder, subs, files in os.walk(path):
         if folder in [".", ".."] or (
             not os.path.basename(folder).startswith((".", "_"))
@@ -1223,7 +1223,7 @@ headers:
 
 
 class MainResponse:
-    def __init__(self, rc, html=None, env={}, reqs=[], total=None, ok=None):
+    def __init__(self, rc, html=None, env={}, reqs=[], total=None, ok=None) -> None:
         self.code = rc
         self.html = html
         self.env = env
@@ -1241,7 +1241,7 @@ class OutputPrint(Enum):
     ONLYKO = 2
 
 
-async def testContent(content: str, env: dict = {}):
+async def testContent(content: str, env: dict = {}) -> MainResponse:
     """ test a yml 'content' against env (easy wrapper for main call )"""
     reqs = [Reqs(io.StringIO(content), env)]
     return await main(reqs, env)
@@ -1387,7 +1387,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         return -1
 
 
-def run():  # console_scripts for setup.py/commandLine
+def run() -> int:  # console_scripts for setup.py/commandLine
     return asyncio.run(commandLine(sys.argv[1:]))
 
 
