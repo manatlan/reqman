@@ -17,27 +17,34 @@
 
 __version__ = "1.2.0.1 HC"
 
-import yaml  # see "pip install pyyaml"
-import os
-import json
-import copy
-import sys
-import glob
-import itertools
-import html
-import socket
-import re
+import asyncio
 import collections
-import io
+import copy
 import datetime
 import email
-import xml.dom.minidom
-import http.cookiejar
+import glob
+import html
 import http.client
-import urllib.request
-import urllib.parse
+import http.cookiejar
+import io
+import itertools
+import json
+import os
+import re
+import socket
+import sys
 import traceback
-from typing import Union, List, Type, Tuple, IO, Iterator, Any
+import urllib.parse
+import urllib.request
+import xml.dom.minidom
+from enum import Enum
+import typing as T
+
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+import httpcore
+import yaml  # see "pip install pyyaml"
 
 
 class NotFound:
@@ -65,7 +72,7 @@ try:  # colorama is optionnal
 
     init()
 
-    def colorize(color: int, t: str) -> Union[str,None]:
+    def colorize(color: int, t: str) -> T.Union[str, None]:
         return color + Style.BRIGHT + t + Fore.RESET + Style.RESET_ALL if t else None
 
     cy = lambda t: colorize(Fore.YELLOW, t)
@@ -141,7 +148,8 @@ def prettify(txt: str, indentation: int = 4) -> str:
         except:
             return txt
 
-def jpath(elem, path: str) -> Union[int,Type[NotFound],str]:
+
+def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
     for i in path.strip(".").split("."):
         try:
             if type(elem) == list:
@@ -173,7 +181,7 @@ class CookieStore(http.cookiejar.CookieJar):
             headers = list(headers.items())
 
         class FakeResponse(http.client.HTTPResponse):
-            def __init__(self, headers=[], url=None)->None:
+            def __init__(self, headers=[], url=None) -> None:
                 """
                 headers: list of RFC822-style 'Key: value' strings
                 """
@@ -276,11 +284,6 @@ class ResponseError(BaseResponse):
     def __repr__(self) -> str:
         return "ERROR: %s" % (self.content)
 
-
-###############################################################################################################
-###############################################################################################################
-###############################################################################################################
-import httpcore, asyncio
 
 XXX = httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None, verify=False))
 # XXX=httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None,verify=False),cookies=COOKIEJAR)
@@ -432,7 +435,7 @@ class TestResult(list):
             else:
                 # ensure that we've got a list
                 values = [value] if type(value) != list else value
-                opOK, opKO=None, None
+                opOK, opKO = None, None
                 bool = False
                 for value in values:  # match any
                     if testContains:
@@ -481,7 +484,7 @@ class TestResult(list):
         return "\n".join(ll)
 
 
-def getVar(env: dict, var: str) -> Any:
+def getVar(env: dict, var: str) -> T.Any:
     if var in env:
         return txtReplace(env, env[var])
     elif "|" in var:
@@ -507,11 +510,13 @@ def getVar(env: dict, var: str) -> Any:
         )
 
 
-def DYNAMIC(x, env: dict) -> Union[str,None]:
+def DYNAMIC(x, env: dict) -> T.Union[str, None]:
     pass  # will be overriden (see below vv)
 
 
-def transform(content: Union[str,None], env: dict, methodName: str) -> Union[str,None]:
+def transform(
+    content: T.Union[str, None], env: dict, methodName: str
+) -> T.Union[str, None]:
     if methodName:
         if methodName in env:
             code = getVar(env, methodName)
@@ -529,15 +534,15 @@ def transform(content: Union[str,None], env: dict, methodName: str) -> Union[str
                 if content is not None:
                     x = json.loads(content)
                 else:
-                    x=None
+                    x = None
             except (json.decoder.JSONDecodeError, TypeError):
                 x = content
             try:
                 if transform.path:
                     curdir = os.getcwd()
                     os.chdir(transform.path)
-                else: 
-                    curdir=None
+                else:
+                    curdir = None
                 content = DYNAMIC(x, env)
             except Exception as e:
                 raise RMException(
@@ -820,7 +825,7 @@ def controle(keys: list, knowkeys: list) -> None:
 
 
 class Reqs(list):
-    def __init__(self, fd: IO, env: dict=None) -> None:
+    def __init__(self, fd: T.IO, env: dict = None) -> None:
         self.env = env or {}  # just for proc finding
         self.name = fd.name.replace("\\", "/") if hasattr(fd, "name") else "String"
         self.trs = []
@@ -982,7 +987,7 @@ class Reqs(list):
 ###########################################################################
 ## Helpers
 ###########################################################################
-def listFiles(path: str, filters=(".yml", ".rml")) -> Iterator[str]:
+def listFiles(path: str, filters=(".yml", ".rml")) -> T.Iterator[str]:
     for folder, subs, files in os.walk(path):
         if folder in [".", ".."] or (
             not os.path.basename(folder).startswith((".", "_"))
@@ -992,7 +997,7 @@ def listFiles(path: str, filters=(".yml", ".rml")) -> Iterator[str]:
                     yield os.path.join(folder, filename)
 
 
-def loadEnv(fd, varenvs: List[str] = []) -> dict:
+def loadEnv(fd, varenvs: T.List[str] = []) -> dict:
     transform.path = None
     if fd:
         if not hasattr(fd, "name"):
@@ -1017,7 +1022,7 @@ def loadEnv(fd, varenvs: List[str] = []) -> dict:
     return env
 
 
-def render(reqs: List[Reqs], switchs: List[str]) -> Tuple[int, int, str]:
+def render(reqs: T.List[Reqs], switchs: T.List[str]) -> T.Tuple[int, int, str]:
     h = """
 <meta charset="utf-8">
 <style>
@@ -1130,10 +1135,10 @@ p {margin:0px;padding:0px;color:#AAA;font-style: italic;}
     return ok, total, h
 
 
-def findRCUp(fromHere: str) -> Union[None, str]:
+def findRCUp(fromHere: str) -> T.Union[None, str]:
     """Find the rc in upwards folders"""
     current = os.path.realpath(fromHere)
-    rc=None
+    rc = None
     while 1:
         rc = os.path.join(current, REQMAN_CONF)
         if os.path.isfile(rc):
@@ -1147,7 +1152,7 @@ def findRCUp(fromHere: str) -> Union[None, str]:
     return rc
 
 
-def resolver(params: List) -> Tuple[Union[str, None], List[str]]:
+def resolver(params: T.List) -> T.Tuple[T.Union[str, None], T.List[str]]:
     """ return tuple (reqman.conf,ymls) finded with params """
     ymls, paths = [], []
 
@@ -1180,7 +1185,7 @@ def resolver(params: List) -> Tuple[Union[str, None], List[str]]:
     return rc, ymls
 
 
-def makeReqs(reqs: List[Reqs], env: dict) -> List[Reqs]:
+def makeReqs(reqs: T.List[Reqs], env: dict) -> T.List[Reqs]:
     if reqs:
         if env and ("BEGIN" in env):
             r = io.StringIO("call: BEGIN")
@@ -1195,17 +1200,20 @@ def makeReqs(reqs: List[Reqs], env: dict) -> List[Reqs]:
     return reqs
 
 
-def create(url: str) -> Tuple[ Union[None,str], str]:
+def create(url: str) -> T.Tuple[T.Union[None, str], str]:
     """ return a (reqman.conf, yml_file) based on the test 'url' """
     hp = urllib.parse.urlparse(url)
     if hp and hp.scheme and hp.hostname:
         root = mkUrl(hp.scheme, hp.hostname, hp.port)
-        rc ="""
+        rc = (
+            """
 root: %(root)s
 headers:
     User-Agent: reqman (https://github.com/manatlan/reqman)
-"""% locals()
-        
+"""
+            % locals()
+        )
+
     else:
         root = ""
         rc = None
@@ -1222,7 +1230,7 @@ headers:
 """
         % locals()
     )
-    return ( rc, yml )
+    return (rc, yml)
 
 
 class MainResponse:
@@ -1233,9 +1241,6 @@ class MainResponse:
         self.reqs = reqs
         self.total = total
         self.ok = ok
-
-
-from enum import Enum
 
 
 class OutputPrint(Enum):
@@ -1272,12 +1277,14 @@ async def main(
     ok, total, html = render(reqs, switchsForHtml)
 
     if outputPrint != OutputPrint.NO and total:
-        print("\nRESULT: ", (cg if int(ok) == int(total) else cr)("%s/%s" % (ok, total)))
+        print(
+            "\nRESULT: ", (cg if int(ok) == int(total) else cr)("%s/%s" % (ok, total))
+        )
 
     return MainResponse(int(total) - int(ok), html, env, reqs, total, ok)
 
 
-async def commandLine(params: List = []) -> int:
+async def commandLine(params: T.List[str] = []) -> int:
     commandLine.mainReponse = None  # for tests Purpose only !
     try:
         if len(params) == 2 and params[0].lower() == "new":
