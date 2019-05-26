@@ -831,6 +831,7 @@ def controle(keys: list, knowkeys: list) -> None:
 
 
 class Reqs(list):
+    sequence="" # can be executed in parallel
     def __init__(self, fd: T.IO, env: dict = None) -> None:
         self.env = env or {}  # just for proc finding
         self.name = fd.name.replace("\\", "/") if hasattr(fd, "name") else "String"
@@ -1196,11 +1197,13 @@ def makeReqs(reqs: T.List[Reqs], env: dict) -> T.List[Reqs]:
         if env and ("BEGIN" in env):
             r = io.StringIO("call: BEGIN")
             r.name = "BEGIN (%s)" % REQMAN_CONF
+            r.sequence="BEGIN"  # should be executed sequentially
             reqs = [Reqs(r, env)] + reqs
 
         if env and ("END" in env):
             r = io.StringIO("call: END")
             r.name = "END (%s)" % REQMAN_CONF
+            r.sequence="END"  # should be executed sequentially
             reqs = reqs + [Reqs(r, env)]
 
     return reqs
@@ -1274,6 +1277,8 @@ async def main(
 ) -> MainResponse:
     reqs = makeReqs(ll, env)
 
+    atBegin=None
+    atEnd=None
     testsFile=[]
     for f in reqs:
         f.trs = []
@@ -1291,13 +1296,19 @@ async def main(
                         print(tr)
                 f.trs.append(tr)
 
-        testsFile.append( proc(f) )
+        if f.sequence=="BEGIN":
+            atBegin = proc(f)
+        elif f.sequence=="END":
+            atEnd = proc(f)
+        else:
+            testsFile.append( proc(f) )
 
+    if atBegin: await atBegin
     if paralleliz:    
         await asyncio.gather(*testsFile)
     else:
-        for i in testsFile:
-            await i
+        [await i for i in testsFile]
+    if atEnd: await atEnd
 
     ok, total, html = render(reqs, switchsForHtml)
 
