@@ -646,6 +646,7 @@ def getHeaders(y: dict) -> dict:
                 "'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')"
             )
             headers = {list(d.keys())[0]: list(d.values())[0] for d in headers}
+        headers={k:str(v) for k,v in headers.items()}
         return headers
     else:
         return {}

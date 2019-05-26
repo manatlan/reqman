@@ -1,7 +1,8 @@
 1.3.0.0: (26/05/2019) "httpcore version"
- - use httpcode 0.3.0
+ - use Tom Christie's httpcore 0.3.0
  - option --p for parallelism files
  - reqman as a module : now a COROUTINE (reqman.testContent( yml: str, env: {}) -> MainReponse)
+ - FIX: header's values are stringified now
 1.2.0.0: (22/05/2019)
  - reqman as a module : now a simple reqman.testContent( yml: str, env: {}) -> MainReponse
 1.1.8.0: (18/05/2019) 

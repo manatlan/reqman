@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+AEFF/
 *.py[cod]
 *$py.class
 reqman.html
