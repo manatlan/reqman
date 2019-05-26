@@ -11,7 +11,7 @@ from io import StringIO
 
 #===============================================
 def runServerMockWith(server):
-    def mockHttp(q):
+    async def mockHttp(q,timeout=None):
         if q.path in server:
             mock=server[q.path]
         elif q.url in server:
@@ -34,7 +34,7 @@ def runServerMockWith(server):
 #===============================================
 
     
-
+import asyncio
 @pytest.fixture(scope="module")
 def client(request):
     files = getattr(request.module, "FILES", [])    # get files from test_.*.py file
@@ -64,9 +64,9 @@ def client(request):
         fo,fe = StringIO(),StringIO()
         with contextlib.redirect_stderr(fe):
             with contextlib.redirect_stdout(fo):
-                rc=reqman.commandLine( list(args) )
+                rc=asyncio.run( reqman.commandLine( list(args) ) )
 
-        r=reqman.commandLine.mainReponse or Ret()  
+        r=rc.details or Ret()  
         r.code=rc        
         r.console=fo.getvalue()+fe.getvalue()
         print(r.console)
