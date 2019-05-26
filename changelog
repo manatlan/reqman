@@ -1,5 +1,5 @@
-1.3.0.0: (26/05/2019) "httpcore version"
- - use Tom Christie's httpcore 0.3.0
+1.3.0.0: (26/05/2019) "httpcore version 0.3.0"
+ - use Tom Christie's httpcore 0.3.0 (for sync/async features)
  - option --p for parallelism files
  - reqman as a module : now a COROUTINE (reqman.testContent( yml: str, env: {}) -> MainReponse)
  - FIX: header's values are stringified now

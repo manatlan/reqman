@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.3.0.0" # httpcore version
+__version__ = "1.3.0.0" # with httpcore version 0.3.0
 
 import asyncio
 import collections
@@ -286,13 +286,13 @@ class ResponseError(BaseResponse):
         return "ERROR: %s" % (self.content)
 
 
-XXX = httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None, verify=False))
+AHTTP = httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None, verify=False))
 # XXX=httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None,verify=False),cookies=COOKIEJAR)
 
 
 async def dohttp(r: Request, timeout=None) -> BaseResponse:
     try:
-        rr = await XXX.request(
+        rr = await AHTTP.request(
             r.method,
             r.url,
             data=b"" if r.body == None else r.body.encode(),
