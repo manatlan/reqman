@@ -4,6 +4,8 @@ Reqman is the postman killer ;-)
 Create your http(s)-tests in simple yaml files, and run them with command line, against various environments.
 **reqman** is a python3 simple file (need [PyYAML](https://pypi.org/project/PyYAML/) dependency). The [changelog](https://github.com/manatlan/reqman/blob/master/changelog) !
 
+**reqman** can be used as a python's module, or a commandLine.
+
 **Features**
    * Light (simple py3 file, 900 lines of code, and x3 lines for unittests, in TDD mind)
    * Powerful (at least as postman free version)
@@ -23,6 +25,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * variables can be computed/transformed (in a chain way)
    * tests files extension : .yml or .rml (ReqManLanguage)
    * generate conf/rml (with 'new' command)
+   * can paralleliz tests (option `--p`)
    * versionning
 
 **and soon**
