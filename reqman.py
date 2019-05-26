@@ -34,17 +34,18 @@ import re
 import socket
 import sys
 import traceback
+import typing as T
 import urllib.parse
 import urllib.request
 import xml.dom.minidom
 from enum import Enum
-import typing as T
+
+import httpcore
+import yaml  # see "pip install pyyaml"
 
 ###############################################################################################################
 ###############################################################################################################
 ###############################################################################################################
-import httpcore
-import yaml  # see "pip install pyyaml"
 
 
 class NotFound:
@@ -1265,27 +1266,38 @@ class OutputPrint(Enum):
 async def testContent(content: str, env: dict = {}) -> MainResponse:
     """ test a yml 'content' against env (easy wrapper for main call )"""
     reqs = [Reqs(io.StringIO(content), env)]
-    return await main(reqs, env)
+    return await main(reqs, env, paralleliz=False)
 
 
 async def main(
-    ll, env: dict = {}, outputPrint: OutputPrint = OutputPrint.NO, switchsForHtml=[]
+    ll, env: dict = {}, outputPrint: OutputPrint = OutputPrint.NO, switchsForHtml=[], paralleliz: bool = False
 ) -> MainResponse:
     reqs = makeReqs(ll, env)
 
+    testsFile=[]
     for f in reqs:
         f.trs = []
-        if outputPrint != OutputPrint.NO:
-            print("\nTESTS:", cb(f.name))
-        for t in f:
-            tr = await t.test(env)  # TODO: colorful output !
+        
+        async def proc(f):
             if outputPrint != OutputPrint.NO:
-                if outputPrint == OutputPrint.ONLYKO:
-                    if not all(tr):
+                print("\nTESTS:", cb(f.name))
+            for t in f:
+                tr = await t.test(env)  # TODO: colorful output !
+                if outputPrint != OutputPrint.NO:
+                    if outputPrint == OutputPrint.ONLYKO:
+                        if not all(tr):
+                            print(tr)
+                    else:
                         print(tr)
-                else:
-                    print(tr)
-            f.trs.append(tr)
+                f.trs.append(tr)
+
+        testsFile.append( proc(f) )
+
+    if paralleliz:    
+        await asyncio.gather(*testsFile)
+    else:
+        for i in testsFile:
+            await i
 
     ok, total, html = render(reqs, switchsForHtml)
 
@@ -1339,6 +1351,13 @@ async def commandLine(params: T.List[str] = []) -> RC:
             else:
                 onlyFailedTests = False
 
+            if "-p" in switchs:
+                switchs.remove("-p")
+                paralleliz = True
+                onlyFailedTests = True
+            else:
+                paralleliz = False
+
             rc, ymls = resolver(params)
 
             # load env !
@@ -1358,6 +1377,7 @@ async def commandLine(params: T.List[str] = []) -> RC:
                     env,
                     OutputPrint.ONLYKO if onlyFailedTests else OutputPrint.YES,
                     switchs,
+                    paralleliz
                 )
                 if m.code >= 0 and m.html:
                     with open("reqman.html", "w+", encoding="utf_8") as fid:
@@ -1376,6 +1396,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 [option]
         --ko : limit standard output to failed tests (ko) only
+        --p  : paralleliz file tests (display only ko tests)
     """
                     % __version__
                 )
