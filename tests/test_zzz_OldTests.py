@@ -1567,7 +1567,7 @@ class Tests_env_save(unittest.TestCase):
 
         env={}
         l[0].stest(env)
-
+        del env["_cookies"]
         self.assertEqual( env, {'newVar': 'the content'} )
 
     def test_create_json_var(self):
@@ -1579,7 +1579,7 @@ class Tests_env_save(unittest.TestCase):
 
         env={}
         l[0].stest(env)
-
+        del env["_cookies"]
         self.assertEqual( env, {'newVar': {"mylist": ["aaa", 42, {"name": "john"}], "mydict": {"name": "jack"}} } )
 
     def test_override_var(self):
@@ -1592,6 +1592,7 @@ class Tests_env_save(unittest.TestCase):
         env={"newVar":"old value"}
         self.assertEqual( env, {'newVar': 'old value'} )
         l[0].stest(env)
+        del env["_cookies"]
         self.assertEqual( env, {'newVar': 'the content'} )
 
     def test_reuse_var_created(self):
@@ -1607,9 +1608,11 @@ class Tests_env_save(unittest.TestCase):
 
         env={}
         l[0].stest(env)
+        del env["_cookies"]
         self.assertEqual( env, {'var': 'the content'} )
 
         s=l[1].stest(env)
+        del env["_cookies"]
         self.assertEqual( s.req.headers["Authorizattion"], "Bearer the content" )
 
 
@@ -1627,6 +1630,7 @@ class Tests_env_save(unittest.TestCase):
 
         env={}
         l[0].stest(env)
+        del env["_cookies"]
         self.assertEqual( env, {'jo': 'the content'} )
 
 
@@ -2266,7 +2270,6 @@ class Tests_Req(unittest.TestCase):
         self.assertEqual("content" in s.res.content, True)
 
     def test_cookie(self):
-        reqman.COOKIEJAR.clear()   # ensure no cookies
 
         env=dict(root="https://github.com/")
 
@@ -2274,9 +2277,7 @@ class Tests_Req(unittest.TestCase):
         s=r.stest(env) 
         self.assertEqual(s.res.headers["Set-Cookie"], "mycookie=myval")
 
-        c=list(reqman.COOKIEJAR)[0]
-        self.assertEqual( c.name, "mycookie" )
-        self.assertEqual( c.value, "myval" )
+        assert len(env["_cookies"])==1
 
         r=reqman.Req("Get","/")
         s=r.stest(env)
@@ -2423,7 +2424,7 @@ class Tests_Req(unittest.TestCase):
         s=l[0].stest(env)
         self.assertEqual( s.req.path, '/a/b' )
 
-
+"""
 class Tests_ReqRespCookie(unittest.TestCase):
     def test_1cookie(self):
         reqman.COOKIEJAR.clear()
@@ -2464,7 +2465,7 @@ class Tests_ReqRespCookie(unittest.TestCase):
         self.assertEqual( hr["Cookie"],"cook=2" )
 
         self.assertEqual( len(reqman.COOKIEJAR), 1)
-
+"""
 
 class Tests_CookieStore(unittest.TestCase):
 

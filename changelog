@@ -1,6 +1,8 @@
 no new reqman's release on pypi, til httpcore == 0.3.0 !!!
 (waiting for a [fix](https://github.com/encode/httpcore/issues/80) and cookie's handling)
 
+1.3.1.0 BETA: (27/05/2019)
+ - cookies are stored in env, so parallelism works as excpected (each file has his cookiejar)
 1.3.0.2 BETA: (27/05/2019)
  - fix: env are cloned when parallelizm
  - fix: req.info status_code is now a real int

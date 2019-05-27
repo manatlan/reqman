@@ -87,7 +87,6 @@ FILES=[
 - GET: http://x/mycontent/xxx-<<r.result.0.val>>-<<r.result.1.val>>-{{yolo}}
   tests:
     - status: 200
-    - content: ok
 """),
 ]
 
@@ -129,7 +128,7 @@ def test_scenar_break(client):
 
 def test_path_break(client):
     x=client("test_path_ko.yml")
-    assert x.code==3
+    assert x.code==2
     assert x.inproc.ok == 0
-    assert x.inproc.total == 3
+    assert x.inproc.total == 2
 

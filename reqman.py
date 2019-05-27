@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.3.0.2 BETA" # with httpcore version 0.3.0
+__version__ = "1.3.1.0 BETA" # with httpcore version 0.3.0
 
 import asyncio
 import collections
@@ -174,8 +174,14 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
 ###########################################################################
 ## http request/response
 ###########################################################################
+
 class CookieStore(http.cookiejar.CookieJar):
     """ Manage cookiejar for httplib-like """
+
+    def __init__(self, ll: T.List[dict]=[]) -> http.cookiejar.CookieJar:
+        http.cookiejar.CookieJar.__init__(self)
+        for c in ll:
+            self.set_cookie( http.cookiejar.Cookie(**c) )    
 
     def saveCookie(self, headers, url: str) -> None:
         if type(headers) == dict:
@@ -201,9 +207,16 @@ class CookieStore(http.cookiejar.CookieJar):
         self.add_cookie_header(r)
         return dict(r.header_items())
 
-
-COOKIEJAR = CookieStore()
-# COOKIEJAR = http.cookiejar.CookieJar()
+    def export(self) -> T.List[dict]:
+        ll=[]
+        for i in self:
+            c={}
+            for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest,rfc2109".split(","):
+                nd=n
+                if nd=="_rest": nd="rest"
+                c[nd]=getattr(i,n)
+            ll.append(c)
+        return ll
 
 
 class Request:
@@ -227,7 +240,6 @@ class Request:
 
         if self.protocol:
             self.url = mkUrl(self.protocol, self.host, self.port) + self.path
-            self.headers = COOKIEJAR.getCookieHeaderForUrl(self.url)
         else:
             self.url = None
 
@@ -269,7 +281,7 @@ class Response(BaseResponse):
         self.headers = dict(headers)  # /!\ cast list of 2-tuple to dict ;-(
         # eg: if multiple "set-cookie" -> only the last is kept
         self.info = info
-        COOKIEJAR.saveCookie(headers, url)
+        self.url=url # just to extract cookie
 
     def __repr__(self) -> str:
         return str(self.status)
@@ -281,6 +293,7 @@ class ResponseError(BaseResponse):
         self.content = m
         self.headers = {}
         self.info = ""
+        self.url=None
 
     def __repr__(self) -> str:
         return "ERROR: %s" % (self.content)
@@ -656,7 +669,6 @@ def getHeaders(y: dict) -> dict:
     else:
         return {}
 
-
 class Req(object):
     def __init__(
         self,
@@ -700,7 +712,8 @@ class Req(object):
             except RMNonPlayable as e:
                 return v
 
-        cenv = env.copy() if env else {}  # current env
+        if env is None: env={}
+        cenv = env.copy()  # current env
         cenv.update(self.params)  # override with self params
         cenv = dict(cenv)
         errPath = (
@@ -779,6 +792,7 @@ class Req(object):
                 if body == precBody:
                     break
 
+
         if errPath:
             req = Request(
                 h.scheme, h.hostname, h.port, self.method, path, body, headers
@@ -798,7 +812,19 @@ class Req(object):
                     pass
 
                 t1 = datetime.datetime.now()
+
+                # set cookies in request according env
+                cj=CookieStore( cenv.get("_cookies",[]) )
+                if req.url: req.headers.update( cj.getCookieHeaderForUrl(req.url) )
+
+                # make the request !!!!!!!!!!!!!!!!!!!!!!
                 res = await dohttp(req, timeout)
+
+                # extract cookies from response to the env
+                if res.url: cj.saveCookie(res.headers.items(), res.url)
+                env["_cookies"] = cj.export()
+
+
                 res.time = datetime.datetime.now() - t1
                 if isinstance(res, Response) and self.saves:
                     for save in self.saves:
