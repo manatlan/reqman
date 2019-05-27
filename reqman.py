@@ -210,8 +210,7 @@ class CookieStore(http.cookiejar.CookieJar):
     def export(self) -> T.List[dict]:
         ll=[]
         for i in self:
-            c={n if n!="_rest" else "rest":getattr(i,n) for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest".split(",")}
-            ll.append(c)
+            ll.append( {n if n!="_rest" else "rest":getattr(i,n) for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest".split(",")} )
         return ll
 
 
@@ -526,12 +525,12 @@ def getVar(env: dict, var: str) -> T.Any:
         val = jpath(env, var)
         if val is NotFound:
             raise RMNonPlayable(
-                "Can't resolve " + var + " in : " + ", ".join(list(env.keys()))
+                "Can't resolve '%s'" % var
             )
         return txtReplace(env, val)
     else:
         raise RMNonPlayable(
-            "Can't resolve " + var + " in : " + ", ".join(list(env.keys()))
+            "Can't resolve '%s'" % var
         )
 
 
@@ -613,7 +612,7 @@ def txtReplace(env: dict, txt) -> T.Any:
 
             if val is NotFound:
                 raise RMNonPlayable(
-                    "Can't resolve " + var + " in : " + ", ".join(list(env.keys()))
+                    "Can't resolve '%s'" % var
                 )
             else:
                 if type(val) != str:
