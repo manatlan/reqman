@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.3.0.2" # with httpcore version 0.3.0
+__version__ = "1.3.0.2 BETA" # with httpcore version 0.3.0
 
 import asyncio
 import collections
