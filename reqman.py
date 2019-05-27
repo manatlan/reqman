@@ -702,7 +702,7 @@ class Req(object):
             self.doc,
         )
 
-    def stest(self, env: dict = None) -> TestResult:
+    def stest(self, env: dict = None) -> TestResult: #for pytests only ;-)
         return asyncio.run(self.test(env))
 
     async def test(self, env: dict = None) -> TestResult:
