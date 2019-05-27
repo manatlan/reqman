@@ -25,7 +25,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * variables can be computed/transformed (in a chain way)
    * tests files extension : .yml or .rml (ReqManLanguage)
    * generate conf/rml (with 'new' command)
-   * can paralleliz tests (option `--p`)
+   * (BETA) can paralleliz tests (option `--p`)
    * versionning
 
 **and soon**
