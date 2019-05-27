@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.3.1.0 BETA" # with httpcore version 0.3.0
+__version__ = "1.3.1.1 BETA" # with httpcore version 0.3.0
 
 import asyncio
 import collections
@@ -1321,13 +1321,14 @@ async def main(
             testsFile.append( f )
 
     async def proc(f,env):
-        if outputPrint != OutputPrint.NO:
+        if outputPrint == OutputPrint.YES:
             print("\nTESTS:", cb(f.name))
         for t in f:
             tr = await t.test(env)  # TODO: colorful output !
             if outputPrint != OutputPrint.NO:
                 if outputPrint == OutputPrint.ONLYKO:
                     if not all(tr):
+                        print("\nTESTS:", cb(f.name))
                         print(tr)
                 else:
                     print(tr)
