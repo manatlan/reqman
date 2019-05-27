@@ -1416,7 +1416,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 [option]
         --ko : limit standard output to failed tests (ko) only
-        --p  : paralleliz file tests (display only ko tests)
+        --p  : (BETA) paralleliz file tests (display only ko tests)
     """
                     % __version__
                 )
