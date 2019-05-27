@@ -178,7 +178,7 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
 class CookieStore(http.cookiejar.CookieJar):
     """ Manage cookiejar for httplib-like """
 
-    def __init__(self, ll: T.List[dict]=[]) -> http.cookiejar.CookieJar:
+    def __init__(self, ll: T.List[dict]=[]) -> None:
         http.cookiejar.CookieJar.__init__(self)
         for c in ll:
             self.set_cookie( http.cookiejar.Cookie(**c) )    
@@ -210,11 +210,7 @@ class CookieStore(http.cookiejar.CookieJar):
     def export(self) -> T.List[dict]:
         ll=[]
         for i in self:
-            c={}
-            for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest,rfc2109".split(","):
-                nd=n
-                if nd=="_rest": nd="rest"
-                c[nd]=getattr(i,n)
+            c={n if n!="_rest" else "rest":getattr(i,n) for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest".split(",")}
             ll.append(c)
         return ll
 
@@ -272,6 +268,11 @@ class Content:
 
 class BaseResponse:
     time = None
+    status = None
+    content = None
+    headers = {}
+    info = None
+    url=""
 
 
 class Response(BaseResponse):
@@ -822,7 +823,7 @@ class Req(object):
 
                 # extract cookies from response to the env
                 if res.url: cj.saveCookie(res.headers.items(), res.url)
-                env["_cookies"] = cj.export()
+                env["_cookies"] = cj.export() # store in the env !
 
 
                 res.time = datetime.datetime.now() - t1
@@ -840,12 +841,10 @@ class Req(object):
                                 )
                         else:
                             if dest:
-                                try:
+                                try: # store in the env !
                                     env[dest] = json.loads(str(res.content))
-                                    cenv[dest] = json.loads(str(res.content))
                                 except json.decoder.JSONDecodeError:
                                     env[dest] = str(res.content)
-                                    cenv[dest] = str(res.content)
 
                 return TestResult(req, res, tests, self.doc)
             else:
