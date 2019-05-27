@@ -15,8 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.3.0.1" # with httpcore version 0.3.0
-#fix: request was broken for some type of body
+__version__ = "1.3.0.2" # with httpcore version 0.3.0
 
 import asyncio
 import collections
@@ -296,9 +295,7 @@ async def dohttp(r: Request, timeout=None) -> BaseResponse:
         body=r.body
         if body is None:
             body=""
-        elif type(body)==str:
-            pass
-        else:
+        elif type(body)!=str:
             body=json.dumps(body)
         rr = await AHTTP.request(
             r.method,
@@ -308,7 +305,7 @@ async def dohttp(r: Request, timeout=None) -> BaseResponse:
             allow_redirects=False,
             timeout=httpcore.TimeoutConfig(timeout),
         )
-        info = "%s %s %s" % (rr.protocol, rr.status_code, rr.reason_phrase)
+        info = "%s %s %s" % (rr.protocol, int(rr.status_code), rr.reason_phrase)
 
         return Response(rr.status_code, rr.content, dict(rr.headers), r.url, info)
     except httpcore.exceptions.ReadTimeout:
@@ -1291,33 +1288,40 @@ async def main(
     testsFile=[]
     for f in reqs:
         f.trs = []
-        
-        async def proc(f):
-            if outputPrint != OutputPrint.NO:
-                print("\nTESTS:", cb(f.name))
-            for t in f:
-                tr = await t.test(env)  # TODO: colorful output !
-                if outputPrint != OutputPrint.NO:
-                    if outputPrint == OutputPrint.ONLYKO:
-                        if not all(tr):
-                            print(tr)
-                    else:
-                        print(tr)
-                f.trs.append(tr)
 
         if f.sequence=="BEGIN":
-            atBegin = proc(f)
+            atBegin =f
         elif f.sequence=="END":
-            atEnd = proc(f)
+            atEnd = f
         else:
-            testsFile.append( proc(f) )
+            testsFile.append( f )
 
-    if atBegin: await atBegin
+    async def proc(f,env):
+        if outputPrint != OutputPrint.NO:
+            print("\nTESTS:", cb(f.name))
+        for t in f:
+            tr = await t.test(env)  # TODO: colorful output !
+            if outputPrint != OutputPrint.NO:
+                if outputPrint == OutputPrint.ONLYKO:
+                    if not all(tr):
+                        print(tr)
+                else:
+                    print(tr)
+            f.trs.append(tr)
+
+
+    if atBegin: await proc(atBegin,env)
     if paralleliz:    
-        await asyncio.gather(*testsFile)
+        ll=[]
+        for i in testsFile:
+            senv=json.loads(json.dumps(env))
+            ll.append( proc(i,senv) )
+        await asyncio.gather(*ll)
     else:
-        [await i for i in testsFile]
-    if atEnd: await atEnd
+        for i in testsFile:
+            senv=json.loads(json.dumps(env))
+            await proc(i,senv)
+    if atEnd: await proc(atEnd,env)
 
     ok, total, html = render(reqs, switchsForHtml)
 

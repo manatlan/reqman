@@ -1,3 +1,8 @@
+1.3.0.2: (27/05/2019)
+ - fix: env are cloned when parallelizm
+ - fix: req.info status_code is now a real int
+1.3.0.1: (27/05/2019)
+ - fix: request was broken for some type of body
 1.3.0.0: (26/05/2019) "httpcore version 0.3.0"
  - use Tom Christie's httpcore 0.3.0 (for sync/async features)
  - option --p for parallelism files
