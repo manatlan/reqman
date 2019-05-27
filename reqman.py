@@ -15,7 +15,8 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.3.0.0" # with httpcore version 0.3.0
+__version__ = "1.3.0.1" # with httpcore version 0.3.0
+#fix: request was broken for some type of body
 
 import asyncio
 import collections
@@ -292,10 +293,17 @@ AHTTP = httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None, verify=False))
 
 async def dohttp(r: Request, timeout=None) -> BaseResponse:
     try:
+        body=r.body
+        if body is None:
+            body=""
+        elif type(body)==str:
+            pass
+        else:
+            body=json.dumps(body)
         rr = await AHTTP.request(
             r.method,
             r.url,
-            data=b"" if r.body == None else r.body.encode(),
+            data=body.encode(),
             headers=r.headers,
             allow_redirects=False,
             timeout=httpcore.TimeoutConfig(timeout),
