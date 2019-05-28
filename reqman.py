@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.3.1.1 BETA" # with httpcore version 0.3.0
+__version__ = "1.3.2.1 BETA" # with httpcore version 0.3.0
 
 import asyncio
 import collections
@@ -1222,21 +1222,6 @@ def resolver(params: T.List) -> T.Tuple[T.Union[str, None], T.List[str]]:
     return rc, ymls
 
 
-def makeReqs(reqs: T.List[Reqs], env: dict) -> T.List[Reqs]:
-    if reqs:
-        if env and ("BEGIN" in env):
-            r = io.StringIO("call: BEGIN")
-            r.name = "BEGIN (%s)" % REQMAN_CONF
-            r.sequence="BEGIN"  # should be executed sequentially
-            reqs = [Reqs(r, env)] + reqs
-
-        if env and ("END" in env):
-            r = io.StringIO("call: END")
-            r.name = "END (%s)" % REQMAN_CONF
-            r.sequence="END"  # should be executed sequentially
-            reqs = reqs + [Reqs(r, env)]
-
-    return reqs
 
 
 def create(url: str) -> T.Tuple[T.Union[None, str], str]:
@@ -1303,23 +1288,23 @@ async def testContent(content: str, env: dict = {}) -> MainResponse:
 
 
 async def main(
-    ll, env: dict = {}, outputPrint: OutputPrint = OutputPrint.NO, switchsForHtml=[], paralleliz: bool = False
+    reqs, env: dict = {}, outputPrint: OutputPrint = OutputPrint.NO, switchsForHtml=[], paralleliz: bool = False
 ) -> MainResponse:
-    reqs = makeReqs(ll, env)
+    
 
     atBegin=None
     atEnd=None
-    testsFile=[]
-    for f in reqs:
-        f.trs = []
+    
+    if env and ("BEGIN" in env):
+        r = io.StringIO("call: BEGIN")
+        r.name = "BEGIN (%s)" % REQMAN_CONF
+        atBegin = Reqs(r, env)
 
-        if f.sequence=="BEGIN":
-            atBegin =f
-        elif f.sequence=="END":
-            atEnd = f
-        else:
-            testsFile.append( f )
-
+    if env and ("END" in env):
+        r = io.StringIO("call: END")
+        r.name = "END (%s)" % REQMAN_CONF
+        atEnd = Reqs(r, env)
+    
     async def proc(f,env):
         if outputPrint == OutputPrint.YES:
             print("\nTESTS:", cb(f.name))
@@ -1334,19 +1319,21 @@ async def main(
                     print(tr)
             f.trs.append(tr)
 
-
     if atBegin: await proc(atBegin,env)
     if paralleliz:    
         ll=[]
-        for i in testsFile:
+        for i in reqs:
             senv=json.loads(json.dumps(env))
             ll.append( proc(i,senv) )
         await asyncio.gather(*ll)
     else:
-        for i in testsFile:
+        for i in reqs:
             senv=json.loads(json.dumps(env))
             await proc(i,senv)
     if atEnd: await proc(atEnd,env)
+
+    if atBegin:reqs=[atBegin]+reqs
+    if atEnd:reqs=reqs+[atEnd]
 
     ok, total, html = render(reqs, switchsForHtml)
 
@@ -1483,14 +1470,15 @@ def run() -> int:  # console_scripts for setup.py/commandLine
 
 if __name__ == "__main__":
     sys.exit(run())
+
     # r=Request("https","www.manatlan.com",443,"GET","/")
     # x=asyncio.run( dohttp(r) )
-    from http.cookiejar import Cookie, CookieJar
+    #~ from http.cookiejar import Cookie, CookieJar
 
-    cj = CookieJar()
-    try:
-        httpcore.Client().get(
-            "https://www.manatlan.com", timeout=httpcore.TimeoutConfig(5), cookies=cj
-        )
-    except httpcore.exceptions.ReadTimeout:
-        print(2)
+    #~ cj = CookieJar()
+    #~ try:
+        #~ httpcore.Client().get(
+            #~ "https://www.manatlan.com", timeout=httpcore.TimeoutConfig(5), cookies=cj
+        #~ )
+    #~ except httpcore.exceptions.ReadTimeout:
+        #~ print(2)
