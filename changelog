@@ -1,6 +1,8 @@
 no new reqman's release on pypi, til httpcore == 0.3.0 !!!
 (waiting for a [fix](https://github.com/encode/httpcore/issues/80) and cookie's handling)
 
+1.3.2.2 BETA: (28/05/2019)
+ - better cookiestore
 1.3.2.1 BETA: (28/05/2019)
  - FIX: parallelizm with begin/end
 1.3.1.1 BETA: (27/05/2019)
