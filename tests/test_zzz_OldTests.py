@@ -2483,15 +2483,19 @@ class Tests_CookieStore(unittest.TestCase):
         for k,v in c.items():
             headers.append(tuple(v.output().split(": ",1)))
         #------------------------------------------------------
+        res=reqman.Response(200,b"",headers,"http://localhost/yo")
 
-        CJ.saveCookie(headers,'http://localhost')
+        CJ.extract(res)
+        u1=reqman.Request("http","localhost",80,"GET","/yo")
+        u2=reqman.Request("http","localhost",80,"GET","/")
+        u3=reqman.Request("http","mama.com",80,"GET","/yo")
+        # self.assertEqual( CJ.update( u1 ), {'Cookie': 'cidf=malz; cidf2=malz2'} )
+        self.assertEqual( CJ.update( u2 ) , {'Cookie': 'cidf2=malz2'} )
+        self.assertEqual( CJ.update( u3 ) , {} )
 
-        self.assertEqual( CJ.getCookieHeaderForUrl('http://localhost/yo') , {'Cookie': 'cidf=malz; cidf2=malz2'} )
-        self.assertEqual( CJ.getCookieHeaderForUrl('http://localhost/') , {'Cookie': 'cidf2=malz2'} )
-        self.assertEqual( CJ.getCookieHeaderForUrl('http://mama.com/') , {} )
-
-        CJ.saveCookie( {"set-cookie":"kkk=va"},'http://mama.com')
-        self.assertEqual( CJ.getCookieHeaderForUrl('http://mama.com/') , {'Cookie': 'kkk=va'} )
+        CJ.extract( reqman.Response(200,b"",{"set-cookie":"kkk=va"},"http://mama.com") )
+        u=reqman.Request("http","mama.com",80,"GET","/")
+        self.assertEqual( CJ.update(u) , {'Cookie': 'kkk=va'} )
 
 class Tests_transform(unittest.TestCase):
 

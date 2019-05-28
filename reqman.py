@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.3.2.1 BETA" # with httpcore version 0.3.0
+__version__ = "1.3.2.2 BETA" # with httpcore version 0.3.0
 
 import asyncio
 import collections
@@ -175,45 +175,6 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
 ## http request/response
 ###########################################################################
 
-class CookieStore(http.cookiejar.CookieJar):
-    """ Manage cookiejar for httplib-like """
-
-    def __init__(self, ll: T.List[dict]=[]) -> None:
-        http.cookiejar.CookieJar.__init__(self)
-        for c in ll:
-            self.set_cookie( http.cookiejar.Cookie(**c) )    
-
-    def saveCookie(self, headers, url: str) -> None:
-        if type(headers) == dict:
-            headers = list(headers.items())
-
-        class FakeResponse(http.client.HTTPResponse):
-            def __init__(self, headers=[], url=None) -> None:
-                """
-                headers: list of RFC822-style 'Key: value' strings
-                """
-                m = email.message_from_string("\n".join(headers))
-                self._headers = m
-                self._url = url
-
-            def info(self):
-                return self._headers
-
-        response = FakeResponse([": ".join([k, v]) for k, v in headers], url)
-        self.extract_cookies(response, urllib.request.Request(url))
-
-    def getCookieHeaderForUrl(self, url: str) -> dict:
-        r = urllib.request.Request(url)
-        self.add_cookie_header(r)
-        return dict(r.header_items())
-
-    def export(self) -> T.List[dict]:
-        ll=[]
-        for i in self:
-            ll.append( {n if n!="_rest" else "rest":getattr(i,n) for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest".split(",")} )
-        return ll
-
-
 class Request:
     def __init__(
         self,
@@ -297,6 +258,47 @@ class ResponseError(BaseResponse):
 
     def __repr__(self) -> str:
         return "ERROR: %s" % (self.content)
+
+class CookieStore(http.cookiejar.CookieJar):
+    """ Manage cookiejar for httplib-like """
+
+    def __init__(self, ll: T.List[dict]=[]) -> None:
+        http.cookiejar.CookieJar.__init__(self)
+        for c in ll:
+            self.set_cookie( http.cookiejar.Cookie(**c) )    
+
+    def update(self, req: Request) -> dict:
+        """return appended headers"""
+        if req.url:
+            r = urllib.request.Request(req.url)
+            self.add_cookie_header(r)
+            req.headers.update( dict(r.header_items()) )
+            return dict(r.header_items())
+
+    def extract(self, res: BaseResponse) -> None:
+        if res.url:
+            headers=res.headers.items()
+
+            class FakeResponse(http.client.HTTPResponse):
+                def __init__(self, headers=[], url=None) -> None:
+                    """
+                    headers: list of RFC822-style 'Key: value' strings
+                    """
+                    m = email.message_from_string("\n".join(headers))
+                    self._headers = m
+                    self._url = url
+
+                def info(self):
+                    return self._headers
+
+            response = FakeResponse([": ".join([k, v]) for k, v in headers], res.url)
+            self.extract_cookies(response, urllib.request.Request(res.url))
+
+    def export(self) -> T.List[dict]:
+        ll=[]
+        for i in self:
+            ll.append( {n if n!="_rest" else "rest":getattr(i,n) for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest".split(",")} )
+        return ll
 
 
 AHTTP = httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None, verify=False))
@@ -815,13 +817,13 @@ class Req(object):
 
                 # set cookies in request according env
                 cj=CookieStore( cenv.get("_cookies",[]) )
-                if req.url: req.headers.update( cj.getCookieHeaderForUrl(req.url) )
+                cj.update(req)
 
                 # make the request !!!!!!!!!!!!!!!!!!!!!!
                 res = await dohttp(req, timeout)
 
                 # extract cookies from response to the env
-                if res.url: cj.saveCookie(res.headers.items(), res.url)
+                cj.extract(res)
                 env["_cookies"] = cj.export() # store in the env !
 
 

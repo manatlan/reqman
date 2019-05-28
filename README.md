@@ -15,6 +15,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * "procedures" (declarations & re-use/call), local or global
    * Environment aware (switch easily)
    * https/ssl ok (bypass)
+   * http 1.0, 1.1, 2.0
    * headers inherits
    * tests inherits
    * timed requests + average times
