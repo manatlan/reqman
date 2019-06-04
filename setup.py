@@ -24,7 +24,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     install_requires=[
-          'httpcore >= 0.3.0',
+          'httpcore <= 0.3.0',
           'pyyaml >= 4.2b1',
           'colorama',
     ],    
