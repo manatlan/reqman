@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.3.2.3 BETA" # with httpcore version 0.3.0
+__version__ = "1.4.0.0"
 
 import asyncio
 import collections
@@ -301,8 +301,7 @@ class CookieStore(http.cookiejar.CookieJar):
         return ll
 
 
-AHTTP = httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None, verify=False))
-# XXX=httpcore.AsyncClient(ssl=httpcore.SSLConfig(cert=None,verify=False),cookies=COOKIEJAR)
+AHTTP = httpcore.AsyncClient(verify=False)
 
 
 async def dohttp(r: Request, timeout=None) -> BaseResponse:
