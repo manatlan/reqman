@@ -1,6 +1,6 @@
 
 - test:
-      - GET: http://fhdskjfdhkjsdlhfjlksfhfjklshfsjk/
+      - GET: http://localhost:17219 #unknown local socket
         tests:
           - status: 200
           - content: nimp

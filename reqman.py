@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.4.0.0"
+__version__ = "1.4.1.0"
 
 import asyncio
 import collections
@@ -332,7 +332,8 @@ async def dohttp(r: Request, timeout=None) -> BaseResponse:
         return ResponseError("Response timeout")
     except KeyError:  # KeyError: <httpcore.dispatch.connection.HTTPConnection object at 0x7fadbf88e0f0>
         return ResponseError("Response timeout")
-    except socket.gaierror:
+    # except socket.gaierror:
+    except OSError:
         return ResponseError("Server is down ?!")
 
 
@@ -1466,7 +1467,13 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 
 def run() -> int:  # console_scripts for setup.py/commandLine
-    return int( asyncio.run( commandLine(sys.argv[1:]) ) )
+    loop = asyncio.get_event_loop()
+    try:
+        return int(loop.run_until_complete( commandLine(sys.argv[1:]) ) )
+    except KeyboardInterrupt:
+        print("\nERROR: process interrupted")
+        # loop.run_until_complete(close())
+        return -1
 
 
 if __name__ == "__main__":

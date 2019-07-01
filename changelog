@@ -1,3 +1,5 @@
+1.4.1.0 (01/07/2019)
+ - FIX: "server is down" & CTRL-C exception handling in async (pytest zzz_OldTest are flaky)
 1.4.0.0 (10/06/2019)
  - use httpcore 0.4.0
 1.3.2.3 BETA: (4/06/2019)
