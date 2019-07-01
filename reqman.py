@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.4.1.0"
+__version__ = "1.4.2.0"
 
 import asyncio
 import collections
@@ -957,6 +957,7 @@ class Reqs(list):
                                             newreq.params, param
                                         )  # merge foreach param
                                     newreq.saves += saves  # merge saves
+                                    newreq.doc=objReplace(newreq.params,newreq.doc) #new
 
                                     ll.append(newreq)
                     else:
@@ -988,6 +989,9 @@ class Reqs(list):
                             dict_merge(lparams, params)
                             if param:
                                 dict_merge(lparams, param)
+
+                            doc=objReplace(lparams,doc) #new
+
                             ll.append(
                                 Req(
                                     action,
