@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.4.2.0"
+__version__ = "1.4.3.0"
 
 import asyncio
 import collections
@@ -1464,9 +1464,6 @@ Test a http service with pre-made scenarios, whose are simple yaml files
     except Exception as e:
         print("\n**HERE IS A BUG**, please report it !")
         print(traceback.format_exc(), "\nERROR: %s" % e)
-        return RC(-1)
-    except KeyboardInterrupt as e:
-        print("\nERROR: process interrupted")
         return RC(-1)
 
 

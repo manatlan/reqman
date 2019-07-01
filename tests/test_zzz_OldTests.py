@@ -36,7 +36,7 @@ async def mockHttp(q,timeout=None):
     else:
         return reqman.Response( 200, "the content", {"Content-Type":"text/plain","server":"mock"}, q.url)
 
-import sys
+import sys,asyncio
 
 ###########################################################################
 class Tests_CommandLine(unittest.TestCase):
@@ -46,6 +46,9 @@ class Tests_CommandLine(unittest.TestCase):
 
         fn=inspect.stack()[1][3]
 
+        asyncio.set_event_loop( #renew loop to be sure that pytest reset all
+            asyncio.new_event_loop()
+        ) 
 
         fo,fe = StringIO(),StringIO()
         with contextlib.redirect_stderr(fe):
