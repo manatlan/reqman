@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.4.3.0"
+__version__ = "1.4.4.0"
 
 import asyncio
 import collections
@@ -639,6 +639,13 @@ def txtReplace(env: dict, txt) -> T.Any:
     return txt
 
 
+def alwaysReplaceTxt(d, v):
+    try:
+        return txtReplace(d, v)
+    except RMNonPlayable as e:
+        return v
+
+
 def warn(*m):
     print("***WARNING***", *m)
 
@@ -670,6 +677,8 @@ def getHeaders(y: dict) -> dict:
         return headers
     else:
         return {}
+
+
 
 class Req(object):
     def __init__(
@@ -708,11 +717,6 @@ class Req(object):
         return asyncio.run(self.test(env))
 
     async def test(self, env: dict = None) -> TestResult:
-        def alwaysReplaceTxt(d, v):
-            try:
-                return txtReplace(d, v)
-            except RMNonPlayable as e:
-                return v
 
         if env is None: env={}
         cenv = env.copy()  # current env
@@ -957,7 +961,7 @@ class Reqs(list):
                                             newreq.params, param
                                         )  # merge foreach param
                                     newreq.saves += saves  # merge saves
-                                    newreq.doc=objReplace(newreq.params,newreq.doc) #new
+                                    newreq.doc=alwaysReplaceTxt(newreq.params,newreq.doc) #new
 
                                     ll.append(newreq)
                     else:
@@ -990,7 +994,7 @@ class Reqs(list):
                             if param:
                                 dict_merge(lparams, param)
 
-                            doc=objReplace(lparams,doc) #new
+                            doc=alwaysReplaceTxt(lparams,doc) #new
 
                             ll.append(
                                 Req(
@@ -1476,6 +1480,7 @@ def run() -> int:  # console_scripts for setup.py/commandLine
         # loop.run_until_complete(close())
         return -1
 
+from io import StringIO
 
 if __name__ == "__main__":
     sys.exit(run())

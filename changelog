@@ -1,3 +1,5 @@
+1.4.4.0 (02/07/2019)
+ - FIX: replacing doc was bugged in some complex cases
 1.4.3.0 (01/07/2019)
  - better release (pytest zzz_OldTest are ok now)
 1.4.2.0 (01/07/2019)
