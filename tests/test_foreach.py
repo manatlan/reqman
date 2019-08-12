@@ -6,6 +6,8 @@
 SERVER={
     "/1" : ( 200, "dsq"),
     "/2" : ( 200, "dsq"),
+    "/getalist" : ( 200, [1,2,3]),
+    "/geta" : ( 200, "dsq"),
 }
 
 FILES=[
@@ -53,6 +55,16 @@ FILES=[
     vvv:
         v: 2
 """),
+
+
+    dict(name="test_l.yml",content="""
+- GET: http://getalist
+  tests:
+    - status: 200
+  save: l
+- GET: http://geta
+  foreach: <<l>>
+"""),
 ]
 
 def test_1(client):
@@ -74,3 +86,7 @@ def test_2(client):
 def test_3(client):
     x=client( "test3.yml" )
     assert x.code==-1
+
+# def test_dyna_list(client):
+#     x=client( "test_l.yml" )
+#     assert x.code==0
