@@ -1327,7 +1327,6 @@ class ReqmanCommand:
         return await self._r.asyncExecute(switchs,paralleliz,http=fakeServer)
 
     async def asyncExecuteDual(self, switchs1=[],switchs2=[], outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanDualResult:
-        assert switchs1!=switchs2 #TODO
         self._r.outputConsole=outputConsole
 
         r2 = self._r.clone()    # clone IMPORTANT !!!
@@ -1615,10 +1614,10 @@ def main(fakeServer=None):
                 outputConsole=OutputConsole.MINIMAL_ONLYKO
             elif p=="s":
                 saveRMR=True
-            elif p=="r":
-                assert not switchs #TODO
-                assert not dswitchs #TODO
-                assert rmrFile #TODO
+            elif p=="r": #TODO: write tests for thoses 3 conditions
+                if switchs: raise RMCommandException("Can't set replay mode with switchs") 
+                if dswitchs: raise RMCommandException("Can't set replay mode with switchs")
+                if not rmrFile: raise RMCommandException("Can't set replay mode, you'll need a rmr file")
                 replayRMR=True
             elif p=="p":
                 paralleliz = True
