@@ -38,6 +38,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
        * dual mode : compare switchs vs others switchs (-env1 +env2) in html output
        * shebang mode
        * better html output (need some works yet !)
+       * fully compatible with reqman1 conf/ymls
 
 **and soon**
    * doc & examples ;-)
