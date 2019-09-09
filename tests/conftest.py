@@ -1,106 +1,54 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-import os,tempfile,shutil,sys
-sys.path.append( os.path.dirname(os.path.dirname(__file__)) )
+import pytest
 import reqman
-import pytest,contextlib
-from io import StringIO
-
-
-
-
-#===============================================
-def runServerMockWith(server):
-    async def mockHttp(q,timeout=None):
-        if q.path in server:
-            mock=server[q.path]
-        elif q.url in server:
-            mock=server[q.url]
-        else:
-            mock=None
-
-        if mock:
-            if callable(mock): mock=mock(q)
-
-            if len(mock)==2:
-                status,body=mock
-                headers={"Content-Type":"text/plain","server":"mock"}
-            elif len(mock)==3:
-                status,body,headers=mock
-            return reqman.Response( status, body, headers, q.url, "MOCK %s" % status)
-        else:
-            return reqman.Response( 404, "Not Found (fixture)", {"Content-Type":"text/plain","server":"mock"}, q.url,"MOCK 404")
-    return mockHttp
-#===============================================
-
-    
-import asyncio
-@pytest.fixture(scope="module")
-def client(request):
-    files = getattr(request.module, "FILES", [])    # get files from test_.*.py file
-    server = getattr(request.module, "SERVER", {})   
-
-    precdir = os.getcwd()
-    dtemp = tempfile.mkdtemp()
-    os.chdir( dtemp )
-
-    for file in files:
-        filename=os.path.join(dtemp,file["name"])
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, "w") as f:
-            f.write(file["content"])
-
-    def tester(*args):
-        class Ret():
-            code=None
-            console=None
-            html=None
-            inproc=None
-
-        if os.path.isfile("reqman.html"):
-            os.unlink("reqman.html")
-
-        print("\n> reqman.exe"," ".join(args))
-        fo,fe = StringIO(),StringIO()
-        with contextlib.redirect_stderr(fe):
-            with contextlib.redirect_stdout(fo):
-                rc=asyncio.run( reqman.commandLine( list(args) ) )
-
-        r=rc.details or Ret()  
-        r.code=rc        
-        r.console=fo.getvalue()+fe.getvalue()
-        print(r.console)
-        
-        r.inproc=r
-        return r
-
-    reqman_http = reqman.dohttp
-    reqman.dohttp = runServerMockWith(server)
-    yield tester
-    reqman.dohttp = reqman_http
-
-    os.chdir( precdir )
-    shutil.rmtree(dtemp)
-
+import asyncio,sys
+import contextlib,io
+import tempfile,os,shutil
 
 @pytest.fixture(scope="function")
-def reqs(request):
-    server = getattr(request.module, "SERVER", {})   
+def Reqs(request):
+    def tester(*a,**k):
+        return reqman.Reqs(*a,**k)
 
-    def caller(txt,env=None):
-        return reqman.Reqs( StringIO(txt),env )
+    yield tester
 
-    precdir = os.getcwd()
-    os.chdir( tempfile.mkdtemp() )
+@pytest.fixture(scope="function")
+def exe(request):
+    def tester(*a,fakeServer=None):
+        sys.argv=["reqman.exe"]+list(a)
 
-    prechttp = reqman.dohttp
-    reqman.dohttp = runServerMockWith(server)
-    yield caller
-    reqman.dohttp=prechttp
+        print(sys.argv)
+        fo,fe = io.StringIO(),io.StringIO()
+        with contextlib.redirect_stderr(fe):
+            with contextlib.redirect_stdout(fo):
+                rc=reqman.main(fakeServer=fakeServer)
 
-    os.chdir( precdir )
+        output=fo.getvalue()+fe.getvalue()
+        print(output)
+
+        class FakeExeReturn(): pass
+        
+        f=FakeExeReturn()
+        f.rc=rc
+        f.console=output
+
+        return f
+
+    try:
+        precdir = os.getcwd()
+        dtemp = tempfile.mkdtemp()
+        os.chdir( dtemp )
+
+        yield tester
+
+    finally:
+        os.chdir( precdir )
+        shutil.rmtree(dtemp)    
 
 
 
-
-
+@pytest.yield_fixture(scope='session')
+def event_loop(request):
+    """Create an instance of the default event loop for each test case."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()

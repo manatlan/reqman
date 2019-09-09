@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # #############################################################################
 #    Copyright (C) 2018-2019 manatlan manatlan[at]gmail(dot)com
@@ -15,66 +15,30 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-__version__ = "1.4.4.0"
-
-import asyncio
-import collections
-import copy
-import datetime
-import email
-import glob
-import html
-import http.client
-import http.cookiejar
-import io
-import itertools
-import json
-import os
-import re
-import socket
-import sys
-import traceback
+import os,sys,re,asyncio,io,datetime,itertools,glob,enum
+import http,urllib,email # for cookies management
+import collections,json
 import typing as T
-import urllib.parse
-import urllib.request
 import xml.dom.minidom
-from enum import Enum
+import sys,traceback
+import pickle,zlib,hashlib
 
-import httpcore
+import httpcore # see "pip install httpcore"
 import yaml  # see "pip install pyyaml"
+import stpl  # see "pip install stpl"
 
-###############################################################################################################
-###############################################################################################################
-###############################################################################################################
-
-
-class NotFound:
-    pass
+#95%: python3 -m pytest --cov-report html --cov=reqman .
+__version__="2.0.0.0"
 
 
-class RMException(Exception):
-    pass
 
-
-class RMNonPlayable(Exception):
-    pass
-
-
-REQMAN_CONF = "reqman.conf"
-KNOWNVERBS = set(
-    ["GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT"]
-)
-
-###########################################################################
-## Utilities
-###########################################################################
 try:  # colorama is optionnal
     from colorama import init, Fore, Style
 
     init()
 
     def colorize(color: int, t: str) -> T.Union[str, None]:
-        return color + Style.BRIGHT + t + Fore.RESET + Style.RESET_ALL if t else None
+        return color + Style.BRIGHT + str(t) + Fore.RESET + Style.RESET_ALL if t else None
 
     cy = lambda t: colorize(Fore.YELLOW, t)
     cr = lambda t: colorize(Fore.RED, t)
@@ -84,36 +48,154 @@ try:  # colorama is optionnal
 except ImportError:
     cy = cr = cg = cb = cw = lambda t: t
 
+KNOWNVERBS=["GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT"]
+KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body" ]
+REQMAN_CONF="reqman.conf"
 
-def chardet(s: str) -> str:
-    """guess encoding of the string 's' -> cp1252 or utf8"""
-    u8 = "çàâäéèêëîïôûù"
-    cp = u8.encode("utf8").decode("cp1252")
+class OutputConsole(enum.Enum):
+    NO = 0
+    MINIMAL = 1
+    MINIMAL_ONLYKO = 2
+    FULL=3
 
-    cu8, ccp = 0, 0
-    for c in u8:
-        cu8 += s.count(c)
-    for c in cp:
-        ccp += s.count(c)
+class RMFormatException(Exception): pass
+class RMException(Exception): pass
 
-    if cu8 >= ccp:
-        return "utf8"
-    else:
-        return "cp1252"
+def izip(ex1,ex2):
+    trans = lambda ex: {i.id: i for i in ex}
+    pop= lambda ex: len(ex)>0 and ex.pop(0) or None
+
+    tex1=trans(ex1)
+    tex2=trans(ex2)
+
+    cex1=[(i,tex2.get(i.id)) for i in ex1]
+    cex2=[(i,tex1.get(i.id)) for i in ex2]
+
+    l=[]
+    while 1:
+        i1=pop(cex1)
+        i2=pop(cex2)
+        if i1 is None and i2 is None: break
+        if i1==i2:
+            l.append( i1)
+        else:
+            if i2 in cex1:
+                l.append( (i1[0],None) )
+                cex2.insert(0,i2)
+            else:
+                if i1 in cex2:
+                    l.append((None,i2[0]))
+                    cex1.insert(0,i1)
+                else:
+                    if i1: l.append( (i1[0],None) )
+                    if i2: l.append((None,i2[0]))
+    
+    return [(e1 or e2, e1,e2)for e1,e2 in l]
+
+def comparable(l):
+    for x,x1,x2 in l:
+        return x1==x2
 
 
-def yamlLoad(fd) -> dict:  # fd is an io thing
-    b = fd.read()
-    if type(b) == bytes:
-        try:
-            b = str(b, "utf8")
-        except UnicodeDecodeError:
-            b = str(b, "cp1252")
-    else:
-        encoding = chardet(b)
-        b = b.encode(encoding).decode("utf8")
-    return yaml.load(b, Loader=yaml.FullLoader)
+AHTTP = httpcore.AsyncClient(verify=False)
 
+class CookieStore(http.cookiejar.CookieJar): #TODO: can do a lot better with httpcore
+    """ Manage cookiejar for httplib-like """
+
+    def __init__(self, ll: T.List[dict]=[]) -> None:
+        http.cookiejar.CookieJar.__init__(self)
+        for c in ll:
+            self.set_cookie( http.cookiejar.Cookie(**c) )    
+
+    def update(self, url:str, inHeaders:dict) -> dict:
+        """return appended headers"""
+        if url and url.lower().startswith("http"):
+            r = urllib.request.Request(url)
+            self.add_cookie_header(r)
+            inHeaders.update( dict(r.header_items()) )
+            return dict(r.header_items())
+
+    def extract(self, url:str, outHeaders:dict) -> None:
+        if url and url.lower().startswith("http"):
+            headers=outHeaders.items()
+
+            class FakeResponse(http.client.HTTPResponse):
+                def __init__(self, headers=[], url=None) -> None:
+                    """
+                    headers: list of RFC822-style 'Key: value' strings
+                    """
+                    m = email.message_from_string("\n".join(headers))
+                    self._headers = m
+                    self._url = url
+
+                def info(self):
+                    return self._headers
+
+            response = FakeResponse([": ".join([k, v]) for k, v in headers], url)
+            self.extract_cookies(response, urllib.request.Request(url))
+
+    def export(self) -> T.List[dict]:
+        ll=[]
+        for i in self:
+            ll.append( {n if n!="_rest" else "rest":getattr(i,n) for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest".split(",")} )
+        return ll
+
+
+def toStr(x):
+    try:
+        return x.decode()
+    except:
+        return str(x)
+
+class Content:
+    def __init__(self,content):
+        self.__b = content if type(content) is bytes else str(content).encode()
+    def __repr__(self) -> str:
+        return toStr(self.__b)
+    def toJson(self):
+        return json.loads( self.__b.decode() )
+
+async def request(method,url,body:bytes,headers, timeout=None):
+    try:
+        r = await AHTTP.request(
+            method,
+            url,
+            data=body,
+            headers=headers,
+            allow_redirects=False,
+            timeout=httpcore.TimeoutConfig( timeout ),
+        )
+        info = "%s %s %s" % (r.protocol, int(r.status_code), r.reason_phrase)
+        return r.status_code, dict(r.headers), Content(r.content), info 
+    except (httpcore.exceptions.ReadTimeout, httpcore.exceptions.ConnectTimeout, httpcore.exceptions.Timeout, httpcore.exceptions.WriteTimeout):
+        return None, {}, "Response timeout", ""
+    except OSError:
+        return None, {}, "Server is down ?!", ""
+    except httpcore.exceptions.InvalidURL:
+        return None, {}, "Invalid request", ""
+
+class FString(str):
+    filename=None
+    encoding=None
+    def __new__(cls,fn:str):
+        for e in ["utf8","cp1252"]:
+            try:
+                with io.open(fn,"r",encoding=e) as fid:
+                    obj=str.__new__(cls,fid.read())
+                    obj.filename=fn
+                    obj.encoding=e
+                    return obj
+            except UnicodeDecodeError:
+                pass
+        raise Exception("Can't read '%s'"%fn)
+
+
+clone=lambda x: json.loads( json.dumps(x) )
+
+def toList(d) -> T.List:
+    return d if type(d)==list else [d]
+
+padLeft=lambda b: ("\n".join(["  "+i for i in str(b).splitlines()]))
 
 def dict_merge(dst: dict, src: dict) -> None:
     """ merge dict 'src' in --> dst """
@@ -130,25 +212,10 @@ def dict_merge(dst: dict, src: dict) -> None:
             else:
                 dst[k] = src[k]
 
+class NotFound: pass
 
-def mkUrl(protocol: str, host: str, port=None) -> str:
-    port = ":%s" % port if port else ""
-    return "{protocol}://{host}{port}".format(**locals())
-
-
-def prettify(txt: str, indentation: int = 4) -> str:
-    try:
-        x = xml.dom.minidom.parseString(txt).toprettyxml(indent=" " * indentation)
-        x = "\n".join(
-            [s for s in x.splitlines() if s.strip()]
-        )  # http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
-        return x
-    except:
-        try:
-            return json.dumps(json.loads(txt), indent=indentation, sort_keys=True)
-        except:
-            return txt
-
+def DYNAMIC(x, env: dict) -> T.Union[str, None]:
+    pass  # will be overriden (see below vv)
 
 def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
     for i in path.strip(".").split("."):
@@ -158,7 +225,7 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
                     return len(elem)
                 else:
                     elem = elem[int(i)]
-            elif type(elem) == dict:
+            elif type(elem) in [dict,Env]:
                 if i == "size":
                     return len(list(elem.keys()))
                 else:
@@ -171,192 +238,713 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
     return elem
 
 
-###########################################################################
-## http request/response
-###########################################################################
 
-class Request:
-    def __init__(
-        self,
-        protocol: str,
-        host: str,
-        port,
-        method: str,
-        path: str,
-        body=None,
-        headers: dict = {},
-    ) -> None:
-        self.protocol = protocol
-        self.host = host
-        self.port = port
-        self.method = method
-        self.path = path
-        self.body = body
-        self.headers = {}
+class Exchange:
+    def __init__(self,method, path, url, body, inHeaders,status,outHeaders,content,info,time):
+        self.id=None
 
-        if self.protocol:
-            self.url = mkUrl(self.protocol, self.host, self.port) + self.path
-        else:
-            self.url = None
-
-        self.headers.update(headers)
-
-    def __repr__(self) -> str:
-        return cy(self.method) + " " + self.path
-
-
-class Content:
-    def __init__(self, content) -> None:
-        self.__b = content if type(content) == bytes else bytes(str(content), "utf8")
-
-    def toBinary(self) -> bytes:
-        return self.__b
-
-    def __repr__(self) -> str:
-        try:
-            return str(self.__b, "utf8")  # try as utf8 ...
-        except UnicodeDecodeError:
-            try:
-                return str(self.__b, "cp1252")  # try as cp1252 ...
-            except UnicodeDecodeError:
-                # fallback to a *** binary representation ***
-                return "*** BINARY SIZE(%s) ***" % len(self.__b)
-
-    def __contains__(self, key: str) -> bool:
-        return key in str(self)
-
-
-class BaseResponse:
-    time = None
-    status = None
-    content = None
-    headers = {}
-    info = None
-    url=""
-
-
-class Response(BaseResponse):
-    def __init__(self, status, body, headers, url, info=None) -> None:
-        self.status = int(status)
-        self.content = Content(body)
-        self.headers = dict(headers)  # /!\ cast list of 2-tuple to dict ;-(
-        # eg: if multiple "set-cookie" -> only the last is kept
+        self.method=method
+        self.path=path
+        self.url=url
+        self.body=body
+        self.bodyContent=Content(body)
+        self.inHeaders=inHeaders
+        self.status = status
+        self.outHeaders = outHeaders
+        self.content = content
         self.info = info
-        self.url=url # just to extract cookie
+        self.time=time
 
-    def __repr__(self) -> str:
-        return str(self.status)
+    def __eq__(self,o):
+        return (o and self.id==o.id)
+
+    def upgrade(self,id,doc,scope,tests):
+        self.id=id 
+        self.doc = doc
+        self.scope = scope 
+        self.tests = TestResult(tests,self.status, self.content , self.outHeaders)
+
+    def __repr__(self):
+        return "<Exchange: %s %s -> %s tests:%s>" % (self.method,self.url,self.status, self.tests or "no")
+
+class Env(dict):
+    def __init__(self,d=None):
+        if not d: d={}
+
+        if isinstance(d,str):
+            try:
+                d=yaml.load(d, Loader=yaml.FullLoader)
+            except Exception as e:
+                raise RMFormatException("Env conf is not yaml")
+
+        if type(d) is not dict:
+            raise RMFormatException("Env conf is not a dict")
+
+        self.__saved={} # shared saved scope between all cloned Env
+
+        dict.__init__(self,d)
+        self.cookiejar = CookieStore()
 
 
-class ResponseError(BaseResponse):
-    def __init__(self, m) -> None:
-        self.status = None
-        self.content = m
-        self.headers = {}
-        self.info = ""
-        self.url=None
+    def save(self,key,value):
+        # if super().__contains__(key):
+        #     raise RMException("can't save in '%s', it will override an existing one in the current env" % key)
+        self.__saved[key]=value
 
-    def __repr__(self) -> str:
-        return "ERROR: %s" % (self.content)
+    def __getitem__(self,key):
+        if key in self.__saved:
+            return self.__saved[key]
+        else:
+            return super().__getitem__(key)
 
-class CookieStore(http.cookiejar.CookieJar):
-    """ Manage cookiejar for httplib-like """
+    def get(self,key,default=None):
+        if key in self.__saved:
+            return self.__saved[key]
+        else:
+            return super().get(key,default)
 
-    def __init__(self, ll: T.List[dict]=[]) -> None:
-        http.cookiejar.CookieJar.__init__(self)
-        for c in ll:
-            self.set_cookie( http.cookiejar.Cookie(**c) )    
+    def __contains__(self, key):
+        if key in self.__saved:
+            return True
+        else:
+            return super().__contains__(key)
 
-    def update(self, req: Request) -> dict:
-        """return appended headers"""
-        if req.url:
-            r = urllib.request.Request(req.url)
-            self.add_cookie_header(r)
-            req.headers.update( dict(r.header_items()) )
-            return dict(r.header_items())
+    def __eq__(self,o):
+        return {**self,**self.__saved} == o
+    
 
-    def extract(self, res: BaseResponse) -> None:
-        if res.url:
-            headers=res.headers.items()
+    def clone(self):
+        newOne=Env({})
+        dict_merge(newOne,self)
+        newOne.cookiejar= CookieStore( self.cookiejar.export() )
+        newOne.__saved = self.__saved # share saved scope !!!
+        return newOne
 
-            class FakeResponse(http.client.HTTPResponse):
-                def __init__(self, headers=[], url=None) -> None:
-                    """
-                    headers: list of RFC822-style 'Key: value' strings
-                    """
-                    m = email.message_from_string("\n".join(headers))
-                    self._headers = m
-                    self._url = url
+    @property
+    def switchs(self):
+        """ return list of tuple (switchName,doc) """
+        if "switchs" in self.keys():
+            # new system (hourraaaaa !!!! )
+            switchs=self["switchs"].keys()
+            for k in switchs:
+                yield k,self["switchs"].get(k,{}).get("doc","???")
+        else: 
+            #old system #DEPRECATED
+            for k, v in self.items():
+                root = v.get("root", None) if type(v) == dict else None
+                if root:
+                    yield (k,v.get("doc",root)) #return the doc or the url of the root
 
-                def info(self):
-                    return self._headers
+    def mergeSwitch(self,switch):
+        if switch in self: #DEPRECATED
+            dict_merge(self,self[switch])
+        else:
+            if switch in self.get("switchs",{}):
+                dict_merge(self,self["switchs"][switch])
+            else:
+                raise RMException("bad switch '%s'" % switch)
 
-            response = FakeResponse([": ".join([k, v]) for k, v in headers], res.url)
-            self.extract_cookies(response, urllib.request.Request(res.url))
+    def replaceObj(self, v: T.Any) -> T.Any:  # same as txtReplace() but for "object" (json'able)
+        if type(v) is bytes:
+            return v
+        elif type(v) is not str:
+            v=json.dumps(v)
 
-    def export(self) -> T.List[dict]:
+        obj = self.replaceTxt( v )
+        if type(obj) is bytes:
+            return obj
+        else:
+            try:
+                obj = json.loads(obj)
+            except (json.decoder.JSONDecodeError, TypeError):
+                pass
+            return obj
+
+    def replaceTxt(self,txt:str) -> T.Union[str, bytes]:
+        assert type(txt) is str
+
+        def _replace(txt:str) -> T.Union[str, bytes]:
+            def getVar(var:str):
+                if "." in var:
+                    return jpath(self, var)
+                elif "|" in var:
+                    key, method = var.split("|", 1)
+
+                    content = self.get(key, key)  # resolv keys else use it a value !!!!!
+                    for m in method.split("|"):
+                        content = self.replaceObj( content )    ## important, resolv inner method first .... see tests 044, 045, 046
+
+                        content = self.transform(content, m)
+                    return content
+                elif var in self:
+                    if type(self[var])==str and 'return ' in self[var]: #TODO: better here !!!
+                        return self.transform(None, var)
+                    else:                    
+                        return self[var]
+                else:
+                    return NotFound
+
+
+            for vvar in re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt):
+                var = vvar[2:-2]
+
+                val=getVar(var)
+
+                if val is not NotFound:
+                    if type(val) != str:
+                        if val is None:
+                            val = "null"
+                        elif val is True:
+                            val = "true"
+                        elif val is False:
+                            val = "false"
+                        elif type(val) == bytes:
+                            return val  # keep BYTES !!!!!!!!!!!!!!
+                        else:  # int, float, list, dict...
+                            try:
+                                val = json.dumps(val)                
+                            except TypeError:
+                                val=str(val)
+
+                        txt = txt.replace('"%s"' % vvar, val)
+                    else:
+                        txt = txt.replace('"%s"' % vvar, '"%s"' % val)
+
+                    txt = txt.replace(vvar, val )
+                    
+            return txt
+
+        while type(txt) is str:
+            _txt=_replace(txt)
+            if _txt==txt: #no change ... it's time to return ;-)
+                return txt
+            else:
+                txt=_txt
+        return txt # bytes
+
+    def transform( self, content: T.Union[str, None], methodName: str) -> T.Union[str, None]:
+        if methodName:
+            if methodName in self:
+                code = self[methodName]
+                try:
+                    exec(
+                        "def DYNAMIC(x,ENV):\n"
+                        + ("\n".join(["  " + i for i in code.splitlines()])),
+                        globals(),
+                    )
+                except Exception as e:
+                    raise RMException(
+                        "Error in declaration of method " + methodName + " : " + str(e)
+                    )
+                try:
+                    if content is not None:
+                        x = json.loads(content)
+                    else:
+                        x = None
+                except (json.decoder.JSONDecodeError, TypeError):
+                    x = content
+                try:
+                    # if self.transform.path:
+                    #     curdir = os.getcwd()
+                    #     os.chdir(self.transform.path)
+                    # else:
+                    curdir = None
+                    content = DYNAMIC(x, self)
+                except Exception as e:
+                    raise RMException(
+                        "Error in execution of method " + methodName + " : " + str(e)
+                    )
+                finally:
+                    pass
+                    # if curdir:
+                    #     os.chdir(curdir)
+            else:
+                raise RMException("Can't find method '%s'" % methodName)
+
+        return content
+
+    def __str__(self):
+        x={**self,"__saved": self.__saved}
+        return json.dumps(x, indent=4, sort_keys=True)
+
+    def __getstate__(self):
+        return dict(self)
+    def __setstate__(self, state):
+        self.__dict__=state
+        self.__saved={}
+        self.cookiejar = CookieStore()
+
+
+
+class Reqs(list):
+    def __init__( self, obj:T.Union[str,FString], env=None, trace=False, name="<YamlString>" ):
+        self.__proc={}
+        self._trace=trace
+        self.exchanges=None   # list of Exchange
+        # self.name=type(obj) is FString and os.path.relpath(obj.filename, os.getcwd()) or name
+        self.name=obj.filename if type(obj) is FString else name
+
+
+        if env is None:
+            self.env=Env()
+        elif type(env) is Env:
+            self.env=env
+        elif type(env) is dict:
+            self.env=Env(env)
+
+        def controle(obj) -> T.List:
+            """ Controle that 'obj' is a list of dict, and is valid """
+            if type(obj)==list:
+                # if any([type(i)!=dict for i in obj]):
+                #     raise self._errorFormat("Reqs: bad object content in the list" )
+                pass
+            elif type(obj)==dict:
+                obj=toList(obj)
+            elif obj is None:
+                obj=[]
+            else:
+                raise self._errorFormat("Reqs: bad object content")
+            # here 'obj' is a list of dict
+            liste=[]
+            for i in obj:
+                if isinstance(i,str):
+                    if i=="break":
+                        print( cy("**WARNING**"), "a", cr("break"), "in", self.name )
+                        break
+                    else:
+                        raise self._errorFormat("Reqs: Unknown action '%s'" % i)
+                elif isinstance(i,dict):
+                    keys=list(i.keys())
+                    if len(keys)==1 and (keys[0] not in KNOWNVERBS+["call"]) and (type(i[keys[0]]) in [dict,list]):
+                        # it's a definition of a proc's named 'key', content = value
+                        key=keys[0]
+                        value=i[key]
+                        if key in self.__proc: 
+                            raise self._errorFormat("Reqs: multiple proc are named '%s'" % key)
+
+                        # declare the proc in the scope
+                        self.__proc[key]=value
+
+                    else:
+                        foreach=i.get("foreach",None)
+                        self._assertType("foreach",foreach,[list,str])
+
+                        scopeParams=i.get("params",{})
+                        self._assertType("params",scopeParams,[dict])
+
+                        if "call" in keys: 
+                            call=i["call"]
+                            self._assertType("call",call,[list,str])
+                            if not all([k in KNOWNACTIONEXT+["call"] for k in keys]):
+                                raise self._errorFormat("Reqs: There are keys that are not understandable %s" % ",".join(keys) )
+
+                            for namedProc in toList(call):
+                                
+                                #TODO: test not dynamic (not call: <<proc>>) !
+
+                                if namedProc in self.__proc: 
+                                    reqs=controle(self.__proc[namedProc])
+                                elif namedProc in self.env:
+                                    reqs=controle(self.env[namedProc])
+                                else:
+                                    raise self._errorFormat("Reqs: call a proc '%s' that doesn't exist" % namedProc)
+
+
+                                for r in reqs: # surcharge reqs from 'i'
+                                    r.updateBody(i)
+                                    r.updateDoc(i)
+                                    r.updateHeaders(i)
+                                    r.updateSave(i)
+                                    r.updateTests(i)
+
+                                liste.append( ReqGroup(reqs,foreach, scopeParams) )
+
+                        elif any( [v in keys for v in KNOWNVERBS] ):
+                            # there is a KNOWNVERBS's action in the dict 'i'
+                            verbs = list(set(KNOWNVERBS).intersection(list(keys)))
+                            if len(verbs)>1:
+                                raise self._errorFormat("Reqs: There are too many http verb in this action %s" % ",".join(verbs))
+
+                            if not all([k in KNOWNACTIONEXT+KNOWNVERBS for k in keys]):
+                                raise self._errorFormat("Reqs: There are keys that are not understandable %s" % ",".join(keys))
+
+                            # append the current action/req to the liste
+                            method=verbs[0]
+                            path = i.get(method,None)
+                            if type(path) is not str:
+                                raise self._errorFormat("Reqs: The action %s should contains a path/string" % method)
+
+                            r=Req(method,path,self)
+                            r.updateBody(i)
+                            r.updateDoc(i)
+                            r.updateHeaders(i)
+                            r.updateSave(i)
+                            r.updateTests(i)
+
+                            if foreach is None: # no foreach
+                                r.updateParams(i)
+                                liste.append( r )
+                            else: #foreach
+                                liste.append( ReqGroup( [r], foreach, scopeParams ) )
+                        else:
+                            raise self._errorFormat("Reqs: unknown action in %s" % ", ".join(keys))
+                else:
+                    raise self._errorFormat("Reqs: bad object %s" % i)
+
+
+            return liste
+
+        if isinstance(obj,str):
+            try:
+                y=yaml.load(obj, Loader=yaml.FullLoader)
+            except Exception as e:
+                raise self._errorFormat("Reqs: YML syntax in %s\n%s" % (self.name, e))
+
+            lreqs=controle(y)
+        else:
+            raise self._errorFormat("Reqs: bad object")
+
+        # here 'obj' is a list of ReqBase, and valid one
+        list.__init__(self,lreqs)
+        if self._trace:
+            print("~"*80)
+            print("~~ Reqs")
+            print("~"*80)
+            print("env:",self.env)
+            print(self)
+            print("~"*80)
+
+    def _errorFormat(self,msg):
+         return RMFormatException(msg+" in %s" % self.name)
+
+    def _assertType(self,name,o,types):
+        if o is not None and type(o) not in types:
+            raise self._errorFormat("TT: %s is malformed, not a %s" % (name,types))
+
+    def execute(self,http=None,outputConsole=OutputConsole.MINIMAL) -> list:
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self.asyncExecute(http,outputConsole=outputConsole))
+
+    async def asyncExecute(self,http=None,outputConsole=OutputConsole.MINIMAL) -> list:
+
+        ############################################# live console
+        if len(self)>0 and outputConsole in [ OutputConsole.MINIMAL, OutputConsole.FULL ]:
+            print("TEST:",cb(self.name))
+        ############################################# live console
+
+        def log(level,*l):
+            if self._trace:
+                print(level*"    "," ".join([str(x) for x in l]))
+
+        log(0,"~"*80)
+        log(0,"~~ Reqs.Execute")
+        log(0,"~"*80)
+
+        def oneline(s):
+            return str(s).splitlines()
+
+        def _test(liste:Reqs, gscope, level=0):
+            log(level,"Test Global Scope :",gscope)
+
+            for idx,i in enumerate(liste):
+                if isinstance(i, Req):
+                    log(level,"* Req:",oneline(i))
+                    yield level,gscope,i.clone()
+                if isinstance(i, ReqGroup):
+                    scope=gscope.clone()
+
+                    log(level,"* ReqGroup:",len(i.reqs),"ReqItem(s)")
+
+                    dict_merge(scope,i.scope)
+                    log(level,"  Scope Add: ",i.scope)
+
+                    foreach=i.foreach or [{}]
+                    if type(foreach) == str: # dynamic foreach !
+                        try:
+                            foreach=json.loads( scope.replaceTxt( foreach ) )
+                        except json.decoder.JSONDecodeError as e:
+                            raise RMException("Reqs: foreach '%s' is not a list of dict" % foreach)
+
+                        if type(foreach)!=list or any([type(p)!=dict for p in foreach]):
+                            raise RMException("Reqs: foreach params is not a list of dict")
+
+                    for fparam in foreach:
+                        log(level,"  Foreach with params:",fparam)
+
+                        for l,s,r in _test(i.reqs,scope,level+1):
+                            r.updateParams( {"params": fparam} )
+                            yield l,s,r
+        
         ll=[]
-        for i in self:
-            ll.append( {n if n!="_rest" else "rest":getattr(i,n) for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest".split(",")} )
+        for l,s,r in _test(self,self.env):
+            ex=await r.asyncExecute(s,http,outputConsole=outputConsole)
+            ll.append( ex )
+            log(l,"  >>> EXECUTE:",ex)
+
+        self.exchanges = ll
         return ll
 
 
-AHTTP = httpcore.AsyncClient(verify=False)
+    def __repr__(self):
+        return "\n".join(["Reqs's Name: %s" % self.name]+[repr(i) for i in self])
 
 
-async def dohttp(r: Request, timeout=None) -> BaseResponse:
-    try:
-        body=r.body
+class ReqItem: pass
+
+class ReqGroup(ReqItem):
+    def __init__(self,reqs:list,foreach,params):
+        self.reqs = reqs
+        self.foreach = foreach
+        self.scope = params
+
+    def updateHeaders( self, o: dict ):
+        for r in self.reqs:
+            r.updateHeaders(o)
+    def updateTests( self, o: dict ):
+        for r in self.reqs:
+            r.updateTests(o)
+    def updateBody( self, o: dict ):
+        for r in self.reqs:
+            r.updateBody(o)
+    def updateDoc( self, o: dict ):
+        for r in self.reqs:
+            r.updateDoc(o)
+    def updateSave( self, o: dict ):
+        for r in self.reqs:
+            r.updateSave(o)
+
+    def __repr__(self):
+        l=[]
+        l.append("<ReqGroup foreach:%s scope:%s>" % (self.foreach,self.scope))
+        for i in self.reqs:
+            l.append( padLeft( str(i)))
+        return "\n".join(l)
+
+
+class Req(ReqItem):
+    def __init__(self,method:str,path:str,parent:Reqs):
+        assert method in KNOWNVERBS
+        self.parent=parent
+        self.method=method
+        self.path=path
+
+        self.headers={}
+        self.params=Env()
+        self.tests=[]
+        self.body=None # or str,dict,list,bool,bytes,int,float
+        self.doc=None # or str
+        self.saves=[]
+    
+    def clone(self):
+        r=Req(self.method,self.path,self.parent)
+        r.headers = clone(self.headers)
+        r.params = clone(self.params)
+        r.tests = clone(self.tests)
+        r.body = clone(self.body)
+        r.doc = clone(self.doc)
+        r.saves = clone(self.saves)
+        return r
+
+    def updateHeaders( self, o: dict ): # merge headers
+        headers=o.get("headers",{})
+        self.parent._assertType("headers",headers,[dict,list])
+        if type(headers) is list: #list > dict
+            #TODO: "'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')"
+            headers = {list(d.keys())[0]: list(d.values())[0] for d in headers}
+        if headers is not None:
+            dict_merge(self.headers, headers)  
+    def updateParams( self, o: dict ): # merge params
+        params=o.get("params",{})
+        self.parent._assertType("params",params,[dict])
+        if params is not None:
+            dict_merge(self.params, params)         
+    def updateTests( self, o: dict ): # append tests
+        tests=o.get("tests",[])
+        self.parent._assertType("tests",tests,[list,dict])
+        if type(tests) == dict: # dict to list
+            #TODO: "'tests:' should be a list of mono key/value pairs (ex: '- status: 200')"
+            tests = [{k: v} for k, v in dict(tests).items()]
+        if tests is not None: self.tests += tests
+    def updateBody( self, o: dict ): # replace body
+        body=o.get("body",None)
+        self.parent._assertType("body",body,[str,dict,list,bool,bytes,int,float])
+        if body is not None: self.body = body
+    def updateDoc( self, o: dict ): # replace doc
+        doc=o.get("doc",None)
+        self.parent._assertType("doc",doc,[str])
+        if doc is not None: self.doc = doc
+    def updateSave( self, o: dict ): # append save
+        save=o.get("save",None)
+        self.parent._assertType("save",save,[str,dict]) #new
+        if type(save) is str: save={save:"<<content>>"} #convert to new system save
+        if save is not None: self.saves += [save]
+
+    def __repr__(self):
+        l=[]
+        l.append("<Req %s: %s>" % (self.method,self.path))
+        if self.headers: l.append("\theaders: %s" % (self.headers))
+        if self.params: l.append("\tparams: %s" % (self.params))
+        if self.tests: l.append("\ttests: %s" % (self.tests))
+        if self.body: l.append("\tbody: %s" % (self.body))
+        if self.doc: l.append("\tdoc: %s" % (self.doc))
+        if self.saves: l.append("\tsaves: %s" % (self.saves))
+        return "\n".join(l)
+
+    async def asyncExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange: 
+        scope=gscope.clone() # important
+        dict_merge(scope, self.params)  # merge params in scope
+
+        root = scope.get("root",None) # global root
+        gheaders = scope.get("headers",None) # global header
+        timeout = scope.get("timeout",None) # global timeout
+        try:
+            timeout = timeout and float(timeout) / 1000.0 or None
+        except ValueError:
+            pass
+
+        method, path, body, headers = self.method, self.path, self.body, self.headers
+        doc, tests, saves = self.doc, self.tests, self.saves
+
+        #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' compute an unique id based on reqs's attributes
+        d = hashlib.md5()
+        d.update(json.dumps([method, path, body, headers,doc, tests, saves]).encode())
+        id=d.hexdigest()
+        #''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+        if gheaders is not None:
+            newHeaders = clone(gheaders)
+            dict_merge(newHeaders, headers)
+            headers=newHeaders
+
+        gpath=path
+        path = scope.replaceTxt(path)
+        if body: body = scope.replaceObj( body )
+        headers= {k:scope.replaceTxt( str(v) ) for k,v in headers.items()} # headers'value should be string
+
+        if doc: doc = scope.replaceTxt(doc)
+        tests= [{list(d.keys())[0] : scope.replaceObj( list(d.values())[0]) } for d in tests] # cast value as str
+
+        if root is not None and not path.lower().startswith("http"):
+            url = root + path
+        else:
+            url = path
+
+        # set cookies in request according env
+        self.parent.env.cookiejar.update(url, headers)
+
+        ex=await asyncExecute(method,gpath,url,body,headers,http=http,timeout=timeout)
+
+        # extract cookies from response to the env
+        self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
+
+       
+        for s in saves:
+            postSaveScope = scope.clone()
+            postSaveScope["content"] = ex.content
+            postSaveScope["status"] = ex.status
+            #TODO: expose headers, time, xml too ?
+            try:
+                postSaveScope["json"] = ex.content.toJson()
+            except:
+                pass
+
+            for saveKey, saveWhat in s.items():
+                self.parent.env.save(saveKey, postSaveScope.replaceObj(saveWhat) )
+
+            del postSaveScope
+
+        ex.upgrade(id,doc,scope,tests)
+
+
+        #=================================================== LIVE CONSOLE
+        if outputConsole != OutputConsole.NO:
+            allIsOk = all(ex.tests)
+            if not (allIsOk and outputConsole == OutputConsole.MINIMAL_ONLYKO):
+                print("*",cy(ex.method),ex.url,"-->",cw(ex.status))
+
+                if outputConsole == OutputConsole.FULL:
+                    display=lambda h: yaml.safe_dump(h,default_flow_style=False,allow_unicode=True)
+                    if ex.inHeaders: print( padLeft( display(ex.inHeaders) ) )
+                    if ex.body: print(padLeft(ex.bodyContent))
+                    print(padLeft("-"*75))
+                    if ex.outHeaders: print( padLeft( display(ex.outHeaders) ) )
+                    if ex.content: print( padLeft(ex.content) )
+                    print(padLeft("-"*75))
+                
+                for t in ex.tests:
+                    print("  -",t and cg("OK") or cr("KO"),":",t.name)
+                print()
+        #=================================================== LIVE CONSOLE
+
+        return ex
+
+
+
+async def asyncExecute(method, path, url, body, headers,http=None,timeout=None) -> Exchange:
+    t1=datetime.datetime.now()
+
+
+    if type(body) is not bytes:
         if body is None:
-            body=""
-        elif type(body)!=str:
-            body=json.dumps(body)
-        rr = await AHTTP.request(
-            r.method,
-            r.url,
-            data=body.encode(),
-            headers=r.headers,
-            allow_redirects=False,
-            timeout=httpcore.TimeoutConfig(timeout),
-        )
-        info = "%s %s %s" % (rr.protocol, int(rr.status_code), rr.reason_phrase)
-
-        return Response(rr.status_code, rr.content, dict(rr.headers), r.url, info)
-    except httpcore.exceptions.ReadTimeout:
-        return ResponseError("Response timeout")
-    except httpcore.exceptions.ConnectTimeout:
-        return ResponseError("Response timeout")
-    except httpcore.exceptions.Timeout:
-        return ResponseError("Response timeout")
-    except httpcore.exceptions.WriteTimeout:
-        return ResponseError("Response timeout")
-    except KeyError:  # KeyError: <httpcore.dispatch.connection.HTTPConnection object at 0x7fadbf88e0f0>
-        return ResponseError("Response timeout")
-    # except socket.gaierror:
-    except OSError:
-        return ResponseError("Server is down ?!")
+            body="".encode()
+        elif type(body) is str:
+            body=body.encode()
+        else:
+            body=json.dumps(body).encode()
 
 
-###############################################################################################################
-###############################################################################################################
-###############################################################################################################
+    if type(http)==dict:
+        status,content,outHeaders,info=404,"mock not found",{"server":"reqman mock"},"MOCK RESPONSE"
+        if url in http:
+            rep=http[url]
+            if callable(rep): rep=rep(method,url,body,headers)
+
+            if len(rep)==2:
+                status,content = rep
+            elif len(rep)==3:
+                status,content,oHeaders = rep
+                dict_merge(outHeaders,oHeaders)
+            else:
+                status,content = 500,"mock server error"
+            assert type(content) in [str,bytes]
+            assert type(status) is int
+            assert type(outHeaders) is dict
+        content=Content(content)
+    else:
+        http=request # use the real one !!
+        status,outHeaders,content,info = await http(method, url, body, headers, timeout=timeout)
+
+    time =datetime.datetime.now() - t1
+    return Exchange(method, path, url, body, headers,status, outHeaders,content, info,time)
 
 
-###########################################################################
-## Reqs manage
-###########################################################################
+
+
+######################################################################################"
+## test part (old code)
+######################################################################################"
 class Test(int):
     """ a boolean with a name """
+    name=""
+    def __init__(self,v,n1,n2): pass # just for mypy
 
-    def __new__(cls, value: int, nameOK: str, nameKO: str):
-        s = super(Test, cls).__new__(cls, value)
+    def __new__(cls, value:int, nameOK: str=None, nameKO: str=None):
+        s = super().__new__(cls, value)
         if value:
             s.name = nameOK
         else:
             s.name = nameKO
         return s
 
+    def __repr__(self):
+        return "%s: %s" % ("OK" if self else "KO", self.name)
 
+
+def strjs(x) -> str:
+    if type(x) is bytes:
+        return str(x)
+    else:
+        return json.dumps(x, ensure_ascii=False)
 
 def getValOpe(v):
     try:
@@ -407,38 +995,29 @@ def getValOpe(v):
         pass
     return v, lambda a, b: a == b, "=", "!="
 
-
-def strjs(x) -> str:
-    return json.dumps(x, ensure_ascii=False)
-
-
 class TestResult(list):
-    def __init__(self, req, res, tests, doc=None) -> None:
-        self.req = req
-        self.res = res
-        self.doc = doc
-
+    def __init__(self, tests, status,content,headers) -> None:
+        
         insensitiveHeaders = (
-            {k.lower(): v for k, v in self.res.headers.items()} if self.res else {}
+            {k.lower(): v for k, v in headers.items()}
         )
 
         results = []
         for test in tests:
             what, value = list(test.keys())[0], list(test.values())[0]
-
             testContains = False
 
             # get the value to compare with value --> tvalue
             if what == "content":
                 testContains = True
-                tvalue = str(self.res.content)
+                tvalue = str(content)
             elif what == "status":
                 testContains = False
-                tvalue = self.res.status
+                tvalue = status
             elif what.startswith("json."):
                 testContains = False
                 try:
-                    jzon = json.loads(str(self.res.content))
+                    jzon = content.toJson()
                     tvalue = jpath(jzon, what[5:])
                     tvalue = None if tvalue is NotFound else tvalue
                 except Exception as e:
@@ -449,10 +1028,13 @@ class TestResult(list):
 
             # test if all match as json (list, dict, str ...)
             try:
-                j = lambda x: json.dumps(
-                    json.loads(x) if type(x) in [str, bytes] else x, sort_keys=True
-                )
-                matchAll = j(value) == j(tvalue)
+                def makeComparable(x):
+                    if type(x) is bytes:
+                        return x
+                    else:
+                        return json.dumps(json.loads(x) if type(x) in [str, bytes] else x, sort_keys=True)
+                
+                matchAll = (makeComparable(value) == makeComparable(tvalue))
             except json.decoder.JSONDecodeError as e:
                 matchAll = False
 
@@ -463,11 +1045,13 @@ class TestResult(list):
                 values = [value] if type(value) != list else value
                 opOK, opKO = None, None
                 bool = False
+
+
                 for value in values:  # match any
                     if testContains:
                         value, ope, opOK, opKO = (
                             value,
-                            lambda x, c: x in c,
+                            lambda x, c: toStr(x) in c,
                             "contains",
                             "doesn't contain",
                         )
@@ -488,750 +1072,433 @@ class TestResult(list):
                         values,
                     )
 
-            results.append(
-                Test(
-                    test,
-                    what + " " + opOK + " " + strjs(val),  # test name OK
-                    what + " " + opKO + " " + strjs(val),  # test name KO
-                )
-            )
+            nameOK=what + " " + opOK + " " + strjs(val)  # test name OK
+            nameKO=what + "[%s] "%tvalue + opKO + " " + strjs(val)  # test name KO
+
+            results.append( Test(test,nameOK, nameKO) )
 
         list.__init__(self, results)
 
     def __repr__(self) -> str:
-        ll = [""]
-        ll.append(
-            cy("*")
-            + " %s --> %s"
-            % (self.req, cw(str(self.res)) if self.res else cr("Not callable"))
-        )
-        for t in self:
-            ll.append("  - %s: %s" % (cg("OK") if t == 1 else cr("KO"), t.name))
-        return "\n".join(ll)
+        return "".join([ "[%s]"%repr(t) for t in self])
+
+class Result:
+    total=0
+    ok=0
+    infos=[]
+    @property
+    def html(self):
+        return render(self)
+    @property
+    def code(self):
+        return self.total-self.ok
 
 
-def getVar(env: dict, var: str) -> T.Any:
-    if var in env:
-        return txtReplace(env, env[var])
-    elif "|" in var:
-        key, method = var.split("|", 1)
+class ReqmanResult(Result):
+    @classmethod
+    def fromRMR(cls,name):
+        if not name.endswith(".rmr"): name=name+".rmr"
+        with open(name, 'rb') as fid:
+            buf=fid.read()
+            assert buf[:4] == b"RMR1" #TODO
+            x=zlib.decompress(buf[4:])
+            return pickle.loads(x)
 
-        content = env.get(key, key)  # resolv keys else use it a value !!!!!
-        content = txtReplace(env, content)
-        for m in method.split("|"):
-            content = transform(content, env, m)
-            content = txtReplace(env, content)
-        return content
+    def __init__(self,ll:T.List[Reqs],switchs:list,env={}):
+        ok=0
+        total=0
+        nbReqs=0
+        for r in ll:
+            for x in r.exchanges:
+                nbReqs+=1
+                total+=len(x.tests)
+                ok+=sum([t for t in x.tests])    
 
-    elif "." in var:
-        val = jpath(env, var)
-        if val is NotFound:
-            raise RMNonPlayable(
-                "Can't resolve '%s'" % var
+        self.infos=[
+            dict(
+                date=datetime.datetime.now(),
+                switchs=switchs,
             )
-        return txtReplace(env, val)
-    else:
-        raise RMNonPlayable(
-            "Can't resolve '%s'" % var
-        )
+        ]
+
+        self.env=env
+        self.ok=ok
+        self.total=total
+        self.nbReqs=nbReqs
+        self.results=ll
+        self.title="%s %s/%s" %(",".join(switchs),ok,total)
+    
+
+    def saveRMR(self):
+        name="_".join( [self.infos[0]["date"].strftime("%y%m%d_%H%M")] + self.infos[0]["switchs"] )+".rmr"
+        with open(name, 'wb') as fid:
+            x=pickle.dumps(self)
+            fid.write(b"RMR1"+zlib.compress(x))
+        return name
+
+class ReqmanDualResult(Result):
+    def __init__(self,r1: ReqmanResult,r2: ReqmanResult):
+        assert len(r1.results)==len(r2.results) #TODO: better here
+
+        d1={i.name:i.exchanges for i in r1.results}
+        d2={i.name:i.exchanges for i in r2.results}
+        
+        class ReqsMix:
+            name=None
+            exchanges=[]
+
+        ll=[]
+        for i in r1.results:
+            m=ReqsMix()
+            m.name=i.name
+            ex1=d1.get(i.name,[])
+            ex2=d2.get(i.name,[])
+
+            m.exchanges = izip(ex1,ex2)
+            if m.exchanges:
+                ll.append( m )
+
+        self.infos=[ r1.infos[0], r2.infos[0] ]
+
+        self.env=None
+        self.ok=r1.ok + r2.ok
+        self.total=r1.total + r2.total
+        self.nbReqs=r1.nbReqs+r2.nbReqs
+        self.results=ll
+        self.title="%s vs %s" % (r1.title,r2.title)
+
+        # for i in ll:
+        #     print("FILE:",i.name)
+        #     for ex,v1,v2 in i.exchanges:
+        #         print("  ",ex.method,ex.path)
+        #         if v1: print("    v1:",v1.method,v1.url)
+        #         if v2: print("    v2:",v2.method,v2.url)
+ 
 
 
-def DYNAMIC(x, env: dict) -> T.Union[str, None]:
-    pass  # will be overriden (see below vv)
-
-
-def transform(
-    content: T.Union[str, None], env: dict, methodName: str
-) -> T.Union[str, None]:
-    if methodName:
-        if methodName in env:
-            code = getVar(env, methodName)
-            try:
-                exec(
-                    "def DYNAMIC(x,ENV):\n"
-                    + ("\n".join(["  " + i for i in code.splitlines()])),
-                    globals(),
-                )
-            except Exception as e:
-                raise RMException(
-                    "Error in declaration of method " + methodName + " : " + str(e)
-                )
-            try:
-                if content is not None:
-                    x = json.loads(content)
-                else:
-                    x = None
-            except (json.decoder.JSONDecodeError, TypeError):
-                x = content
-            try:
-                if transform.path:
-                    curdir = os.getcwd()
-                    os.chdir(transform.path)
-                else:
-                    curdir = None
-                content = DYNAMIC(x, env)
-            except Exception as e:
-                raise RMException(
-                    "Error in execution of method " + methodName + " : " + str(e)
-                )
-            finally:
-                if curdir:
-                    os.chdir(curdir)
-        else:
-            raise RMException(
-                "Can't find method "
-                + methodName
-                + " in : "
-                + ", ".join(list(env.keys()))
-            )
-
-    return content
-
-
-transform.path = None  # change cd cwd for transform methods when executed
-
-
-def objReplace(env: dict, txt: str) -> T.Any:  # same as txtReplace() but for "object" (json'able)
-    obj = txtReplace(env, txt)
-    try:
-        obj = json.loads(obj)
-    except (json.decoder.JSONDecodeError, TypeError):
-        pass
-    return obj
-
-
-def txtReplace(env: dict, txt) -> T.Any:
-    if env and txt and isinstance(txt, str):
-        for vvar in re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt):
-            var = vvar[2:-2]
-
-            try:
-                val = getVar(
-                    env, var
-                )  # recursive here ! (if myvar="{{otherVar}}"", redo a pass to resolve otherVar)
-            except RuntimeError:
-                raise RMException("Recursion trouble for '%s'" % var)
-
-            if val is NotFound:
-                raise RMNonPlayable(
-                    "Can't resolve '%s'" % var
-                )
-            else:
-                if type(val) != str:
-                    if val is None:
-                        val = "null"
-                    elif val is True:
-                        val = "true"
-                    elif val is False:
-                        val = "false"
-                    elif type(val) in [list, dict]:
-                        val = json.dumps(val)
-                    elif type(val) == bytes:
-                        val = val  # keep BYTES !!!!!!!!!!!!!!
-                    else:  # int, float, ...
-                        val = json.dumps(val)
-
-                if type(val) != bytes:
-                    txt = txt.replace(vvar, val)
-                else:
-                    return val  # if bytes, return directly the bytes !!!
-
-    return txt
-
-
-def alwaysReplaceTxt(d, v):
-    try:
-        return txtReplace(d, v)
-    except RMNonPlayable as e:
-        return v
-
-
-def warn(*m):
-    print("***WARNING***", *m)
-
-
-def getTests(y: dict) -> list:
-    """ Get defined tests as list ok dict key:value """
-    if y:
-        tests = y.get("tests", [])
-        if type(tests) == dict:
-            warn(
-                "'tests:' should be a list of mono key/value pairs (ex: '- status: 200')"
-            )
-            tests = [{k: v} for k, v in dict(tests).items()]
-        return tests
-    else:
-        return []
-
-
-def getHeaders(y: dict) -> dict:
-    """ Get defined headers as dict """
-    if y:
-        headers = y.get("headers", {})
-        if type(headers) == list:
-            warn(
-                "'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')"
-            )
-            headers = {list(d.keys())[0]: list(d.values())[0] for d in headers}
-        headers={k:str(v) for k,v in headers.items()}
-        return headers
-    else:
-        return {}
-
-
-
-class Req(object):
-    def __init__(
-        self,
-        method,
-        path,
-        body=None,
-        headers={},
-        tests=[],
-        saves=[],
-        params={},
-        doc=None,
-    ):  # body = str ou dict ou None
-        self.method = method.upper()
-        self.path = path
-        self.body = body
-        self.headers = headers
-        self.tests = tests
-        self.saves = saves
-        self.params = params
-        self.doc = doc
+class Reqman:
+    def __init__(self,conf=None):
+        self.env=Env(conf)
+        self.ymls=[] # list of str (or reqs)
+        self.outputConsole = OutputConsole.MINIMAL
 
     def clone(self):
-        return Req(
-            self.method,
-            self.path,
-            copy.deepcopy(self.body),
-            dict(self.headers),
-            list(self.tests),
-            list(self.saves),
-            dict(self.params),
-            self.doc,
-        )
+        r=Reqman( clone(self.env) )
+        r.ymls = self.ymls
+        r.outputConsole = self.outputConsole
+        return r
 
-    def stest(self, env: dict = None) -> TestResult: #for pytests only ;-)
-        return asyncio.run(self.test(env))
+    @property
+    def switchs(self):
+        return list(self.env.switchs)
+        
+    def add(self,y):
+        self.ymls.append( y )
 
-    async def test(self, env: dict = None) -> TestResult:
+    def execute(self,switchs=[],paralleliz=False,http=None) -> ReqmanResult:
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self.asyncExecute(switchs,paralleliz,http))
 
-        if env is None: env={}
-        cenv = env.copy()  # current env
-        cenv.update(self.params)  # override with self params
-        cenv = dict(cenv)
-        errPath = (
-            None
-        )  # to handle NonPlayable test (not a error anymore, a TestResult is returned)
+    async def asyncExecute(self,switchs: list = [],paralleliz=False,http=None) -> ReqmanResult:
+        scope = self.env.clone()
 
-        # path ...
-        try:
-            path = txtReplace(cenv, self.path)
-        except RMNonPlayable as e:
-            path = self.path
-            errPath = e  # to return a ResponseError on path replace trouble
+        for switch in switchs:
+            scope.mergeSwitch(switch)
 
-        if cenv and (not path.strip().lower().startswith("http")) and ("root" in cenv):
-            h = urllib.parse.urlparse(cenv["root"])
-            if h.path and h.path[-1] == "/":
-                if path[0] == "/":
-                    path = h.path + path[1:]
-                else:
-                    path = h.path + path
+        reqsBegin=Reqs(yaml.dump(scope["BEGIN"]) if "BEGIN" in scope else "",scope,name="BEGIN")
+        reqsEnd=Reqs(yaml.dump(scope["END"]) if "END" in scope else "",scope,name="END") if "END" in scope else None
+
+        results=[]
+
+        if reqsBegin is not None:
+            await reqsBegin.asyncExecute(http)
+            results.append( reqsBegin )
+
+        lreqs=[]
+        for yml in self.ymls:
+            if isinstance(yml,Reqs):
+                yml.env = scope
+                lreqs.append( yml )
             else:
-                path = h.path + path
+                lreqs.append( Reqs( yml, scope ) )   #(no need to clone) scope is cloned at execution time!
+
+        if paralleliz:
+            ll=[reqs.asyncExecute(http, outputConsole=self.outputConsole) for reqs in lreqs]
+
+            sem = asyncio.Semaphore(10) # ten concurrent coroutine max
+            async with sem:            
+                await asyncio.gather(*ll)
+            results += lreqs
         else:
-            h = urllib.parse.urlparse(path)
-            path = h.path + ("?" + h.query if h.query else "")
+            for reqs in lreqs:
+                await reqs.asyncExecute(http, outputConsole=self.outputConsole)
+                results.append( reqs)
 
-        # headers ...
-        headers = getHeaders(cenv).copy() if cenv else {}
-        headers.update(self.headers)  # override with self headers
-        headers = {
-            k: alwaysReplaceTxt(cenv, v)
-            for k, v in list(headers.items())
-            if v is not None
-        }
+        if reqsEnd is not None:
+            await reqsEnd.asyncExecute(http, outputConsole=self.outputConsole)
+            results.append( reqsEnd )
 
-        # fill tests ...
-        tests = getTests(cenv)
-        tests += self.tests  # extends with self tests
 
-        ntests = []
-        for test in tests:
-            key, val = list(test.keys())[0], list(test.values())[0]
-            if type(val) == list:
-                val = [alwaysReplaceTxt(cenv, i) for i in val]
+        r=ReqmanResult(results,switchs,self.env)
+        #============================= LIVE CONSOLE
+        if self.outputConsole != OutputConsole.NO:
+            callback = cg if r.ok==r.total else cr
+            print("RESULT:", callback("%s/%s" % (r.ok,r.total)), "(%sreq(s))" % r.nbReqs)
+        #============================= LIVE CONSOLE
+
+        return r
+
+
+
+
+
+
+async def testContent(content: str, env: dict = {}, http=None) -> ReqmanResult:
+    """ test a yml 'content' against env (easy wrapper for main call )"""
+    if not isinstance(env,Env): env=Env(env)
+    reqs = Reqs(content,env=env)
+    await reqs.asyncExecute(http=http, outputConsole=OutputConsole.NO)
+
+    return ReqmanResult( [reqs],[], env )
+
+def findRCup(cp):
+    rqc=None
+    while os.path.basename(cp)!="":
+        if os.path.isfile( os.path.join(cp,REQMAN_CONF) ):
+            rqc=os.path.join(cp,REQMAN_CONF)
+            break
+        else:
+            cp=os.path.realpath(os.path.join(cp, os.pardir))
+
+    if rqc:
+        print( cw("Use '%s'" % os.path.relpath(rqc)) )
+    return rqc
+
+class ReqmanCommand:
+    def __init__(self,*params):
+        self._r=Reqman()
+
+        def listFiles(path: str, filters=(".yml", ".rml")) -> T.Iterator[str]:
+            for folder, subs, files in os.walk(path):
+                if (folder in [".", ".."]) or (not os.path.basename(folder).startswith( (".", "_") )):
+                    for filename in files:
+                        if filename.lower().endswith(filters) and not filename.startswith( (".", "_") ):
+                            yield os.path.join(folder, filename)
+
+        # expand list with file pattern matching (win needed)
+        params = list(itertools.chain.from_iterable([glob.glob(i) or [i] for i in params]))
+        files=[]
+
+        for p in params:
+            if os.path.isdir(p):
+                files += sorted(list(listFiles(p)), key=lambda x: x.lower())
+            elif os.path.isfile(p):
+                files.append(p)
             else:
-                val = alwaysReplaceTxt(cenv, val)
-            ntests.append({key: val})
-        tests = ntests
+                raise RMException("bad param: %s" % p)  # TODO: better here
 
-        # body ...
-        if self.body and not isinstance(self.body, str):
+        files=[os.path.abspath(i) for i in files]  #TODO: really needed ?
 
-            # ================================
-            def apply(body, method):
-                if type(body) == list:
-                    return [apply(i, method) for i in body]
-                elif type(body) == dict:
-                    return {k: apply(v, method) for k, v in body.items()}
-                else:
-                    return method(body)
+        files.sort()
+        cp=os.path.dirname(os.path.commonprefix(files)) or "."
 
-            # ================================
+        rqc=findRCup(cp)
+        if rqc:
+            # os.chdir( os.path.dirname(rqc) ) # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: needed ?
+            self._r.env=Env( FString(rqc))
 
+        for i in files:
+            self._r.add(FString(i))
+
+    @property
+    def nbFiles(self):
+        return len( self._r.ymls)
+
+    @property
+    def switchs(self):
+        return self._r.switchs
+
+    def execute(self, switchs=[], paralleliz=False, outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanResult:
+        self._r.outputConsole=outputConsole
+        return self._r.execute(switchs,paralleliz,http=fakeServer)
+
+    async def asyncExecute(self, switchs=[], paralleliz=False, outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanResult:
+        self._r.outputConsole=outputConsole
+        return await self._r.asyncExecute(switchs,paralleliz,http=fakeServer)
+
+    async def asyncExecuteDual(self, switchs1=[],switchs2=[], outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanDualResult:
+        assert switchs1!=switchs2 #TODO
+        self._r.outputConsole=outputConsole
+
+        r2 = self._r.clone()    # clone IMPORTANT !!!
+
+        ll=[self._r.asyncExecute(switchs1,http=fakeServer), r2.asyncExecute(switchs2,http=fakeServer) ]
+        return ReqmanDualResult(*await asyncio.gather(*ll))
+
+
+
+class ReqmanRMR(ReqmanCommand):
+    def __init__(self,rmr: ReqmanResult):
+        self._r=Reqman()
+        self._r.env=rmr.env
+        self._r.ymls=[i for i in rmr.results if i.name not in ["BEGIN","END"]]
+
+    #override
+    async def asyncExecuteDual(self, switchs1=[],switchs2=[], outputConsole=OutputConsole.MINIMAL,fakeServer=None)  -> ReqmanDualResult:
+        raise RMException("not implemented")
+
+
+def render(rr:Result) -> str:
+
+    def prettify(txt: str, indentation: int = 4) -> str:
+        if txt==None:
+            return ""
+        else:
+            txt=str(txt)
+        try:
+            x = xml.dom.minidom.parseString(txt).toprettyxml(indent=" " * indentation)
+            x = "\n".join(
+                [s for s in x.splitlines() if s.strip()]
+            )  # http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
+            return x
+        except:
             try:
-                jrep = lambda x: objReplace(cenv, x)  # "json rep"
-                body = apply(self.body, jrep)
-                body = json.dumps(body)  # and convert to string !
-            except RMNonPlayable as e:
-                # return a TestResult Error ....
-                body = self.body
-        else:
-            body = self.body
-            while 1:
-                precBody = body
-                body = alwaysReplaceTxt(cenv, body)
-                if body == precBody:
-                    break
+                return json.dumps(json.loads(txt), indent=indentation, sort_keys=True)
+            except:
+                return txt
 
-
-        if errPath:
-            req = Request(
-                h.scheme, h.hostname, h.port, self.method, path, body, headers
-            )
-            res = ResponseError(str(errPath))
-            return TestResult(req, res, tests, self.doc)
-        else:
-            req = Request(
-                h.scheme, h.hostname, h.port, self.method, path, body, headers
-            )
-            if h.hostname:
-
-                timeout = cenv.get("timeout", None)
-                try:
-                    timeout = timeout and float(timeout) / 1000.0 or None
-                except ValueError:
-                    pass
-
-                t1 = datetime.datetime.now()
-
-                # set cookies in request according env
-                cj=CookieStore( cenv.get("_cookies",[]) )
-                cj.update(req)
-
-                # make the request !!!!!!!!!!!!!!!!!!!!!!
-                res = await dohttp(req, timeout)
-
-                # extract cookies from response to the env
-                cj.extract(res)
-                env["_cookies"] = cj.export() # store in the env !
-
-
-                res.time = datetime.datetime.now() - t1
-                if isinstance(res, Response) and self.saves:
-                    for save in self.saves:
-                        dest = txtReplace(cenv, save)
-                        if dest.lower().startswith("file://"):
-                            name = dest[7:]
-                            try:
-                                with open(name, "wb+") as fid:
-                                    fid.write(res.content.toBinary())
-                            except Exception as e:
-                                raise RMException(
-                                    "Save to file '%s' error : %s" % (name, e)
-                                )
-                        else:
-                            if dest:
-                                try: # store in the env !
-                                    env[dest] = json.loads(str(res.content))
-                                except json.decoder.JSONDecodeError:
-                                    env[dest] = str(res.content)
-
-                return TestResult(req, res, tests, self.doc)
-            else:
-                # no hostname : no response, no tests ! (missing reqman.conf the root var ?)
-                return TestResult(req, None, [], self.doc)
-
-    def __repr__(self):
-        return "<%s %s>" % (self.method, self.path)
-
-
-def controle(keys: list, knowkeys: list) -> None:
-    for key in keys:
-        if key not in knowkeys:
-            raise RMException("Not a valid entry '%s'" % key)
-
-
-class Reqs(list):
-    sequence="" # can be executed in parallel
-    def __init__(self, fd: T.IO, env: dict = None) -> None:
-        self.env = env or {}  # just for proc finding
-        self.name = fd.name.replace("\\", "/") if hasattr(fd, "name") else "String"
-        self.trs = []
-        if not hasattr(fd, "name"):
-            setattr(fd, "name", "<string>")
-        try:
-            l = yamlLoad(fd)
-        except Exception as e:
-            raise RMException("YML syntax in %s\n%s" % (fd.name or "<string>", e))
-
-        procs = {}
-
-        def feed(l):
-            l = l if type(l) == list else [l]
-
-            ll = []
-            for entry in l:
-                if not entry:
-                    continue
-                env = {}
-                dict_merge(env, self.env)
-
-                try:
-                    if type(entry) != dict:
-                        if type(entry) == str and entry == "break":
-                            break
-                        else:
-                            raise RMException("no actions for %s" % entry)
-                    action = list(
-                        (KNOWNVERBS | set(["call"])).intersection(list(entry.keys()))
-                    )
-                    if len(action) > 1:
-                        raise IndexError
-                    else:
-                        action = action[0]
-                except IndexError:
-                    action = None
-
-                if action is not None:
-                    # a real action (call a proc or a requests)
-                    headers = getHeaders(entry)
-                    tests = getTests(entry)
-                    params = entry.get("params", {})
-                    foreach = entry.get("foreach", [None])  # at least one iteration !
-                    saves = entry.get("save", [])
-                    saves = saves if type(saves) == list else [saves]
-
-                    if type(params) == dict:
-                        dict_merge(env, params)  # add current params (to find proc)
-                    else:
-                        raise RMException("params is not a dict : '%s'" % params)
-
-                    if foreach and type(foreach) == str:
-                        foreach = objReplace(env, foreach)
-
-                    if action == "call":
-                        controle(
-                            entry.keys(),
-                            ["headers", "tests", "params", "foreach", "save", "call"],
-                        )
-
-                        procnames = entry["call"]
-
-                        if procnames and type(procnames) == str:
-                            procnames = objReplace(env, procnames)
-
-                        procnames = (
-                            procnames if type(procnames) == list else [procnames]
-                        )
-
-                        for procname in procnames:
-                            procname = objReplace(env, procname)
-                            content = procs.get(procname, env.get(procname, None))
-                            if content is None:
-                                raise RMException(
-                                    "unknown procedure '%s' is %s"
-                                    % (procname, procs.keys())
-                                )
-
-                            for param in foreach:
-                                if type(param) == str:
-                                    param = objReplace(env, param)
-                                for req in feed(content):
-                                    newreq = req.clone()
-                                    newreq.tests += tests  # merge tests
-                                    dict_merge(newreq.headers, headers)  # merge headers
-                                    dict_merge(newreq.params, params)  # merge params
-                                    if param:
-                                        dict_merge(
-                                            newreq.params, param
-                                        )  # merge foreach param
-                                    newreq.saves += saves  # merge saves
-                                    newreq.doc=alwaysReplaceTxt(newreq.params,newreq.doc) #new
-
-                                    ll.append(newreq)
-                    else:
-                        controle(
-                            entry.keys(),
-                            [
-                                "headers",
-                                "doc",
-                                "tests",
-                                "params",
-                                "foreach",
-                                "save",
-                                "body",
-                            ]
-                            + list(KNOWNVERBS),
-                        )
-
-                        body = entry.get("body", None)
-                        doc = entry.get("doc", None)
-
-                        if foreach and type(foreach) != list:
-                            raise RMException("the foreach section is not a list ?!")
-
-                        for param in foreach:
-                            if type(param) == str:
-                                param = objReplace(env, param)
-
-                            lparams = {}
-                            dict_merge(lparams, params)
-                            if param:
-                                dict_merge(lparams, param)
-
-                            doc=alwaysReplaceTxt(lparams,doc) #new
-
-                            ll.append(
-                                Req(
-                                    action,
-                                    entry[action],
-                                    body,
-                                    headers,
-                                    tests,
-                                    saves,
-                                    lparams,
-                                    doc,
-                                )
-                            )
-
-                elif len(entry) == 1 and type(list(entry.values())[0]) in [list, dict]:
-                    # a proc declared
-                    procname, content = list(entry.items())[0]
-                    if procname in [
-                        "headers",
-                        "tests",
-                        "params",
-                        "foreach",
-                        "save",
-                        "body",
-                    ]:
-                        raise RMException("procedure can't be named %s" % procname)
-                    procs[procname] = content
-                else:
-                    # no sense ?!
-                    raise RMException("no action or too many : %s" % entry.keys())
-
-            return ll
-
-        list.__init__(self, feed(l))
-
-
-###########################################################################
-## Helpers
-###########################################################################
-def listFiles(path: str, filters=(".yml", ".rml")) -> T.Iterator[str]:
-    for folder, subs, files in os.walk(path):
-        if folder in [".", ".."] or (
-            not os.path.basename(folder).startswith((".", "_"))
-        ):
-            for filename in files:
-                if filename.lower().endswith(filters):
-                    yield os.path.join(folder, filename)
-
-
-def loadEnv(fd, varenvs: T.List[str] = []) -> dict:
-    transform.path = None
-    if fd:
-        if not hasattr(fd, "name"):
-            setattr(fd, "name", "")
-        try:
-            env = yamlLoad(fd) if fd else {}
-            if fd.name:
-                print(cw("Using '%s'" % os.path.relpath(fd.name)))
-                transform.path = os.path.dirname(
-                    fd.name
-                )  # change path when executing transform methods, according the path of reqman.conf
-        except Exception as e:
-            raise RMException("YML syntax in %s\n%s" % (fd.name or "<string>", e))
-    else:
-        env = {}
-
-    for name in varenvs:
-        if name not in env:
-            raise RMException("the switch '-%s' is unknown ?!" % name)
-        else:
-            dict_merge(env, env[name])
-    return env
-
-
-def render(reqs: T.List[Reqs], switchs: T.List[str]) -> T.Tuple[int, int, str]:
-    h = """
-<meta charset="utf-8">
+    template="""<!DOCTYPE html>
+<html>
+<head>
+<title>{{result.title}}</title>
 <style>
+* { box-sizing: border-box;}
+html,body {width:100%;height:100%;margin:0px;padding:0px}
+h3,h4 {padding:0px;margin:0px}
+h3 {color: blue;margin-top:22px;}
+h4 {cursor:pointer;padding:4px;background:#eee}
+h4:hover {background: linear-gradient(to right,#EEE,white) !important}
+h4 i {color:#AAA;font-weight: normal;font-size:0.9em}
 body {font-family: sans-serif;font-size:90%}
-.ok {color:green}
-.ko {color:red}
-hr {padding:0px;margin:0px;height: 1px;border: 0;color: #CCC;background-color: #CCC;}
-pre {padding:4px;border:1px solid black;background:white !important;overflow-x:auto;width:100%;max-height:300px;margin:2px;}
-span.title {cursor:pointer;}
-span.title:hover {background:#EEE;}
-i {float:right;color:#AAA}
-i.bad {color:orange}
-i.good {color:green}
-ol,ul {margin:0px;}
-ol {padding:0px;}
-ol > li {background:#FFE;border-bottom:1px dotted grey;padding:4px;margin-left:16px}
-li.hide {background:inherit}
-li.hide > ul > span {display:none}
-h3 {color:blue;margin:8 0 0 0;padding:0px}
-.info {position:fixed;top:0px;right:0px;background:rgba(1,1,1,0.2);border-radius:4px;text-align:right;padding:4px}
-.info > * {display:block}
-p {margin:0px;padding:0px;color:#AAA;font-style: italic;}
+pre {padding:4px;border:1px solid #CCC;max-height:300px;margin:2px;width:95%;display:block;overflow:auto;background:white;font-size:0.9em}
+.OK {color:green}
+.KO {color:red}
+div.r {margin:4px;background: linear-gradient(#EEE,white);margin-left:10px}
+div.hide > div.h {background:white}
+div.hide > h4 {background:white}
+div.h {display:flex; flex-flow: row nowrap;padding-left:10px}
+div.h > div {flex: 1 0 50%}
+.expanderContent   {
+    padding: 0;
+    max-height: 700px;
+    opacity: 1;
+    overflow-y: auto;
+    transition: 0.3s ease all;
+    padding:4px
+}
+.hide .expanderContent {
+    max-height: 0;
+    opacity: 0;
+    padding:0px
+}
 </style>
+</head>
+<body>
+<div class="h" style="position:sticky">
+%for i in result.infos:
+    <div>
+        <span style="float:right"><b>{{", ".join(i["switchs"])}}</b> {{i["date"].strftime("%Y-%m-%d %H:%M:%S")}}</span>
+    </div>
+%end
+</div>
+
+%for r in result.results:
+%if r:
+<div class="f">
+    <h3>File: {{relpath(r.name)}}</h3>
+
+    %for ex in r.exchanges:
+    <div class="r hide">
+        <h4 onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details">
+            <b>{{first(ex).method}}</b> 
+            {{first(ex).path}}
+            <br/>
+            <i>{{first(ex).doc}}</i>
+        </h4>
+
+<div class="h s expanderContent">
+%for x in discover(ex):
+    <div style="width:50%">
+    %if x is not None:
+<pre>
+{{x.method}} {{x.url}}
+%for k,v in x.inHeaders.items():
+<b>{{k}}</b>: {{v}}
+%end
+{{prettify(x.bodyContent)}}</pre>
+
+    --> {{x.info}}
+
+<pre>
+%for k,v in x.outHeaders.items():
+<b>{{k}}</b>: {{v}}
+%end
+{{prettify(x.content)}}</pre>
+    %else:
+        -
+    %end
+    </div>
+%end
+</div>
+
+
+<div class="h">
+%for x in discover(ex):
+    <div style="width:50%">
+    %if x is not None:
+
+        %for i in x.tests:
+            <li class="{{i and "OK" or "KO"}}">{{i and "OK" or "KO"}} : {{i.name}}</li>
+        %end    
+    %else:
+        -
+    %end
+    </div>
+%end
+</div>
+
+    </div>
+    %end
+
+
+</div>
+%end
+%end
+</body>
+</html>
 """
-    alltr = []
-    for f in reqs:
-        times = [tr.res.time for tr in f.trs if tr.res and tr.res.time]
 
-        hreqs = ""
-        for tr in f.trs:
-            alltr += tr
-
-            qheaders = "\n".join(
-                ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.req.headers.items())]
-            )
-            content = Content(tr.req.body)
-            qbody = html.escape(prettify(str(content or "")))
-
-            qdoc = "<p>%s</p>" % tr.doc if tr.doc else ""
-
-            if tr.res and tr.res.status is not None:
-                rtime = tr.res.time
-                info = tr.res.info
-                rheaders = "\n".join(
-                    ["<b>%s</b>: %s" % (k, v) for k, v in list(tr.res.headers.items())]
-                )
-                rbody = html.escape(prettify(str(tr.res.content or "")))
-
-                hres = """
-                    <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
-                    -> {info}
-                    <pre title="the response">{rheaders}<hr/>{rbody}</pre>
-                """.format(
-                    **locals()
-                )
-
-            else:
-                rtime = ""
-
-                hres = """
-                    <pre title="the request">{tr.req.method} {tr.req.url}<hr/>{qheaders}<hr/>{qbody}</pre>
-                """.format(
-                    **locals()
-                )
-
-            tests = "".join(
-                [
-                    """<li class='%s'>%s</li>"""
-                    % ("ok" if t else "ko", html.escape(t.name))
-                    for t in tr
-                ]
-            )
-
-            hreqs += """
-<li class="hide">
-    <span class="title" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details"><b>{tr.req.method}</b> {tr.req.path} : <b>{tr.res}</b> <i>{rtime}</i>{qdoc}</span>
-    <ul>
-        <span>
-            {hres}
-        </span>
-        {tests}
-    </ul>
-</li>
-            """.format(
-                **locals()
-            )
-
-        avg = sum(times, datetime.timedelta()) / len(times) if len(times) else 0
-        h += """<h3>%s</h3>
-        <ol>
-            <i style='float:inherit'>%s req(s) avg = %s</i>
-            %s
-        </ol>""" % (
-            f.name,
-            len(times),
-            avg,
-            hreqs,
-        )
-
-    ok, total = len([i for i in alltr if i]), len(alltr)
-
-    h += """<title>Result: %(ok)s/%(total)s</title>
-    <div class='info'><span>%(today)s</span><b>%(switchs)s</b></div>""" % dict(
-        ok=ok,
-        total=total,
-        today=str(datetime.datetime.now())[:16],
-        switchs=" ".join(switchs),
-    )
-
-    return ok, total, h
-
-
-def findRCUp(fromHere: str) -> T.Union[None, str]:
-    """Find the rc in upwards folders"""
-    current = os.path.realpath(fromHere)
-    rc = None
-    while 1:
-        rc = os.path.join(current, REQMAN_CONF)
-        if os.path.isfile(rc):
-            break
-        next = os.path.realpath(os.path.join(current, ".."))
-        if next == current:
-            rc = None
-            break
+    def discover(ex):
+        if type(ex) is tuple:
+            return list(ex[1:])
         else:
-            current = next
-    return rc
-
-
-def resolver(params: T.List) -> T.Tuple[T.Union[str, None], T.List[str]]:
-    """ return tuple (reqman.conf,ymls) finded with params """
-    ymls, paths = [], []
-
-    # expand list with file pattern matching (win needed)
-    params = list(itertools.chain.from_iterable([glob.glob(i) or [i] for i in params]))
-
-    for p in params:
-        if os.path.isdir(p):
-            ymls += sorted(list(listFiles(p)), key=lambda x: x.lower())
-            paths += [os.path.dirname(i) for i in ymls]
-        elif os.path.isfile(p):
-            paths.append(os.path.dirname(p))
-            ymls.append(p)
+            return [ex]
+    def first(ex):
+        if type(ex) is tuple:
+            return ex[0]
         else:
-            raise RMException("bad param: %s" % p)  # TODO: better here
+            return ex
 
-    # choose first reqman.conf under choosen files
-    rc = None
-    folders = list(set(paths))
-    folders.sort(key=lambda i: i.count("/") + i.count("\\"))
-    for f in folders:
-        if os.path.isfile(os.path.join(f, REQMAN_CONF)):
-            rc = os.path.join(f, REQMAN_CONF)
-
-    # if not, take the first reqman.conf in backwards
-    if rc is None:
-        rc = findRCUp(folders[0] if folders else ".")
-
-    ymls.sort(key=lambda x: x.lower())
-    return rc, ymls
+    def relpath(p):
+        return os.path.relpath(p,os.getcwd())
 
 
+    return stpl.template(template,result=rr,prettify=prettify,discover=discover,first=first,relpath=relpath)
+
+
+def mkUrl(protocol: str, host: str, port=None) -> str:
+    port = ":%s" % port if port else ""
+    return "{protocol}://{host}{port}".format(**locals())
 
 
 def create(url: str) -> T.Tuple[T.Union[None, str], str]:
@@ -1266,103 +1533,55 @@ headers:
     )
     return (rc, yml)
 
+def extractParams(params):
+    files,rparams,switchs,dswitchs=[],[],[],[]
+    for param in params:
+        if param.startswith("--"):
+            # reqman param
+            p=param[2:]
+            if p.startswith("o"):
+                rparams.append( p )
+            else: # ability to group param (ex: --kspb)
+                for i in p:
+                    rparams.append( i )
+        elif param.startswith("-"):
+            # switch param
+            switchs.append( param[1:] )
+        elif param.startswith("+"):
+            # dual switch param
+            dswitchs.append( param[1:] )
+        else:
+            files.append(param)
+    return files,rparams,switchs,dswitchs
 
-class MainResponse:
-    def __init__(self, rc, html=None, env={}, reqs=[], total=None, ok=None) -> None:
-        self.code = rc
-        self.html = html
-        self.env = env
-        self.reqs = reqs
-        self.total = total
-        self.ok = ok
+def main(fakeServer=None):
+    params=sys.argv[1:]
+    r=None
+    class RMCommandException(Exception): pass
 
-class RC(int):
-    """ a int with a details/mainResponse """
-    def __new__(cls, value: int, details: MainResponse = None):
-        s = super(RC, cls).__new__(cls, value)
-        s.details = details
-        return s
+    #extract sys.argv in --> files,rparams,switch
+    files,rparams,switchs,dswitchs=extractParams(params)
 
+    if len(files)==1 and rparams==[] and switchs==[] and dswitchs==[] and not files[0].endswith(".rmr"):
+        f=files[0]
+        if os.path.isfile(f):
+            with open(f,"r") as fid:
+                firstLine=fid.readline()
+            if firstLine.startswith("#! "):
+                p=firstLine[3:].strip()
+                print(cr("Use SHEBANG : %s")%p)
+                pp=p.split(" ")
+                exfiles,rparams,switchs,dswitchs = extractParams(pp)
+                files.extend(exfiles)
 
+    rmrFile=files[0] if len(files)==1 and files[0].endswith(".rmr") else None
 
-class OutputPrint(Enum):
-    NO = 0
-    YES = 1
-    ONLYKO = 2
-
-
-async def testContent(content: str, env: dict = {}) -> MainResponse:
-    """ test a yml 'content' against env (easy wrapper for main call )"""
-    reqs = [Reqs(io.StringIO(content), env)]
-    return await main(reqs, env, paralleliz=False)
-
-
-async def main(
-    reqs, env: dict = {}, outputPrint: OutputPrint = OutputPrint.NO, switchsForHtml=[], paralleliz: bool = False
-) -> MainResponse:
-    
-
-    atBegin=None
-    atEnd=None
-    
-    if env and ("BEGIN" in env):
-        r = io.StringIO("call: BEGIN")
-        r.name = "BEGIN (%s)" % REQMAN_CONF
-        atBegin = Reqs(r, env)
-
-    if env and ("END" in env):
-        r = io.StringIO("call: END")
-        r.name = "END (%s)" % REQMAN_CONF
-        atEnd = Reqs(r, env)
-    
-    async def proc(f,env):
-        if outputPrint == OutputPrint.YES:
-            print("\nTESTS:", cb(f.name))
-        for t in f:
-            tr = await t.test(env)  # TODO: colorful output !
-            if outputPrint != OutputPrint.NO:
-                if outputPrint == OutputPrint.ONLYKO:
-                    if not all(tr):
-                        print("\nTESTS:", cb(f.name))
-                        print(tr)
-                else:
-                    print(tr)
-            f.trs.append(tr)
-
-    if atBegin: await proc(atBegin,env)
-    if paralleliz:    
-        ll=[]
-        for i in reqs:
-            senv=json.loads(json.dumps(env))
-            ll.append( proc(i,senv) )
-        await asyncio.gather(*ll)
-    else:
-        for i in reqs:
-            senv=json.loads(json.dumps(env))
-            await proc(i,senv)
-    if atEnd: await proc(atEnd,env)
-
-    if atBegin:reqs=[atBegin]+reqs
-    if atEnd:reqs=reqs+[atEnd]
-
-    ok, total, html = render(reqs, switchsForHtml)
-
-    if outputPrint != OutputPrint.NO and total:
-        print(
-            "\nRESULT: ", (cg if int(ok) == int(total) else cr)("%s/%s" % (ok, total))
-        )
-
-    return MainResponse(int(total) - int(ok), html, env, reqs, total, ok)
-
-
-async def commandLine(params: T.List[str] = []) -> RC:
+    # start the process
     try:
         if len(params) == 2 and params[0].lower() == "new":
             ## CREATE USAGE
-            rc = findRCUp(".")
-            if rc:
-                print(cw("Using '%s'" % os.path.relpath(rc)))
-
+            rc = findRCup(".")
+    
             conf, yml = create(params[1])
             if conf:
                 if not rc:
@@ -1374,64 +1593,113 @@ async def commandLine(params: T.List[str] = []) -> RC:
                     raise RMException(
                         "there is no '%s', you shoul provide a full url !" % REQMAN_CONF
                     )
-
+    
             ff = glob.glob("*_test.rml")
             yname = "%04d_test.rml" % ((len(ff) + 1) * 10)
-
+    
             print("Create", yname)
             with open(yname, "w") as fid:
                 fid.write(yml)
+    
+            return 0
 
-            return RC(0)
-        else:
-            switchs = []
-
-            # search for a specific env var (starting with "-")
-            for switch in [i for i in params if i.startswith("-")]:
-                params.remove(switch)
-                switchs.append(switch[1:])
-
-            if "-ko" in switchs:
-                switchs.remove("-ko")
-                onlyFailedTests = True
-            else:
-                onlyFailedTests = False
-
-            if "-p" in switchs:
-                switchs.remove("-p")
+        # control options
+        paralleliz = False
+        outputConsole=OutputConsole.MINIMAL
+        outputHtmlFile = "reqman.html"
+        openBrowser=False
+        saveRMR=False
+        replayRMR=False
+        for p in rparams:
+            if p=="k":
+                outputConsole=OutputConsole.MINIMAL_ONLYKO
+            elif p=="s":
+                saveRMR=True
+            elif p=="r":
+                assert not switchs #TODO
+                assert not dswitchs #TODO
+                assert rmrFile #TODO
+                replayRMR=True
+            elif p=="p":
                 paralleliz = True
-                onlyFailedTests = True
+                outputConsole=OutputConsole.MINIMAL_ONLYKO
+            elif p.startswith("o"):
+                outputHtmlFile=p[1:].strip(":= ")
+                if not outputHtmlFile:
+                    outputConsole=OutputConsole.FULL
+            elif p.startswith("b"):
+                openBrowser=True
             else:
-                paralleliz = False
+                raise RMCommandException("bad option '%s'" % p)
 
-            rc, ymls = resolver(params)
+        loop = asyncio.get_event_loop()
+        if dswitchs: 
+            # dual mode -> ReqmanDualResult
+            if rmrFile:
+                r=ReqmanRMR(ReqmanResult.fromRMR(rmrFile))
 
-            # load env !
-            if rc:
-                with open(str(rc), "r") as fid:
-                    env = loadEnv(fid, switchs)
+                rr1=ReqmanResult.fromRMR(rmrFile)
+                rr2=loop.run_until_complete( r.asyncExecute(dswitchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
+                rr=ReqmanDualResult(rr1,rr2)
             else:
-                env = loadEnv(None, switchs)
+                r=ReqmanCommand(*files)
+                if r.nbFiles<1:  raise RMCommandException("no yml files found")
 
-            ll = []
-            for i in ymls:
-                with open(i, "r") as fid:
-                    ll.append(Reqs(fid, env))
-            if ll:
-                m = await main(
-                    ll,
-                    env,
-                    OutputPrint.ONLYKO if onlyFailedTests else OutputPrint.YES,
-                    switchs,
-                    paralleliz
-                )
-                if m.code >= 0 and m.html:
-                    with open("reqman.html", "w+", encoding="utf_8") as fid:
-                        fid.write(m.html)
-                return RC(m.code,m)  # aka rc
+                rr=loop.run_until_complete( r.asyncExecuteDual(switchs,dswitchs,outputConsole=outputConsole,fakeServer=fakeServer) )
+        else:
+            # single mode -> ReqmanResult or ReqmanDualResult
+            if rmrFile:
+                rmr=ReqmanResult.fromRMR(rmrFile)
+                if not switchs:
+                    if replayRMR: # -> ReqmanDualResult
+                        r=ReqmanRMR(rmr)
+
+                        rr1=ReqmanResult.fromRMR(rmrFile)
+                        rr2=loop.run_until_complete( r.asyncExecute(dswitchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
+                        rr=ReqmanDualResult(rr1,rr2)
+                    else:
+                        rr=rmr
+                else:
+                    r=ReqmanRMR(rmr)
+                    rr=loop.run_until_complete( r.asyncExecute(switchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
             else:
-                print(
-                    """USAGE TEST   : reqman [--option] [-switch] <folder|file>...
+                r=ReqmanCommand(*files)
+                if r.nbFiles<1:  raise RMCommandException("no yml files found")
+
+                rr=loop.run_until_complete( r.asyncExecute(switchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
+
+        if saveRMR:
+            if isinstance(rr,ReqmanResult):
+                print("Save RMR:",rr.saveRMR())
+            else:
+                print("Can't save dual results ;-)")
+
+        if outputHtmlFile:
+            with open(outputHtmlFile,"w+") as fid:
+                fid.write( rr.html )
+            if openBrowser:
+                try:
+                    import webbrowser
+                    webbrowser.open_new_tab(outputHtmlFile)
+                except:
+                    pass
+
+        return rr.code
+
+    except KeyboardInterrupt:
+        print("\nERROR: process interrupted")
+        # loop.run_until_complete(close())
+        return -1
+    except RMFormatException as e:
+        print("\nERROR FORMAT: %s" % e)
+        return -1
+    except RMException as e:
+        print("\nERROR EXECUTION: %s" % e)
+        return -1
+    except RMCommandException as e:
+        print("\nERROR COMMAND: %s" % e)
+
+        print( """USAGE TEST   : reqman [--option] [-switch] <folder|file>...
 USAGE CREATE : reqman new <url>
 Version %s
 Test a http service with pre-made scenarios, whose are simple yaml files
@@ -1441,58 +1709,30 @@ Test a http service with pre-made scenarios, whose are simple yaml files
                 (as many as you want)
 
 [option]
-        --ko : limit standard output to failed tests (ko) only
-        --p  : (BETA) paralleliz file tests (display only ko tests)
+        --k        : Limit standard output to failed tests (ko only)
+        --p        : Paralleliz file tests (display only ko tests)
+        --o:name   : Set a name for the html output file 
+        --o        : No html output file, but full console 
+        --b        : Open html output in browser if generated
+        --s        : Save RMR file
+        --r        : Replay the given RMR file in dual mode
     """
-                    % __version__
-                )
-
-                if env:
-                    print(
-                        """  [switch]      : default to "%s" """ % env.get("root", None)
-                    )
-                    for k, v in env.items():
-                        root = v.get("root", None) if type(v) == dict else None
-                        if root:
-                            print("""%15s : "%s" """ % ("-" + k, root))
-                else:
-                    print(
-                        """  [switch]      : pre-made 'switch' defined in a %s"""
-                        % REQMAN_CONF
-                    )
-                return RC(-1)
-
-    except RMException as e:
-        print("\nERROR: %s" % e)
-        return RC(-1)
+            % __version__
+        )      
+        if r and r.switchs:
+            print("[switch]")
+            for k, v in r.switchs:
+                print("""%12s : "%s" """ % ("-" + k, v))
+        else:
+            print(
+                """[switch]     : pre-made 'switch' defined in a %s"""
+                % REQMAN_CONF
+            )        
+        return -1
     except Exception as e:
-        print("\n**HERE IS A BUG**, please report it !")
-        print(traceback.format_exc(), "\nERROR: %s" % e)
-        return RC(-1)
-
-
-def run() -> int:  # console_scripts for setup.py/commandLine
-    loop = asyncio.get_event_loop()
-    try:
-        return int(loop.run_until_complete( commandLine(sys.argv[1:]) ) )
-    except KeyboardInterrupt:
-        print("\nERROR: process interrupted")
-        # loop.run_until_complete(close())
+        print("\n**HERE IS A BUG**, please report it : https://github.com/manatlan/reqman/issues ;-)")
+        print(traceback.format_exc(), "\nBUG: %s" % e)
         return -1
 
-from io import StringIO
-
-if __name__ == "__main__":
-    sys.exit(run())
-
-    # r=Request("https","www.manatlan.com",443,"GET","/")
-    # x=asyncio.run( dohttp(r) )
-    #~ from http.cookiejar import Cookie, CookieJar
-
-    #~ cj = CookieJar()
-    #~ try:
-        #~ httpcore.Client().get(
-            #~ "https://www.manatlan.com", timeout=httpcore.TimeoutConfig(5), cookies=cj
-        #~ )
-    #~ except httpcore.exceptions.ReadTimeout:
-        #~ print(2)
+if __name__=="__main__":
+    sys.exit(main())

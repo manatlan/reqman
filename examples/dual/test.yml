@@ -1,0 +1,24 @@
+- GET: /
+  tests:
+    - status: 200
+
+- nimp:
+    - GET: /fgfdsgfdsgfsdgfsd/<<root>>/<<i>>
+      tests:
+        - status: 404
+
+    - GET: /fgfdsgfdsgfsdgfsdEND
+      foreach:
+        - t: x
+      tests:
+        - status: 404
+
+
+- call: nimp
+  foreach: <<multi>>
+- call: nimp
+  foreach: <<multi>>
+
+- GET: /theLastOne
+  tests:
+    - status: 404

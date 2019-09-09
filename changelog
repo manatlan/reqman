@@ -1,3 +1,6 @@
+2.0.0.0
+- full rewrite from scratch + new features
+
 1.4.4.0 (02/07/2019)
  - FIX: replacing doc was bugged in some complex cases
 1.4.3.0 (01/07/2019)
@@ -30,23 +33,23 @@
  - FIX: header's values are stringified now
 1.2.0.0: (22/05/2019)
  - reqman as a module : now a simple reqman.testContent( yml: str, env: {}) -> MainReponse
-1.1.8.0: (18/05/2019) 
+1.1.8.0: (18/05/2019)
  - html escape test name
  - display doc line under the test for the reqman.html
-1.1.7.0: (18/05/2019) 
+1.1.7.0: (18/05/2019)
  - module.main now returns something that is usefull when used as a lib
-1.1.6.0: (17/05/2019) 
+1.1.6.0: (17/05/2019)
  - better handle NonPlayable test (coz unresolved params) .. should be ok now !
-1.1.5.0: (16/05/2019) 
+1.1.5.0: (16/05/2019)
  - FIX: reqman run as console script again ;-)
-1.1.4.0: (16/05/2019) 
+1.1.4.0: (16/05/2019)
  - reqman is now a module and a console script (reqman)
-1.1.3.0: (16/05/2019) 
+1.1.3.0: (16/05/2019)
  - ability to send bytes in the body (using a method with return bytes, ex: "body: <<|giveMeBytes>>")
  - handle None value as "null" ("" before)
-1.1.2.6: (16/05/2019) 
+1.1.2.6: (16/05/2019)
  - just a correct README.md
-1.1.2.5: (16/05/2019) 
+1.1.2.5: (16/05/2019)
  - type hints (pyright under vscode)
  - fix: yaml warning without loader
  - fix: another unresolved params won't break the process
