@@ -1,4 +1,4 @@
-# reqman
+# reqman (2.0)
 Reqman is the postman killer ;-)
 
 Create your http(s)-tests in simple yaml files, and run them with command line, against various environments.
