@@ -35,8 +35,9 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
        * a lot of new options (auto open browser, set html filename, compare, ...)
        * ability to save the state, to compare with newer ones
        * ability to replay given tests (rmr file)
-       * dual mode : compare switchs vs others switchs (-env1 +env2)
+       * dual mode : compare switchs vs others switchs (-env1 +env2) in html output
        * shebang mode
+       * better html output (need some works yet !)
 
 **and soon**
    * doc & examples ;-)
