@@ -1553,7 +1553,7 @@ def extractParams(params):
             files.append(param)
     return files,rparams,switchs,dswitchs
 
-def main(fakeServer=None):
+def main(fakeServer=None) -> int:
     params=sys.argv[1:]
     r=None
     class RMCommandException(Exception): pass
