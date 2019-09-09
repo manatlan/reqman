@@ -7,7 +7,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
 **reqman** can be used as a python's module, or a commandLine.
 
 **Features**
-   * Light (simple py3 file, 1500 lines of code, and x3 lines for unittests, in TDD mind)
+   * Light (simple py3 file, 1800 lines of code, and x3 lines for unittests, in TDD mind ... cov:95%)
    * Powerful (at least as postman free version)
    * tests are simple (no code !)
    * Variable pool
@@ -28,6 +28,15 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * generate conf/rml (with 'new' command)
    * can paralleliz tests (option `--p`)
    * versionning
+   * NEW 2.0 : 
+       * rewrite from scratch, a lot stronger & speeder !
+       * advanced save mechanisms
+       * new switchs system
+       * a lot of new options (auto open browser, set html filename, compare, ...)
+       * ability to save the state, to compare with newer ones
+       * ability to replay given tests (rmr file)
+       * dual mode : compare switchs vs others switchs (-env1 +env2)
+       * shebang mode
 
 **and soon**
    * doc & examples ;-)
@@ -125,8 +134,9 @@ package: reqman
 test:
     root: https://test.pypi.org
 
-colorama:
-    package: colorama
+switchs: # the new way to declare switchs (in a 'switchs' statement)
+    colorama:
+        package: colorama
 ```
 
 Now, you can check that 'colorama' exists on pypi.org, like that :
