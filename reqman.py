@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.0.0.0"
+__version__="2.0.1.0" #only SemVer (the last ".0" is win only)
 
 
 
@@ -1128,6 +1128,9 @@ class ReqmanResult(Result):
         self.results=ll
         self.title="%s %s/%s" %(",".join(switchs),ok,total)
     
+    @property
+    def switchs(self):
+        return self.infos[0]["switchs"] #TODO: not top (but needed for replaying)
 
     def saveRMR(self):
         name="_".join( [self.infos[0]["date"].strftime("%y%m%d_%H%M")] + self.infos[0]["switchs"] )+".rmr"
@@ -1653,8 +1656,8 @@ def main(fakeServer=None) -> int:
                     if replayRMR: # -> ReqmanDualResult
                         r=ReqmanRMR(rmr)
 
-                        rr1=ReqmanResult.fromRMR(rmrFile)
-                        rr2=loop.run_until_complete( r.asyncExecute(dswitchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
+                        rr1=ReqmanResult.fromRMR(rmrFile) # vv redeclare used switchs (important ! fix 2.0.1)
+                        rr2=loop.run_until_complete( r.asyncExecute(rmr.switchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
                         rr=ReqmanDualResult(rr1,rr2)
                     else:
                         rr=rmr
@@ -1734,4 +1737,6 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         return -1
 
 if __name__=="__main__":
-    sys.exit(main())
+    # sys.exit(main())
+    sys.argv=["","dev.rmr","--r"]
+    main()
