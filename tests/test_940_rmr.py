@@ -21,7 +21,7 @@ def _continue(exe):
     x=exe(".","--s",fakeServer=mock)  # generate a RMR
     assert "http://a/hello" in x.console
     assert x.rc==0
-    assert x.console.count("content contains")==2
+    assert x.console.count("content contains")==1
     assert os.path.isfile("reqman.html")
     os.unlink("reqman.html")
     lrmr=[i for i in os.listdir(".") if i.endswith(".rmr")]
@@ -33,7 +33,7 @@ def _continue(exe):
     assert "http://a/hello" not in x.console # because nothing is replayed
     assert x.rc==0
     assert os.path.isfile("r1.html")
-    assert not x.console.count("content contains")==2 # nothing is replayed, only output
+    assert not x.console.count("content contains")==1 # nothing is replayed, only output
 
     x=exe(lrmr[0],"-other","--o:r2.html",fakeServer=mock) # replay RMR with another switch  -> single result
     assert "http://b/hello" in x.console
@@ -54,7 +54,7 @@ def _continue(exe):
     assert "http://a/hello" in x.console
     assert x.rc==0
     assert os.path.isfile("r4.html")
-    assert x.console.count("content contains")==2
+    assert x.console.count("content contains")==1
 
 
 def test_COMMAND_rmr_tests_old_switchs(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
@@ -68,12 +68,12 @@ def test_COMMAND_rmr_tests_old_switchs(exe):   #<- it's not a real test ... just
           root: http://b
           def: B
 
-        BEGIN:
-        - GET: /start
-          doc: ici <<def>>
-          tests:
-            - status: 200
-            - content: ok
+          BEGIN:
+          - GET: /start
+            doc: ici <<def>>
+            tests:
+              - status: 200
+              - content: ok
 
         """)
     _continue(exe)
@@ -90,11 +90,11 @@ def test_COMMAND_rmr_tests_new_switchs(exe):   #<- it's not a real test ... just
             root: http://b
             def: B
 
-        BEGIN:
-        - GET: /start
-          doc: ici <<def>>
-          tests:
-            - status: 200
-            - content: ok
+            BEGIN:
+            - GET: /start
+              doc: ici <<def>>
+              tests:
+                - status: 200
+                - content: ok
         """)
     _continue(exe)
