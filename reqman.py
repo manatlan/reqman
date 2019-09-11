@@ -1737,6 +1737,4 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         return -1
 
 if __name__=="__main__":
-    # sys.exit(main())
-    sys.argv=["","dev.rmr","--r"]
-    main()
+    sys.exit(main())
