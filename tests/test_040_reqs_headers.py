@@ -152,3 +152,22 @@ def test_2bad_actionExt2(Reqs):
 """
     with pytest.raises(reqman.RMFormatException):
         Reqs(y)
+
+def test_header_override_remove(Reqs):
+    y="""
+- yo:
+    - GET: https://www.manatlan.com
+      headers:
+        jo: hello
+- call: yo
+  headers:
+    jo: null
+"""
+    l=Reqs(y)
+    assert len(l) == 1
+    assert type(l[0]) is reqman.ReqGroup    
+    assert l[0].reqs[0].headers ==  {'jo': None}  # before execution
+
+    ll=l.execute( {"https://www.manatlan.com":(200,"ok")})
+    assert len(ll) == 1
+    assert ll[0].inHeaders=={}
