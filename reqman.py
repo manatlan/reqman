@@ -28,8 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.0.1.0" #only SemVer (the last ".0" is win only)
-
+__version__="2.0.2.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -819,7 +818,7 @@ class Req(ReqItem):
         gpath=path
         path = scope.replaceTxt(path)
         if body: body = scope.replaceObj( body )
-        headers= {k:scope.replaceTxt( str(v) ) for k,v in headers.items()} # headers'value should be string
+        headers= {k:scope.replaceTxt( str(v) ) for k,v in headers.items() if v} # headers'value should be string
 
         if doc: doc = scope.replaceTxt(doc)
         tests= [{list(d.keys())[0] : scope.replaceObj( list(d.values())[0]) } for d in tests] # cast value as str
