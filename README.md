@@ -52,9 +52,8 @@ If you are on an nix platform, you can start with pip :
 
 it will install the _reqman_ script in your path (perhaps, you'll need to Add the path `~/.local/bin` to the _PATH_ environment variable.)
 
-If you are on microsoft windows, just download [reqman1.exe](https://github.com/manatlan/reqman/blob/reqman1.4.4.0/dist/reqman.exe), and add it in your path. 
+If you are on microsoft windows, just download [reqman.exe (v2)](https://github.com/manatlan/reqman/blob/master/dist/reqman.exe).(The old v1 reqman.exe, is still there](https://github.com/manatlan/reqman/blob/reqman1.4.4.0/dist/reqman.exe), and add it in your path. 
 
-**Available soon : reqman.exe (v2)**
 
 ## Getting started : let's go
 
