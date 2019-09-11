@@ -39,11 +39,3 @@ def test_simplest2(Reqs):
     assert ll[0].url == "https://www.manatlan.com/p1/1/p2"
     assert ll[1].url == "https://www.manatlan.com/p1/2/p2"
 
-# def test_bad(Reqs):
-#     y="""
-# - GET: https://www.manatlan.com
-#   foreach:
-#     a: 12
-# """
-#     with pytest.raises(reqman.RMFormatException):
-#         Reqs(y)
