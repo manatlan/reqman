@@ -21,12 +21,13 @@ class FakeExeReturn():
         with open(h,"w+") as fid:
             ansi_escape =re.compile(r'(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]')
             console=ansi_escape.sub('', self.console)    
-            fid.write("""<h3>RC : %s</h3>""" % self.rc)
+            fid.write("""<h3>Test file : "%s"</h3>""" % os.getenv('PYTEST_CURRENT_TEST') )
+            fid.write("""<h3>RC : %s <-- "%s"</h3>""" % (self.rc," ".join(sys.argv)))
             fid.write("""<h3>Output Console:</h3><pre>%s</pre>""" % console)
             if self.rr :
                 fid.write("""<h3>Env:</h3><pre>%s</pre>""" % (json.dumps(self.rr.env, indent=4, sort_keys=True)))
                 fid.write("""<h3>Output Html (%s):</h3>%s""" % (self.rr.__class__.__name__,self.rr.html))
-
+            
         import webbrowser
         webbrowser.open_new_tab(h)   
 

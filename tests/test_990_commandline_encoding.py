@@ -81,4 +81,4 @@ def test_diff_encoding_with_rconf2(exe):
         
     x=exe(".",fakeServer=MOCK)
     assert x.rc == 0
-    x.view()
+    # x.view()
