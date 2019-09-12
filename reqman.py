@@ -1390,6 +1390,7 @@ def render(rr:Result) -> str:
     template="""<!DOCTYPE html>
 <html>
 <head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <title>{{result.title}}</title>
 <style>
 * { box-sizing: border-box;}
