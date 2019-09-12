@@ -20,6 +20,7 @@ def test_COMMAND_bad_option2(exe):
 
 def test_COMMAND_bad_option_try_help(exe):
     r=exe(".","--help")
+    # r.view()
     assert r.rc==-1
     assert "ERROR COMMAND: bad option" in r.console
     assert "USAGE" in r.console

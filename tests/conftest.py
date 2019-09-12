@@ -1,7 +1,7 @@
 import pytest
 import reqman
 import asyncio,sys
-import contextlib,io,re,json
+import contextlib,io,re,json,html
 import tempfile,os,shutil
 
 
@@ -16,6 +16,7 @@ def Reqs(request):
 class FakeExeReturn():
     rc=0
     console=""
+    rr=None
     def view(self):
         h=tempfile.mktemp()+".html"
         with open(h,"w+") as fid:
@@ -23,8 +24,8 @@ class FakeExeReturn():
             console=ansi_escape.sub('', self.console)    
             fid.write("""<h3>Test file : "%s"</h3>""" % os.getenv('PYTEST_CURRENT_TEST') )
             fid.write("""<h3>RC : %s <-- "%s"</h3>""" % (self.rc," ".join(sys.argv)))
-            fid.write("""<h3>Output Console:</h3><pre>%s</pre>""" % console)
-            if self.rr :
+            fid.write("""<h3>Output Console:</h3><pre>%s</pre>""" % html.escape(console))
+            if self.rr:
                 fid.write("""<h3>Env:</h3><pre>%s</pre>""" % (json.dumps(self.rr.env, indent=4, sort_keys=True)))
                 fid.write("""<h3>Output Html (%s):</h3>%s""" % (self.rr.__class__.__name__,self.rr.html))
             
