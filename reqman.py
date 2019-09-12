@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.0.3.0" #only SemVer (the last ".0" is win only)
+__version__="2.0.4.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -96,6 +96,14 @@ def comparable(l):
         return x1==x2
 
 
+def ustr(x): # ensure str are utf8 inside
+    # assert type(x)==str
+    try:
+        return x.encode("cp1252").decode()
+    except:
+        return x.encode("utf8").decode()
+
+
 AHTTP = httpcore.AsyncClient(verify=False)
 
 class CookieStore(http.cookiejar.CookieJar): #TODO: can do a lot better with httpcore
@@ -148,7 +156,7 @@ def toStr(x):
 
 class Content:
     def __init__(self,content):
-        self.__b = content if type(content) is bytes else str(content).encode()
+        self.__b = content if type(content) is bytes else ustr(content).encode()
     def __repr__(self) -> str:
         return toStr(self.__b)
     def toJson(self):
@@ -271,6 +279,7 @@ class Env(dict):
         if not d: d={}
 
         if isinstance(d,str):
+            d=ustr(d)
             try:
                 d=yaml.load(d, Loader=yaml.FullLoader)
             except Exception as e:
@@ -602,6 +611,7 @@ class Reqs(list):
             return liste
 
         if isinstance(obj,str):
+            obj=ustr(obj)
             try:
                 y=yaml.load(obj, Loader=yaml.FullLoader)
             except Exception as e:
@@ -920,6 +930,7 @@ async def asyncExecute(method, path, url, body, headers,http=None,timeout=None) 
     else:
         http=request # use the real one !!
         status,outHeaders,content,info = await http(method, url, body, headers, timeout=timeout)
+
 
     time =datetime.datetime.now() - t1
     return Exchange(method, path, url, body, headers,status, outHeaders,content, info,time)

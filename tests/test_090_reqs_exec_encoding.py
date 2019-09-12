@@ -36,4 +36,4 @@ tests:
     l=Reqs(y)
     assert len(l) == 1
     ll= l.execute(MOCK)
-    assert not any(ll[0].tests) #can't resolve ;-( (NEXT UPDATE !!! it's in the pipe)
+    assert any(ll[0].tests) #can't resolve ;-( (NEXT UPDATE !!! it's in the pipe)

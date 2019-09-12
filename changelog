@@ -1,3 +1,5 @@
+2.0.4.0
+- EVOL: all(ymls/conf/response content) is converted to utf8 str
 2.0.3.0
 - FIX: dyn params can be transformed now, and can be bytes
 2.0.2.0
