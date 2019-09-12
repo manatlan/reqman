@@ -1,8 +1,9 @@
 import pytest
 import reqman
 import asyncio,sys
-import contextlib,io
+import contextlib,io,re,json
 import tempfile,os,shutil
+
 
 @pytest.fixture(scope="function")
 def Reqs(request):
@@ -11,23 +12,41 @@ def Reqs(request):
 
     yield tester
 
+
+class FakeExeReturn():
+    rc=0
+    console=""
+    def view(self):
+        h=tempfile.mktemp()+".html"
+        with open(h,"w+") as fid:
+            ansi_escape =re.compile(r'(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]')
+            console=ansi_escape.sub('', self.console)    
+            fid.write("""<h3>RC : %s</h3>""" % self.rc)
+            fid.write("""<h3>Output Console:</h3><pre>%s</pre>""" % console)
+            if self.rr :
+                fid.write("""<h3>Env:</h3><pre>%s</pre>""" % (json.dumps(self.rr.env, indent=4, sort_keys=True)))
+                fid.write("""<h3>Output Html (%s):</h3>%s""" % (self.rr.__class__.__name__,self.rr.html))
+
+        import webbrowser
+        webbrowser.open_new_tab(h)   
+
 @pytest.fixture(scope="function")
 def exe(request):
     def tester(*a,fakeServer=None):
         sys.argv=["reqman.exe"]+list(a)
 
+
+        f=FakeExeReturn()
+        
         print(sys.argv)
         fo,fe = io.StringIO(),io.StringIO()
         with contextlib.redirect_stderr(fe):
             with contextlib.redirect_stdout(fo):
-                rc=reqman.main(fakeServer=fakeServer)
+                rc=reqman.main(fakeServer=fakeServer,hookResults=f)
 
         output=fo.getvalue()+fe.getvalue()
         print(output)
 
-        class FakeExeReturn(): pass
-        
-        f=FakeExeReturn()
         f.rc=rc
         f.console=output
 

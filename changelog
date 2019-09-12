@@ -1,3 +1,5 @@
+- EVOL: (for tests/debug only) add a view() mechanism, to display "exe" extended results in an html page in a browser
+
 2.0.4.0
 - EVOL: all(ymls/conf/response content) is converted to utf8 str
 2.0.3.0

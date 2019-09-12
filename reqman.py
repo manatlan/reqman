@@ -1575,7 +1575,7 @@ def extractParams(params):
             files.append(param)
     return files,rparams,switchs,dswitchs
 
-def main(fakeServer=None) -> int:
+def main(fakeServer=None,hookResults=None) -> int:
     params=sys.argv[1:]
     r=None
     class RMCommandException(Exception): pass
@@ -1704,6 +1704,9 @@ def main(fakeServer=None) -> int:
                     webbrowser.open_new_tab(outputHtmlFile)
                 except:
                     pass
+
+        if hookResults is not None: # for tests only
+            hookResults.rr=rr
 
         return rr.code
 
