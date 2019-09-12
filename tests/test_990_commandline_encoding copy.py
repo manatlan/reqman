@@ -64,8 +64,12 @@ tests:
 
 def test_diff_encoding_with_rconf2(exe): 
     y="""
-GET: https://www.manatlan.com/utf8
-tests:
+- GET: https://www.manatlan.com/utf8
+  tests:
+    - content: <<val>>
+
+- GET: https://www.manatlan.com/cp1252
+  tests:
     - content: <<val>>
 """.encode().decode("cp1252")
 
@@ -77,4 +81,4 @@ tests:
         
     x=exe(".",fakeServer=MOCK)
     assert x.rc == 0
-    # x.view()
+    x.view()
