@@ -15,7 +15,7 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-import os,sys,re,asyncio,io,datetime,itertools,glob,enum
+import os,sys,re,asyncio,io,datetime,itertools,glob,enum,codecs
 import http,urllib,email # for cookies management
 import collections,json
 import typing as T
@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.0.4.0" #only SemVer (the last ".0" is win only)
+__version__="2.0.5.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -207,11 +207,7 @@ padLeft=lambda b: ("\n".join(["  "+i for i in str(b).splitlines()]))
 def dict_merge(dst: dict, src: dict) -> None:
     """ merge dict 'src' in --> dst """
     for k, v in src.items():
-        if (
-            k in dst
-            and isinstance(dst[k], dict)
-            and isinstance(src[k], collections.abc.Mapping)
-        ):
+        if (k in dst and isinstance(dst[k], dict) and isinstance(src[k], collections.abc.Mapping)):
             dict_merge(dst[k], src[k])
         else:
             if k in dst and isinstance(dst[k], list) and isinstance(src[k], list):
@@ -809,7 +805,9 @@ class Req(ReqItem):
 
     async def asyncExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange: 
         scope=gscope.clone() # important
-        dict_merge(scope, self.params)  # merge params in scope
+        for k,v in self.params.items(): # tests 095
+            if k not in scope:
+                scope[k]=v
 
         root = scope.get("root",None) # global root
         gheaders = scope.get("headers",None) # global header
@@ -1696,7 +1694,7 @@ def main(fakeServer=None,hookResults=None) -> int:
                 print("Can't save dual results ;-)")
 
         if outputHtmlFile:
-            with open(outputHtmlFile,"w+") as fid:
+            with codecs.open(outputHtmlFile, "w+", "utf-8-sig") as fid:
                 fid.write( rr.html )
             if openBrowser:
                 try:
