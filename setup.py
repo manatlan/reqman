@@ -26,6 +26,7 @@ setuptools.setup(
     install_requires=[
           'httpcore > 0.3.0',
           'pyyaml >= 4.2b1',
+          'stpl >= 1.13.2',
           'colorama',
     ],    
 )
