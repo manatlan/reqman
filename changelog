@@ -1,3 +1,8 @@
+2.0.8.0 (03/10/2019)
+- dual exchanges list is now a tuple of 2 items (3 before) : take less space in rmr!
+- (a lot) better var resolution in env
+- html rendering redisplay rendered url (in place of path) when not dual (like reqman1)!
+- FIX: matching req (dual mode) when "id" are the same (foreach loop/same pattern)
 2.0.7.0 (2019)
 - add stpl to setup.py (ouppssss)
 2.0.6.0 (2019)

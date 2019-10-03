@@ -16,8 +16,9 @@ def test_Env_cant_save_existing():
     assert e == {"a":42}
 
     # with pytest.raises(reqman.RMException):
-    e.save("a",43)
-    assert e["a"]==43
+    assert e["a"]==42
+    e.save("a",43) # will erase old "a"
+    assert e["a"]==43   # important, to get token oauth first (in current major reqman's tests)!
 
 def test_createEnv():
     assert reqman.Env() == {}

@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.0.7.0" #only SemVer (the last ".0" is win only)
+__version__="2.0.8.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -61,14 +61,24 @@ class RMFormatException(Exception): pass
 class RMException(Exception): pass
 
 def izip(ex1,ex2):
-    trans = lambda ex: {i.id: i for i in ex}
     pop= lambda ex: len(ex)>0 and ex.pop(0) or None
 
-    tex1=trans(ex1)
-    tex2=trans(ex2)
+    def trans(ex):
+        tex={}
+        lex=[]
+        for i in ex:
+            uid=i.id
+            while uid in tex:
+                uid+=type(uid)==str and "b" or 1
+            tex[uid]=i
+            lex.append( (uid,i) )
+        return tex,lex
 
-    cex1=[(i,tex2.get(i.id)) for i in ex1]
-    cex2=[(i,tex1.get(i.id)) for i in ex2]
+    tex1,lex1=trans(ex1)
+    tex2,lex2=trans(ex2)
+    
+    cex1=[(i,tex2.get(uid)) for uid,i in lex1]
+    cex2=[(i,tex1.get(uid)) for uid,i in lex2]
 
     l=[]
     while 1:
@@ -89,10 +99,10 @@ def izip(ex1,ex2):
                     if i1: l.append( (i1[0],None) )
                     if i2: l.append((None,i2[0]))
     
-    return [(e1 or e2, e1,e2)for e1,e2 in l]
+    return [(e1,e2)for e1,e2 in l]
 
 def comparable(l):
-    for x,x1,x2 in l:
+    for x1,x2 in l:
         return x1==x2
 
 
@@ -291,27 +301,23 @@ class Env(dict):
 
 
     def save(self,key,value):
-        # if super().__contains__(key):
-        #     raise RMException("can't save in '%s', it will override an existing one in the current env" % key)
+        if super().__contains__(key): del self[key]
         self.__saved[key]=value
 
     def __getitem__(self,key):
-        if key in self.__saved:
+        if key in self.__saved and super().__contains__(key):
+            # if in two place : return the self one
+            return super().__getitem__( key )
+        elif key in self.__saved:
             return self.__saved[key]
-        else:
-            return super().__getitem__(key)
+        elif super().__contains__(key):
+            return super().__getitem__( key ) 
 
     def get(self,key,default=None):
-        if key in self.__saved:
-            return self.__saved[key]
-        else:
-            return super().get(key,default)
+        return self.__getitem__(key) or default
 
     def __contains__(self, key):
-        if key in self.__saved:
-            return True
-        else:
-            return super().__contains__(key)
+        return  key in self.__saved or super().__contains__(key)
 
     def __eq__(self,o):
         return {**self,**self.__saved} == o
@@ -322,6 +328,11 @@ class Env(dict):
         dict_merge(newOne,self)
         newOne.cookiejar= CookieStore( self.cookiejar.export() )
         newOne.__saved = self.__saved # share saved scope !!!
+        for k in newOne.__saved.keys():
+            try:
+                del newOne[k]
+            except:
+                pass
         return newOne
 
     @property
@@ -805,9 +816,10 @@ class Req(ReqItem):
 
     async def asyncExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange: 
         scope=gscope.clone() # important
-        for k,v in self.params.items(): # tests 095
-            if k not in scope:
-                scope[k]=v
+        # for k,v in self.params.items(): # tests 095-1
+        #     if k not in scope:
+        #         scope[k]=v
+        dict_merge(scope,self.params)
 
         root = scope.get("root",None) # global root
         gheaders = scope.get("headers",None) # global header
@@ -1443,7 +1455,7 @@ div.h > div {flex: 1 0 50%}
     <div class="r hide">
         <h4 onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details">
             <b>{{first(ex).method}}</b> 
-            {{first(ex).path}}
+            {{first_path(ex)}}
             <br/>
             <i>{{first(ex).doc}}</i>
         </h4>
@@ -1502,14 +1514,20 @@ div.h > div {flex: 1 0 50%}
 
     def discover(ex):
         if type(ex) is tuple:
-            return list(ex[1:])
+            return list(ex)
         else:
             return [ex]
     def first(ex):
         if type(ex) is tuple:
-            return ex[0]
+            return ex[0] or ex[1]
         else:
             return ex
+
+    def first_path(ex):
+        if type(ex) is tuple:
+            return first(ex).path
+        else:
+            return ex.url
 
     def relpath(p):
         try:
@@ -1518,7 +1536,7 @@ div.h > div {flex: 1 0 50%}
             return p
 
 
-    return stpl.template(template,result=rr,prettify=prettify,discover=discover,first=first,relpath=relpath)
+    return stpl.template(template,result=rr,prettify=prettify,discover=discover,first=first,relpath=relpath,first_path=first_path)
 
 
 def mkUrl(protocol: str, host: str, port=None) -> str:
