@@ -14,6 +14,7 @@ BEGIN:
 proc1: return x*"a"
 
 val_bb: bb
+v: 2
 
 dua:
     root: http://machinedua.com
@@ -34,10 +35,10 @@ dua:
 """)
 
     r.add("""
-- GET: /<<2|proc1>>
+- GET: /<<v|proc1>>
   tests:
     - status: 200
-- POST: /<<2|proc2>>
+- POST: /<<v|proc2>>
   tests:
     - status: 200
   params:

@@ -3,8 +3,9 @@ import pytest,reqman
 
 def test_simplest(Reqs):
     y="""
-- GET: /<<hello|upper>>
+- GET: /<<v|upper>>
   params:
+    v: hello
     upper: return x.upper()
 """
     l=Reqs(y)
@@ -14,8 +15,9 @@ def test_simplest(Reqs):
 
 def test_simplest_chaining(Reqs):
     y="""
-- GET: /<<Hello|upper|lower>>
+- GET: /<<v|upper|lower>>
   params:
+    v: Hello  
     upper: return x.upper()
     lower: return x.lower()
 """
@@ -28,7 +30,8 @@ def test_simplest_transciant(Reqs):
     y="""
 - GET: /<<param>>
   params:
-    param: <<hello|upper>>
+    param: <<v|upper>>
+    v: hello  
     upper: return x.upper()
 """
     l=Reqs(y,trace=True)

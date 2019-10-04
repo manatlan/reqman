@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.0.8.0" #only SemVer (the last ".0" is win only)
+__version__="2.0.8.1" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -388,7 +388,7 @@ class Env(dict):
                     # content = self.get(key, key)  # resolv keys else use it a value !!!!!
                     content = getVar(key)
                     if content is NotFound:
-                        content = key
+                        content = None
 
                     for m in method.split("|"):
                         content = self.replaceObj( content )    ## important, resolv inner method first .... see tests 044, 045, 046

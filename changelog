@@ -1,3 +1,5 @@
+2.0.8.1 (04/10/2019)
+- when <<toto|d>>, now x=None if toto is an undefined var (no more "toto")
 2.0.8.0 (03/10/2019)
 - dual exchanges list is now a tuple of 2 items (3 before) : take less space in rmr!
 - (a lot) better var resolution in env

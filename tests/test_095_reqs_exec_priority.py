@@ -37,7 +37,7 @@ def test_create_default_value_for_proc(Reqs): # hey pato, look here
     - proc:
         - GET: /<<p|defa>>
           params:
-            defa: return "a" if x=="p" else x
+            defa: return x or "a"
 
     - call: proc # call a
       tests:
