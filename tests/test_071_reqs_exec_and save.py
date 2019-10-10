@@ -129,9 +129,10 @@ PROC:
     - call: PROC
       params:
         first: start
-      save: data
+      save: 
+        redirige: <<json.route.second>>
 
-    - POST: /go/<<data.route.second>>
+    - POST: /go/<<redirige>>
       tests:
         - status: 200
         - content: ok
@@ -139,7 +140,7 @@ PROC:
 - call: context
 """
 
-    l=Reqs(y2,env)    
+    l=Reqs(y2,env,trace=True)    
     ll=l.execute( mock )
     assert len(ll)==2
     assert all(ll[0].tests)

@@ -1,3 +1,5 @@
+2.1.0.0 (10/10/2019)
+- hermetic scope between file : saved data are not shared with every files (only those in BEGIN statement, whose are global) (like reqman1)
 - better resolver when mixing . and |
 - better python detection var/method
 - resolve jpath in computed var's env (test960)

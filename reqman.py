@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.0.8.1+" #only SemVer (the last ".0" is win only)
+__version__="2.1.0.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -305,24 +305,30 @@ class Env(dict):
         if type(d) is not dict:
             raise RMFormatException("Env conf is not a dict")
 
-        self.__saved={} # shared saved scope between all cloned Env
+        self.__shared={} # shared saved scope between all cloned Env
+        self.__global={} # shared global saved scope between all cloned Env (from BEGIN only)
 
         dict.__init__(self,d)
         self.cookiejar = CookieStore()
 
 
-    def save(self,key,value):
+    def save(self,key,value,isGlobal=False):
         self[key]=value
-        self.__saved[key]=value
+        self.__shared[key]=value
+        if isGlobal:
+            self.__global[key]=value
 
-
-    def clone(self):
+    def clone(self,cloneSharedScope=True):
         newOne=Env({})
         dict_merge(newOne,self)
         newOne.cookiejar= CookieStore( self.cookiejar.export() )
-        newOne.__saved = self.__saved 
-        for k,v in self.__saved.items(): # share saved scope !!!
-            newOne.save(k,v)
+
+        dict_merge(newOne,self.__global) # declare those of the global scope !!! (from BEGIN only)
+        newOne.__global = self.__global  #mk a ref to global
+
+        if cloneSharedScope: #used (at false) at each Reqs() constructor (to start on a sane base)
+            dict_merge(newOne,self.__shared) # declare those of the shared scope !!!
+            newOne.__shared = self.__shared  #mk a ref to shared
         return newOne
 
     @property
@@ -475,7 +481,8 @@ class Env(dict):
         return dict(self)
     def __setstate__(self, state):
         self.__dict__=state
-        self.__saved={}
+        self.__shared={}
+        self.__global={}
         self.cookiejar = CookieStore()
 
 
@@ -492,7 +499,7 @@ class Reqs(list):
         if env is None:
             self.env=Env()
         elif type(env) is Env:
-            self.env=env
+            self.env=env.clone(cloneSharedScope=False) # remove shared one
         elif type(env) is dict:
             self.env=Env(env)
 
@@ -654,9 +661,9 @@ class Reqs(list):
             for idx,i in enumerate(liste):
                 if isinstance(i, Req):
                     log(level,"* Req:",oneline(i))
-                    yield level,gscope,i.clone()
+                    yield level,gscope,i.clone() # this clone has no effect ;-)
                 if isinstance(i, ReqGroup):
-                    scope=gscope.clone()
+                    scope=gscope.clone() #important
 
                     log(level,"* ReqGroup:",len(i.reqs),"ReqItem(s)")
 
@@ -797,9 +804,6 @@ class Req(ReqItem):
 
     async def asyncExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange: 
         scope=gscope.clone() # important
-        # for k,v in self.params.items(): # tests 095-1
-        #     if k not in scope:
-        #         scope[k]=v
         dict_merge(scope,self.params)
 
         root = scope.get("root",None) # global root
@@ -857,7 +861,8 @@ class Req(ReqItem):
                 pass
 
             for saveKey, saveWhat in s.items():
-                self.parent.env.save(saveKey, postSaveScope.replaceObj(saveWhat) )
+                self.parent.env.save(saveKey, postSaveScope.replaceObj(saveWhat), self.parent.name=="BEGIN" )
+                # gscope.save(saveKey, postSaveScope.replaceObj(saveWhat) ) # NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 
             del postSaveScope
 

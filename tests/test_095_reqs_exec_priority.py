@@ -116,39 +116,4 @@ def test_priority_over_saved(Reqs):
     for i in ll:
       assert all(i.tests)
     
-
-def test_priority_token(Reqs): # current major reqman's tests !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # PROBABLY THE MOST IMPORTANT TEST ;-)
-    # (BASE FEATURE FROM DAY ONE)
-    rc="""
-    token: fake
-
-    BEGIN:
-      - GET: /token 
-        save: token
-
-    """
-
-    y="""
-    - call: BEGIN
-    - GET: /<<token>>
-      tests:
-        status: 200
-    - GET: /<<token>>
-      params:
-        token: real2  #override temporaly
-      tests:
-        status: 201
-    - GET: /<<token>>
-      tests:
-        status: 200
-    """
-    MOCK={
-        "/token":(200,'real'),
-        "/real":(200,'ok'),
-        "/real2":(201,'ok'),
-    }
-    ll=Reqs(y,Env(rc)).execute(MOCK)
-    for i in ll:
-      assert all(i.tests)
     
