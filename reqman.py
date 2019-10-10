@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.0.8.1" #only SemVer (the last ".0" is win only)
+__version__="2.0.8.1+" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -301,38 +301,27 @@ class Env(dict):
 
 
     def save(self,key,value):
-        if super().__contains__(key): del self[key]
+        self[key]=value
         self.__saved[key]=value
 
     def __getitem__(self,key):
-        if key in self.__saved and super().__contains__(key):
-            # if in two place : return the self one
+        if super().__contains__(key):
             return super().__getitem__( key )
-        elif key in self.__saved:
-            return self.__saved[key]
-        elif super().__contains__(key):
-            return super().__getitem__( key ) 
 
     def get(self,key,default=None):
         return self.__getitem__(key) or default
 
     def __contains__(self, key):
-        return  key in self.__saved or super().__contains__(key)
+        return  super().__contains__(key)
 
-    def __eq__(self,o):
-        return {**self,**self.__saved} == o
-    
 
     def clone(self):
         newOne=Env({})
         dict_merge(newOne,self)
         newOne.cookiejar= CookieStore( self.cookiejar.export() )
         newOne.__saved = self.__saved # share saved scope !!!
-        for k in newOne.__saved.keys():
-            try:
-                del newOne[k]
-            except:
-                pass
+        for k,v in self.__saved.items():
+            newOne.save(k,v)
         return newOne
 
     @property
@@ -487,8 +476,7 @@ class Env(dict):
         return content
 
     def __str__(self):
-        x={**self,"__saved": self.__saved}
-        return json.dumps(x, indent=4, sort_keys=True)
+        return json.dumps(self, indent=4, sort_keys=True)
 
     def __getstate__(self):
         return dict(self)

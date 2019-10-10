@@ -9,7 +9,7 @@ def test_Env_pickable():
 
     e.save("b",43)
     assert e == {"a":42,"b":43}
-    assert pickle.loads(pickle.dumps(e)) == {"a":42} # ok, saved are ignored when pickled
+    assert pickle.loads(pickle.dumps(e)) == {"a":42,"b":43}
 
 def test_Env_cant_save_existing():
     e= reqman.Env( {"a":42} )

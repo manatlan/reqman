@@ -1,3 +1,4 @@
+- better save() mechanism
 2.0.8.1 (04/10/2019)
 - when <<toto|d>>, now x=None if toto is an undefined var (no more "toto")
 2.0.8.0 (03/10/2019)
