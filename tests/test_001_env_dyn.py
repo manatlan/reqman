@@ -12,13 +12,8 @@ def test_Env_dyn():
     env2.save("yolo",13)
 
     assert env2["yolo"] == 13
-    assert env["yolo"] == None
+    assert "yolo" not in env
 
-    # assert "yolo" in env2
-    # assert "yolo" in env
-
-    # assert env == {"a":42,"yolo":13}
-    # assert env2 == {"a":42,"yolo":13}
 
 def test_Env_dyn_jpath():
     env=reqman.Env( {"orig":dict(x=42)} )

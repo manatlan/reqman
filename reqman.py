@@ -304,16 +304,6 @@ class Env(dict):
         self[key]=value
         self.__saved[key]=value
 
-    def __getitem__(self,key):
-        if super().__contains__(key):
-            return super().__getitem__( key )
-
-    def get(self,key,default=None):
-        return self.__getitem__(key) or default
-
-    def __contains__(self, key):
-        return  super().__contains__(key)
-
 
     def clone(self):
         newOne=Env({})
