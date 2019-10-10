@@ -1,3 +1,5 @@
+- better python detection var/method
+- resolve jpath in computed var's env (test960)
 - better save() mechanism (simpler)
 2.0.8.1 (04/10/2019)
 - when <<toto|d>>, now x=None if toto is an undefined var (no more "toto")

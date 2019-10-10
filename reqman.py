@@ -60,6 +60,17 @@ class OutputConsole(enum.Enum):
 class RMFormatException(Exception): pass
 class RMException(Exception): pass
 
+def declare(code):
+    return "def DYNAMIC(x,ENV):\n" + ("\n".join(["  " + i for i in code.splitlines()]))
+        
+
+def isPython(x):
+    if type(x)==str and "return" in x:
+        try:
+            return compile(declare(x),"unknown","exec") and True
+        except:
+            return False
+
 def izip(ex1,ex2):
     pop= lambda ex: len(ex)>0 and ex.pop(0) or None
 
@@ -360,7 +371,12 @@ class Env(dict):
         def _replace(txt:str) -> T.Union[str, bytes]:
             def getVar(var:str):
                 if "." in var:
-                    return jpath(self, var)
+                    x=jpath(self, var)
+                    if isPython(x):
+                        ld,lf=var.split(".",1)
+                        r=self.transform(None, ld)
+                        x=jpath(r,lf)
+                    return x
                 elif "|" in var:
                     key, method = var.split("|", 1)
 
@@ -375,7 +391,7 @@ class Env(dict):
                         content = self.transform(content, m)
                     return content
                 elif var in self:
-                    if type(self[var])==str and 'return ' in self[var]: #TODO: better here !!!
+                    if isPython(self[var]):
                         return self.transform(None, var)
                     else:                    
                         return self[var]
@@ -425,11 +441,7 @@ class Env(dict):
             if methodName in self:
                 code = self[methodName]
                 try:
-                    exec(
-                        "def DYNAMIC(x,ENV):\n"
-                        + ("\n".join(["  " + i for i in code.splitlines()])),
-                        globals(),
-                    )
+                    exec(declare(code),globals(),)
                 except Exception as e:
                     raise RMException(
                         "Error in declaration of method " + methodName + " : " + str(e)
@@ -446,20 +458,11 @@ class Env(dict):
                     x=content
 
                 try:
-                    # if self.transform.path:
-                    #     curdir = os.getcwd()
-                    #     os.chdir(self.transform.path)
-                    # else:
-                    curdir = None
                     content = DYNAMIC(x, self)
                 except Exception as e:
                     raise RMException(
                         "Error in execution of method " + methodName + " : " + str(e)
                     )
-                finally:
-                    pass
-                    # if curdir:
-                    #     os.chdir(curdir)
             else:
                 raise RMException("Can't find method '%s'" % methodName)
 
