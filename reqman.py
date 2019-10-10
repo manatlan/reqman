@@ -309,8 +309,8 @@ class Env(dict):
         newOne=Env({})
         dict_merge(newOne,self)
         newOne.cookiejar= CookieStore( self.cookiejar.export() )
-        newOne.__saved = self.__saved # share saved scope !!!
-        for k,v in self.__saved.items():
+        newOne.__saved = self.__saved 
+        for k,v in self.__saved.items(): # share saved scope !!!
             newOne.save(k,v)
         return newOne
 
