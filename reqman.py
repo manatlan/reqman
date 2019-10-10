@@ -370,14 +370,7 @@ class Env(dict):
 
         def _replace(txt:str) -> T.Union[str, bytes]:
             def getVar(var:str):
-                if "." in var:
-                    x=jpath(self, var)
-                    if isPython(x):
-                        ld,lf=var.split(".",1)
-                        r=self.transform(None, ld)
-                        x=jpath(r,lf)
-                    return x
-                elif "|" in var:
+                if "|" in var:
                     key, method = var.split("|", 1)
 
                     # content = self.get(key, key)  # resolv keys else use it a value !!!!!
@@ -390,6 +383,14 @@ class Env(dict):
 
                         content = self.transform(content, m)
                     return content
+                elif "." in var:
+                    x=jpath(self, var)
+                    if isPython(x):
+                        ld,lf=var.split(".",1)
+                        r=self.transform(None, ld)
+                        x=jpath(r,lf)
+                    return x
+
                 elif var in self:
                     if isPython(self[var]):
                         return self.transform(None, var)
