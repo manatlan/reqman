@@ -1,3 +1,4 @@
+- better resolver when mixing . and |
 - better python detection var/method
 - resolve jpath in computed var's env (test960)
 - better save() mechanism (simpler)
