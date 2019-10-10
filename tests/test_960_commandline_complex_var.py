@@ -1,6 +1,6 @@
 import reqman,pytest,sys,os
 
-def test_COMMAND_complex(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
+def test_COMMAND_complex(exe):   
     mock = {"/hello":(200,"ok")}
 
     with open("f.yml","w+") as fid:
@@ -17,10 +17,9 @@ def test_COMMAND_complex(exe):   #<- it's not a real test ... just COPY/PASTE th
         """)
         
     x=exe(".",fakeServer=mock)
-    assert os.path.isfile("reqman.html")
     assert x.rc == 0
 
-def test_COMMAND_complex2(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
+def test_COMMAND_complex2(exe):   
     mock = {"/HELLO":(200,"ok")}
 
     with open("f.yml","w+") as fid:
@@ -39,6 +38,5 @@ def test_COMMAND_complex2(exe):   #<- it's not a real test ... just COPY/PASTE t
         """)
         
     x=exe(".",fakeServer=mock)
-    assert os.path.isfile("reqman.html")
     assert x.rc == 0
 

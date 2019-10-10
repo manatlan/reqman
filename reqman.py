@@ -373,7 +373,6 @@ class Env(dict):
                 if "|" in var:
                     key, method = var.split("|", 1)
 
-                    # content = self.get(key, key)  # resolv keys else use it a value !!!!!
                     content = getVar(key)
                     if content is NotFound:
                         content = None
