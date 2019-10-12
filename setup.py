@@ -7,7 +7,7 @@ setuptools.setup(
     # scripts=['reqman.py'],
     entry_points={
         'console_scripts': [
-            'reqman = reqman:run',
+            'reqman = reqman:main',
         ],
     },
     py_modules=["reqman"],
