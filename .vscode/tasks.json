@@ -26,6 +26,16 @@
                 "panel": "new",
                 "focus": true
             }
+        },
+        {
+            "label": "deploy docs",
+            "type": "shell",
+            "command": "mkdocs gh-deploy",
+            "problemMatcher": [],
+            "presentation": {
+                "panel": "new",
+                "focus": true
+            }
         }
     ]
 }

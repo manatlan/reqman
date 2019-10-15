@@ -1,0 +1,21 @@
+site_name: Reqman
+site_description: The postman killer ;-)
+
+theme:
+    name: 'material'
+
+repo_name: manatlan/reqman
+repo_url: https://github.com/manatlan/reqman
+edit_uri: ""
+
+nav:
+    - Introduction: 'index.md'
+    - Installation: 'install.md'
+    - Simplest use: 'simple_use.md'
+    - Using a global conf: conf.md
+    - Grammar: yml_syntax.md
+    - Python powered: python.md
+
+markdown_extensions:
+  - markdown.extensions.codehilite:
+      guess_lang: false
