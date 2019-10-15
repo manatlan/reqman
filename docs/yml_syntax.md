@@ -1,14 +1,64 @@
+## Reqman language Syntax
+
+A reqman's file tests, is a YAML file, endings with ".yml" or ".rml" (ReqMan Language).
+
+Its content is a list of statements. There are 4 types of statements :
+ * A http request
+ * A Procedure's declaration
+ * A call procedure
+ * A break statement
 
 
-## Reserved words
-### HTTP VERB
-Known HTTP verbs : "GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT"
+### A HTTP Request
+This kind of statement, should contain ONE HTTP VERB, in uppercase (Known HTTP verbs : "GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT")
 
 ```yaml
+- GET: /hello
 - OPTIONS: /hello
 - HEAD: /hello
-- GET: /hello
 ```
+
+And it's generally completed with additionnal keywords
+
+
+### A Procedure's declaration
+This statement declare a procedure which can be only called by a "call statement".
+
+Here is the declaration of a procedure `MyProcedure`:
+
+```yaml
+- MyProcedure:
+    - GET: /hello1
+    - GET: /hello2
+```
+The content of the procedure is a list which can contains the 4 types of statements.
+
+Note : Without a call statement : this file does nothing ...
+
+### A call procedure
+This statement let you call a procedure.
+```yaml
+- call: MyProcedure
+```
+
+And it's generally completed with additionnal keywords
+
+
+### A 'break' statement
+This statement is only useful, when you are working on a test file, it lets you break the process. So you can edit your statements step by step.
+
+```yaml
+- GET: /hello1
+- break
+- GET: /hello2
+- GET: /hello3
+```
+In this case ^^; only the first request is called ... The others are ignored.
+
+
+##Additionnal reserved keywords
+
+Theses keywords can be added on request or call statements.
 
 ### "body"
 
