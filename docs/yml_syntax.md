@@ -40,6 +40,13 @@ This statement let you call a procedure.
 ```yaml
 - call: MyProcedure
 ```
+or
+
+```yaml
+- call: 
+    - MyProcedure1
+    - MyProcedure2
+```
 
 And it's generally completed with additionnal keywords
 
@@ -53,22 +60,37 @@ This statement is only useful, when you are working on a test file, it lets you 
 - GET: /hello2
 - GET: /hello3
 ```
-In this case ^^; only the first request is called ... The others are ignored.
+In this case ^^; only the first request is called ... The others are simply ignored.
 
 
-##Additionnal reserved keywords
+## Additionnal keywords
 
-Theses keywords can be added on request or call statements.
+Theses keywords can be added on request or call statements, to complete the statement.
 
 ### "body"
+Let you add a 'body' in your POST statements ;-)
 
 ```yaml
 - POST: /hello
   body: "I'm the body"
 ```
 
+```yaml
+- POST: /hello
+  body: {"key":12, "value":"hello"}
+```
+
+```yaml
+- POST: /hello
+  body:
+    key: 12
+    value: "hello"
+```
+
+
 
 ### "headers"
+Let you add 'headers' in yours statements. 
 
 ```yaml
 - POST: /hello
@@ -80,6 +102,7 @@ Theses keywords can be added on request or call statements.
 
 
 ### "tests"
+Let you add 'tests' in yours statements. 
 
 ```yaml
 - GET: /returnJson  # return {"result":{"content":"ok","value":3.3}}
@@ -113,6 +136,7 @@ Theses keywords can be added on request or call statements.
 
 
 ### "save"
+It lets you save parameters for later use. Theses parameters are only available in the current yaml tests. Only thoses saved in the `BEGIN` procedure will be global to all yaml tests.
 
 #### Save all the response
 
@@ -120,7 +144,7 @@ Theses keywords can be added on request or call statements.
 - GET: /returnJson  # return {"result":{"content":"ok","value":3.3}}
   save: allJson
 ```
-Now, you can 'allJson' in following requests
+Now, you can use 'allJson' in following statements
 
 #### Save a partial response in a new param 'rcontent'
 
@@ -129,9 +153,12 @@ Now, you can 'allJson' in following requests
   save: 
     rcontent: <<json.result.content>>
 ```
-now, you can 'rcontent' in following requests
+Now, you can use 'rcontent' in following statements
+
+
 
 ### "foreach"
+It let you repeat your statement, with a list of dict.
 
 ```yaml
 - GET: /test/<<value>>
@@ -140,24 +167,14 @@ now, you can 'rcontent' in following requests
     - value: 2
     - value: 3
 ```
-Will make 3 requests
-
-
-### "call"
+Will make 3 requests, it the same things as :
 
 ```yaml
-- MyProcedure:
-    - POST: /test
-      body: <<value>>
-
-    - GET: /test
-      tests:
-        - content: <<value>>
-
-- call: MyProcedure
-  params:
-    value: 1
+- GET: /test/1
+- GET: /test/2
+- GET: /test/3
 ```
+
 
 
 ## Reserved params:
@@ -171,7 +188,7 @@ It's the root path, which is used as prefix when request use absolute path
     root: https://example.com
 ```
 
-it's better to define it in the reqman.conf
+It's better to define it in the reqman.conf
 
 
 ### "timeout"
@@ -183,7 +200,7 @@ It's the max time in ms to wait the response
     timeout: 100  #100ms max
 ```
 
-it's better to define it in the reqman.conf
+It's better to define it in the reqman.conf
 
 
 ## In reqman.conf only:
@@ -194,7 +211,7 @@ Global `headers` for all tests
 Global `tests` for all tests (DEPRECATED (useless?))
 
 ### "switchs"
-
+TODO
 
 ### "BEGIN" (procedure)
 
