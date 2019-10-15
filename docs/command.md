@@ -77,7 +77,7 @@ or
     path: "hello"
 ```
 
-will run the file, with `prod` switch, and open the html output in the default browser ...
+Will run the file, with `prod` switch, and open the html output in the default browser ...
 (if the file is runned with others files or with options/switch ... reqman will use options/switchs from commandline)
 
 Very handy, to avoid to go in console while coding your test ;-)
