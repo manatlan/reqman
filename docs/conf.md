@@ -36,9 +36,12 @@ tip: this var can be overriden in a "params"/"foreach" statement.
 
 
 ### "headers"
-Global `headers` for all tests
-SEE HEADERS
+Global [headers](yml_syntax.md#headers) for all tests
 
+```yaml
+headers:
+    content-type: application/json
+```
 
 ## Declare switchs for command line
 ### "switchs"

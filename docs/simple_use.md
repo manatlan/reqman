@@ -23,7 +23,12 @@ TEST: test.yml
 RESULT: 1/1 (1req(s))
 ```
 
-Reqman has called the url and tested that HTTP status == 200, it has generated a `reqman.html` which contains more details about the http exchange, and it returned a RC code == 0 (no test errors)
+What's happening ?
+
+* Reqman has requested the url
+* It has tested that HTTP status == 200
+* it has generated a `reqman.html` file which contains more details about the http exchange,
+* And it returned a RC code == 0 (no test errors, else will be the number of failed tests, or -1 if error)
 
 
 

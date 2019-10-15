@@ -19,7 +19,7 @@ This kind of statement, should contain ONE HTTP VERB, in uppercase (Known HTTP v
 - HEAD: /hello
 ```
 
-And it's generally completed with additionnal keywords
+And it's generally completed with [additionnal keywords](yml_syntax.md#additionnal-keywords)
 
 
 ### A Procedure's declaration
@@ -49,7 +49,7 @@ or
     - MyProcedure2
 ```
 
-And it's generally completed with additionnal keywords
+And it's generally completed with [additionnal keywords](yml_syntax.md#additionnal-keywords)
 
 
 ### A 'break' statement
@@ -87,8 +87,7 @@ Let you add a 'body' in your POST statements ;-)
     key: 12
     value: "hello"
 ```
-
-
+Body described in yaml syntax, will automatically converted in json. The latest 2 examples are the same.
 
 ### "headers"
 Let you add 'headers' in yours statements. 
@@ -101,22 +100,41 @@ Let you add 'headers' in yours statements.
     x-hello: it's me
 ```
 
+If there are global or inherited headers, you can override them, by setting them to `null`, like that:
+
+```yaml
+- myproc:
+    - POST: /hello
+      body: "I'm the body"
+      headers:
+        content-type:       # leave empty, will not send the content-type from the caller
+        x-hello: it's me
+
+- call: myproc
+  headers:
+     content-type: application/json
+
+```
+Header's keys are case insensitive.
 
 ### "tests"
 Let you add 'tests' in yours statements. 
 
 ```yaml
-- GET: /returnJson  # return {"result":{"content":"ok","value":3.3}}
+- GET: /returnJson  # return {"result":{"content":"ok","value":3.3, "list":[42,43]}}
   tests:
     - status: 200
     - content-type: application/json    # test a response header
+    - content:  "result"                # ensure that the global response contains text "result"
     - json.result.content: "ok"
     - json.result.content: . != "ko"
     - json.result.content.size: 2       # test size of the string
     - json.result.size: 2               # test size of the dict
     - json.result.value: . > 3
     - json.result.value: . <= 4
-    - content:  "result"                # ensure that the global response contains text "result"
+    - json.result.list.0: 42            # refer to the first item in the list
+    - json.result.list.1: 43            # refer to the second item in the list
+    - json.result.list.-1: 43           # refer to the last item in the list
 ```
 
 
@@ -124,9 +142,9 @@ Let you add 'tests' in yours statements.
 
 ```yaml
 - GET: /test 
-  doc: "Just a description which is displayed in the html output for this request"
+  doc: "Just a description which is displayed in the html output for this request on <<root>> !"
 ```
-
+Yes, you can use var substitutions in `doc` !
 
 ### "params"
 ```yaml
@@ -134,10 +152,10 @@ Let you add 'tests' in yours statements.
   params:
     path: "hello"
 ```
-
+`<<path>>` is substitued by the value of the param `path`.
 
 ### "save"
-It lets you save parameters for later use. Theses parameters are only available in the current yaml tests. Only thoses saved in the `BEGIN` procedure will be global to all yaml tests.
+It lets you save parameters for later use. Theses parameters are only available in the current yaml tests. Only thoses saved in the `BEGIN` procedure will be shared with all test files.
 
 #### Save all the response
 

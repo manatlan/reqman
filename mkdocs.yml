@@ -3,6 +3,9 @@ site_description: The postman killer ;-)
 
 theme:
     name: 'material'
+    palette:
+        primary: 'green'
+        accent: 'green'
 
 repo_name: manatlan/reqman
 repo_url: https://github.com/manatlan/reqman

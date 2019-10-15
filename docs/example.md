@@ -2,13 +2,13 @@
 
 Here is a classic config, with oauth2 authentification, and two mode switchs.
 
-When reqman is executed without switchs:
+When reqman is executed without switchs (`reqman test.yml`):
 
   * It will target the server on localhost.
   * It will use a default access_token, for development
 
 
-When reqman is executed with a switch 'prod' 
+When reqman is executed with a switch 'prod' (`reqman test.yml -prod`):
 
   * It will target the server on example.com (root overriden)
   * It will try to obtain a access_token on authorization server (via BEGIN procedure)
@@ -41,9 +41,8 @@ switchs:
         - status:       200
       save:             token
 ```
-Here are the tests
 
-## A yml test file
+## And a yml test file
 ```yaml
 - GET: /api/pets/v1/list
   tests:

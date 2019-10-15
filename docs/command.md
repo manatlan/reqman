@@ -4,7 +4,7 @@ You can pass an many yaml's test files or folders as you want. Reqman will compu
 
 And it will run the tests against the first reqman.conf found in the common path, if it exists.
 
-If [reqman.conf](conf.md) contains 'switchs', you'll be able to add switchs in your command line.
+If [reqman.conf](conf.md) contains [switchs](conf.md#switchs), you'll be able to add switchs in your command line.
 
 ```
 USAGE TEST   : reqman [--option] [-switch] <folder|file>...
@@ -31,27 +31,37 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 ## Reqman's options
 
 ### p: paralleliz
-Will run a "thread" by file. It's a lot speeder ;-)
+Will run a "thread" by test's file. It's a lot speeder ;-)
 
 ### b: browser
-Will open `reqman.html` in the default browser
+Will open `reqman.html` file in the default browser, after tests.
 
-...
+... will continue to explain new reqman2 features ...
+... will continue to explain new reqman2 features ...
+... will continue to explain new reqman2 features ...
+... will continue to explain new reqman2 features ...
+... will continue to explain new reqman2 features ...
+... will continue to explain new reqman2 features ...
 
 ## Start a new project
 There is a special command to start a new project from scratch :
 
-'''
+```
 $ reqman new https://www.example.com/myapi/v1/test
-'''
+```
 
 It will create, in the current folder, a (very) basic [reqman.conf](conf.md) and a test file against this url
+
+And you can run test immediatly :
+```
+$ reqman .
+```
 
 
 ## Shebang mode
 It's my most loved feature, over reqman1 ;-)
 
-Very useful in a text editor : just configure your editor to run the edited yaml file against reqman executable. And if you run a single file, without any parameters. Reqman will look a the shebang, and use the parameter.
+Very useful in a text editor : just configure your editor to run the edited yaml file against reqman executable. And if you run a single file, without any parameters. Reqman will look at the shebang, and use the parameters.
 
 ```yaml
 #!/usr/local/bin/reqman --b -prod
@@ -68,6 +78,7 @@ or
 ```
 
 will run the file, with `prod` switch, and open the html output in the default browser ...
+(if the file is runned with others files or with options/switch ... reqman will use options/switchs from commandline)
 
 Very handy, to avoid to go in console while coding your test ;-)
 
