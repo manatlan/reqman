@@ -16,7 +16,7 @@ $ reqman test.yml
 The console should prints:
 ```
 $ reqman test.yml 
-TEST: /home/manatlan/Documents/python/reqman/test.yml
+TEST: test.yml
 * GET https://github.com/manatlan/reqman --> 200
   - OK : status = 200
 
