@@ -1,10 +1,10 @@
 # reqman (2.0)
-Reqman is the postman killer ;-)
+Reqman is a postman killer ;-)
 
 Create your http(s)-tests in simple yaml files, and run them with command line, against various environments.
-**reqman** is a python3 simple file (need [PyYAML](https://pypi.org/project/PyYAML/) & [stpl](https://pypi.org/project/stpl/) dependencies). The [changelog](https://github.com/manatlan/reqman/blob/master/changelog) !
+**reqman** is a python3 simple file. The [changelog](https://github.com/manatlan/reqman/blob/master/changelog) !
 
-**reqman** can be used as a python's module, or a commandLine.
+[Documentation](https://manatlan.github.io/reqman/)
 
 **Features**
    * Light (simple py3 file, 1800 lines of code, and x3 lines for unittests, in TDD mind ... cov:95%)
@@ -37,16 +37,16 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
        * ability to replay given tests (rmr file)
        * dual mode : compare switchs vs others switchs (-env1 +env2) in html output
        * shebang mode
-       * better html output (need some works yet !)
+       * better html output
        * fully compatible with reqman1 conf/ymls
 
 **and soon**
-   * doc & examples ;-)
+   * [doc]((https://manatlan.github.io/reqman/)) & examples ;-)
    * postman converter ?
 
 ## Getting started : installation
 
-If you are on an nix platform, you can start with pip :
+If you are on an *nix platform, you can start with pip :
 
     $ pip3 install reqman
 
