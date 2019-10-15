@@ -2,14 +2,15 @@
 
 Using "params" statement, it possible in introduce python scripts, to make you tests more powerful.
 
-(You can include all python libs available in reqman, but for others lib you should have python3 on the host with yours libs.)
-
 Can be really useful to:
 
  * transform data (gzip, base64, encrypt, ...)
  * save content
  * compute complex data
  * ...
+
+(You can include all python libs available in reqman, but for others lib you should have python3 on the host with yours libs.)
+
 
 ## With param value
 
@@ -53,4 +54,4 @@ And you can chain methods like this
         return base64.b64encode( x )
 ```
 
-A better place for theses methods : declare them in the reqman.conf !
+A better place for theses methods : declare them in the [reqman.conf](conf.md) !

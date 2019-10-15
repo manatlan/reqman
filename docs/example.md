@@ -1,13 +1,17 @@
+# A classic example
+
 Here is a classic config, with oauth2 authentification, and two mode switchs.
 
 When reqman is executed without switchs:
-* It will target the server on localhost.
-* It will use a default access_token, for development
+
+  * It will target the server on localhost.
+  * It will use a default access_token, for development
 
 
 When reqman is executed with a switch 'prod' 
-* It will target the server on example.com
-* It will try to obtain a access_token on authorization server.
+
+  * It will target the server on example.com (root overriden)
+  * It will try to obtain a access_token on authorization server (via BEGIN procedure)
 
 
 ## A reqman.conf
@@ -25,6 +29,7 @@ headers:
 
 switchs:
   prod:
+    doc:                Test in production
     root:               https://example.com
 
     BEGIN:

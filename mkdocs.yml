@@ -12,9 +12,11 @@ nav:
     - Introduction: 'index.md'
     - Installation: 'install.md'
     - Simplest use: 'simple_use.md'
+    - Test's Grammar: yml_syntax.md
     - Using a global conf: conf.md
-    - Grammar: yml_syntax.md
     - Python powered: python.md
+    - Command Line: command.md
+    - An example: example.md
 
 markdown_extensions:
   - markdown.extensions.codehilite:

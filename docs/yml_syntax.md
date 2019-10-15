@@ -3,6 +3,7 @@
 A reqman's file tests, is a YAML file, endings with ".yml" or ".rml" (ReqMan Language).
 
 Its content is a list of statements. There are 4 types of statements :
+
  * A http request
  * A Procedure's declaration
  * A call procedure
@@ -177,48 +178,4 @@ Will make 3 requests, it the same things as :
 
 
 
-## Reserved params:
-### "root"
 
-It's the root path, which is used as prefix when request use absolute path
-
-```yaml
-- GET: /test
-  params:
-    root: https://example.com
-```
-
-It's better to define it in the reqman.conf
-
-
-### "timeout"
-It's the max time in ms to wait the response
-
-```yaml
-- call: MyProcedure
-  params:
-    timeout: 100  #100ms max
-```
-
-It's better to define it in the reqman.conf
-
-
-## In reqman.conf only:
-### "headers"
-Global `headers` for all tests
-
-### "tests"
-Global `tests` for all tests (DEPRECATED (useless?))
-
-### "switchs"
-TODO
-
-### "BEGIN" (procedure)
-
-It's a special procedure, which can be declared in reqman.conf only, and is called at the beginning of all tests.
-It can be useful to obtain an oauth2 token bearer, initiate some things, ...
-
-### "END" (procedure)
-
-It's a special procedure, which can be declared in reqman.conf only, and is called at the end of all tests.
-It can be useful to clear some things after all tests, ...
