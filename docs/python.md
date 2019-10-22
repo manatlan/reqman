@@ -1,11 +1,11 @@
 # Python powered
 
-Using "params" statement, it possible in introduce python scripts, to make you tests more powerful.
+Using "params" statement, it possible in introduce python scripts, to make your tests more powerful.
 
 Can be really useful to:
 
  * transform data (gzip, base64, encrypt, ...)
- * save content
+ * save/read content from filesystem
  * compute complex data
  * ...
 
