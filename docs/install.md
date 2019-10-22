@@ -15,7 +15,8 @@ $ pip3 install reqman
 In a console:
 ```
 $ git clone https://github.com/manatlan/reqman.git
-$ pip3 install pyyaml httpcore stpl colorama
+$ pip3 install pyyaml httpcore stpl colorama pytest
 $ python3 -m pytest tests/
+$ python3 setup.py install
 ```
 

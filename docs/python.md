@@ -1,6 +1,6 @@
 # Python powered
 
-Using "params" statement, it possible in introduce python scripts, to make your tests more powerful.
+Using "params" statement, it possible in introduce python3 scripts, to make your tests more powerful.
 
 Can be really useful to:
 
@@ -9,7 +9,8 @@ Can be really useful to:
  * compute complex data
  * ...
 
-(You can include all python libs available in reqman, but for others lib you should have python3 on the host with yours libs.)
+!!! info
+    You can include all python libs available in reqman, but for others libs you should have python3 on the host with yours libs.
 
 
 ## With param value
@@ -54,4 +55,5 @@ And you can chain methods like this
         return base64.b64encode( x )
 ```
 
-A better place for theses methods : declare them in the [reqman.conf](conf.md) !
+!!! tip
+    A better place for theses methods : declare them in the [reqman.conf](conf.md) !
