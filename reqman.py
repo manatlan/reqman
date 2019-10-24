@@ -1091,7 +1091,7 @@ class TestResult(list):
             nameOK=what + " " + opOK + " " + strjs(val)  # test name OK
             nameKO=what + " " + opKO + " " + strjs(val)  # test name KO
 
-            results.append( Test(test,nameOK, nameKO, tvalue) )
+            results.append( Test(test,nameOK, nameKO, strjs(tvalue)) )
 
         list.__init__(self, results)
 
