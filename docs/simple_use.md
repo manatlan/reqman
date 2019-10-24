@@ -13,7 +13,7 @@ And run it with reqman, in console
 $ reqman test.yml
 ```
 
-The console should prints:
+The console should print:
 ```
 $ reqman test.yml 
 TEST: test.yml
