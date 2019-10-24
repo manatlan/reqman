@@ -56,6 +56,7 @@ def _continue(exe):
     assert x.rc==0
     assert os.path.isfile("r4.html")
     assert x.console.count("content contains")==1
+    # x.view()
 
 def test_COMMAND_rmr_tests_old_switchs(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
 

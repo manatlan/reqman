@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.1.0.2" #only SemVer (the last ".0" is win only)
+__version__="2.1.1.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -197,11 +197,11 @@ async def request(method,url,body:bytes,headers, timeout=None):
         info = "%s %s %s" % (r.protocol, int(r.status_code), r.reason_phrase)
         return r.status_code, dict(r.headers), Content(r.content), info 
     except (httpcore.exceptions.ReadTimeout, httpcore.exceptions.ConnectTimeout, httpcore.exceptions.Timeout, httpcore.exceptions.WriteTimeout):
-        return None, {}, "Response timeout", ""
+        return None, {}, "Timeout", ""
     except OSError:
-        return None, {}, "Server is down ?!", ""
+        return None, {}, "Unreachable", ""
     except httpcore.exceptions.InvalidURL:
-        return None, {}, "Invalid request", ""
+        return None, {}, "Invalid", ""
 
 class FString(str):
     filename=None
@@ -874,7 +874,7 @@ class Req(ReqItem):
         if outputConsole != OutputConsole.NO:
             allIsOk = all(ex.tests)
             if not (allIsOk and outputConsole == OutputConsole.MINIMAL_ONLYKO):
-                print("*",cy(ex.method),ex.url,"-->",cw(ex.status))
+                print("*",cy(ex.method),ex.url,"-->",cw(ex.content if ex.status is None else ex.status))
 
                 if outputConsole == OutputConsole.FULL:
                     display=lambda h: yaml.safe_dump(h,default_flow_style=False,allow_unicode=True)
@@ -941,14 +941,15 @@ async def asyncExecute(method, path, url, body, headers,http=None,timeout=None) 
 class Test(int):
     """ a boolean with a name """
     name=""
-    def __init__(self,v,n1,n2): pass # just for mypy
+    def __init__(self,v,n1,n2,realValue): pass # just for mypy
 
-    def __new__(cls, value:int, nameOK: str=None, nameKO: str=None):
+    def __new__(cls, value:int, nameOK: str=None, nameKO: str=None,realValue=None):
         s = super().__new__(cls, value)
         if value:
             s.name = nameOK
         else:
             s.name = nameKO
+        s.value = realValue
         return s
 
     def __repr__(self):
@@ -1088,9 +1089,9 @@ class TestResult(list):
                     )
 
             nameOK=what + " " + opOK + " " + strjs(val)  # test name OK
-            nameKO=what + "[%s] "%strjs(tvalue) + opKO + " " + strjs(val)  # test name KO
+            nameKO=what + " " + opKO + " " + strjs(val)  # test name KO
 
-            results.append( Test(test,nameOK, nameKO) )
+            results.append( Test(test,nameOK, nameKO, tvalue) )
 
         list.__init__(self, results)
 
@@ -1442,9 +1443,10 @@ div.h > div {flex: 1 0 50%}
     <div class="r hide">
         <h4 onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details">
             <b>{{first(ex).method}}</b> 
-            {{first_path(ex)}}
+            {{first_path(ex)}} <b style="float:right">{{first(ex).content if first(ex).status is None else first(ex).status}}</b>
             <br/>
             <i>{{first(ex).doc}}</i>
+            
         </h4>
 
 <div class="h s expanderContent">
@@ -1479,7 +1481,7 @@ div.h > div {flex: 1 0 50%}
     %if x is not None:
 
         %for i in x.tests:
-            <li class="{{i and "OK" or "KO"}}">{{i and "OK" or "KO"}} : {{i.name}}</li>
+            <li class="{{i and "OK" or "KO"}}" title="{{i.value}}">{{i and "OK" or "KO"}} : {{i.name}}</li>
         %end    
     %else:
         -

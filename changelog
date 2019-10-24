@@ -1,3 +1,5 @@
+2.1.1.0 (24/10/2019)
+- EVOL: better status in console, and in html. Real test value in html tooltip
 2.1.0.2 (12/10/2019)
 - fix: command line on *nix works again (oupsss)
 2.1.0.1 (11/10/2019)
