@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.1.1.0" #only SemVer (the last ".0" is win only)
+__version__="2.1.2.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -59,6 +59,7 @@ class OutputConsole(enum.Enum):
 
 class RMFormatException(Exception): pass
 class RMException(Exception): pass
+class RMPyException(Exception): pass
 
 def declare(code):
     return "def DYNAMIC(x,ENV):\n" + ("\n".join(["  " + i for i in code.splitlines()]))
@@ -450,7 +451,7 @@ class Env(dict):
                 try:
                     exec(declare(code),globals(),)
                 except Exception as e:
-                    raise RMException(
+                    raise RMPyException(
                         "Error in declaration of method " + methodName + " : " + str(e)
                     )
 
@@ -467,11 +468,11 @@ class Env(dict):
                 try:
                     content = DYNAMIC(x, self)
                 except Exception as e:
-                    raise RMException(
+                    raise RMPyException(
                         "Error in execution of method " + methodName + " : " + str(e)
                     )
             else:
-                raise RMException("Can't find method '%s'" % methodName)
+                raise RMPyException("Can't find method '%s'" % methodName)
 
         return content
 
@@ -676,10 +677,12 @@ class Reqs(list):
                         try:
                             foreach=json.loads( scope.replaceTxt( foreach ) )
                         except json.decoder.JSONDecodeError as e:
-                            raise RMException("Reqs: foreach '%s' is not a list of dict" % foreach)
+                            raise RMException("Reqs: Dynamic foreach '%s' is not a list of dict" % foreach)
+                        except RMPyException as e:
+                            raise RMException("Reqs: Dynamic foreach ERROR %s" % e)
 
                         if type(foreach)!=list or any([type(p)!=dict for p in foreach]):
-                            raise RMException("Reqs: foreach params is not a list of dict")
+                            raise RMException("Reqs: Dynamic foreach params is not a list of dict")
 
                     for fparam in foreach:
                         log(level,"  Foreach with params:",fparam)
@@ -830,42 +833,52 @@ class Req(ReqItem):
             headers=newHeaders
 
         gpath=path
-        path = scope.replaceTxt(path)
-        if body: body = scope.replaceObj( body )
-        headers= {k:scope.replaceTxt( str(v) ) for k,v in headers.items() if v} # headers'value should be string
+        try:
+            path = scope.replaceTxt(path)
 
-        if doc: doc = scope.replaceTxt(doc)
-        tests= [{list(d.keys())[0] : scope.replaceObj( list(d.values())[0]) } for d in tests] # cast value as str
+            if root is not None and not path.lower().startswith("http"):
+                url = root + path
+            else:
+                url = path
 
-        if root is not None and not path.lower().startswith("http"):
-            url = root + path
-        else:
-            url = path
+            if body: body = scope.replaceObj( body )
 
-        # set cookies in request according env
-        self.parent.env.cookiejar.update(url, headers)
+            headers= {k:scope.replaceTxt( str(v) ) for k,v in headers.items() if v} # headers'value should be string
 
-        ex=await asyncExecute(method,gpath,url,body,headers,http=http,timeout=timeout)
+            if doc: doc = scope.replaceTxt(doc)
+            tests= [{list(d.keys())[0] : scope.replaceObj( list(d.values())[0]) } for d in tests] # cast value as str
 
-        # extract cookies from response to the env
-        self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
+            # set cookies in request according env
+            self.parent.env.cookiejar.update(url, headers)
+
+            ex=await asyncExecute(method,gpath,url,body,headers,http=http,timeout=timeout)
+        except RMPyException as e:
+            ex=Exchange(method,gpath,gpath,body or "", headers, None,{},str(e),"TEST EXCEPTION",0)
+        finally:
+            # extract cookies from response to the env
+            self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
 
        
-        for s in saves:
-            postSaveScope = scope.clone()
-            postSaveScope["content"] = ex.content
-            postSaveScope["status"] = ex.status
-            #TODO: expose headers, time, xml too ?
-            try:
-                postSaveScope["json"] = ex.content.toJson()
-            except:
-                pass
+        try:
+            for s in saves:
+                postSaveScope = scope.clone()
+                postSaveScope["content"] = ex.content
+                postSaveScope["status"] = ex.status
+                #TODO: expose headers, time, xml too ?
+                try:
+                    postSaveScope["json"] = ex.content.toJson()
+                except:
+                    pass
 
-            for saveKey, saveWhat in s.items():
-                self.parent.env.save(saveKey, postSaveScope.replaceObj(saveWhat), self.parent.name=="BEGIN" )
-                # gscope.save(saveKey, postSaveScope.replaceObj(saveWhat) ) # NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+                for saveKey, saveWhat in s.items():
+                    self.parent.env.save(saveKey, postSaveScope.replaceObj(saveWhat), self.parent.name=="BEGIN" )
+                    # gscope.save(saveKey, postSaveScope.replaceObj(saveWhat) ) # NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 
-            del postSaveScope
+                del postSaveScope
+        except RMPyException as e:
+            ex.status=None
+            ex.content = e
+            ex.info="TEST EXCEPTION"
 
         ex.upgrade(id,doc,scope,tests)
 

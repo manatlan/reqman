@@ -117,7 +117,7 @@ def test_transform_dynamix():
 
 def test_transform_statix():
     env = reqman.Env(dict(m="return x*'*'"))
-    with pytest.raises(reqman.RMException):
+    with pytest.raises(reqman.RMPyException):
         env.replaceTxt("hello '<<42|m>>'")
     # assert env.replaceTxt("hello '<<42|m>>'") == "hello '******************************************'"
 
@@ -127,7 +127,7 @@ def test_transform_no_args_return_float():
 
 def test_transform_return_int():
     env = reqman.Env(dict(m="return int(x*7)"))
-    with pytest.raises(reqman.RMException):
+    with pytest.raises(reqman.RMPyException):
         env.replaceTxt("hello '<<42|m>>'")
         # assert env.replaceTxt("hello '<<42|m>>'") == "hello '294'"
 
@@ -137,13 +137,13 @@ def test_transform_return_bytes_and_replace_all():
 
 def test_transform_unknown_method():
     env = reqman.Env()
-    with pytest.raises(reqman.RMException):
+    with pytest.raises(reqman.RMPyException):
         env.replaceTxt("hello '<<v|unknwon>>'")
 
 
 def test_transform_bad_exception_in_method():
     env = reqman.Env(dict(m="return x/0"))
-    with pytest.raises(reqman.RMException):
+    with pytest.raises(reqman.RMPyException):
         env.replaceTxt("hello '<<42|m>>'")
 
 def test_replaceObj():
