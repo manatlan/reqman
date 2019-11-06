@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.1.2.0" #only SemVer (the last ".0" is win only)
+__version__="2.1.3.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -827,13 +827,19 @@ class Req(ReqItem):
         id=d.hexdigest()
         #''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-        if gheaders is not None:
-            newHeaders = clone(gheaders)
-            dict_merge(newHeaders, headers)
-            headers=newHeaders
-
         gpath=path
         try:
+            def resolvHeaders(headers):
+                if type(headers)==str:
+                    headers=scope.replaceObj(headers)
+                    self.parent._assertType("headers",headers,[dict,list])
+                return headers
+
+            if gheaders is not None:
+                newHeaders = resolvHeaders(clone(gheaders))
+                dict_merge(newHeaders, headers)
+                headers=newHeaders
+
             path = scope.replaceTxt(path)
 
             if root is not None and not path.lower().startswith("http"):
@@ -843,6 +849,7 @@ class Req(ReqItem):
 
             if body: body = scope.replaceObj( body )
 
+            headers=resolvHeaders(headers)
             headers= {k:scope.replaceTxt( str(v) ) for k,v in headers.items() if v} # headers'value should be string
 
             if doc: doc = scope.replaceTxt(doc)
@@ -852,7 +859,7 @@ class Req(ReqItem):
             self.parent.env.cookiejar.update(url, headers)
 
             ex=await asyncExecute(method,gpath,url,body,headers,http=http,timeout=timeout)
-        except RMPyException as e:
+        except (RMPyException,RMFormatException) as e: # RMFormatException for headers resolver !
             ex=Exchange(method,gpath,gpath,body or "", headers, None,{},str(e),"TEST EXCEPTION",0)
         finally:
             # extract cookies from response to the env
