@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.1.3.0" #only SemVer (the last ".0" is win only)
+__version__="2.1.5.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -861,8 +861,9 @@ class Req(ReqItem):
             ex=await asyncExecute(method,gpath,url,body,headers,http=http,timeout=timeout)
         except (RMPyException,RMFormatException) as e: # RMFormatException for headers resolver !
             ex=Exchange(method,gpath,gpath,body or "", headers, None,{},str(e),"TEST EXCEPTION",0)
+        except Exception as e: # RMFormatException for headers resolver !
+            ex=Exchange(method,gpath,gpath,body or "", headers, 500,{},str(e),"TEST EXCEPTION",0)
         finally:
-            # extract cookies from response to the env
             self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
 
        
@@ -1216,7 +1217,7 @@ class ReqmanDualResult(Result):
 
 
 class Reqman:
-    def __init__(self,conf=None):
+    def __init__(self,conf=None): #TODO: ability to pass env directly
         self.env=Env(conf)
         self.ymls=[] # list of str (or reqs)
         self.outputConsole = OutputConsole.MINIMAL

@@ -1,3 +1,7 @@
+2.1.5.0 (11/11/2019)
+- last version was unusable ;-)
+2.1.4.0 (11/11/2019)
+- FIX: bug when url return a real error 500
 2.1.3.0 (05/11/2019)
 - EVOL : headers can be dynamic in reqman.conf
 2.1.2.0 (26/10/2019)
