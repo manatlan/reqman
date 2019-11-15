@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.1.7.0" #only SemVer (the last ".0" is win only)
+__version__="2.1.8.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -63,7 +63,7 @@ class RMPyException(Exception): pass
 
 def declare(code):
     return "def DYNAMIC(x,ENV):\n" + ("\n".join(["  " + i for i in code.splitlines()]))
-        
+
 
 def isPython(x):
     if type(x)==str and "return" in x:
@@ -88,7 +88,7 @@ def izip(ex1,ex2):
 
     tex1,lex1=trans(ex1)
     tex2,lex2=trans(ex2)
-    
+
     cex1=[(i,tex2.get(uid)) for uid,i in lex1]
     cex2=[(i,tex1.get(uid)) for uid,i in lex2]
 
@@ -110,7 +110,7 @@ def izip(ex1,ex2):
                 else:
                     if i1: l.append( (i1[0],None) )
                     if i2: l.append((None,i2[0]))
-    
+
     return [(e1,e2)for e1,e2 in l]
 
 def comparable(l):
@@ -137,7 +137,7 @@ class CookieStore(http.cookiejar.CookieJar): #TODO: can do a lot better with htt
     def __init__(self, ll: T.List[dict]=[]) -> None:
         http.cookiejar.CookieJar.__init__(self)
         for c in ll:
-            self.set_cookie( http.cookiejar.Cookie(**c) )    
+            self.set_cookie( http.cookiejar.Cookie(**c) )
 
     def update(self, url:str, inHeaders:dict) -> dict:
         """return appended headers"""
@@ -187,7 +187,7 @@ class Content:
     def toJson(self):
         return json.loads( self.__b.decode() )
 
-async def request(method,url,body:bytes,headers, timeout=None):
+async def _request(method,url,body:bytes,headers, timeout=None):
     try:
         if (not body) and headers: headers["Content-Length"]="0"
         r = await AHTTP.request(
@@ -199,13 +199,22 @@ async def request(method,url,body:bytes,headers, timeout=None):
             timeout=httpcore.TimeoutConfig( timeout ),
         )
         info = "%s %s %s" % (r.protocol, int(r.status_code), r.reason_phrase)
-        return r.status_code, dict(r.headers), Content(r.content), info 
+        return r.status_code, dict(r.headers), Content(r.content), info
     except (httpcore.exceptions.ReadTimeout, httpcore.exceptions.ConnectTimeout, httpcore.exceptions.Timeout, httpcore.exceptions.WriteTimeout):
         return None, {}, "Timeout", ""
-    except OSError:
+    except OSError as e:
         return None, {}, "Unreachable", ""
     except httpcore.exceptions.InvalidURL:
         return None, {}, "Invalid", ""
+
+async def request(method,url,body:bytes,headers, timeout=None):
+    """ mimic "_request()" to try 3 times, when Unreachable (to be really sure ;-) """
+    t = await _request(method,url,body,headers,timeout)
+    if t[2]=="Unreachable": # conncetion lost, retry to see ;-)
+        t = await _request(method,url,body,headers,timeout)
+        if t[2]=="Unreachable": # conncetion lost, retry to see ;-)
+            t = await _request(method,url,body,headers,timeout)
+    return t
 
 class FString(str):
     filename=None
@@ -288,9 +297,9 @@ class Exchange:
         return (o and self.id==o.id)
 
     def upgrade(self,id,doc,scope,tests):
-        self.id=id 
+        self.id=id
         self.doc = doc
-        self.scope = scope 
+        self.scope = scope
         self.tests = TestResult(tests,self.status, self.content , self.outHeaders)
 
     def __repr__(self):
@@ -344,7 +353,7 @@ class Env(dict):
             switchs=self["switchs"].keys()
             for k in switchs:
                 yield k,self["switchs"].get(k,{}).get("doc","???")
-        else: 
+        else:
             #old system #DEPRECATED
             for k, v in self.items():
                 root = v.get("root", None) if type(v) == dict else None
@@ -404,7 +413,7 @@ class Env(dict):
                 elif var in self:
                     if isPython(self[var]):
                         return self.transform(None, var)
-                    else:                    
+                    else:
                         return self[var]
                 else:
                     return NotFound
@@ -427,7 +436,7 @@ class Env(dict):
                             return val  # keep BYTES !!!!!!!!!!!!!!
                         else:  # int, float, list, dict...
                             try:
-                                val = json.dumps(val)                
+                                val = json.dumps(val)
                             except TypeError:
                                 val=str(val)
 
@@ -436,7 +445,7 @@ class Env(dict):
                         txt = txt.replace('"%s"' % vvar, '"%s"' % val)
 
                     txt = txt.replace(vvar, val )
-                    
+
             return txt
 
         while type(txt) is str:
@@ -535,7 +544,7 @@ class Reqs(list):
                         # it's a definition of a proc's named 'key', content = value
                         key=keys[0]
                         value=i[key]
-                        if key in self.__proc: 
+                        if key in self.__proc:
                             raise self._errorFormat("Reqs: multiple proc are named '%s'" % key)
 
                         # declare the proc in the scope
@@ -548,17 +557,17 @@ class Reqs(list):
                         scopeParams=i.get("params",{})
                         self._assertType("params",scopeParams,[dict])
 
-                        if "call" in keys: 
+                        if "call" in keys:
                             call=i["call"]
                             self._assertType("call",call,[list,str])
                             if not all([k in KNOWNACTIONEXT+["call"] for k in keys]):
                                 raise self._errorFormat("Reqs: There are keys that are not understandable %s" % ",".join(keys) )
 
                             for namedProc in toList(call):
-                                
+
                                 #TODO: test not dynamic (not call: <<proc>>) !
 
-                                if namedProc in self.__proc: 
+                                if namedProc in self.__proc:
                                     reqs=controle(self.__proc[namedProc])
                                 elif namedProc in self.env:
                                     reqs=controle(self.env[namedProc])
@@ -693,7 +702,7 @@ class Reqs(list):
                         for l,s,r in _test(i.reqs,scope,level+1):
                             r.updateParams( {"params": fparam} )
                             yield l,s,r
-        
+
         ll=[]
         for l,s,r in _test(self,self.env):
             ex=await r.asyncExecute(s,http,outputConsole=outputConsole)
@@ -753,7 +762,7 @@ class Req(ReqItem):
         self.body=None # or str,dict,list,bool,bytes,int,float
         self.doc=None # or str
         self.saves=[]
-    
+
     def clone(self):
         r=Req(self.method,self.path,self.parent)
         r.headers = clone(self.headers)
@@ -771,12 +780,12 @@ class Req(ReqItem):
             #TODO: "'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')"
             headers = {list(d.keys())[0]: list(d.values())[0] for d in headers}
         if headers is not None:
-            dict_merge(self.headers, headers)  
+            dict_merge(self.headers, headers)
     def updateParams( self, o: dict ): # merge params
         params=o.get("params",{})
         self.parent._assertType("params",params,[dict])
         if params is not None:
-            dict_merge(self.params, params)         
+            dict_merge(self.params, params)
     def updateTests( self, o: dict ): # append tests
         tests=o.get("tests",[])
         self.parent._assertType("tests",tests,[list,dict])
@@ -809,7 +818,7 @@ class Req(ReqItem):
         if self.saves: l.append("\tsaves: %s" % (self.saves))
         return "\n".join(l)
 
-    async def asyncExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange: 
+    async def asyncExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange:
         scope=gscope.clone() # important
         dict_merge(scope,self.params)
 
@@ -870,7 +879,7 @@ class Req(ReqItem):
             assert ex
             self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
 
-       
+
         try:
             for s in saves:
                 postSaveScope = scope.clone()
@@ -909,7 +918,7 @@ class Req(ReqItem):
                     if ex.outHeaders: print( padLeft( display(ex.outHeaders) ) )
                     if ex.content: print( padLeft(ex.content) )
                     print(padLeft("-"*75))
-                
+
                 for t in ex.tests:
                     print("  -",t and cg("OK") or cr("KO"),":",t.name)
                 print()
@@ -1038,7 +1047,7 @@ def getValOpe(v):
 
 class TestResult(list):
     def __init__(self, tests, status,content,headers) -> None:
-        
+
         insensitiveHeaders = (
             {k.lower(): v for k, v in headers.items()}
         )
@@ -1074,7 +1083,7 @@ class TestResult(list):
                         return x
                     else:
                         return json.dumps(json.loads(x) if type(x) in [str, bytes] else x, sort_keys=True)
-                
+
                 matchAll = (makeComparable(value) == makeComparable(tvalue))
             except json.decoder.JSONDecodeError as e:
                 matchAll = False
@@ -1153,7 +1162,7 @@ class ReqmanResult(Result):
             for x in r.exchanges:
                 nbReqs+=1
                 total+=len(x.tests)
-                ok+=sum([t for t in x.tests])    
+                ok+=sum([t for t in x.tests])
 
         self.infos=[
             dict(
@@ -1168,7 +1177,7 @@ class ReqmanResult(Result):
         self.nbReqs=nbReqs
         self.results=ll
         self.title="%s %s/%s" %(",".join(switchs),ok,total)
-    
+
     @property
     def switchs(self):
         return self.infos[0]["switchs"] #TODO: not top (but needed for replaying)
@@ -1186,7 +1195,7 @@ class ReqmanDualResult(Result):
 
         d1={i.name:i.exchanges for i in r1.results}
         d2={i.name:i.exchanges for i in r2.results}
-        
+
         class ReqsMix:
             name=None
             exchanges=[]
@@ -1217,7 +1226,7 @@ class ReqmanDualResult(Result):
         #         print("  ",ex.method,ex.path)
         #         if v1: print("    v1:",v1.method,v1.url)
         #         if v2: print("    v2:",v2.method,v2.url)
- 
+
 
 
 class Reqman:
@@ -1235,7 +1244,7 @@ class Reqman:
     @property
     def switchs(self):
         return list(self.env.switchs)
-        
+
     def add(self,y):
         self.ymls.append( y )
 
@@ -1270,7 +1279,7 @@ class Reqman:
             ll=[reqs.asyncExecute(http, outputConsole=self.outputConsole) for reqs in lreqs]
 
             sem = asyncio.Semaphore(10) # ten concurrent coroutine max
-            async with sem:            
+            async with sem:
                 await asyncio.gather(*ll)
             results += lreqs
         else:
@@ -1467,11 +1476,11 @@ div.h > div {flex: 1 0 50%}
     %for ex in r.exchanges:
     <div class="r hide">
         <h4 onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details">
-            <b>{{first(ex).method}}</b> 
+            <b>{{first(ex).method}}</b>
             {{first_path(ex)}} <b style="float:right">{{first(ex).content if first(ex).status is None else first(ex).status}}</b>
             <br/>
             <i>{{first(ex).doc}}</i>
-            
+
         </h4>
 
 <div class="h s expanderContent">
@@ -1507,7 +1516,7 @@ div.h > div {flex: 1 0 50%}
 
         %for i in x.tests:
             <li class="{{i and "OK" or "KO"}}" title="{{i.value}}">{{i and "OK" or "KO"}} : {{i.name}}</li>
-        %end    
+        %end
     %else:
         -
     %end
@@ -1638,7 +1647,7 @@ def main(fakeServer=None,hookResults=None) -> int:
         if len(params) == 2 and params[0].lower() == "new":
             ## CREATE USAGE
             rc = findRCup(".")
-    
+
             conf, yml = create(params[1])
             if conf:
                 if not rc:
@@ -1650,14 +1659,14 @@ def main(fakeServer=None,hookResults=None) -> int:
                     raise RMException(
                         "there is no '%s', you shoul provide a full url !" % REQMAN_CONF
                     )
-    
+
             ff = glob.glob("*_test.rml")
             yname = "%04d_test.rml" % ((len(ff) + 1) * 10)
-    
+
             print("Create", yname)
             with open(yname, "w") as fid:
                 fid.write(yml)
-    
+
             return 0
 
         # control options
@@ -1673,7 +1682,7 @@ def main(fakeServer=None,hookResults=None) -> int:
             elif p=="s":
                 saveRMR=True
             elif p=="r": #TODO: write tests for thoses 3 conditions
-                if switchs: raise RMCommandException("Can't set replay mode with switchs") 
+                if switchs: raise RMCommandException("Can't set replay mode with switchs")
                 if dswitchs: raise RMCommandException("Can't set replay mode with switchs")
                 if not rmrFile: raise RMCommandException("Can't set replay mode, you'll need a rmr file")
                 replayRMR=True
@@ -1690,7 +1699,7 @@ def main(fakeServer=None,hookResults=None) -> int:
                 raise RMCommandException("bad option '%s'" % p)
 
         loop = asyncio.get_event_loop()
-        if dswitchs: 
+        if dswitchs:
             # dual mode -> ReqmanDualResult
             if rmrFile:
                 r=ReqmanRMR(ReqmanResult.fromRMR(rmrFile))
@@ -1771,14 +1780,14 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 [option]
         --k        : Limit standard output to failed tests (ko only)
         --p        : Paralleliz file tests (display only ko tests)
-        --o:name   : Set a name for the html output file 
-        --o        : No html output file, but full console 
+        --o:name   : Set a name for the html output file
+        --o        : No html output file, but full console
         --b        : Open html output in browser if generated
         --s        : Save RMR file
         --r        : Replay the given RMR file in dual mode
     """
             % __version__
-        )      
+        )
         if r and r.switchs:
             print("[switch]")
             for k, v in r.switchs:
@@ -1787,7 +1796,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
             print(
                 """[switch]     : pre-made 'switch' defined in a %s"""
                 % REQMAN_CONF
-            )        
+            )
         return -1
     except Exception as e:
         print("\n**HERE IS A BUG**, please report it : https://github.com/manatlan/reqman/issues ;-)")

@@ -1,3 +1,5 @@
+2.1.8.0 (15/11/2019)
+- EVOL: try request 3 times, when host is unreachable, to be really sure
 2.1.7.0 (15/11/2019)
 - FIX: trouble when pymethod in a dict in a body
 2.1.6.0 (13/11/2019)
