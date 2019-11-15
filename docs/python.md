@@ -36,8 +36,7 @@ it's like a param, but 'x' is the input parameter (ENV dict is also available)
     content: "hello world"
     gzip: |
         import zlib
-        return zlib.compress( x )
-
+        return zlib.compress( bytes(x,"utf8") )
 ```
 
 And you can chain methods like this
@@ -49,10 +48,10 @@ And you can chain methods like this
     content: "hello world"
     gzip: |
         import zlib
-        return zlib.compress( x )
-    b65: |
+        return zlib.compress( bytes(x,"utf8") )
+    b64: |
         import base64
-        return base64.b64encode( x )
+        return str( base64.b64encode( bytes(x,"utf8") ), "utf8" )
 ```
 
 !!! tip
