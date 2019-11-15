@@ -1,3 +1,5 @@
+2.1.7.0 (15/11/2019)
+- FIX: trouble when pymethod in a dict in a body
 2.1.6.0 (13/11/2019)
 - EVOL: replace vars in root too
 2.1.5.0 (11/11/2019)

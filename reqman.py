@@ -28,7 +28,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.1.6.0" #only SemVer (the last ".0" is win only)
+__version__="2.1.7.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -123,7 +123,10 @@ def ustr(x): # ensure str are utf8 inside
     try:
         return x.encode("cp1252").decode()
     except:
-        return x.encode("utf8").decode()
+        if type(x)==bytes:
+            return x.encode("utf8").decode()
+        else:
+            return str(x)
 
 
 AHTTP = httpcore.AsyncClient(verify=False)
@@ -864,6 +867,7 @@ class Req(ReqItem):
         except Exception as e: # RMFormatException for headers resolver !
             ex=Exchange(method,gpath,gpath,body or "", headers, 500,{},str(e),"TEST EXCEPTION",0)
         finally:
+            assert ex
             self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
 
        
