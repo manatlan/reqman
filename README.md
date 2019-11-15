@@ -6,7 +6,7 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
 
 [DEMO](https://test-reqman.glitch.me)
 
-[Documentation](https://manatlan.github.io/reqman/)
+[Documentation](https://reqman-docs.glitch.me/)
 
 **Features**
    * Light (simple py3 file, 1800 lines of code, and x3 lines for unittests, in TDD mind ... cov:95%)
