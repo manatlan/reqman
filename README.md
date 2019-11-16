@@ -1,4 +1,4 @@
-# reqman (2.0)
+# reqman (2.X)
 Reqman is a postman killer ;-)
 
 Create your http(s)-tests in simple yaml files, and run them with command line, against various environments.
@@ -95,8 +95,9 @@ root: https://pypi.org
 headers:
     User-Agent: reqman (https://github.com/manatlan/reqman)
 
-test:
-    root: https://test.pypi.org
+switchs:
+    test:
+        root: https://test.pypi.org
 ```
 
 Now, you have created your first _switch_. And try to run your tests like this:
@@ -115,15 +116,16 @@ headers:
 
 package: reqman
 
-test:
-    root: https://test.pypi.org
+switchs:
+    test:
+        root: https://test.pypi.org
 ```
 
 You have declared a _var_ **package** ! let's edit the test file _0010_test.rml_ like this :
 
 ```yaml
 - GET: /pypi/<<package>>/json
-    tests:
+  tests:
     - status: 200
 ```
 
@@ -136,10 +138,10 @@ headers:
 
 package: reqman
 
-test:
-    root: https://test.pypi.org
+switchs:
+    test:
+        root: https://test.pypi.org
 
-switchs: # the new way to declare switchs (in a 'switchs' statement)
     colorama:
         package: colorama
 ```
