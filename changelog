@@ -1,3 +1,5 @@
+2.2.0.0 (18/11/2019)
+- EVOL: change http lib from httpcore to aiohttp, for the ability to send mixed case headers
 2.1.8.0 (15/11/2019)
 - EVOL: try request 3 times, when host is unreachable, to be really sure
 2.1.7.0 (15/11/2019)

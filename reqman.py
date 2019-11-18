@@ -22,13 +22,15 @@ import typing as T
 import xml.dom.minidom
 import sys,traceback
 import pickle,zlib,hashlib
+import http.cookiejar
 
-import httpcore # see "pip install httpcore"
+# import httpcore # see "pip install httpcore"
+import aiohttp # see "pip install aiohttp"
 import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.1.8.0" #only SemVer (the last ".0" is win only)
+__version__="2.2.0.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -129,7 +131,6 @@ def ustr(x): # ensure str are utf8 inside
             return str(x)
 
 
-AHTTP = httpcore.AsyncClient(verify=False)
 
 class CookieStore(http.cookiejar.CookieJar): #TODO: can do a lot better with httpcore
     """ Manage cookiejar for httplib-like """
@@ -186,6 +187,8 @@ class Content:
         return toStr(self.__b)
     def toJson(self):
         return json.loads( self.__b.decode() )
+"""
+AHTTP = httpcore.AsyncClient(verify=False)
 
 async def _request(method,url,body:bytes,headers, timeout=None):
     try:
@@ -208,13 +211,33 @@ async def _request(method,url,body:bytes,headers, timeout=None):
         return None, {}, "Invalid", ""
 
 async def request(method,url,body:bytes,headers, timeout=None):
-    """ mimic "_request()" to try 3 times, when Unreachable (to be really sure ;-) """
+    ''' mimic "_request()" to try 3 times, when Unreachable (to be really sure ;-) '''
     t = await _request(method,url,body,headers,timeout)
     if t[2]=="Unreachable": # conncetion lost, retry to see ;-)
         t = await _request(method,url,body,headers,timeout)
         if t[2]=="Unreachable": # conncetion lost, retry to see ;-)
             t = await _request(method,url,body,headers,timeout)
     return t
+"""
+import concurrent,ssl
+async def request(method,url,body:bytes,headers, timeout=None):
+    try:
+        async with aiohttp.ClientSession() as session:
+            if timeout is not None: timeout=timeout/1000
+
+            r=await session.request(method,url,data=body,headers=headers,ssl=False,timeout=timeout,allow_redirects=False)
+            content=await r.content.read()
+
+            info = "%s %s %s" % (r.version, int(r.status), r.reason)
+            return r.status, dict(r.headers), Content(content), info
+    except aiohttp.client_exceptions.ClientConnectorError as e:
+        return None, {}, "Unreachable", ""        
+    except concurrent.futures._base.TimeoutError as e:
+        return None, {}, "Timeout", ""
+    except aiohttp.client_exceptions.InvalidURL as e:
+        return None, {}, "Invalid", ""
+    except ssl.SSLError:
+        pass
 
 class FString(str):
     filename=None

@@ -5,4 +5,9 @@
           - status: 200
           - content: nimp
 
+      - GET: htxxtp:/localhost.17219 
+        tests:
+          - status: 200
+          - content: nimp
+
 - call: test
