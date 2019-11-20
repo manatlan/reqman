@@ -30,7 +30,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.2.0.0" #only SemVer (the last ".0" is win only)
+__version__="2.2.0.1" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -223,12 +223,11 @@ import concurrent,ssl
 async def request(method,url,body:bytes,headers, timeout=None):
     try:
         async with aiohttp.ClientSession() as session:
-            if timeout is not None: timeout=timeout/1000
 
             r=await session.request(method,url,data=body,headers=headers,ssl=False,timeout=timeout,allow_redirects=False)
             content=await r.content.read()
 
-            info = "%s %s %s" % (r.version, int(r.status), r.reason)
+            info = "HTTP/%s.%s %s %s" % (r.version.major,r.version.minor, int(r.status), r.reason)
             return r.status, dict(r.headers), Content(content), info
     except aiohttp.client_exceptions.ClientConnectorError as e:
         return None, {}, "Unreachable", ""        
