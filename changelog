@@ -1,3 +1,6 @@
+2.2.1.0 (20/11/2019)
+- minor fixes: http version in html output is better ;-)
+- evol: reqman version in meta tag in html output
 2.2.0.0 (18/11/2019)
 - EVOL: change http lib from httpcore to aiohttp, for the ability to send mixed case headers
 2.1.8.0 (15/11/2019)

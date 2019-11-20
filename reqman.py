@@ -23,6 +23,7 @@ import xml.dom.minidom
 import sys,traceback
 import pickle,zlib,hashlib
 import http.cookiejar
+import concurrent,ssl
 
 # import httpcore # see "pip install httpcore"
 import aiohttp # see "pip install aiohttp"
@@ -30,7 +31,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.2.0.1" #only SemVer (the last ".0" is win only)
+__version__="2.2.1.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -219,7 +220,7 @@ async def request(method,url,body:bytes,headers, timeout=None):
             t = await _request(method,url,body,headers,timeout)
     return t
 """
-import concurrent,ssl
+
 async def request(method,url,body:bytes,headers, timeout=None):
     try:
         async with aiohttp.ClientSession() as session:
@@ -1449,6 +1450,7 @@ def render(rr:Result) -> str:
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <title>{{result.title}}</title>
+<meta name="description" content="reqman {{version}}">
 <style>
 * { box-sizing: border-box;}
 html,body {width:100%;height:100%;margin:0px;padding:0px}
@@ -1581,7 +1583,7 @@ div.h > div {flex: 1 0 50%}
             return p
 
 
-    return stpl.template(template,result=rr,prettify=prettify,discover=discover,first=first,relpath=relpath,first_path=first_path)
+    return stpl.template(template,result=rr,prettify=prettify,discover=discover,first=first,relpath=relpath,first_path=first_path,version=__version__)
 
 
 def mkUrl(protocol: str, host: str, port=None) -> str:
