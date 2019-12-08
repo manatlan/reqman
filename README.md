@@ -157,7 +157,7 @@ And you can check that 'colorama' exists on test.pypi.org, like that :
 As you can imagine, it's possible to make a lot of fun things easily. (see a more complex [reqman.conf](https://github.com/manatlan/reqman/blob/master/examples/reqman.conf))
 
 
-Now, you can edit your rml file, and try the things available in this [tuto](https://github.com/manatlan/reqman/blob/master/examples/tuto.yml).
+Now, you can edit your rml file, and try the things available in this [tuto](https://github.com/manatlan/reqman/blob/reqman1.4.4.0/examples/tuto.yml).
 Organize your tests as you want : you can make many requests in a rml file, you can make many files with many requests, you can make folders which contain many rml files. _Reqman_ will not scan sub-folders starting with "_" or ".".
 
 _reqman_ will return an `exit code` which contains the number of KO tests : 0 if everything is OK, or -1 if there is a trouble (tests can't be runned) : so it's easily scriptable in your automated workflows !
