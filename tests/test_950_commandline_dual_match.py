@@ -37,7 +37,7 @@ def test_dual_izip(exe):
         root: http://a
         def: A
 
-        switchs:
+        switches:
           other:
             root: http://b
             def: B

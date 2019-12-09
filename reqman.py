@@ -369,13 +369,13 @@ class Env(dict):
         return newOne
 
     @property
-    def switchs(self):
+    def switches(self):
         """ return list of tuple (switchName,doc) """
-        if "switchs" in self.keys():
+        if "switches" in self.keys():
             # new system (hourraaaaa !!!! )
-            switchs=self["switchs"].keys()
-            for k in switchs:
-                yield k,self["switchs"].get(k,{}).get("doc","???")
+            switches=self["switches"].keys()
+            for k in switches:
+                yield k,self["switches"].get(k,{}).get("doc","???")
         else:
             #old system #DEPRECATED
             for k, v in self.items():
@@ -387,8 +387,8 @@ class Env(dict):
         if switch in self: #DEPRECATED
             dict_merge(self,self[switch])
         else:
-            if switch in self.get("switchs",{}):
-                dict_merge(self,self["switchs"][switch])
+            if switch in self.get("switches",{}):
+                dict_merge(self,self["switches"][switch])
             else:
                 raise RMException("bad switch '%s'" % switch)
 
@@ -1177,7 +1177,7 @@ class ReqmanResult(Result):
             x=zlib.decompress(buf[4:])
             return pickle.loads(x)
 
-    def __init__(self,ll:T.List[Reqs],switchs:list,env={}):
+    def __init__(self,ll:T.List[Reqs],switches:list,env={}):
         ok=0
         total=0
         nbReqs=0
@@ -1190,7 +1190,7 @@ class ReqmanResult(Result):
         self.infos=[
             dict(
                 date=datetime.datetime.now(),
-                switchs=switchs,
+                switches=switches,
             )
         ]
 
@@ -1199,14 +1199,14 @@ class ReqmanResult(Result):
         self.total=total
         self.nbReqs=nbReqs
         self.results=ll
-        self.title="%s %s/%s" %(",".join(switchs),ok,total)
+        self.title="%s %s/%s" %(",".join(switches),ok,total)
 
     @property
-    def switchs(self):
-        return self.infos[0]["switchs"] #TODO: not top (but needed for replaying)
+    def switches(self):
+        return self.infos[0]["switches"] #TODO: not top (but needed for replaying)
 
     def saveRMR(self):
-        name="_".join( [self.infos[0]["date"].strftime("%y%m%d_%H%M")] + self.infos[0]["switchs"] )+".rmr"
+        name="_".join( [self.infos[0]["date"].strftime("%y%m%d_%H%M")] + self.infos[0]["switches"] )+".rmr"
         with open(name, 'wb') as fid:
             x=pickle.dumps(self)
             fid.write(b"RMR1"+zlib.compress(x))
@@ -1265,20 +1265,20 @@ class Reqman:
         return r
 
     @property
-    def switchs(self):
-        return list(self.env.switchs)
+    def switches(self):
+        return list(self.env.switches)
 
     def add(self,y):
         self.ymls.append( y )
 
-    def execute(self,switchs=[],paralleliz=False,http=None) -> ReqmanResult:
+    def execute(self,switches=[],paralleliz=False,http=None) -> ReqmanResult:
         loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.asyncExecute(switchs,paralleliz,http))
+        return loop.run_until_complete(self.asyncExecute(switches,paralleliz,http))
 
-    async def asyncExecute(self,switchs: list = [],paralleliz=False,http=None) -> ReqmanResult:
+    async def asyncExecute(self,switches: list = [],paralleliz=False,http=None) -> ReqmanResult:
         scope = self.env.clone()
 
-        for switch in switchs:
+        for switch in switches:
             scope.mergeSwitch(switch)
 
         reqsBegin=Reqs(yaml.dump(scope["BEGIN"]) if "BEGIN" in scope else "",scope,name="BEGIN")
@@ -1315,7 +1315,7 @@ class Reqman:
             results.append( reqsEnd )
 
 
-        r=ReqmanResult(results,switchs,self.env)
+        r=ReqmanResult(results,switches,self.env)
         #============================= LIVE CONSOLE
         if self.outputConsole != OutputConsole.NO:
             callback = cg if r.ok==r.total else cr
@@ -1394,23 +1394,23 @@ class ReqmanCommand:
         return len( self._r.ymls)
 
     @property
-    def switchs(self):
-        return self._r.switchs
+    def switches(self):
+        return self._r.switches
 
-    def execute(self, switchs=[], paralleliz=False, outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanResult:
+    def execute(self, switches=[], paralleliz=False, outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanResult:
         self._r.outputConsole=outputConsole
-        return self._r.execute(switchs,paralleliz,http=fakeServer)
+        return self._r.execute(switches,paralleliz,http=fakeServer)
 
-    async def asyncExecute(self, switchs=[], paralleliz=False, outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanResult:
+    async def asyncExecute(self, switches=[], paralleliz=False, outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanResult:
         self._r.outputConsole=outputConsole
-        return await self._r.asyncExecute(switchs,paralleliz,http=fakeServer)
+        return await self._r.asyncExecute(switches,paralleliz,http=fakeServer)
 
-    async def asyncExecuteDual(self, switchs1=[],switchs2=[], outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanDualResult:
+    async def asyncExecuteDual(self, switches1=[],switches2=[], outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanDualResult:
         self._r.outputConsole=outputConsole
 
         r2 = self._r.clone()    # clone IMPORTANT !!!
 
-        ll=[self._r.asyncExecute(switchs1,http=fakeServer), r2.asyncExecute(switchs2,http=fakeServer) ]
+        ll=[self._r.asyncExecute(switches1,http=fakeServer), r2.asyncExecute(switches2,http=fakeServer) ]
         return ReqmanDualResult(*await asyncio.gather(*ll))
 
 
@@ -1422,7 +1422,7 @@ class ReqmanRMR(ReqmanCommand):
         self._r.ymls=[i for i in rmr.results if i.name not in ["BEGIN","END"]]
 
     #override
-    async def asyncExecuteDual(self, switchs1=[],switchs2=[], outputConsole=OutputConsole.MINIMAL,fakeServer=None)  -> ReqmanDualResult:
+    async def asyncExecuteDual(self, switches1=[],switches2=[], outputConsole=OutputConsole.MINIMAL,fakeServer=None)  -> ReqmanDualResult:
         raise RMException("not implemented")
 
 
@@ -1487,7 +1487,7 @@ div.h > div {flex: 1 0 50%}
 <div class="h" style="position:sticky">
 %for i in result.infos:
     <div>
-        <span style="float:right"><b>{{", ".join(i["switchs"])}}</b> {{i["date"].strftime("%Y-%m-%d %H:%M:%S")}}</span>
+        <span style="float:right"><b>{{", ".join(i["switches"])}}</b> {{i["date"].strftime("%Y-%m-%d %H:%M:%S")}}</span>
     </div>
 %end
 </div>
@@ -1624,7 +1624,7 @@ headers:
     return (rc, yml)
 
 def extractParams(params):
-    files,rparams,switchs,dswitchs=[],[],[],[]
+    files,rparams,switches,dswitches=[],[],[],[]
     for param in params:
         if param.startswith("--"):
             # reqman param
@@ -1636,13 +1636,13 @@ def extractParams(params):
                     rparams.append( i )
         elif param.startswith("-"):
             # switch param
-            switchs.append( param[1:] )
+            switches.append( param[1:] )
         elif param.startswith("+"):
             # dual switch param
-            dswitchs.append( param[1:] )
+            dswitches.append( param[1:] )
         else:
             files.append(param)
-    return files,rparams,switchs,dswitchs
+    return files,rparams,switches,dswitches
 
 def main(fakeServer=None,hookResults=None) -> int:
     params=sys.argv[1:]
@@ -1650,9 +1650,9 @@ def main(fakeServer=None,hookResults=None) -> int:
     class RMCommandException(Exception): pass
 
     #extract sys.argv in --> files,rparams,switch
-    files,rparams,switchs,dswitchs=extractParams(params)
+    files,rparams,switches,dswitches=extractParams(params)
 
-    if len(files)==1 and rparams==[] and switchs==[] and dswitchs==[] and not files[0].endswith(".rmr"):
+    if len(files)==1 and rparams==[] and switches==[] and dswitches==[] and not files[0].endswith(".rmr"):
         f=files[0]
         if os.path.isfile(f):
             with open(f,"r") as fid:
@@ -1661,7 +1661,7 @@ def main(fakeServer=None,hookResults=None) -> int:
                 firstLine=firstLine.strip()
                 print(cr("Use SHEBANG : %s") % firstLine)
                 pp=firstLine.split(" ")[1:]
-                exfiles,rparams,switchs,dswitchs = extractParams(pp)
+                exfiles,rparams,switches,dswitches = extractParams(pp)
                 files.extend(exfiles)
 
     rmrFile=files[0] if len(files)==1 and files[0].endswith(".rmr") else None
@@ -1706,8 +1706,8 @@ def main(fakeServer=None,hookResults=None) -> int:
             elif p=="s":
                 saveRMR=True
             elif p=="r": #TODO: write tests for thoses 3 conditions
-                if switchs: raise RMCommandException("Can't set replay mode with switchs")
-                if dswitchs: raise RMCommandException("Can't set replay mode with switchs")
+                if switches: raise RMCommandException("Can't set replay mode with switches")
+                if dswitches: raise RMCommandException("Can't set replay mode with switches")
                 if not rmrFile: raise RMCommandException("Can't set replay mode, you'll need a rmr file")
                 replayRMR=True
             elif p=="p":
@@ -1723,40 +1723,40 @@ def main(fakeServer=None,hookResults=None) -> int:
                 raise RMCommandException("bad option '%s'" % p)
 
         loop = asyncio.get_event_loop()
-        if dswitchs:
+        if dswitches:
             # dual mode -> ReqmanDualResult
             if rmrFile:
                 r=ReqmanRMR(ReqmanResult.fromRMR(rmrFile))
 
                 rr1=ReqmanResult.fromRMR(rmrFile)
-                rr2=loop.run_until_complete( r.asyncExecute(dswitchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
+                rr2=loop.run_until_complete( r.asyncExecute(dswitches,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
                 rr=ReqmanDualResult(rr1,rr2)
             else:
                 r=ReqmanCommand(*files)
                 if r.nbFiles<1:  raise RMCommandException("no yml files found")
 
-                rr=loop.run_until_complete( r.asyncExecuteDual(switchs,dswitchs,outputConsole=outputConsole,fakeServer=fakeServer) )
+                rr=loop.run_until_complete( r.asyncExecuteDual(switches,dswitches,outputConsole=outputConsole,fakeServer=fakeServer) )
         else:
             # single mode -> ReqmanResult or ReqmanDualResult
             if rmrFile:
                 rmr=ReqmanResult.fromRMR(rmrFile)
-                if not switchs:
+                if not switches:
                     if replayRMR: # -> ReqmanDualResult
                         r=ReqmanRMR(rmr)
 
-                        rr1=ReqmanResult.fromRMR(rmrFile) # vv redeclare used switchs (important ! fix 2.0.1)
-                        rr2=loop.run_until_complete( r.asyncExecute(rmr.switchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
+                        rr1=ReqmanResult.fromRMR(rmrFile) # vv redeclare used switches (important ! fix 2.0.1)
+                        rr2=loop.run_until_complete( r.asyncExecute(rmr.switches,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
                         rr=ReqmanDualResult(rr1,rr2)
                     else:
                         rr=rmr
                 else:
                     r=ReqmanRMR(rmr)
-                    rr=loop.run_until_complete( r.asyncExecute(switchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
+                    rr=loop.run_until_complete( r.asyncExecute(switches,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
             else:
                 r=ReqmanCommand(*files)
                 if r.nbFiles<1:  raise RMCommandException("no yml files found")
 
-                rr=loop.run_until_complete( r.asyncExecute(switchs,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
+                rr=loop.run_until_complete( r.asyncExecute(switches,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
 
         if saveRMR:
             if isinstance(rr,ReqmanResult):
@@ -1812,9 +1812,9 @@ Test a http service with pre-made scenarios, whose are simple yaml files
     """
             % __version__
         )
-        if r and r.switchs:
+        if r and r.switches:
             print("[switch]")
-            for k, v in r.switchs:
+            for k, v in r.switches:
                 print("""%12s : "%s" """ % ("-" + k, v))
         else:
             print(

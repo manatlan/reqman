@@ -7,7 +7,7 @@ def test_COMMAND_usage_no_files(exe):
     assert "USAGE" in x.console
     assert "pre-made 'switch' defined" in x.console
         
-def test_COMMAND_usage_list_switchs(exe):
+def test_COMMAND_usage_list_switches(exe):
     with open("reqman.conf","w+") as fid:
         fid.write("root: 'https://s1.com'\n")
         fid.write("sw1:\n")
