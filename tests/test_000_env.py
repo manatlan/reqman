@@ -180,9 +180,9 @@ def test_replaceObj3():
     o=env.replaceObj( "<<obj1>>" )
     assert o == {'a': 42, 'b': "hello"}
 
-def test_switchs():
+def test_switches():
     env = reqman.Env(dict(
         obj1=dict(root="https://w1"),
     ))
-    assert list(env.switchs)==[('obj1', 'https://w1')]
+    assert list(env.switches)==[('obj1', 'https://w1')]
     

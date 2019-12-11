@@ -54,7 +54,7 @@
 2.0.2.0
 - FIX: override headers with None/null to remove it
 2.0.1.0
-- FIX: replaying works now when switchs declare a BEGIN/END
+- FIX: replaying works now when switches declare a BEGIN/END
 2.0.0.0
 - full rewrite from scratch + new features
 

@@ -58,7 +58,7 @@ def _continue(exe):
     assert x.console.count("content contains")==1
     # x.view()
 
-def test_COMMAND_rmr_tests_old_switchs(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
+def test_COMMAND_rmr_tests_old_switches(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
 
     with open("reqman.conf","w+") as fid:
         fid.write("""
@@ -79,14 +79,14 @@ def test_COMMAND_rmr_tests_old_switchs(exe):   #<- it's not a real test ... just
         """)
     _continue(exe)
 
-def test_COMMAND_rmr_tests_new_switchs(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
+def test_COMMAND_rmr_tests_new_switches(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
 
     with open("reqman.conf","w+") as fid:
         fid.write("""
         root: http://a
         def: A
 
-        switchs:
+        switches:
           other:
             root: http://b
             def: B

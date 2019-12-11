@@ -22,7 +22,7 @@ dua:
 """
     r=reqman.Reqman(conf)
 
-    assert r.switchs==[("dua","http://machinedua.com")]
+    assert r.switches==[("dua","http://machinedua.com")]
 
     r.add("""
 - call: BEGIN

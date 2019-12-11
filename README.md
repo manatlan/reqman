@@ -33,11 +33,11 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
    * NEW 2.0 : 
        * rewrite from scratch, a lot stronger & speeder !
        * advanced save mechanisms
-       * new switchs system
+       * new switches system
        * a lot of new options (auto open browser, set html filename, compare, ...)
        * ability to save the state, to compare with newer ones
        * ability to replay given tests (rmr file)
-       * dual mode : compare switchs vs others switchs (-env1 +env2) in html output
+       * dual mode : compare switches vs others switches (-env1 +env2) in html output
        * shebang mode
        * better html output
        * fully compatible with reqman1 conf/ymls
@@ -95,7 +95,7 @@ root: https://pypi.org
 headers:
     User-Agent: reqman (https://github.com/manatlan/reqman)
 
-switchs:
+switches:
     test:
         root: https://test.pypi.org
 ```
@@ -105,7 +105,7 @@ Now, you have created your first _switch_. And try to run your tests like this:
     $ reqman.py . -test
 
 It will run your tests against the _root_ defined in _test_ section ; and the test is KO, because _reqman_ doesn't exist on test.pypi.org !
-In fact; all declared things under _test_ will replace those at the top ! So you can declare multiple environments, with multiple switchs ! 
+In fact; all declared things under _test_ will replace those at the top ! So you can declare multiple environments, with multiple switches ! 
 
 But you can declare what you want, now edit _reqman.conf_ like this :
 
@@ -116,7 +116,7 @@ headers:
 
 package: reqman
 
-switchs:
+switches:
     test:
         root: https://test.pypi.org
 ```
@@ -138,7 +138,7 @@ headers:
 
 package: reqman
 
-switchs:
+switches:
     test:
         root: https://test.pypi.org
 

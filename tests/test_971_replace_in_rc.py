@@ -97,7 +97,7 @@ token: "no"
 headers:
   auth: <<token>>
 
-switchs:
+switches:
     mod:
         token: "ok"
 
