@@ -107,6 +107,26 @@ switches:
 
 """)
 
+def test_replace_headers2_in_rc_old_switchs(exe):
+
+    with open("reqman.conf","w+") as fid:
+        fid.write("""
+
+token: "no"
+
+headers:
+  auth: <<token>>
+
+switchs:
+    mod:
+        token: "ok"
+
+    headers:
+        auth: <<token>>
+
+
+""")
+
     with open("f.yml","w+") as fid:
         fid.write("""
 - GET: /a

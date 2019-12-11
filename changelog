@@ -1,3 +1,6 @@
+2.2.2.0 (11/12/2019)
+- EVOL: not append root if url has a scheme
+- EVOL: switchs renamed switches (switchs is deprecated) ... thanks @mikeputnam
 2.2.1.0 (20/11/2019)
 - minor fixes: http version in html output is better ;-)
 - evol: reqman version in meta tag in html output

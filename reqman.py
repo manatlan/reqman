@@ -17,6 +17,7 @@
 
 import os,sys,re,asyncio,io,datetime,itertools,glob,enum,codecs
 import http,urllib,email # for cookies management
+import urllib.parse
 import collections,json
 import typing as T
 import xml.dom.minidom
@@ -31,7 +32,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.2.1.0" #only SemVer (the last ".0" is win only)
+__version__="2.2.2.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -376,6 +377,11 @@ class Env(dict):
             switches=self["switches"].keys()
             for k in switches:
                 yield k,self["switches"].get(k,{}).get("doc","???")
+        elif "switchs" in self.keys():
+            # new system (hourraaaaa !!!! )
+            switches=self["switchs"].keys()
+            for k in switches:
+                yield k,self["switchs"].get(k,{}).get("doc","???")
         else:
             #old system #DEPRECATED
             for k, v in self.items():
@@ -387,8 +393,11 @@ class Env(dict):
         if switch in self: #DEPRECATED
             dict_merge(self,self[switch])
         else:
-            if switch in self.get("switches",{}):
-                dict_merge(self,self["switches"][switch])
+            switches=self.get("switches",{})
+            if not switches:
+                switches=self.get("switchs",{})
+            if switch in switches:
+                dict_merge(self,switches[switch])
             else:
                 raise RMException("bad switch '%s'" % switch)
 
@@ -877,7 +886,7 @@ class Req(ReqItem):
 
             path = scope.replaceTxt(path)
 
-            if root is not None and not path.lower().startswith("http"):
+            if root is not None and not urllib.parse.urlparse(path.lower()).scheme:
                 url = scope.replaceTxt(root) + path
             else:
                 url = path
