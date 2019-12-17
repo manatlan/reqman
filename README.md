@@ -3,7 +3,7 @@ Reqman is a postman killer ;-)
 
 **Reqman** is a [postman](https://www.getpostman.com/) killer. It shares the same goal, but without GUI ... the GUI is simply your favorite text editor, because requests/tests are only simple yaml files. **Reqman** is a command line tool, available on any platforms.
 
-<iframe width="640" height="460" src="https://www.youtube.com/embed/ToK-5VwxhP4?autoplay=1&loop=1&playlist=ToK-5VwxhP4&cc_load_policy=1" frameborder="0" allow="accelerometer; autoplay; loop; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[Video (1minute)](https://www.youtube.com/embed/ToK-5VwxhP4?autoplay=1&loop=1&playlist=ToK-5VwxhP4&cc_load_policy=1)
 
 All configurations is done via simple yaml files, editable with any text editors. Results are displayed in console and in an html output. It's scriptable, and can be used as a daemon/cron task to automate your tests.
 
