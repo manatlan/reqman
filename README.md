@@ -1,12 +1,19 @@
 # reqman (2.X)
 Reqman is a postman killer ;-)
 
-Create your http(s)-tests in simple yaml files, and run them with command line, against various environments.
-**reqman** is a python3 simple file. The [changelog](https://github.com/manatlan/reqman/blob/master/changelog) !
+**Reqman** is a [postman](https://www.getpostman.com/) killer. It shares the same goal, but without GUI ... the GUI is simply your favorite text editor, because requests/tests are only simple yaml files. **Reqman** is a command line tool, available on any platforms.
 
-[DEMO](https://test-reqman.glitch.me)
+<iframe width="640" height="460" src="https://www.youtube.com/embed/ToK-5VwxhP4?autoplay=1&loop=1&playlist=ToK-5VwxhP4&cc_load_policy=1" frameborder="0" allow="accelerometer; autoplay; loop; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+All configurations is done via simple yaml files, editable with any text editors. Results are displayed in console and in an html output. It's scriptable, and can be used as a daemon/cron task to automate your tests.
 
 [Documentation](https://reqman-docs.glitch.me/)
+
+[Changelog](https://github.com/manatlan/reqman/blob/master/changelog) !
+
+[Online tool to convert swagger/openapi3, OR postman collections](https://reqman-tools.glitch.me/) to reqman's tests
+
+[DEMO](https://test-reqman.glitch.me)
 
 **Features**
    * Light (simple py3 file, 1800 lines of code, and x3 lines for unittests, in TDD mind ... cov:95%)
@@ -42,9 +49,6 @@ Create your http(s)-tests in simple yaml files, and run them with command line, 
        * better html output
        * fully compatible with reqman1 conf/ymls
 
-**and soon**
-   * [doc]((https://manatlan.github.io/reqman/)) & examples ;-)
-   * postman converter ?
 
 ## Getting started : installation
 

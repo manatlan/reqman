@@ -110,3 +110,4 @@ pypi.txt
 .pytest_cache/
 
 *.rmr
+save.yml

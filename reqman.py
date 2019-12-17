@@ -32,7 +32,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.2.2.0" #only SemVer (the last ".0" is win only)
+__version__="2.2.3.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -189,6 +189,8 @@ class Content:
         return toStr(self.__b)
     def toJson(self):
         return json.loads( self.__b.decode() )
+    def bytes(self):
+        return self.__b
 """
 AHTTP = httpcore.AsyncClient(verify=False)
 
@@ -404,6 +406,8 @@ class Env(dict):
     def replaceObj(self, v: T.Any) -> T.Any:  # same as txtReplace() but for "object" (json'able)
         if type(v) is bytes:
             return v
+        elif type(v) is Content: # (when save to var)
+            return v.bytes()
         elif type(v) is not str:
             v=json.dumps(v)
 
