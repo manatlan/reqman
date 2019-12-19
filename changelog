@@ -1,3 +1,5 @@
+2.2.4.0 (19/12/2019)
+- EVOL: add a way to update env with command line (ex: "reqman . var:ok" )
 2.2.3.0 (17/12/2019)
 - FIX: save content to var was bugged (Content serialization)
 2.2.2.0 (11/12/2019)

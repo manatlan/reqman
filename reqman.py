@@ -32,7 +32,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.2.3.0" #only SemVer (the last ".0" is win only)
+__version__="2.2.4.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -1381,11 +1381,15 @@ class ReqmanCommand:
         params = list(itertools.chain.from_iterable([glob.glob(i) or [i] for i in params]))
         files=[]
 
+        penv={}
         for p in params:
             if os.path.isdir(p):
                 files += sorted(list(listFiles(p)), key=lambda x: x.lower())
             elif os.path.isfile(p):
                 files.append(p)
+            elif ":" in p:
+                key,value = p.split(":",1)
+                penv[key]=value
             else:
                 raise RMException("bad param: %s" % p)  # TODO: better here
 
@@ -1398,6 +1402,9 @@ class ReqmanCommand:
         if rqc:
             # os.chdir( os.path.dirname(rqc) ) # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: needed ?
             self._r.env=Env( FString(rqc))
+
+        for k,v in penv.items():    # add param's input env into env
+            self._r.env[k]=v
 
         for i in files:
             self._r.add(FString(i))
