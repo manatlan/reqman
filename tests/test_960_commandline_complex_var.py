@@ -105,7 +105,7 @@ def test_env_hermetic_between_files(exe): # pato trouble
 
     x=exe(".",fakeServer=MOCK)
     # x.view()
-    assert x.rc == 0
+    assert x.rc == 1 #1 error coz the 404 test is non playable
 
 def test_ensure_global_proc_doesnt_save_globally(exe):
     MOCK={
@@ -137,4 +137,4 @@ def test_ensure_global_proc_doesnt_save_globally(exe):
 
     x=exe(".",fakeServer=MOCK)
     # x.view()
-    assert x.rc == 0
+    assert x.rc == 1 #1 error coz the 404 test is non playable

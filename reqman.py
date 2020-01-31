@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # #############################################################################
-#    Copyright (C) 2018-2019 manatlan manatlan[at]gmail(dot)com
+#    Copyright (C) 2018-2020 manatlan manatlan[at]gmail(dot)com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -32,7 +32,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.2.4.0" #only SemVer (the last ".0" is win only)
+__version__="2.2.5.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -64,6 +64,7 @@ class OutputConsole(enum.Enum):
 class RMFormatException(Exception): pass
 class RMException(Exception): pass
 class RMPyException(Exception): pass
+class RMNonResolvedVars(Exception): pass
 
 def declare(code):
     return "def DYNAMIC(x,ENV):\n" + ("\n".join(["  " + i for i in code.splitlines()]))
@@ -421,6 +422,13 @@ class Env(dict):
                 pass
             return obj
 
+    def getNonResolvedVars(self,txt):
+        if type(txt)==str:
+            return re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt)
+        else:
+            return []
+
+
     def replaceTxt(self,txt:str) -> T.Union[str, bytes]:
         assert type(txt) is str
 
@@ -455,7 +463,7 @@ class Env(dict):
                     return NotFound
 
 
-            for vvar in re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt):
+            for vvar in self.getNonResolvedVars(txt):
                 var = vvar[2:-2]
 
                 val=getVar(var)
@@ -900,6 +908,16 @@ class Req(ReqItem):
             headers=resolvHeaders(headers)
             headers= {k:scope.replaceTxt( str(v) ) for k,v in headers.items() if v} # headers'value should be string
 
+            # #=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ test if all vars are resolved
+            if scope.getNonResolvedVars(path):
+                raise RMNonResolvedVars("`Path` non resolved")
+            if scope.getNonResolvedVars(body):
+                raise RMNonResolvedVars("`Body` non resolved")
+            for k,v in headers.items():
+                if scope.getNonResolvedVars(v):
+                    raise RMNonResolvedVars("Header `%s` non resolved" % k)
+            #=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
             if doc: doc = scope.replaceTxt(doc)
             tests= [{list(d.keys())[0] : scope.replaceObj( list(d.values())[0]) } for d in tests] # cast value as str
 
@@ -907,7 +925,7 @@ class Req(ReqItem):
             self.parent.env.cookiejar.update(url, headers)
 
             ex=await asyncExecute(method,gpath,url,body,headers,http=http,timeout=timeout)
-        except (RMPyException,RMFormatException) as e: # RMFormatException for headers resolver !
+        except (RMPyException,RMFormatException,RMNonResolvedVars) as e: # RMFormatException for headers resolver !
             ex=Exchange(method,gpath,gpath,body or "", headers, None,{},str(e),"TEST EXCEPTION",0)
         except Exception as e: # RMFormatException for headers resolver !
             ex=Exchange(method,gpath,gpath,body or "", headers, 500,{},str(e),"TEST EXCEPTION",0)
@@ -956,7 +974,10 @@ class Req(ReqItem):
                     print(padLeft("-"*75))
 
                 for t in ex.tests:
-                    print("  -",t and cg("OK") or cr("KO"),":",t.name)
+                    if ex.status is None:
+                        print("  -",t and "OK" or "KO",":",t.name)
+                    else:
+                        print("  -",t and cg("OK") or cr("KO"),":",t.name)
                 print()
         #=================================================== LIVE CONSOLE
 
@@ -1488,6 +1509,7 @@ div.hide > div.h {background:white}
 div.hide > h4 {background:white}
 div.h {display:flex; flex-flow: row nowrap;padding-left:10px}
 div.h > div {flex: 1 0 50%}
+.nonp * {color:#888 !important;text-decoration: line-through;}
 .expanderContent   {
     padding: 0;
     max-height: 700px;
@@ -1507,7 +1529,7 @@ div.h > div {flex: 1 0 50%}
 <div class="h" style="position:sticky">
 %for i in result.infos:
     <div>
-        <span style="float:right"><b>{{", ".join(i["switches"])}}</b> {{i["date"].strftime("%Y-%m-%d %H:%M:%S")}}</span>
+        <span style="float:right"><b>{{", ".join(i["switches"])}}</b> {{i["date"].strftime("%Y-%m-%d %H:%M:%S")}}<br/>{{result.ok}}/{{result.total}} ({{result.nbReqs}}req(s))</span>
     </div>
 %end
 </div>
@@ -1531,6 +1553,7 @@ div.h > div {flex: 1 0 50%}
 %for x in discover(ex):
     <div style="width:50%">
     %if x is not None:
+
 <pre>
 {{x.method}} {{x.url}}
 %for k,v in x.inHeaders.items():
@@ -1555,9 +1578,8 @@ div.h > div {flex: 1 0 50%}
 
 <div class="h">
 %for x in discover(ex):
-    <div style="width:50%">
+    <div style="width:50%" class="{{x and x.status==None and 'nonp'}}">
     %if x is not None:
-
         %for i in x.tests:
             <li class="{{i and "OK" or "KO"}}" title="{{i.value}}">{{i and "OK" or "KO"}} : {{i.name}}</li>
         %end

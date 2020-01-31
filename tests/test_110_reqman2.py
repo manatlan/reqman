@@ -57,7 +57,7 @@ async def test_hermetic_env_paralleliz():
 """)
 
     rr=await r.asyncExecute( paralleliz=True, http=MOCK )
-    assert rr.code==0
+    assert rr.code==1 #1 error coz the 404 test is non playable
 
 @pytest.mark.asyncio
 async def test_hermetic_env():
@@ -95,4 +95,4 @@ async def test_hermetic_env():
 """)
 
     rr=await r.asyncExecute( paralleliz=False, http=MOCK )
-    assert rr.code==0
+    assert rr.code==1 #1 error coz the 404 test is non playable

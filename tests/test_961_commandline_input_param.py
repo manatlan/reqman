@@ -18,7 +18,7 @@ def test_ko(exe):
 
     x=exe(".","--o",fakeServer=MOCK)
     # x.view()
-    assert x.rc == 0
+    assert x.rc == 1 #1 error coz the 404 test is non playable
 
 
 def test_ok(exe):

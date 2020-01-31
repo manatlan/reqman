@@ -1,3 +1,8 @@
+2.2.5.0 (31/01/2020)
+- EVOL:
+    - don't try to play tests which contains non resolved vars in path/headers/body
+    - non playable tests (non resolved, timeout, unreachable) are greyed out in outputs
+
 2.2.4.0 (19/12/2019)
 - EVOL: add a way to update env with command line (ex: "reqman . var:ok" )
 2.2.3.0 (17/12/2019)

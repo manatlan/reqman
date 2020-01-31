@@ -16,8 +16,10 @@ tests:
     ll= l.execute(MOCK)
     assert ll[0].url == "https://www.manatlan.com/<<path_jo>>"
     assert ll[0].inHeaders == {"jo": "<<header_jo>>"}
-    assert ll[0].body == b"Hello <<val_jo>>"
-    assert any(ll[0].tests)
+    # print(ll[0].body)
+    # assert ll[0].body == b"Hello <<val_jo>>"
+    assert ll[0].status==None
+    assert not any(ll[0].tests)
 
 def test_simplest_ok(Reqs):
     y="""
