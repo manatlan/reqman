@@ -227,7 +227,7 @@ async def request(method,url,body:bytes,headers, timeout=None):
 
 async def request(method,url,body:bytes,headers, timeout=None):
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=True) as session:
 
             r=await session.request(method,url,data=body,headers=headers,ssl=False,timeout=timeout,allow_redirects=False)
             content=await r.content.read()
