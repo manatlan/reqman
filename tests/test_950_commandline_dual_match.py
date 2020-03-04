@@ -58,7 +58,7 @@ def test_dual_izip(exe):
         
     x=exe(".",fakeServer=MOCK)
     assert x.rc == 0
-    # x.view()
 
     x=exe(".","+other",fakeServer=MOCK)
     assert x.rc == 0
+    # x.view()

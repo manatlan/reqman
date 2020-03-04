@@ -1225,6 +1225,7 @@ class ReqmanResult(Result):
             dict(
                 date=datetime.datetime.now(),
                 switches=switches,
+                title="%s/%s" % (ok,total)
             )
         ]
 
@@ -1529,7 +1530,7 @@ div.h > div {flex: 1 0 50%}
 <div class="h" style="position:sticky">
 %for i in result.infos:
     <div>
-        <span style="float:right"><b>{{", ".join(i["switches"])}}</b> {{i["date"].strftime("%Y-%m-%d %H:%M:%S")}}<br/>{{result.ok}}/{{result.total}} ({{result.nbReqs}}req(s))</span>
+        <span style="float:right"><b>{{", ".join(i["switches"])}}</b> {{i["date"].strftime("%Y-%m-%d %H:%M:%S")}}<br/>{{i["title"]}}</span>
     </div>
 %end
 </div>
