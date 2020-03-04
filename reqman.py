@@ -32,7 +32,7 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.2.5.0" #only SemVer (the last ".0" is win only)
+__version__="2.2.6.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal

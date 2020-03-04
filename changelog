@@ -1,3 +1,4 @@
+2.2.6.0 (04/03/2020)
 - EVOL: Add proxy support (via HTTP(S)_PROXY environment variables), thanks @iamhsa 
 - FIX: dual result now display ok/total per view (not the cumulative one)
 
