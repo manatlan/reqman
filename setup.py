@@ -25,6 +25,7 @@ setuptools.setup(
     ),
     install_requires=[
           'aiohttp',
+          'py-dom-xpath-six',
           'pyyaml >= 4.2b1',
           'stpl >= 1.13.2',
           'colorama',

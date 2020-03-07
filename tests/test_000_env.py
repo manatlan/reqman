@@ -58,7 +58,6 @@ def test_jpath():
     assert reqman.jpath(env, "tata.l.1.size") == 1
     assert reqman.jpath(env, "tata.l.size") == 3
 
-
 def test_simple():
     dt = datetime.datetime.now()
 

@@ -27,8 +27,8 @@ All configurations is done via simple yaml files, editable with any text editors
    * http 1.0, 1.1, 2.0
    * support HTTP(S)_PROXY environment variables
    * headers inherits
-   * tests inherits
-   * timed requests + average times
+   * ~~tests inherits~~
+   * ~~timed requests + average times~~
    * html tests renderer (with request/response contents)
    * encoding aware
    * cookie handling
@@ -49,6 +49,7 @@ All configurations is done via simple yaml files, editable with any text editors
        * shebang mode
        * better html output
        * fully compatible with reqman1 conf/ymls
+       * xml/xpath support tests
 
 
 ## Getting started : installation

@@ -25,14 +25,16 @@ import sys,traceback
 import pickle,zlib,hashlib
 import http.cookiejar
 import concurrent,ssl
+from xml.dom import minidom
 
 # import httpcore # see "pip install httpcore"
 import aiohttp # see "pip install aiohttp"
 import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
+import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.2.6.0" #only SemVer (the last ".0" is win only)
+__version__="2.3.0.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -190,6 +192,8 @@ class Content:
         return toStr(self.__b)
     def toJson(self):
         return json.loads( self.__b.decode() )
+    def toXml(self):
+        return Xml( repr(self) )
     def bytes(self):
         return self.__b
 """
@@ -301,6 +305,38 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
         except (ValueError, IndexError) as e:
             return NotFound
     return elem
+
+
+class Xml:
+  def __init__(self,x):
+    self.doc=minidom.parseString(x)
+
+  def xpath(self,p):
+    lll=[]
+    for ii in xpath.find(p, self.doc):
+      if ii.nodeType in [self.doc.ELEMENT_NODE,self.doc.DOCUMENT_NODE]:
+        lll.append( xpath.expr.string_value(ii) )
+      elif ii.nodeType==self.doc.TEXT_NODE:
+        lll.append( ii.wholeText )
+      elif ii.nodeType==self.doc.ATTRIBUTE_NODE:
+        lll.append(ii.value)
+      else: # 'CDATA_SECTION_NODE', 'COMMENT_NODE', 'DOCUMENT_FRAGMENT_NODE', 'DOCUMENT_TYPE_NODE', 'ENTITY_NODE', 'ENTITY_REFERENCE_NODE', 'NOTATION_NODE', 'PROCESSING_INSTRUCTION_NODE'
+        raise Exception("Not implemented")
+
+    if lll:
+      r=lll[0] if len(lll)==1 else lll
+    else:
+      r=NotFound
+    # print("%-40s ---> {%s}" %(p,r))
+    return r
+
+  def __repr__(self):
+      xml= self.doc.toprettyxml()
+      x = "\n".join(
+        [s for s in xml.splitlines() if s.strip()]
+      )  # http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
+      return x
+
 
 
 
@@ -447,6 +483,11 @@ class Env(dict):
                         content = self.transform(content, m)
                     return content
                 elif "." in var:
+                    #-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
+                    vx,xp=var.split(".",1)
+                    if type(self[vx]) is Xml:
+                        return self[vx].xpath(xp)
+                    #-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
                     x=jpath(self, var)
                     if isPython(x):
                         ld,lf=var.split(".",1)
@@ -944,6 +985,10 @@ class Req(ReqItem):
                     postSaveScope["json"] = ex.content.toJson()
                 except:
                     pass
+                try:
+                    postSaveScope["xml"] = ex.content.toXml()
+                except:
+                    pass
 
                 for saveKey, saveWhat in s.items():
                     self.parent.env.save(saveKey, postSaveScope.replaceObj(saveWhat), self.parent.name=="BEGIN" )
@@ -1129,6 +1174,25 @@ class TestResult(list):
                     tvalue = None if tvalue is NotFound else tvalue
                 except Exception as e:
                     tvalue = None
+            elif what.startswith("xml."):
+                #===================================================== EN CHANTIER
+                xp=what[4:]
+                if xp.endswith(".size"):
+                    computeSize=True
+                    xp=xp[:-5]
+                else:
+                    computeSize=False
+
+                try:
+                    x=content.toXml()
+                    tvalue = x.xpath(xp)
+                except:
+                    tvalue=None
+                tvalue = None if tvalue is NotFound else tvalue
+
+                if (tvalue is not None) and computeSize:
+                    tvalue=len(tvalue)
+                #=====================================================
             else:  # headers
                 testContains = True
                 tvalue = insensitiveHeaders.get(what.lower(), "")
@@ -1476,11 +1540,7 @@ def render(rr:Result) -> str:
         else:
             txt=str(txt)
         try:
-            x = xml.dom.minidom.parseString(txt).toprettyxml(indent=" " * indentation)
-            x = "\n".join(
-                [s for s in x.splitlines() if s.strip()]
-            )  # http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
-            return x
+            return repr(Xml(txt))
         except:
             try:
                 return json.dumps(json.loads(txt), indent=indentation, sort_keys=True)
