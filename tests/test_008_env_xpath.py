@@ -14,8 +14,22 @@ xml="""<?xml version="1.0" encoding="UTF-8"?>
     <c>yolo <i>xxx</i></c>
 </x>"""
 
+def test_soapresponse():
+    xx="""<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP-ENV:Header>header</SOAP-ENV:Header>
+    <SOAP-ENV:Body>
+        <result>hello</result>
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>"""
+    x=reqman.Xml(xx)
+    assert x.xpath("//result")=="hello"
+    assert x.xpath("//result/text()")=="hello"
+    assert x.xpath("//SOAP-ENV:Header")=="header"
+
 def test_xpath():
     x=reqman.Xml(xml)
+    assert x.xpath("//unknown")==reqman.NotFound
     assert x.xpath("//c")=="yolo xxx"
     assert x.xpath("//b[@v>10]")=="b11"
     assert x.xpath("//b[@v<10]")=="b9"
