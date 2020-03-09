@@ -27,6 +27,7 @@ def test_soapresponse():
     assert x.xpath("//result")=="hello"
     assert x.xpath("//result/text()")=="hello"
     assert x.xpath("//SOAP-ENV:Header")=="header"
+    assert x.xpath("//*:Header")=="header"
     assert x.xpath("//*[local-name()='result2']")=="hello2"
     assert x.xpath("//*:result2")=="hello2"
 
