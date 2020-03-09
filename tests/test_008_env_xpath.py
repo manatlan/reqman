@@ -20,12 +20,15 @@ def test_soapresponse():
     <SOAP-ENV:Header>header</SOAP-ENV:Header>
     <SOAP-ENV:Body>
         <result>hello</result>
+        <result2 xmlns="myns">hello2</result2>
     </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>"""
     x=reqman.Xml(xx)
     assert x.xpath("//result")=="hello"
     assert x.xpath("//result/text()")=="hello"
     assert x.xpath("//SOAP-ENV:Header")=="header"
+    assert x.xpath("//*[local-name()='result2']")=="hello2"
+    assert x.xpath("//*:result2")=="hello2"
 
 def test_xpath():
     x=reqman.Xml(xml)
