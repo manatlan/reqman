@@ -28,18 +28,18 @@ def test_xpath_ok(exe):
   tests:
     - status: 200
     - json.result: null
-    - xml.//c : "yolo xxx"
-    - xml.//c.size   : 8
+    - xml.//c.0 : "yolo xxx"
+    - xml.//c.0.size   : 8
     - xml.//a: ["aaa1","aaa2"]
-    - xml.//a[1]: "aaa1"
-    - xml.//a[last()]: "aaa2"
+    - xml.//a[1].0: "aaa1"
+    - xml.//a[last()].0: "aaa2"
     - xml.//a/text(): ["aaa1","aaa2"]
     - xml.//a.size : .=2
-    - xml.//a[@v]: "aaa1"
-    - xml.//a[@v]/@v: 1
+    - xml.//a[@v].0: "aaa1"
+    - xml.//a[@v]/@v.0: 1
     - xml.//a|//b: ["aaa1","aaa2","b9","b11"]
     - xml.//nooooo: null
-    - xml.//ns2:typeDocument: hello
+    - xml.//ns2:typeDocument.0: hello
     
 """)
 
@@ -74,6 +74,27 @@ def test_xpath_compute(exe):
     - status: 200
   save:
     redirect:  <<xml.//a[last()]>>
+
+- GET: /<<redirect.0>>
+  tests:
+    - status: 200
+
+""")
+
+    x=exe(".","--o",fakeServer=MOCK)
+    # print(x.console) 
+    # x.view()
+    assert x.rc == 0
+
+def test_xpath_compute2(exe):
+
+    with open("f.yml","w+") as fid:
+        fid.write("""
+- GET: /xml
+  tests:
+    - status: 200
+  save:
+    redirect:  <<xml.//a[last()].0>>
 
 - GET: /<<redirect>>
   tests:

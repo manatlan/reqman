@@ -34,7 +34,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.3.1.0" #only SemVer (the last ".0" is win only)
+__version__="2.3.2.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -324,9 +324,10 @@ class Xml:
         raise Exception("Not implemented")
 
     if lll:
-      r=lll[0] if len(lll)==1 else lll
+    #   r=lll[0] if len(lll)==1 else lll
+        r=lll
     else:
-      r=NotFound
+        r=NotFound
     # print("%-40s ---> {%s}" %(p,r))
     return r
 
@@ -486,7 +487,17 @@ class Env(dict):
                     #-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
                     vx,xp=var.split(".",1)
                     if vx in self and type(self[vx]) is Xml:
-                        return self[vx].xpath(xp)
+
+                        if xp.find(".")>0:              # NOT TOP
+                            xp,ends=xp.split(".",1)
+                        else:
+                            ends=None
+
+                        ll=self[vx].xpath(xp)
+                        if ll and ends:
+                            return jpath(ll,ends)
+                        else:
+                            return ll
                     #-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
                     x=jpath(self, var)
                     if isPython(x):
@@ -1177,21 +1188,21 @@ class TestResult(list):
             elif what.startswith("xml."):
                 #===================================================== EN CHANTIER
                 xp=what[4:]
-                if xp.endswith(".size"):
-                    computeSize=True
-                    xp=xp[:-5]
+
+                if xp.find(".")>0:              # NOT TOP
+                    xp,ends=xp.split(".",1)
                 else:
-                    computeSize=False
+                    ends=None
 
                 try:
                     x=content.toXml()
                     tvalue = x.xpath(xp)
+                    if tvalue and ends:
+                        tvalue=jpath(tvalue,ends)
                 except:
                     tvalue=None
                 tvalue = None if tvalue is NotFound else tvalue
 
-                if (tvalue is not None) and computeSize:
-                    tvalue=len(tvalue)
                 #=====================================================
             else:  # headers
                 testContains = True
