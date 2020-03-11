@@ -1,3 +1,5 @@
+- EVOL : change xml indentation from 8 to 4
+
 2.3.3 (11/3/2020)
 - EVOL : better extract xpath in jpath
 - FIX: a TypeError when comparing differents types

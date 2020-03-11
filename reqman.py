@@ -350,7 +350,7 @@ class Xml:
     return r
 
   def __repr__(self):
-      xml= self.doc.toprettyxml()
+      xml= self.doc.toprettyxml(indent=" " * 4)
       x = "\n".join(
         [s for s in xml.splitlines() if s.strip()]
       )  # http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
