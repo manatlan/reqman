@@ -38,14 +38,18 @@ def test_xpath_ok(exe):
     - xml.//a[@v].0: "aaa1"
     - xml.//a[@v]/@v.0: 1
     - xml.//a|//b: ["aaa1","aaa2","b9","b11"]
-    - xml.//nooooo: null
+    - xml.//a|//b.size: 4
+    - xml.//*:nooooo: null
     - xml.//ns2:typeDocument.0: hello
+    - xml.//c: .>1                       # bad
     
 """)
 
     x=exe(".","--o",fakeServer=MOCK)
     # print(x.console)
-    assert x.rc == 0
+    x.view()
+    assert x.rc == 1  # the bad one ^^
+
 
 
 def test_xpath_ko(exe):

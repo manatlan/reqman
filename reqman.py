@@ -34,7 +34,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.3.2.0" #only SemVer (the last ".0" is win only)
+__version__="2.3.3.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -306,6 +306,24 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
             return NotFound
     return elem
 
+def xj(xp):
+  """
+  Split xpath/jpath expr in -> xpath,jpath
+  ex:   "//b[@v='.'].-1.size" ---> ( "//b[@v='.']" , '-1.size' )
+  """
+  ll=xp.split(".")
+  if len(ll)>1:
+    ends=[]
+    while 1:
+      if "size" in ll[-1]:
+        ends.append(ll.pop())
+      elif ll[-1].lstrip("-+").isdigit():
+        ends.append(ll.pop())
+      else:
+        break
+    return ".".join(ll) , ".".join( reversed(ends))
+  else:
+    return xp,""
 
 class Xml:
   def __init__(self,x):
@@ -488,13 +506,10 @@ class Env(dict):
                     vx,xp=var.split(".",1)
                     if vx in self and type(self[vx]) is Xml:
 
-                        if xp.find(".")>0:              # NOT TOP
-                            xp,ends=xp.split(".",1)
-                        else:
-                            ends=None
+                        xp,ends=xj(xp)
 
                         ll=self[vx].xpath(xp)
-                        if ll and ends:
+                        if type(ll)==list and ends:
                             return jpath(ll,ends)
                         else:
                             return ll
@@ -1189,15 +1204,12 @@ class TestResult(list):
                 #===================================================== EN CHANTIER
                 xp=what[4:]
 
-                if xp.find(".")>0:              # NOT TOP
-                    xp,ends=xp.split(".",1)
-                else:
-                    ends=None
+                xp,ends=xj(xp)
 
                 try:
                     x=content.toXml()
                     tvalue = x.xpath(xp)
-                    if tvalue and ends:
+                    if type(tvalue)==list and ends:
                         tvalue=jpath(tvalue,ends)
                 except:
                     tvalue=None
@@ -1240,7 +1252,10 @@ class TestResult(list):
                     else:
                         value, ope, opOK, opKO = getValOpe(value)
 
-                    bool = ope(value, tvalue)
+                    try:
+                        bool = ope(value, tvalue)
+                    except TypeError:
+                        bool=False
                     if bool:
                         break
 
