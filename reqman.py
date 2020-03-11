@@ -330,24 +330,21 @@ class Xml:
     self.doc=minidom.parseString(x)
 
   def xpath(self,p):
-    lll=[]
+    ll=[]
     for ii in xpath.find(p, self.doc):
       if ii.nodeType in [self.doc.ELEMENT_NODE,self.doc.DOCUMENT_NODE]:
-        lll.append( xpath.expr.string_value(ii) )
+        ll.append( xpath.expr.string_value(ii) )
       elif ii.nodeType==self.doc.TEXT_NODE:
-        lll.append( ii.wholeText )
+        ll.append( ii.wholeText )
       elif ii.nodeType==self.doc.ATTRIBUTE_NODE:
-        lll.append(ii.value)
+        ll.append(ii.value)
       else: # 'CDATA_SECTION_NODE', 'COMMENT_NODE', 'DOCUMENT_FRAGMENT_NODE', 'DOCUMENT_TYPE_NODE', 'ENTITY_NODE', 'ENTITY_REFERENCE_NODE', 'NOTATION_NODE', 'PROCESSING_INSTRUCTION_NODE'
         raise Exception("Not implemented")
 
-    if lll:
-    #   r=lll[0] if len(lll)==1 else lll
-        r=lll
+    if ll:
+        return ll
     else:
-        r=NotFound
-    # print("%-40s ---> {%s}" %(p,r))
-    return r
+        return NotFound
 
   def __repr__(self):
       xml= self.doc.toprettyxml(indent=" " * 4)
