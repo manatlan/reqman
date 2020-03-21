@@ -1,0 +1,19 @@
+#!python3.7 reqman.py --b
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code)
+#--------------------------------------------------------------
+
+- GET: https://manatlan.alwaysdata.net/AEFF
+  tests:
+    - status: 200
+    - content: 1234
+  save: xxx
+
+- GET: https://manatlan.alwaysdata.net/AEFF
+  doc: <<xxx>>>
+  headers:
+    jo: <<xxx>>
+  tests:
+    - status: 200
+    - content: <<xxx>>

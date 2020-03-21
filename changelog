@@ -1,4 +1,7 @@
+2.3.4 (21/3/2020)
+- EVOL: add a limited repr of outputs in reqman.html generation, to limit size of the html (+ trick '+')
 - EVOL : change xml indentation from 8 to 4
+- EVOL: simple copy-clipboard requests/response from reqman.html
 
 2.3.3 (11/3/2020)
 - EVOL : better extract xpath in jpath

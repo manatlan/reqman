@@ -20,7 +20,6 @@ import http,urllib,email # for cookies management
 import urllib.parse
 import collections,json
 import typing as T
-import xml.dom.minidom
 import sys,traceback
 import pickle,zlib,hashlib
 import http.cookiejar
@@ -34,7 +33,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.3.3.0" #only SemVer (the last ".0" is win only)
+__version__="2.3.4.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -63,6 +62,7 @@ class OutputConsole(enum.Enum):
     MINIMAL_ONLYKO = 2
     FULL=3
 
+
 class RMFormatException(Exception): pass
 class RMException(Exception): pass
 class RMPyException(Exception): pass
@@ -78,6 +78,7 @@ def isPython(x):
             return compile(declare(x),"unknown","exec") and True
         except:
             return False
+
 
 def izip(ex1,ex2):
     pop= lambda ex: len(ex)>0 and ex.pop(0) or None
@@ -628,8 +629,6 @@ class Reqs(list):
         def controle(obj) -> T.List:
             """ Controle that 'obj' is a list of dict, and is valid """
             if type(obj)==list:
-                # if any([type(i)!=dict for i in obj]):
-                #     raise self._errorFormat("Reqs: bad object content in the list" )
                 pass
             elif type(obj)==dict:
                 obj=toList(obj)
@@ -860,6 +859,11 @@ class ReqGroup(ReqItem):
 class Req(ReqItem):
     def __init__(self,method:str,path:str,parent:Reqs):
         assert method in KNOWNVERBS
+        if path.startswith("+"):
+            path=path[1:]
+            self.nolimit=True
+        else:
+            self.nolimit=False
         self.parent=parent
         self.method=method
         self.path=path
@@ -879,6 +883,7 @@ class Req(ReqItem):
         r.body = clone(self.body)
         r.doc = clone(self.doc)
         r.saves = clone(self.saves)
+        r.nolimit=clone(self.nolimit)
         return r
 
     def updateHeaders( self, o: dict ): # merge headers
@@ -948,6 +953,7 @@ class Req(ReqItem):
         #''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
         gpath=path
+        ex=None
         try:
             def resolvHeaders(headers):
                 if type(headers)==str:
@@ -1049,6 +1055,7 @@ class Req(ReqItem):
                 print()
         #=================================================== LIVE CONSOLE
 
+        ex.nolimit = self.nolimit
         return ex
 
 
@@ -1570,6 +1577,23 @@ def render(rr:Result) -> str:
             except:
                 return txt
 
+    class LIMIT:
+        TESTVALUE   = 128
+        HEADERVALUE = 512
+        DOC         = 1024
+        TITLE       = 1024
+        BODY        = 4096
+
+    def limit(txt: str, size=None) -> str:
+        if size and txt and len(txt)>int(size):
+            info="...***TRUNCATED***..."
+            size=size - len(info)
+            return txt[ : size//2] + info + txt[ -size//2 : ]
+        else:
+            return txt
+
+
+
     template="""<!DOCTYPE html>
 <html>
 <head>
@@ -1578,14 +1602,15 @@ def render(rr:Result) -> str:
 <meta name="description" content="reqman {{version}}">
 <style>
 * { box-sizing: border-box;}
+.click {cursor:pointer}
 html,body {width:100%;height:100%;margin:0px;padding:0px}
 h3,h4 {padding:0px;margin:0px}
 h3 {color: blue;margin-top:22px;}
-h4 {cursor:pointer;padding:4px;background:#eee}
+h4 {padding:4px;background:#eee}
 h4:hover {background: linear-gradient(to right,#EEE,white) !important}
 h4 i {color:#AAA;font-weight: normal;font-size:0.9em}
 body {font-family: sans-serif;font-size:90%}
-pre {padding:4px;border:1px solid #CCC;max-height:300px;margin:2px;width:95%;display:block;overflow:auto;background:white;font-size:0.9em}
+pre {padding:4px;border:1px solid #CCC;max-height:300px;margin:2px;width:95%;display:block;overflow:auto;background:white}
 .OK {color:green}
 .KO {color:red}
 div.r {margin:4px;background: linear-gradient(#EEE,white);margin-left:10px}
@@ -1600,20 +1625,54 @@ div.h > div {flex: 1 0 50%}
     opacity: 1;
     overflow-y: auto;
     transition: 0.3s ease all;
-    padding:4px
+    padding:4px;
+    font-size:0.9em;
 }
 .hide .expanderContent {
     max-height: 0;
     opacity: 0;
     padding:0px
 }
+
+.cc:before{ 
+  content:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAARCAYAAADUryzEAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AMVCjI2TjtqdwAAAKlJREFUOMvd1LEJAjEYxfHfSUC0EezcQRB7KxsXcABLwQlcwh0EwQGcwDEcwcLCVvG0SXVezlMLwQevSPj4f/keSaCPE+41/KSABVpYx3VK7RQgwxmzwn6qHvJojUJBJx71+sI3TMo6LSN5XzFKjgG26BYBzdhhrFo7jMpGEDPJ1FTDl/oTwFuhlQFWmH4KCDhE/yaDUHJNAzap5xtrhqncejjW+BcumMMD+Ycv+JwSPxAAAAAASUVORK5CYII=) ;
+  position:relative; 
+  left:0px;
+  top:5px;
+ }
+
+.blinking{
+    animation:blinkingText .3s;
+}
+@keyframes blinkingText{
+    0%{     opacity: 1 }
+    60%{    opacity: 0 }
+    100%{   opacity: 1 }
+}
+
 </style>
+<script>
+function copyToClipboard( obj ) {
+    obj.classList.toggle("blinking")
+    setTimeout( function() {obj.classList.toggle("blinking")}, 300)
+    var str=obj.textContent;
+    
+    const el = document.createElement('textarea');
+    el.value = str;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+}; 
+</script>
 </head>
 <body>
 <div class="h" style="position:sticky">
 %for i in result.infos:
     <div>
-        <span style="float:right"><b>{{", ".join(i["switches"])}}</b> {{i["date"].strftime("%Y-%m-%d %H:%M:%S")}}<br/>{{i["title"]}}</span>
+        <span style="float:right;padding:4px"><b>{{", ".join(i["switches"])}}</b> {{i["date"].strftime("%Y-%m-%d %H:%M:%S")}}<br/>
+            <span style="float:right">{{i["title"]}}</span>
+        </span>
     </div>
 %end
 </div>
@@ -1624,34 +1683,33 @@ div.h > div {flex: 1 0 50%}
     <h3>File: {{relpath(r.name)}}</h3>
 
     %for ex in r.exchanges:
+        % isLimit=not first(ex).nolimit
     <div class="r hide">
-        <h4 onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details">
+        <h4 class="click" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details">
             <b>{{first(ex).method}}</b>
             {{first_path(ex)}} <b style="float:right">{{first(ex).content if first(ex).status is None else first(ex).status}}</b>
             <br/>
-            <i>{{first(ex).doc}}</i>
+            <i>{{limit(first(ex).doc,isLimit and LIMIT.DOC)}}</i>
 
         </h4>
 
-<div class="h s expanderContent">
+<div class="h s expanderContent"><a class="cc click" onclick="copyToClipboard( this.parentNode )" title="copy"></a>
 %for x in discover(ex):
     <div style="width:50%">
     %if x is not None:
-
 <pre>
 {{x.method}} {{x.url}}
 %for k,v in x.inHeaders.items():
-<b>{{k}}</b>: {{v}}
+<b>{{k}}</b>: {{limit(v,isLimit and LIMIT.HEADERVALUE)}}
 %end
-{{prettify(x.bodyContent)}}</pre>
-
-    --> {{x.info}}
+{{limit(prettify(x.bodyContent),LIMIT.BODY)}}</pre>
+--> {{x.info}}
 
 <pre>
 %for k,v in x.outHeaders.items():
-<b>{{k}}</b>: {{v}}
+<b>{{k}}</b>: {{limit(v,isLimit and LIMIT.HEADERVALUE)}}
 %end
-{{prettify(x.content)}}</pre>
+{{limit(prettify(x.content),isLimit and LIMIT.BODY)}}</pre>
     %else:
         -
     %end
@@ -1660,12 +1718,13 @@ div.h > div {flex: 1 0 50%}
 </div>
 
 
+
 <div class="h">
 %for x in discover(ex):
     <div style="width:50%" class="{{x and x.status==None and 'nonp'}}">
     %if x is not None:
         %for i in x.tests:
-            <li class="{{i and "OK" or "KO"}}" title="{{i.value}}">{{i and "OK" or "KO"}} : {{i.name}}</li>
+            <li class="{{i and "OK" or "KO"}}" title="{{limit(i.value,isLimit and LIMIT.TITLE)}}">{{i and "OK" or "KO"}} : {{limit(i.name,isLimit and LIMIT.TESTVALUE)}}</li>
         %end
     %else:
         -
@@ -1709,7 +1768,7 @@ div.h > div {flex: 1 0 50%}
             return p
 
 
-    return stpl.template(template,result=rr,prettify=prettify,discover=discover,first=first,relpath=relpath,first_path=first_path,version=__version__)
+    return stpl.template(template,result=rr,prettify=prettify,discover=discover,first=first,relpath=relpath,first_path=first_path,version=__version__,limit=limit,LIMIT=LIMIT)
 
 
 def mkUrl(protocol: str, host: str, port=None) -> str:
