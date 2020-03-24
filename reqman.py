@@ -33,7 +33,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.3.5.0" #only SemVer (the last ".0" is win only)
+__version__="2.3.6.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -1704,7 +1704,7 @@ function copyToClipboard( obj ) {
 %for k,v in x.inHeaders.items():
 <b>{{k}}</b>: {{limit(v,isLimit and LIMIT.HEADERVALUE)}}
 %end
-{{limit(prettify(x.bodyContent),LIMIT.BODY)}}</pre>
+{{limit(prettify(x.bodyContent),isLimit and LIMIT.BODY)}}</pre>
 --> {{x.info}}
 
 <pre>
