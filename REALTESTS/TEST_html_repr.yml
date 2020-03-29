@@ -1,0 +1,42 @@
+#!python3.7 reqman.py --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+- GET: https://manatlan.alwaysdata.net/AEFFC/ju
+  tests:
+    - status: 200
+    - content: llo
+    - content: héllo
+    - json.msg: héllo
+
+- GET: https://manatlan.alwaysdata.net/AEFFC/jw
+  tests:
+    - status: 200
+    - content: llo
+    - content: héllo
+    - json.msg: héllo
+
+- GET: https://manatlan.alwaysdata.net/AEFFC/tu
+  tests:
+    - status: 200
+    - content: llo
+    - content: héllo
+
+- GET: https://manatlan.alwaysdata.net/AEFFC/tw
+  tests:
+    - status: 200
+    - content: llo
+    - content: héllo
+
+- GET: https://manatlan.alwaysdata.net/AEFFC/tb
+  tests:
+    - status: 200
+    - content: "1234"
+
+- GET: https://manatlan.alwaysdata.net/AEFFC/th
+  tests:
+    - status: 200
+    - content: "ok"
+    - msg: h\udce9h\udce9

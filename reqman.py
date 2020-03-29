@@ -33,7 +33,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.3.7.0" #only SemVer (the last ".0" is win only)
+__version__="2.3.8.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -78,6 +78,10 @@ def isPython(x):
             return compile(declare(x),"unknown","exec") and True
         except:
             return False
+
+def jdumps(o,*a,**k):
+    k["ensure_ascii"]=False
+    return json.dumps(o,*a,**k)
 
 
 def izip(ex1,ex2):
@@ -197,6 +201,8 @@ class Content:
         return Xml( repr(self) )
     def bytes(self):
         return self.__b
+
+
 """
 AHTTP = httpcore.AsyncClient(verify=False)
 
@@ -235,10 +241,18 @@ async def request(method,url,body:bytes,headers, timeout=None):
         async with aiohttp.ClientSession(trust_env=True) as session:
 
             r=await session.request(method,url,data=body,headers=headers,ssl=False,timeout=timeout,allow_redirects=False)
-            content=await r.content.read()
-
+            try:
+                obj=await r.json()
+                content=jdumps(obj).encode("utf-8") # ensure json chars are not escaped, and are in utf8
+            except:
+                try:
+                    txt=await r.text()
+                    content=txt.encode("utf-8") # force bytes to be in utf8
+                except:
+                    content=await r.read()            
+            h={k:ascii(v) for k,v in dict(r.headers).items()} # avoid surrogate (because headers are ascii only!)
             info = "HTTP/%s.%s %s %s" % (r.version.major,r.version.minor, int(r.status), r.reason)
-            return r.status, dict(r.headers), Content(content), info
+            return r.status, h, Content(content), info
     except aiohttp.client_exceptions.ClientConnectorError as e:
         return None, {}, "Unreachable", ""        
     except concurrent.futures._base.TimeoutError as e:
@@ -463,7 +477,7 @@ class Env(dict):
         elif type(v) is Content: # (when save to var)
             return v.bytes()
         elif type(v) is not str:
-            v=json.dumps(v)
+            v=jdumps(v)
 
         obj = self.replaceTxt( v )
         if type(obj) is bytes:
@@ -545,7 +559,7 @@ class Env(dict):
                             return val  # keep BYTES !!!!!!!!!!!!!!
                         else:  # int, float, list, dict...
                             try:
-                                val = json.dumps(val)
+                                val = jdumps(val)
                             except TypeError:
                                 val=str(val)
 
@@ -598,7 +612,7 @@ class Env(dict):
         return content
 
     def __str__(self):
-        return json.dumps(self, indent=4, sort_keys=True)
+        return jdumps(self, indent=4, sort_keys=True)
 
     def __getstate__(self):
         return dict(self)
@@ -1070,7 +1084,7 @@ async def asyncExecute(method, path, url, body, headers,http=None,timeout=None) 
         elif type(body) is str:
             body=body.encode()
         else:
-            body=json.dumps(body).encode()
+            body=jdumps(body).encode()
 
 
     if type(http)==dict:
@@ -1125,8 +1139,10 @@ class Test(int):
 def strjs(x) -> str:
     if type(x) is bytes:
         return str(x)
+    elif type(x) is str:
+        return x
     else:
-        return json.dumps(x, ensure_ascii=False)
+        return jdumps(x)
 
 def getValOpe(v):
     try:
@@ -1230,7 +1246,7 @@ class TestResult(list):
                     if type(x) is bytes:
                         return x
                     else:
-                        return json.dumps(json.loads(x) if type(x) in [str, bytes] else x, sort_keys=True)
+                        return jdumps(json.loads(x) if type(x) in [str, bytes] else x, sort_keys=True)
 
                 matchAll = (makeComparable(value) == makeComparable(tvalue))
             except json.decoder.JSONDecodeError as e:
@@ -1575,7 +1591,7 @@ def render(rr:Result) -> str:
             return repr(Xml(txt))
         except:
             try:
-                return json.dumps(json.loads(txt), indent=indentation, sort_keys=True)
+                return jdumps(json.loads(txt), indent=indentation, sort_keys=True)
             except:
                 return txt
 
