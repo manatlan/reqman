@@ -8,7 +8,7 @@ import reqman, asyncio,pytest
 # THESES TESTS CAN ONLY WORK WITH A REAL ACCESS TO FULLY INTERNET !!!
 
 def test_json():
-    r=reqman.ReqmanCommand( r"examples/j*" )
+    r=reqman.ReqmanCommand( r"REALTESTS/j*" )
     rr=r.execute( )
     # with open("/home/manatlan/aeff1.html","w+") as fid:
     #     fid.write( rr.html )
@@ -17,7 +17,7 @@ def test_json():
 
 
 def test_down():
-    r=reqman.ReqmanCommand( r"examples/server_do*" )
+    r=reqman.ReqmanCommand( r"REALTESTS/server_do*" )
     rr=r.execute( )
     # with open("/home/manatlan/aeff2.html","w+") as fid:
     #     fid.write( rr.html )
@@ -25,7 +25,7 @@ def test_down():
     assert rr.nbReqs==2
 
 def test_timeout():
-    r=reqman.ReqmanCommand( r"examples/server_ti*" )
+    r=reqman.ReqmanCommand( r"REALTESTS/server_ti*" )
     rr=r.execute( )
     # with open("/home/manatlan/aeff3.html","w+") as fid:
     #     fid.write( rr.html )

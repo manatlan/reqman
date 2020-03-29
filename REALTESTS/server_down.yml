@@ -1,0 +1,19 @@
+#!python3.7 reqman.py --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- test:
+      - GET: http://localhost:17219 #unknown local socket
+        tests:
+          - status: 200
+          - content: nimp
+
+      - GET: htxxtp:/localhost.17219 
+        tests:
+          - status: 200
+          - content: nimp
+
+- call: test
