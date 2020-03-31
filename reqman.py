@@ -33,7 +33,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.3.8.0" #only SemVer (the last ".0" is win only)
+__version__="2.3.8.1" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -236,6 +236,10 @@ async def request(method,url,body:bytes,headers, timeout=None):
     return t
 """
 
+textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
+isBytes = lambda bytes: bool(bytes.translate(None, textchars))
+
+
 async def request(method,url,body:bytes,headers, timeout=None):
     try:
         async with aiohttp.ClientSession(trust_env=True) as session:
@@ -245,11 +249,11 @@ async def request(method,url,body:bytes,headers, timeout=None):
                 obj=await r.json()
                 content=jdumps(obj).encode("utf-8") # ensure json chars are not escaped, and are in utf8
             except:
-                try:
+                content=await r.read()
+                if not isBytes(content):
                     txt=await r.text()
                     content=txt.encode("utf-8") # force bytes to be in utf8
-                except:
-                    content=await r.read()            
+                    
             h={k:ascii(v) for k,v in dict(r.headers).items()} # avoid surrogate (because headers are ascii only!)
             info = "HTTP/%s.%s %s %s" % (r.version.major,r.version.minor, int(r.status), r.reason)
             return r.status, h, Content(content), info
