@@ -1,3 +1,6 @@
+2.3.8.1 (31/03/2020)
+- fix: on win only : sometimes bytes was considering as str utf8 (?!)
+
 2.3.8 (29/03/2020)
 - EVOL: decode all encoding as utf8, and no more json escaping non-ascii .. all utf8 !
 
