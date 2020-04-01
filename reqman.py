@@ -1583,21 +1583,20 @@ class ReqmanRMR(ReqmanCommand):
     async def asyncExecuteDual(self, switches1=[],switches2=[], outputConsole=OutputConsole.MINIMAL,fakeServer=None)  -> ReqmanDualResult:
         raise RMException("not implemented")
 
+def prettify(txt: str, indentation: int = 4) -> str:
+    if txt==None:
+        return ""
+    else:
+        txt=str(txt)
+    try:
+        return repr(Xml(txt))
+    except:
+        try:
+            return jdumps(json.loads(txt), indent=indentation, sort_keys=True)
+        except:
+            return txt
 
 def render(rr:Result) -> str:
-
-    def prettify(txt: str, indentation: int = 4) -> str:
-        if txt==None:
-            return ""
-        else:
-            txt=str(txt)
-        try:
-            return repr(Xml(txt))
-        except:
-            try:
-                return jdumps(json.loads(txt), indent=indentation, sort_keys=True)
-            except:
-                return txt
 
     class LIMIT:
         TESTVALUE   = 128
