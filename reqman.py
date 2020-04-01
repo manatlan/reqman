@@ -1148,43 +1148,53 @@ def strjs(x) -> str:
     else:
         return jdumps(x)
 
+def guessValue(txt):
+    if type(txt) == str:
+        try:
+            return json.loads(txt)
+        except:
+            try:
+                return json.loads('"%s"' % txt.replace('"','\\"'))
+            except:
+                return txt
+    return txt
+
 def getValOpe(v):
     try:
         if type(v) == str and v.startswith("."):
             g = re.match(r"^\. *([!=<>]{1,2}) *(.+)$", v)
             if g:
                 op, v = g.groups()
-                vv = yaml.load(v, Loader=yaml.FullLoader)
                 if op == "==":  # not needed really, but just for compatibility
-                    return vv, lambda a, b: b == a, "=", "!="
+                    return v, lambda a, b: b == a, "=", "!="
                 elif op == "=":  # not needed really, but just for compatibility
-                    return vv, lambda a, b: b == a, "=", "!="
+                    return v, lambda a, b: b == a, "=", "!="
                 elif op == "!=":
-                    return vv, lambda a, b: b != a, "!=", "="
+                    return v, lambda a, b: b != a, "!=", "="
                 elif op == ">=":
                     return (
-                        vv,
+                        v,
                         lambda a, b: b != None and a != None and b >= a or False,
                         ">=",
                         "<",
                     )
                 elif op == "<=":
                     return (
-                        vv,
+                        v,
                         lambda a, b: b != None and a != None and b <= a or False,
                         "<=",
                         ">",
                     )
                 elif op == ">":
                     return (
-                        vv,
+                        v,
                         lambda a, b: b != None and a != None and b > a or False,
                         ">",
                         "<=",
                     )
                 elif op == "<":
                     return (
-                        vv,
+                        v,
                         lambda a, b: b != None and a != None and b < a or False,
                         "<",
                         ">=",
@@ -1264,12 +1274,11 @@ class TestResult(list):
                 opOK, opKO = None, None
                 bool = False
 
-
                 for value in values:  # match any
                     if testContains:
                         value, ope, opOK, opKO = (
                             value,
-                            lambda x, c: toStr(x) in c,
+                            lambda x, c:  toStr(x) in toStr(c),
                             "contains",
                             "doesn't contain",
                         )
@@ -1277,7 +1286,7 @@ class TestResult(list):
                         value, ope, opOK, opKO = getValOpe(value)
 
                     try:
-                        bool = ope(value, tvalue)
+                        bool = ope( guessValue(value), guessValue(tvalue) )
                     except TypeError:
                         bool=False
                     if bool:
