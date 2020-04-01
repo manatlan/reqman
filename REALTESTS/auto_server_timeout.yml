@@ -1,11 +1,17 @@
-#!python3.7 reqman.py --b
+#!python3 fakereqman.py valid:2:4:2 --b 
+#!C:/Python37/python.exe fakereqman.py valid:2:4:2 --b 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 - test:
-      - GET: https://manatlan.com/5secondsPlease
+      - GET: http://localhost:11111/wait?value=2
+        tests:
+          - status: 200
+          - content: OK
+
+      - GET: http://localhost:11111/wait?value=0.1
         tests:
           - status: 200
           - content: OK

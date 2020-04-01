@@ -1,42 +1,36 @@
-#!python3.7 reqman.py --b
+#!python3 fakereqman.py valid:15:15:5 --b 
+#!C:/Python37/python.exe fakereqman.py valid:15:15:5 --b 
 # -*- coding: Windows-1252 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
-- GET: https://manatlan.alwaysdata.net/AEFFC/ju
+- GET: http://localhost:11111/get_json
   tests:
     - status: 200
     - content: llo
     - content: héllo
     - json.msg: héllo
 
-- GET: https://manatlan.alwaysdata.net/AEFFC/jw
+- GET: http://localhost:11111/get_txt
   tests:
     - status: 200
     - content: llo
-    - content: héllo
-    - json.msg: héllo
+    - content: Héllo
 
-- GET: https://manatlan.alwaysdata.net/AEFFC/tu
+- GET: http://localhost:11111/get_txt_cp1252
   tests:
     - status: 200
     - content: llo
-    - content: héllo
+    - content: Héllo
 
-- GET: https://manatlan.alwaysdata.net/AEFFC/tw
-  tests:
-    - status: 200
-    - content: llo
-    - content: héllo
-
-- GET: https://manatlan.alwaysdata.net/AEFFC/tb
+- GET: http://localhost:11111/get_bytes
   tests:
     - status: 200
     - content: "1234"
 
-- GET: https://manatlan.alwaysdata.net/AEFFC/th
+- GET: http://localhost:11111/get_header
   tests:
     - status: 200
     - content: "ok"
-    - msg: h\udce9h\udce9
+    - msg: h\xe9h\xe9

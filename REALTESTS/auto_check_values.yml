@@ -1,0 +1,31 @@
+#!python3 fakereqman.py valid:12:16:2 --b 
+#!C:/Python37/python.exe fakereqman.py valid:12:16:2 --b 
+- GET: http://localhost:11111/get_xml
+  tests:
+      - status: 200
+
+      # xml value are str (but guessed with reqman)
+      - xml.//age.0: 42
+      - xml.//age.0: "42"
+      - xml.//age.0: .>40
+
+- GET: http://localhost:11111/get_json
+  tests:
+      - status: 200
+
+      - json.info: {"m": "42","n": 42,"t": "Hello"}
+
+      # test an int
+      - json.info.n: 42
+      - json.info.n: "42"
+      - json.info.n: .> 40
+
+      # test an str
+      - json.info.m: 42
+      - json.info.m: "42"
+      - json.info.m: .> 40
+
+      - json.info.t: .>null
+      - json.info.t: .>true
+      - json.info.t: .>2
+      - json.info.t: .>2.2

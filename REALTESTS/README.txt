@@ -1,3 +1,4 @@
-here, there will be more "Real tests"
-(and the server will be local, and the will be a easy procedure to run them all)
-(the "examples" will be removed)
+here, there will be more "Real tests" (the "examples" will be removed)
+
+python3.7 -m pytest REALTESTS/test_autos.py
+

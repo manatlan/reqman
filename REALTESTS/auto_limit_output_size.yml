@@ -1,20 +1,23 @@
-#!python3.7 reqman.py --b
+#!python3 fakereqman.py valid:4:4:2 --b 
+#!C:/Python37/python.exe fakereqman.py valid:4:4:2 --b 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 
-- GET: https://manatlan.alwaysdata.net/AEFF
+- GET: http://localhost:11111/bigtxt
   tests:
     - status: 200
     - content: 1234
   save: xxx
 
-- GET: https://manatlan.alwaysdata.net/AEFF
+- GET: http://localhost:11111/bigtxt
   doc: <<xxx>>>
   headers:
-    jo: <<xxx>>
+    jo: <<xxx|limit>>
+  params:
+    limit: return x[:8000]
   tests:
     - status: 200
     - content: <<xxx>>
