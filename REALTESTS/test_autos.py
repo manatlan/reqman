@@ -1,6 +1,6 @@
 import reqman
 import fakereqman
-import sys
+import sys,time
 from glob import glob
 
 def test_autos():
@@ -8,7 +8,9 @@ def test_autos():
     Will automatically run reqman'tests (auto*.yml) in current folder
     and check if valid according shebang's valid statements
     """
-    for f in glob("REALITCE/auto_*.yml"):
+    ll=glob("REALTESTS/auto_*.yml")
+    assert ll
+    for f in ll:
         with open(f) as fid:
             firstLine=fid.readline()
         
@@ -23,4 +25,5 @@ def test_autos():
 
         # and do the tests with optionnal "valid:x:x:x"
         sys.argv=["test",f] + args
+        print(sys.argv)
         assert fakereqman.main()==0, "File '%s' is not valid" % f
