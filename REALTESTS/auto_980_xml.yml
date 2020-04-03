@@ -1,0 +1,64 @@
+#!python3 fakereqman.py valid:21:22:3 --b 
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- GET: http://localhost:11111/get_xml
+  tests:
+    - status: 200
+    - json.result: null
+    - xml.//c.0 : "yolo xxx"
+    - xml.//c.0.size   : 8
+    - xml.//a: ["aaa1","aaa2"]
+    - xml.//a[1].0: "aaa1"
+    - xml.//a[last()].0: "aaa2"
+    - xml.//a/text(): ["aaa1","aaa2"]
+    - xml.//a.size : .=2
+    - xml.//a[@v].0: "aaa1"
+    - xml.//a[@v]/@v.0: 1
+    - xml.//a|//b: ["aaa1","aaa2","b9","b11"]
+    - xml.//a|//b.size: 4
+    - xml.//*:nooooo: null
+    - xml.//ns2:typeDocument.0: hello
+
+    - xml.//a|//b.size|toX: XXXX              # NEW
+    - xml.//a[@v].0|upper: "AAA1"             # NEW
+
+  params:
+    upper: return x and x.upper()
+    toX: return x and x*"X"
+
+- GET: http://localhost:11111/get_xml
+  tests:
+    - status: 200
+    - xml.//c: .>1                       # bad
+
+- GET: http://localhost:11111/get_json
+  tests:
+    - status: 200
+    - json.result: null
+    - xml.//nooooo: null    
+
+
+# - GET: /xml
+#   tests:
+#     - status: 200
+#   save:
+#     redirect:  <<xml.//a[last()]>>
+
+# - GET: /<<redirect.0>>
+#   tests:
+#     - status: 200
+
+
+# - GET: /xml
+#   tests:
+#     - status: 200
+#   save:
+#     redirect:  <<xml.//a[last()].0>>
+
+# - GET: /<<redirect>>
+#   tests:
+#     - status: 200

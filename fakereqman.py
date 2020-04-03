@@ -44,7 +44,7 @@ async def hello(request):
 @routes.get('/get_json')
 async def hello(request):
     obj=dict( info=dict(t="Hello",n=42,m="42"), infos=[1,2,3], float=3.14, empty=None, mot="héllo ça va ?",msg="héllo")
-    return web.Response(status=200,body=json.dumps(obj))
+    return web.Response(status=200,body=json.dumps(obj),headers={"X-MyHeader":"hello"})
 
 @routes.get('/get_header')
 async def hello(request):
@@ -52,19 +52,25 @@ async def hello(request):
 
 @routes.get('/get_xml')
 async def hello(request):
-    xml="""<root>
-        <name prefix="mr">john</name>
-        <age>42</age>
-        <infos rep="héllo" ref="1515">
-            <info v="0"></info>
-            <info v="1">3.14</info>
-            <info v="2">Hello</info>
-            <info v="3">Héllo</info>
-        </infos>
-    </root>
-    """
+    xml="""<?xml version="1.0" encoding="UTF-8"?>
+<x xmlns:ns2="www">
+    <entete>
+        <ns2:typeDocument>hello</ns2:typeDocument>
+    </entete>
+    <age>42</age>
+    <a v="1">aaa1</a>
+    <a>aaa2</a>
+    <b v="9">b9</b>
+    <b v="11">b11</b>
+    <c>yolo <i>xxx</i></c>
+</x>"""
     return web.Response(status=200,text=xml)
 
+import socket
+def isFree(ip, port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(1)
+    return not (s.connect_ex((ip,port)) == 0)
 
 import sys,reqman
 import threading,asyncio
@@ -78,44 +84,52 @@ class FakeWebServer(threading.Thread): # the webserver is ran on a separated thr
         self._exit=False
 
     def run(self):
-        print("Fake Server:",self.root)
+        print("> Fake Server:",self.root)
 
         async def start():
             runner = web.AppRunner(self.app)
             await runner.setup()
-            await web.TCPSite(runner, 'localhost', self.port).start()
+            self.site=web.TCPSite(runner, 'localhost', self.port)
+            await self.site.start()
         
             while self._exit==False:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.333333)
+
+            await self.site.stop()
+            await runner.shutdown()
 
         asyncio.set_event_loop(asyncio.new_event_loop())
         loop=asyncio.get_event_loop()
-        loop.run_until_complete(start())        
 
+
+        async def wait():
+            while not isFree("127.0.0.1",self.port):
+                await asyncio.sleep(0.5)
+
+        loop.run_until_complete(wait()) 
+        loop.run_until_complete(start())       
+        loop.run_until_complete(wait()) 
 
         # gracefull death
-        try:
-            tasks = asyncio.all_tasks(loop) #py37
-        except:
-            tasks = asyncio.Task.all_tasks(loop) #py35
+        tasks = asyncio.all_tasks(loop) #py37
         for task in tasks: task.cancel()
         try:
             loop.run_until_complete(asyncio.gather(*tasks))
         except:
             pass
+        loop.close() 
 
 
     def stop(self):
         self._exit=True
 
-def main():
+def main( runServer=False ):
     """
     retourne 0 : si valid est ok
     retourne 1 : si valid est ko
     retourne None : si pas validation
     """
 
-    ws=FakeWebServer(11111)
 
     class RR: pass
     o=RR()
@@ -133,10 +147,16 @@ def main():
     #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     try:
-        ws.start()
+        if runServer:
+            ws=FakeWebServer(11111)
+            ws.start()
+            import time
+            time.sleep(1) # wait server start ;-(
+
         rc=reqman.main(hookResults=o)
     finally:
-        ws.stop()
+        if runServer:
+            ws.stop()
 
     rc=None
     if hasattr(o,"rr"):
@@ -144,13 +164,13 @@ def main():
 
         if valid:
             rc=0 if valid==toValid else 1
-            print("Check valid:",valid,"?==",toValid,"-->",rc)
+            print("> Check valid:",valid,"?==",toValid,"-->",rc)
         else:
-            print("No validation check! (valid:%s)" % toValid)
+            print("> No validation check! (valid:%s)" % toValid)
 
     return rc
 
 
 if __name__=="__main__":
-    sys.exit( main() )
+    sys.exit( main(runServer=True) )
 

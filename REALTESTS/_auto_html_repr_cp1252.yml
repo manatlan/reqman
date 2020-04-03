@@ -1,5 +1,4 @@
-#!python3 fakereqman.py valid:15:15:5 --b 
-#!C:/Python37/python.exe fakereqman.py valid:15:15:5 --b 
+#!python3 fakereqman.py valid:15:15:5 --b
 # -*- coding: Windows-1252 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)

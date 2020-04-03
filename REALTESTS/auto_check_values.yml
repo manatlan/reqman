@@ -1,5 +1,9 @@
 #!python3 fakereqman.py valid:12:16:2 --b 
-#!C:/Python37/python.exe fakereqman.py valid:12:16:2 --b 
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
 - GET: http://localhost:11111/get_xml
   tests:
       - status: 200

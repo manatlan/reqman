@@ -10,20 +10,36 @@ def test_autos():
     """
     ll=glob("REALTESTS/auto_*.yml")
     assert ll
-    for f in ll:
-        with open(f) as fid:
-            firstLine=fid.readline()
-        
-        # get args from the shebang on the yaml
-        cmd,params=(firstLine.split("reqman.py"))
-        args=params.strip().split(" ")
 
-        # remove "--b" to avoid opening tabs
-        if "--b" in args:
-            args.remove("--b")
-            args.append("--k")
+    ws=fakereqman.FakeWebServer(11111)
+    ws.start()
+    import time
+    time.sleep(1)   
 
-        # and do the tests with optionnal "valid:x:x:x"
-        sys.argv=["test",f] + args
-        print(sys.argv)
-        assert fakereqman.main()==0, "File '%s' is not valid" % f
+    try:  
+        for f in ll:
+            with open(f) as fid:
+                firstLine=fid.readline()
+            
+            # get args from the shebang on the yaml
+            cmd,params=(firstLine.split("reqman.py"))
+            args=params.strip().split(" ")
+
+            # remove "--b" to avoid opening tabs
+            if "--b" in args:
+                args.remove("--b")
+                args.append("--k")
+
+            # and do the tests with optionnal "valid:x:x:x"
+            sys.argv=["FAKEREQMAN",f] + args
+            print("\n"+">"*80)
+            print(">"," ".join(sys.argv))
+            print(">"*80)
+            assert fakereqman.main(runServer=False)==0, "File '%s' is not valid" % f
+            # sys.argv=["FAKEREQMAN",f] + args + ["--o"]
+            # print("\n"+">"*80)
+            # print(">"," ".join(sys.argv))
+            # print(">"*80)
+            # assert fakereqman.main()==0, "File '%s' is not valid" % f
+    finally:
+        ws.stop()

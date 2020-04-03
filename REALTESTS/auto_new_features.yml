@@ -1,0 +1,51 @@
+#!python3 fakereqman.py valid:15:15:2 --b 
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- old:
+
+    - GET: http://localhost:11111/get_json
+      doc: old tests mechanism (to ensure compat)
+      tests:
+        - status: 200
+        - content: float
+        - json.info.n: .>= <<my42>>
+        - json.msg: héllo
+        - X-MyHeader: hello   # compat *DEPRECATED*
+        - x-myheader: hel   # compat *DEPRECATED* (contains)
+
+- new:
+
+    - GET: http://localhost:11111/get_json
+      doc: new mechanism tests
+      tests:
+        - status|testInt: ok                #new
+        - json.info.n|testInt: ok           #new
+        - json.msg|testStr: ok              #new
+        - header.X-MyHeader: hello          #new
+        - header.x-myheader: hel            #new (contains)
+        - header.x-myHEADer|upper|decor: XHELLOX    #new
+
+        - mybool: true                      # can test real var too !
+        - kiki: null                        # unknown var is None/null
+        - kiki|upper: null                  # unknown var is None/null
+- call:
+    - old
+    - new
+  params:
+    mybool: true
+    my42: 42
+
+    testByte: |
+        return "ok" if type(x)==bytes else "ko"
+    testInt: |
+        return "ok" if type(x)==int else "ko"
+    testStr: |
+        return "ok" if type(x)==str else "ko"
+    upper: |
+        return x and x.upper()
+    decor: |
+        return x and "X%sX"%x

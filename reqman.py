@@ -33,7 +33,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.3.9.0" #only SemVer (the last ".0" is win only)
+__version__="2.3.10.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -378,6 +378,10 @@ class Xml:
 class Exchange:
     def __init__(self,method, path, url, body, inHeaders,status,outHeaders,content,info,time):
         self.id=None
+        self.doc=None
+        self.scope=None
+        self.tests=[]
+        self.nolimit=False
 
         self.method=method
         self.path=path
@@ -393,12 +397,6 @@ class Exchange:
 
     def __eq__(self,o):
         return (o and self.id==o.id)
-
-    def upgrade(self,id,doc,scope,tests):
-        self.id=id
-        self.doc = doc
-        self.scope = scope
-        self.tests = TestResult(tests,self.status, self.content , self.outHeaders)
 
     def __repr__(self):
         return "<Exchange: %s %s -> %s tests:%s>" % (self.method,self.url,self.status, self.tests or "no")
@@ -505,8 +503,11 @@ class Env(dict):
 
         def _replace(txt:str) -> T.Union[str, bytes]:
             def getVar(var:str):
-                if "|" in var:
-                    key, method = var.split("|", 1)
+                methods=re.findall( r"\|[\d\w\|]+$",var)
+                if methods:
+                    p=var.index(methods[0])
+                    key=var[:p]
+                    method=var[p+1:]
 
                     content = getVar(key)
                     if content is NotFound:
@@ -965,9 +966,8 @@ class Req(ReqItem):
         doc, tests, saves = self.doc, self.tests, self.saves
 
         #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' compute an unique id based on reqs's attributes
-        d = hashlib.md5()
-        d.update(json.dumps([method, path, body, headers,doc, tests, saves]).encode())
-        id=d.hexdigest()
+        uid = hashlib.md5()
+        uid.update(json.dumps([method, path, body, headers,doc, tests, saves]).encode())
         #''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
         gpath=path
@@ -1021,34 +1021,46 @@ class Req(ReqItem):
             assert ex
             self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
 
+        #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+        envResponse = scope.clone()
+        envResponse["content"] = ex.content
+        envResponse["status"] = ex.status
+        envResponse["header"] = {k.lower():v[1:-1] for k,v in ex.outHeaders.items()}  # NEW !!!!
+        #TODO: expose time ?
+        try:
+            envResponse["json"] = ex.content.toJson()
+        except:
+            pass
+        try:
+            envResponse["xml"] = ex.content.toXml()
+        except:
+            pass
+        #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
 
         try:
             for s in saves:
-                postSaveScope = scope.clone()
-                postSaveScope["content"] = ex.content
-                postSaveScope["status"] = ex.status
-                #TODO: expose headers, time, xml too ?
-                try:
-                    postSaveScope["json"] = ex.content.toJson()
-                except:
-                    pass
-                try:
-                    postSaveScope["xml"] = ex.content.toXml()
-                except:
-                    pass
-
                 for saveKey, saveWhat in s.items():
-                    self.parent.env.save(saveKey, postSaveScope.replaceObj(saveWhat), self.parent.name=="BEGIN" )
+                    self.parent.env.save(saveKey, envResponse.replaceObj(saveWhat), self.parent.name=="BEGIN" )
                     # gscope.save(saveKey, postSaveScope.replaceObj(saveWhat) ) # NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-
-                del postSaveScope
         except RMPyException as e:
             ex.status=None
             ex.content = e
             ex.info="TEST EXCEPTION"
 
-        ex.upgrade(id,doc,scope,tests)
+        # important !
+        envResponse["content"] = ex.content
+        envResponse["status"] = ex.status
 
+        # upgrade 'ex' !
+        ex.id = uid.hexdigest()
+        ex.doc = doc
+        ex.scope = scope
+        ex.nolimit = self.nolimit
+        #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+        ex.tests = TestResult(tests,envResponse,ex.status)
+        # ex.tests = TestResultOld(tests,ex.status, ex.content , ex.outHeaders)
+        #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
         #=================================================== LIVE CONSOLE
         if outputConsole != OutputConsole.NO:
@@ -1073,7 +1085,6 @@ class Req(ReqItem):
                 print()
         #=================================================== LIVE CONSOLE
 
-        ex.nolimit = self.nolimit
         return ex
 
 
@@ -1207,7 +1218,7 @@ def getValOpe(v):
         pass
     return v, lambda a, b: a == b, "=", "!="
 
-class TestResult(list):
+class TestResultOld(list):
     def __init__(self, tests, status,content,headers) -> None:
 
         insensitiveHeaders = (
@@ -1313,6 +1324,103 @@ class TestResult(list):
 
     def __repr__(self) -> str:
         return "".join([ "[%s]"%repr(t) for t in self])
+
+def lowerIfHeader(t:str):
+    if t.startswith("header."):
+        tt=t.split("|",1)
+        t="|".join( [tt[0].lower()] + tt[1:] )
+    return t
+
+class TestResult(list):
+    def __init__(self, tests, env, status) -> None:
+
+        results = []
+        for test in tests:
+            what, value = list(test.keys())[0], list(test.values())[0]
+            tvalue=env.replaceObj("<<%s>>" % lowerIfHeader(what))
+            if type(tvalue)==str and tvalue.startswith("<<"): tvalue=None #TODO: use replaceObjOrNone
+
+            firstWord = re.split(r"[\.|]",what)[0]
+            testContains = False # true pour contant & headers !!!!!
+            if firstWord=="content":
+                testContains=True
+            elif firstWord=="status":
+                testContains=False
+            elif firstWord=="json":
+                testContains=False
+            elif firstWord=="xml":
+                testContains=False
+            elif firstWord=="header":
+                testContains=True
+            else: # header
+                if "header" in env:
+                    header=what.lower()
+                    if header in env["header"]:
+                        print( cy("**DEPRECATED**"), "use new header syntax in tests (- header.%s: ...)"%what )
+                        tvalue = env["header"][header]
+                        testContains=True
+
+            # test if all match as json (list, dict, str ...)
+            try:
+                def makeComparable(x):
+                    if type(x) is bytes:
+                        return x
+                    else:
+                        return jdumps(json.loads(x) if type(x) in [str, bytes] else x, sort_keys=True)
+
+                matchAll = (makeComparable(value) == makeComparable(tvalue))
+            except json.decoder.JSONDecodeError as e:
+                matchAll = False
+
+            if matchAll:
+                test, opOK, opKO, val = True, "=", "!=", value
+            else:
+                # ensure that we've got a list
+                values = [value] if type(value) != list else value
+                opOK, opKO = None, None
+                bool = False
+
+                for value in values:  # match any
+                    if testContains:
+                        value, ope, opOK, opKO = (
+                            value,
+                            lambda x, c:  toStr(x) in toStr(c),
+                            "contains",
+                            "doesn't contain",
+                        )
+                    else:
+                        value, ope, opOK, opKO = getValOpe(value)
+
+                    try:
+                        bool = ope( guessValue(value), guessValue(tvalue) )
+                    except TypeError:
+                        bool=False
+                    if bool:
+                        break
+
+                bool=bool and status!=None # make test KO if status is invalid 
+
+                if len(values) == 1:
+                    test, opOK, opKO, val = bool, opOK, opKO, value
+                else:
+                    test, opOK, opKO, val = (
+                        bool,
+                        "matchs any",
+                        "doesn't match any",
+                        values,
+                    )
+
+            nameOK=what + " " + opOK + " " + strjs(val)  # test name OK
+            nameKO=what + " " + opKO + " " + strjs(val)  # test name KO
+
+            results.append( Test(test,nameOK, nameKO, strjs(tvalue)) )
+
+        list.__init__(self, results)
+
+    def __repr__(self) -> str:
+        return "".join([ "[%s]"%repr(t) for t in self])
+
+
 
 class Result:
     total=0
@@ -2044,3 +2152,6 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 if __name__=="__main__":
     sys.exit(main())
+    # import fakereqman
+    # sys.argv=["","REALTESTS/auto_980_xml.yml","--k"]
+    # fakereqman.main()

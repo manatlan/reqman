@@ -1,5 +1,4 @@
-#!python3 fakereqman.py valid:15:15:5 --b 
-#!C:/Python37/python.exe fakereqman.py valid:15:15:5 --b 
+#!python3 fakereqman.py valid:17:17:5 --b 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -33,4 +32,6 @@
   tests:
     - status: 200
     - content: "ok"
-    - msg: h\xe9h\xe9
+    - msg: h\xe9h\xe9     # test header
+    - Msg: h\xe9h\xe9     # test header mixed case
+    - MSG: h\xe9h\xe9     # test header mixed case

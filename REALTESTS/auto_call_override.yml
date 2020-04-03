@@ -1,0 +1,42 @@
+#!python3 fakereqman.py valid:8:8:4 --b 
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+# 095 - test_priority_dont_override_local_value
+- proc:
+    - GET: http://localhost:11111/set?value=<<p>>
+      params:
+        p: a     
+
+- call: proc # call a
+  tests:
+    - status: 200
+    - content: a
+
+- call: proc # will call a  (pato will not be happy ;-) )
+  params:
+    p: b
+  tests:
+    - status: 200
+    - content: a
+################
+# 095 - test_create_default_value_for_proc
+- proc2:
+    - GET:  http://localhost:11111/set?value=<<p|defa>>
+      params:
+        defa: return x or "a"
+
+- call: proc2 # call a
+  tests:
+    - status: 200
+    - content: a
+
+- call: proc2 # call b  (pato will be happy ;-) )
+  params:
+    p: b
+  tests:
+    - status: 200
+    - content: b

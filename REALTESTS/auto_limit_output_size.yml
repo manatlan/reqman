@@ -1,5 +1,4 @@
 #!python3 fakereqman.py valid:4:4:2 --b 
-#!C:/Python37/python.exe fakereqman.py valid:4:4:2 --b 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)

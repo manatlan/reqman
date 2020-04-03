@@ -1,0 +1,71 @@
+#!python3 fakereqman.py valid:2:7:7 --b 
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+#  TEST 970 !!!!!
+
+- GET: http://localhost:11111/get_json
+  tests:
+    - status: 200
+- GET: http://localhost:11111/<<i|method>>
+  headers:
+    x-hello: world
+  params:
+    i: 0
+    method: return 12/x
+  tests:
+    - status: 200
+- GET: http://localhost:11111/<<i|method>>
+  headers:
+    x-hello: world
+  params:
+    i: 0
+  tests:
+    - status: 200
+- GET: http://localhost:11111/get_json
+  headers:
+    x-hello: <<i|method>>
+  params:
+    i: 0
+  tests:
+    - status: 200
+- POST: http://localhost:11111/get_json
+  body: <<i|method>>
+  headers:
+    x-hello: world
+  params:
+    i: 0
+    method: return 12/x
+  tests:
+    - status: 200
+
+
+
+
+
+- GET: http://localhost:11111/get_json
+  tests:
+    - status: 200
+- GET: http://localhost:11111/get_json
+  save: 
+    r: <<i|method>>
+  params:
+    i: 0
+    method: return 12/x
+  tests:
+    - status: 200
+
+# REAL ERROR !!!!
+# - GET: http://localhost:11111/get_json
+#   tests:
+#     - status: 200
+# - GET: http://localhost:11111/get_json
+#   foreach: <<i|method>>
+#   params:
+#     i: 0
+#     method: return 12/x
+#   tests:
+#     - status: 200    

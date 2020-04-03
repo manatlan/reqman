@@ -1,5 +1,4 @@
-#!python3 fakereqman.py valid:0:4:2 --b 
-#!C:/Python37/python.exe fakereqman.py valid:0:4:2 --b 
+#!python3 fakereqman.py valid:4:8:4 --b 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -17,5 +16,15 @@
         tests:
           - status: 200
           - content: nimp
+
+      - GET: http://localhost:11111/get_500
+        tests:
+          - status: 500
+          - content: Internal Server Error
+
+      - GET: http://localhost:11111/get_404
+        tests:
+          - status: 404
+          - content: not found
 
 - call: test
