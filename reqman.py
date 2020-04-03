@@ -1129,10 +1129,7 @@ class Req(ReqItem):
         ex.doc = doc
         ex.scope = scope
         ex.nolimit = self.nolimit
-        #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
         ex.tests = TestResult(tests,envResponse,ex.status)
-        # ex.tests = TestResultOld(tests,ex.status, ex.content , ex.outHeaders)
-        #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
         #=================================================== LIVE CONSOLE
         if outputConsole != OutputConsole.NO:

@@ -1,0 +1,11 @@
+#!python3 fakereqman.py valid:ERROR --b 
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+- jo:
+    - GET: http://127.0.0.1:11111/get_txt
+
+- call: jo
+  unknown: yolo

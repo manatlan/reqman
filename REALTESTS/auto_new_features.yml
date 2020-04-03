@@ -19,7 +19,7 @@
 
 - new:
 
-    - GET: http://localhost:11111/get_json
+    - GET: +http://localhost:11111/get_json
       doc: new mechanism tests
       tests:
         - status|testInt: ok                #new

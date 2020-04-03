@@ -1,0 +1,14 @@
+#!python3 fakereqman.py valid:1 --b 
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- GET: http://localhost:11111/get_json
+  tests:
+        - status: 200
+- break
+- GET: http://localhost:11111/get_json
+  tests:
+        - status: 200
