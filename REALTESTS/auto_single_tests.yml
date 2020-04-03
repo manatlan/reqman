@@ -1,4 +1,4 @@
-#!python3 fakereqman.py valid:11111111111 --b 
+#!python3 fakereqman.py valid:1111111111111 --b 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -9,6 +9,12 @@ GET: http://localhost:11111/get_json
 headers:  # headers as list of dict (bad practice)
   - h1: "yolo"
   - h2: "yolo"
+
+params:
+  fct: |
+    return dict(a=dict(b=42))
+  fbytes:
+    return b"ABCD"
 tests: 
   - status: 200
   - status: . = 200
@@ -23,3 +29,6 @@ tests:
         - 201
   - json.info.size: 3   # size of dict
   - json.infos.size: 3  # size of list
+  - fct.a.b: 42
+  - fbytes: <<fbytes>>
+
