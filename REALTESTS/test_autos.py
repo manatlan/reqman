@@ -18,8 +18,8 @@ def test_autos():
 
     try:  
         for f in ll:
-            with open(f) as fid:
-                firstLine=fid.readline()
+            txt=reqman.FString(f)
+            firstLine=txt.splitlines()[0]
             
             # get args from the shebang on the yaml
             cmd,params=(firstLine.split("reqman.py"))
@@ -36,10 +36,10 @@ def test_autos():
             print(">"," ".join(sys.argv))
             print(">"*80)
             assert fakereqman.main(runServer=False)==0, "File '%s' is not valid" % f
-            # sys.argv=["FAKEREQMAN",f] + args + ["--o"]
-            # print("\n"+">"*80)
-            # print(">"," ".join(sys.argv))
-            # print(">"*80)
-            # assert fakereqman.main()==0, "File '%s' is not valid" % f
+            sys.argv=["FAKEREQMAN",f] + args + ["--o"]
+            print("\n"+">"*80)
+            print(">"," ".join(sys.argv))
+            print(">"*80)
+            assert fakereqman.main()==0, "File '%s' is not valid" % f
     finally:
         ws.stop()
