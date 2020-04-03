@@ -58,14 +58,3 @@
   tests:
     - status: 200
 
-# REAL ERROR !!!!
-# - GET: http://localhost:11111/get_json
-#   tests:
-#     - status: 200
-# - GET: http://localhost:11111/get_json
-#   foreach: <<i|method>>
-#   params:
-#     i: 0
-#     method: return 12/x
-#   tests:
-#     - status: 200    

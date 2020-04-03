@@ -158,17 +158,24 @@ def main( runServer=False ):
         if runServer:
             ws.stop()
 
-    rc=None
-    if hasattr(o,"rr"):
+    frc=None
+    if rc>=0 and hasattr(o,"rr"):
         toValid="%s:%s:%s" % (o.rr.ok,o.rr.total,o.rr.nbReqs)
 
         if valid:
-            rc=0 if valid==toValid else 1
-            print("> Check valid:",valid,"?==",toValid,"-->",rc)
+            frc=0 if valid==toValid else 1
+            print("> Check valid:",valid,"?==",toValid,"-->",frc)
+        else:
+            print("> No validation check! (valid:%s)" % toValid)
+    else:
+        toValid="ERROR"
+        if valid:
+            frc=0 if valid==toValid else 1
+            print("> Check valid:",valid,"?==",toValid,"-->",frc)
         else:
             print("> No validation check! (valid:%s)" % toValid)
 
-    return rc
+    return frc
 
 
 if __name__=="__main__":

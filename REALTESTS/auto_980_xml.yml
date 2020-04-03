@@ -1,4 +1,4 @@
-#!python3 fakereqman.py valid:21:22:3 --b 
+#!python3 fakereqman.py valid:24:25:4 --b 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -42,23 +42,9 @@
     - xml.//nooooo: null    
 
 
-# - GET: /xml
-#   tests:
-#     - status: 200
-#   save:
-#     redirect:  <<xml.//a[last()]>>
+- GET: http://localhost:11111/get_xml
+  tests:
+    - status: 200
+    - xml.//a[last()].0: "aaa2"
+    - xml.//a[last()]: [ "aaa2" ]
 
-# - GET: /<<redirect.0>>
-#   tests:
-#     - status: 200
-
-
-# - GET: /xml
-#   tests:
-#     - status: 200
-#   save:
-#     redirect:  <<xml.//a[last()].0>>
-
-# - GET: /<<redirect>>
-#   tests:
-#     - status: 200
