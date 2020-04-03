@@ -123,6 +123,28 @@ class FakeWebServer(threading.Thread): # the webserver is ran on a separated thr
     def stop(self):
         self._exit=True
 
+
+
+
+
+def checkSign(sign1,sign2):
+    """ Return the error or '' """
+    if sign1==sign2:
+        return "" # no error
+    else:
+        dsign1=sign1.split(',')
+        dsign2=sign2.split(',')
+        if len(dsign1)!=len(dsign2):
+            return "Not same number od requests (is there a new ?)"
+        else:
+            for idx,(t1,t2) in enumerate(zip(dsign1,dsign2)):
+                if len(t1) != len(t2):
+                    return "Req %s has %s tests (expected %s)" % (idx+1,len(t2),len(t1))
+                else:
+                    if t1!=t2:
+                        diffs=[i+1 for i,(a1,a2)  in enumerate(zip(t1,t2)) if a1!=a2]
+                        return "Req %s fail on its %s test" % (idx+1,diffs[0])
+
 def main( runServer=False ):
     """
     retourne 0 : si valid est ok
@@ -167,21 +189,29 @@ def main( runServer=False ):
         toValid=",".join(details)
         
         if valid:
-            frc=0 if valid==toValid else 1
-            print("> Check valid:",valid,"?==",toValid,"-->",frc)
+            err=checkSign(valid,toValid)
+            print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
         else:
             print("> No validation check! (valid:%s)" % toValid)
+            err=None
     else:
         toValid="ERROR"
         if valid:
-            frc=0 if valid==toValid else 1
-            print("> Check valid:",valid,"?==",toValid,"-->",frc)
+            err="" if valid==toValid else "no error"
+            print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
         else:
             print("> No validation check! (valid:%s)" % toValid)
+            err=None
 
-    return frc
+    return err
 
 
 if __name__=="__main__":
-    sys.exit( main(runServer=True) )
+    err=main(runServer=True)
+    if err is None:
+        sys.exit( -1)
+    elif err=="":
+        sys.exit(0)
+    else:
+        sys.exit(1)
 

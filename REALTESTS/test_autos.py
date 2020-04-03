@@ -35,11 +35,13 @@ def test_autos():
             print("\n"+">"*80)
             print(">"," ".join(sys.argv))
             print(">"*80)
-            assert fakereqman.main(runServer=False)==0, "File '%s' is not valid" % f
+            err=fakereqman.main(runServer=False)
+            assert err=="", "File '%s' : %s" % (f,err)
             sys.argv=["FAKEREQMAN",f] + args + ["--o"]
             print("\n"+">"*80)
             print(">"," ".join(sys.argv))
             print(">"*80)
-            assert fakereqman.main()==0, "File '%s' is not valid" % f
+            err=fakereqman.main(runServer=False)
+            assert err=="", "File '%s' : %s" % (f,err)
     finally:
         ws.stop()
