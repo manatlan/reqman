@@ -33,7 +33,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.3.10.0" #only SemVer (the last ".0" is win only)
+__version__="2.4.0.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -53,7 +53,7 @@ except ImportError:
     cy = cr = cg = cb = cw = lambda t: t
 
 KNOWNVERBS=["GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT"]
-KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body" ]
+KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body","if" ]
 REQMAN_CONF="reqman.conf"
 
 class OutputConsole(enum.Enum):
@@ -706,6 +706,7 @@ class Reqs(list):
 
 
                                 for r in reqs: # surcharge reqs from 'i'
+                                    r.updateIf(i)
                                     r.updateBody(i)
                                     r.updateDoc(i)
                                     r.updateHeaders(i)
@@ -730,6 +731,7 @@ class Reqs(list):
                                 raise self._errorFormat("Reqs: The action %s should contains a path/string" % method)
 
                             r=Req(method,path,self)
+                            r.updateIf(i)
                             r.updateBody(i)
                             r.updateDoc(i)
                             r.updateHeaders(i)
@@ -806,7 +808,8 @@ class Reqs(list):
                 if isinstance(i, Req):
                     log(level,"* Req:",oneline(i))
                     yield level,gscope,i.clone() # this clone has no effect ;-)
-                if isinstance(i, ReqGroup):
+
+                elif isinstance(i, ReqGroup):
                     scope=gscope.clone() #important
 
                     log(level,"* ReqGroup:",len(i.reqs),"ReqItem(s)")
@@ -835,9 +838,21 @@ class Reqs(list):
 
         ll=[]
         for l,s,r in _test(self,self.env):
-            ex=await r.asyncExecute(s,http,outputConsole=outputConsole)
-            ll.append( ex )
-            log(l,"  >>> EXECUTE:",ex)
+
+            doIf=True
+            if r.ifs:
+                envIf=s.clone()
+                dict_merge(envIf,r.params)
+                doIf=all( [envIf.replaceObjOrNone( i ) for i in r.ifs] )
+
+            if doIf:
+                ex=await r.asyncExecute(s,http,outputConsole=outputConsole)
+                ll.append( ex )
+                log(l,"  >>> EXECUTE:",ex)
+            else:
+                print( cy("**WARNING**"), "'if statement' not resolved" )
+
+
 
         self.exchanges = ll
         return ll
@@ -855,6 +870,9 @@ class ReqGroup(ReqItem):
         self.foreach = foreach
         self.scope = params
 
+    def updateIf( self, o: dict ):
+        for r in self.reqs:
+            r.updateIf(o)
     def updateHeaders( self, o: dict ):
         for r in self.reqs:
             r.updateHeaders(o)
@@ -897,6 +915,7 @@ class Req(ReqItem):
         self.body=None # or str,dict,list,bool,bytes,int,float
         self.doc=None # or str
         self.saves=[]
+        self.ifs=[]
 
     def clone(self):
         r=Req(self.method,self.path,self.parent)
@@ -907,7 +926,14 @@ class Req(ReqItem):
         r.doc = clone(self.doc)
         r.saves = clone(self.saves)
         r.nolimit=clone(self.nolimit)
+        r.ifs=clone(self.ifs)
         return r
+
+    def updateIf( self, o: dict ): # merge headers
+        if 'if' in o:
+            v=o.get("if",None)
+            self.parent._assertType("if",v,[str,int,bool,float])
+            self.ifs.append(v)
 
     def updateHeaders( self, o: dict ): # merge headers
         headers=o.get("headers",{})
@@ -946,6 +972,7 @@ class Req(ReqItem):
     def __repr__(self):
         l=[]
         l.append("<Req %s: %s>" % (self.method,self.path))
+        if self.ifs: l.append("\tif: %s" % (self.ifs))
         if self.headers: l.append("\theaders: %s" % (self.headers))
         if self.params: l.append("\tparams: %s" % (self.params))
         if self.tests: l.append("\ttests: %s" % (self.tests))
@@ -1050,7 +1077,7 @@ class Req(ReqItem):
         except RMPyException as e:
             ex.status=None
             ex.content = e
-            ex.info="TEST EXCEPTION"
+            ex.info="SAVE EXCEPTION"
 
         # important !
         envResponse["content"] = ex.content
@@ -1872,7 +1899,6 @@ def main(fakeServer=None,hookResults=None) -> int:
 
     #extract sys.argv in --> files,rparams,switch
     files,rparams,switches,dswitches=extractParams(params)
-
 
     isOldSheBang = len(files)==1 and rparams==[] and switches==[] and dswitches==[] and not files[0].endswith(".rmr") # DEPRECATED
     isNewSheBang = len(files)==1 and rparams==["i"] and switches==[] and dswitches==[] and not files[0].endswith(".rmr")

@@ -1,0 +1,47 @@
+#!python3 fakereqman.py valid:1,1,1 --b 
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+- context:
+
+  - 
+    if: <<v|moreThanDix>>
+    GET: http://localhost:11111/get_txt
+    doc: <<v|moreThanDix>>
+    tests:
+      - status: 200
+
+- call: context
+  params:
+    moreThanDix: return x>10 #hello roxy music ;-)
+    ok: False
+    v: 9
+
+- call: context
+  params:
+    moreThanDix: return x>10 #hello roxy music ;-)
+    ok: True
+    v: 11
+
+- call: context
+  foreach:
+    - moreThanDix: return x>10 #hello roxy music ;-)
+      ok: False
+      v: 9
+    - moreThanDix: return x>10 #hello roxy music ;-)
+      ok: True
+      v: 11
+
+
+- call: context
+  params:
+    moreThanDix: return x>10 #hello roxy music ;-)
+  foreach:
+    - ok: False
+      v: 9
+    - ok: True
+      v: 11
+
+
