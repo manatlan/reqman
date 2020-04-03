@@ -47,7 +47,7 @@ def test_xpath_ok(exe):
 
     x=exe(".","--o",fakeServer=MOCK)
     # print(x.console)
-    x.view()
+    # x.view()
     assert x.rc == 1  # the bad one ^^
 
 
