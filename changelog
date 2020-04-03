@@ -1,5 +1,7 @@
 THE FUTURE 2.4.0
 - EVOL: simple "if statement" !
+- remove old shebang system
+- selfconf in preparation
 
 2.3.10 (3/4/20)
 - EVOL: (new test system) tests on all vars, with methods too
