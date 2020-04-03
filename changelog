@@ -1,3 +1,6 @@
+- EVOL: tests on all vars, with methods too
+- EVOL: new test header syntax (header.xxx)
+
 2.3.9 (1/4/20)
 - FIX: display headers in console was bugged
 - FIX: better guess value

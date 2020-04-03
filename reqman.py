@@ -491,6 +491,10 @@ class Env(dict):
                 pass
             return obj
 
+    def replaceObjOrNone(self, v: T.Any) -> T.Any:  # same as txtReplace() but for "object" (json'able)
+        v=self.replaceObj( v )
+        return v if self.getNonResolvedVars(v)==[] else None
+
     def getNonResolvedVars(self,txt):
         if type(txt)==str:
             return re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt)
@@ -1218,112 +1222,6 @@ def getValOpe(v):
         pass
     return v, lambda a, b: a == b, "=", "!="
 
-class TestResultOld(list):
-    def __init__(self, tests, status,content,headers) -> None:
-
-        insensitiveHeaders = (
-            {k.lower(): v for k, v in headers.items()}
-        )
-
-        results = []
-        for test in tests:
-            what, value = list(test.keys())[0], list(test.values())[0]
-            testContains = False
-
-            # get the value to compare with value --> tvalue
-            if what == "content":
-                testContains = True
-                tvalue = str(content)
-            elif what == "status":
-                testContains = False
-                tvalue = status
-            elif what.startswith("json."):
-                testContains = False
-                try:
-                    jzon = content.toJson()
-                    tvalue = jpath(jzon, what[5:])
-                    tvalue = None if tvalue is NotFound else tvalue
-                except Exception as e:
-                    tvalue = None
-            elif what.startswith("xml."):
-                #===================================================== EN CHANTIER
-                xp=what[4:]
-
-                xp,ends=xj(xp)
-
-                try:
-                    x=content.toXml()
-                    tvalue = x.xpath(xp)
-                    if type(tvalue)==list and ends:
-                        tvalue=jpath(tvalue,ends)
-                except:
-                    tvalue=None
-                tvalue = None if tvalue is NotFound else tvalue
-
-                #=====================================================
-            else:  # headers
-                testContains = True
-                tvalue = insensitiveHeaders.get(what.lower(), "")
-
-            # test if all match as json (list, dict, str ...)
-            try:
-                def makeComparable(x):
-                    if type(x) is bytes:
-                        return x
-                    else:
-                        return jdumps(json.loads(x) if type(x) in [str, bytes] else x, sort_keys=True)
-
-                matchAll = (makeComparable(value) == makeComparable(tvalue))
-            except json.decoder.JSONDecodeError as e:
-                matchAll = False
-
-            if matchAll:
-                test, opOK, opKO, val = True, "=", "!=", value
-            else:
-                # ensure that we've got a list
-                values = [value] if type(value) != list else value
-                opOK, opKO = None, None
-                bool = False
-
-                for value in values:  # match any
-                    if testContains:
-                        value, ope, opOK, opKO = (
-                            value,
-                            lambda x, c:  toStr(x) in toStr(c),
-                            "contains",
-                            "doesn't contain",
-                        )
-                    else:
-                        value, ope, opOK, opKO = getValOpe(value)
-
-                    try:
-                        bool = ope( guessValue(value), guessValue(tvalue) )
-                    except TypeError:
-                        bool=False
-                    if bool:
-                        break
-
-                bool=bool and status!=None # make test KO if status is invalid 
-
-                if len(values) == 1:
-                    test, opOK, opKO, val = bool, opOK, opKO, value
-                else:
-                    test, opOK, opKO, val = (
-                        bool,
-                        "matchs any",
-                        "doesn't match any",
-                        values,
-                    )
-
-            nameOK=what + " " + opOK + " " + strjs(val)  # test name OK
-            nameKO=what + " " + opKO + " " + strjs(val)  # test name KO
-
-            results.append( Test(test,nameOK, nameKO, strjs(tvalue)) )
-
-        list.__init__(self, results)
-
-    def __repr__(self) -> str:
-        return "".join([ "[%s]"%repr(t) for t in self])
 
 def lowerIfHeader(t:str):
     if t.startswith("header."):
@@ -1337,8 +1235,8 @@ class TestResult(list):
         results = []
         for test in tests:
             what, value = list(test.keys())[0], list(test.values())[0]
-            tvalue=env.replaceObj("<<%s>>" % lowerIfHeader(what))
-            if type(tvalue)==str and tvalue.startswith("<<"): tvalue=None #TODO: use replaceObjOrNone
+            tvalue=env.replaceObjOrNone("<<%s>>" % lowerIfHeader(what))
+
 
             firstWord = re.split(r"[\.|]",what)[0]
             testContains = False # true pour contant & headers !!!!!
