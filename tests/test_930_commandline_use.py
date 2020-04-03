@@ -64,7 +64,7 @@ def test_COMMAND_shebang(exe):   #<- it's not a real test ... just COPY/PASTE th
             - content: ok
         """)
         
-    x=exe("f.yml",fakeServer=mock) # should call A file only !
+    x=exe("--i","f.yml",fakeServer=mock) # should call A file only !
     assert os.path.isfile("reqman.html")
     assert x.rc == 0
     assert "Use SHEBANG : " in x.console

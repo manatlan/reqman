@@ -1940,9 +1940,8 @@ def main(fakeServer=None,hookResults=None) -> int:
     #extract sys.argv in --> files,rparams,switch
     files,rparams,switches,dswitches=extractParams(params)
 
-    isOldSheBang = len(files)==1 and rparams==[] and switches==[] and dswitches==[] and not files[0].endswith(".rmr") # DEPRECATED
     isNewSheBang = len(files)==1 and rparams==["i"] and switches==[] and dswitches==[] and not files[0].endswith(".rmr")
-    if isOldSheBang or isNewSheBang:
+    if isNewSheBang:
         f=files[0]
         if os.path.isfile(f):
             with open(f,"r") as fid:
