@@ -1,6 +1,8 @@
+2.3.10 (3/4/20)
 - EVOL: (new test system) tests on all vars, with methods too
 - EVOL: new test header syntax (header.xxx)
 - EVOL: new option "--i" for force to use shebang mode on a single file
+- pytest: "python3.7 -m pytest tests REALTESTS"
 
 2.3.9 (1/4/20)
 - FIX: display headers in console was bugged
