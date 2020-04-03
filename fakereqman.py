@@ -135,7 +135,7 @@ def checkSign(sign1,sign2):
         dsign1=sign1.split(',')
         dsign2=sign2.split(',')
         if len(dsign1)!=len(dsign2):
-            return "Not same number od requests (is there a new ?)"
+            return "Not same number of requests (is there a new ?)"
         else:
             for idx,(t1,t2) in enumerate(zip(dsign1,dsign2)):
                 if len(t1) != len(t2):

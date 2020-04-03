@@ -1,4 +1,4 @@
-#!python3 fakereqman.py valid:1,11,1 --b 
+#!python3 fakereqman.py valid:00 --b 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -19,7 +19,7 @@
 
     switches:
       yolo:
-        rsc: get_big
+        rsc: get_txt
 
 - GET: /<<rsc>>
   tests:

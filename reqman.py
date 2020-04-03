@@ -422,6 +422,17 @@ class Env(dict):
         self.cookiejar = CookieStore()
 
 
+    # def _getProc(self,name):
+    #     return Reqs(yaml.dump(self[name]) if name in self else "",self,name=name) if name in self else None
+
+    def getBEGIN(self):
+        return Reqs(yaml.dump(self["BEGIN"]) if "BEGIN" in self else "",self,name="BEGIN")
+        # return self._getProc("BEGIN")
+    def getEND(self):
+        return Reqs(yaml.dump(self["END"]) if "END" in self else "",self,name="END") if "END" in self else None
+        # return self._getProc("END")
+
+
     def save(self,key,value,isGlobal=False):
         self[key]=value
         self.__shared[key]=value
@@ -649,6 +660,9 @@ class Reqs(list):
         elif type(env) is dict:
             self.env=Env(env)
 
+        # if "BEGIN" in self.env: del self.env["BEGIN"]
+        # if "END" in self.env: del self.env["END"]
+
         def controle(obj) -> T.List:
             """ Controle that 'obj' is a list of dict, and is valid """
             if type(obj)==list:
@@ -660,6 +674,16 @@ class Reqs(list):
             else:
                 raise self._errorFormat("Reqs: bad object content")
             # here 'obj' is a list of dict
+
+            #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+            # for idx,statement in enumerate(obj):
+            #     if isinstance(statement,dict) and len(statement)==1 and "conf" in statement:
+            #         self.env.update( statement["conf"] )
+            #         del obj[idx]
+            #         print(cy("**WARNING**"), "%s use self conf" % self.name)
+            #         break
+            #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+
             liste=[]
             for i in obj:
                 if isinstance(i,str):
@@ -837,6 +861,17 @@ class Reqs(list):
                             yield l,s,r
 
         ll=[]
+
+        
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+        # reqsBegin=self.env.getBEGIN() if self.name not in ["BEGIN","END"] else None
+        # reqsEnd=self.env.getEND() if self.name not in ["BEGIN","END"] else None
+        # if reqsBegin is not None:
+        #     for r in reqsBegin:
+        #         ll.append( await r.asyncExecute(self.env,http,outputConsole=outputConsole) )                
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+
+
         for l,s,r in _test(self,self.env):
 
             doIf=True
@@ -853,6 +888,12 @@ class Reqs(list):
                 print( cy("**WARNING**"), "'if statement' not resolved" )
 
 
+
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+        # if reqsEnd is not None:
+        #     for r in reqsEnd:
+        #         ll.append( await r.asyncExecute(self.env,http,outputConsole=outputConsole) )                
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         self.exchanges = ll
         return ll
@@ -1474,22 +1515,24 @@ class Reqman:
         for switch in switches:
             scope.mergeSwitch(switch)
 
-        reqsBegin=Reqs(yaml.dump(scope["BEGIN"]) if "BEGIN" in scope else "",scope,name="BEGIN")
-        reqsEnd=Reqs(yaml.dump(scope["END"]) if "END" in scope else "",scope,name="END") if "END" in scope else None
+        reqsBegin=scope.getBEGIN()
+        reqsEnd=scope.getEND()
+
+        lreqs=[]
+        for yml in self.ymls:
+            if isinstance(yml,Reqs):
+                reqs=yml
+                reqs.env = scope
+                lreqs.append( reqs )
+            else:
+                lreqs.append( Reqs( yml, scope ) )   #(no need to clone) scope is cloned at execution time!
+
 
         results=[]
 
         if reqsBegin is not None:
             await reqsBegin.asyncExecute(http)
             results.append( reqsBegin )
-
-        lreqs=[]
-        for yml in self.ymls:
-            if isinstance(yml,Reqs):
-                yml.env = scope
-                lreqs.append( yml )
-            else:
-                lreqs.append( Reqs( yml, scope ) )   #(no need to clone) scope is cloned at execution time!
 
         if paralleliz:
             ll=[reqs.asyncExecute(http, outputConsole=self.outputConsole) for reqs in lreqs]
