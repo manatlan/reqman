@@ -160,8 +160,12 @@ def main( runServer=False ):
 
     frc=None
     if rc>=0 and hasattr(o,"rr"):
-        toValid="%s:%s:%s" % (o.rr.ok,o.rr.total,o.rr.nbReqs)
-
+        details=[]
+        for i in o.rr.results:
+            for j in i.exchanges:
+                details.append("".join([str(int(t)) for t in j.tests]))
+        toValid=",".join(details)
+        
         if valid:
             frc=0 if valid==toValid else 1
             print("> Check valid:",valid,"?==",toValid,"-->",frc)
