@@ -1,0 +1,9 @@
+#!python3 fakereqman.py valid:1 --b root:http://localhost:11111
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+- GET: /get_json # use <<root>> from command line !
+  tests:
+      - status: 200
