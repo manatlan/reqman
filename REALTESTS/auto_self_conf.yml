@@ -1,0 +1,28 @@
+#!python3 fakereqman.py valid:1,11,1 --b 
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+- conf:
+    root: http://localhost:11111
+    rsc: bigtxt
+
+    BEGIN:
+      GET: http://localhost:11111/get_txt
+      tests:
+        status: 200
+    END:
+      GET: http://localhost:11111/get_txt
+      tests:
+        status: 200
+
+    switches:
+      yolo:
+        rsc: get_big
+
+- GET: /<<rsc>>
+  tests:
+    - status: 200
+    - content: 1234
+
