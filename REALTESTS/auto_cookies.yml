@@ -7,45 +7,45 @@
 #--------------------------------------------------------------
 
 - CONTEXT:
-  - GET: /testCookie/create
+  - GET: /cookie?value=create
     tests:
       - status: 200
       - set-cookie: cpt=0; Path=/
       - content: create
 
-  - GET: /testCookie/inc
+  - GET: /cookie?value=inc
     tests:
       - status: 200
       - set-cookie: cpt=1; Path=/
       - content: inc
 
-  - GET: /testCookie/inc
+  - GET: /cookie?value=inc
     tests:
       - status: 200
       - set-cookie: cpt=2; Path=/
       - content: inc
 
-  - GET: /testCookie/view
+  - GET: /cookie?value=view
     tests:
       - status: 200
       - content: "2"
 
-  - GET: /testCookie/inc
+  - GET: /cookie?value=inc
     tests:
       - status: 200
       - set-cookie: cpt=3; Path=/
       - content: inc
 
-  - GET: /testCookie/del
+  - GET: /cookie?value=del
     tests:
       - status: 200
       - content: del
 
-  - GET: /testCookie/view
+  - GET: /cookie?value=view
     tests:
       - status: 200
       - content: "no"
 
 - call: CONTEXT
   params:
-    root: https://manatlan.alwaysdata.net
+    root: http://127.0.0.1:11111

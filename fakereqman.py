@@ -11,6 +11,36 @@ routes = web.RouteTableDef()
 async def hello(request):
     return web.Response(status=200,text=request.query.get("value","?"))
 
+@routes.get('/cookie')
+async def cookie(request):
+    resp=web.Response(status=200,text="?")
+    
+    argv=request.query.get("value","?")
+    if argv=="create":
+        resp.set_cookie("cpt",0)
+        msg= "create"
+    elif argv=="inc":
+        cpt=int(request.cookies.get("cpt",-1))
+        if cpt>=0:
+            resp.set_cookie("cpt",cpt+1)
+            msg="inc"
+        else:
+            msg="no"
+    elif argv=="view":
+        cpt=int(request.cookies.get("cpt",-1))
+        if cpt>=0:
+            msg=str(cpt)
+        else:
+            msg="no"
+    elif argv=="del":
+        resp.del_cookie("cpt")
+        msg="del"
+    else:
+        msg="???"
+
+    resp.text=msg
+    return resp
+
 @routes.get('/bigtxt')
 async def hello(request):
     return web.Response(status=200,text="".join(["[%s]" % i for i in range(10000)]))
