@@ -165,53 +165,54 @@ def main( runServer=False ):
             ws.start()
             import time
             time.sleep(1) # wait server start ;-(
-
-        valid,*args=newValids[0]
-        if runServer==False and "--b" in args: args.remove("--b") # remove --b when pytest ;-)
-        sys.argv = cmds + args
         
-        rc=reqman.main(hookResults=o)
+        for newValid in newValids:
+            valid,*args=newValid
+            if runServer==False and "--b" in args: args.remove("--b") # remove --b when pytest ;-)
+            sys.argv = cmds + args
+            
+            rc=reqman.main(hookResults=o)
+
+            if rc>=0 and hasattr(o,"rr"):
+                details=[]
+                details2=[]
+                for i in o.rr.results:
+                    for j in i.exchanges:
+                        if type(j)==tuple:
+                            details.append("".join([str(int(t)) for t in j[0].tests]))
+                            details2.append("".join([str(int(t)) for t in j[1].tests]))
+                        else:
+                            details.append("".join([str(int(t)) for t in j.tests]))
+                toValid=",".join(details)
+                if details2: toValid+=":"+",".join(details2)
+                
+                if valid:
+                    err=checkSign(valid,toValid)
+                    print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
+                else:
+                    print("> No validation check! (valid:%s)" % toValid)
+                    err=None
+            else:
+                toValid="ERROR"
+                if valid:
+                    err="" if valid==toValid else "mismatch (%s!=%s)" % (valid,toValid)
+                    print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
+                else:
+                    print("> No validation check! (valid:%s)" % toValid)
+                    err=None    
+
+            yield err
     finally:
         if runServer:
             ws.stop()
     
-    if rc>=0 and hasattr(o,"rr"):
-        details=[]
-        details2=[]
-        for i in o.rr.results:
-            for j in i.exchanges:
-                if type(j)==tuple:
-                    details.append("".join([str(int(t)) for t in j[0].tests]))
-                    details2.append("".join([str(int(t)) for t in j[1].tests]))
-                else:
-                    details.append("".join([str(int(t)) for t in j.tests]))
-        toValid=",".join(details)
-        if details2: toValid+=":"+",".join(details2)
-        
-        if valid:
-            err=checkSign(valid,toValid)
-            print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
-        else:
-            print("> No validation check! (valid:%s)" % toValid)
-            err=None
-    else:
-        toValid="ERROR"
-        if valid:
-            err="" if valid==toValid else "mismatch (%s!=%s)" % (valid,toValid)
-            print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
-        else:
-            print("> No validation check! (valid:%s)" % toValid)
-            err=None
-
-    return err
 
 
 if __name__=="__main__":
-    err=main(runServer=True)
-    if err is None:
-        sys.exit( -1)
-    elif err=="":
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    for err in main(runServer=True):
+        if err is None:
+            sys.exit( -1)
+        elif err:
+            sys.exit(1)
+    sys.exit(0)
 

@@ -22,12 +22,13 @@ def test_file(file):
 
 def run(params):
     sys.argv=params
-
+    err=""
     fo,fe = io.StringIO(),io.StringIO()
     with contextlib.redirect_stderr(fe):
         with contextlib.redirect_stdout(fo):
-            err=fakereqman.main(runServer=False)
-    print(">"," ".join(sys.argv),"--->",err or "ok")
+            for err in fakereqman.main(runServer=False):
+                if err:
+                    break
 
     output=fo.getvalue()+fe.getvalue()
     return err
