@@ -145,7 +145,7 @@ def checkSign(sign1,sign2):
                         diffs=[i+1 for i,(a1,a2)  in enumerate(zip(t1,t2)) if a1!=a2]
                         return "Req %s fail on its %s test" % (idx+1,diffs[0])
 
-def main( runServer=False ):
+def main( cmds, runServer=False ):
     """
     retourne 0 : si valid est ok
     retourne 1 : si valid est ko
@@ -154,7 +154,6 @@ def main( runServer=False ):
     class RR: pass
     o=RR()
 
-    cmds=sys.argv[:]
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
     newValids=[i[8:].strip().split(" ") for i in reqman.FString(cmds[1]).splitlines() if i.startswith("#:valid:")]
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
@@ -209,7 +208,7 @@ def main( runServer=False ):
 
 
 if __name__=="__main__":
-    for err in main(runServer=True):
+    for err in main(sys.argv[:],runServer=True):
         if err is None:
             sys.exit( -1)
         elif err:
