@@ -5,5 +5,5 @@
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 - GET: /get_json # use <<root>> from command line !
-  tests:
-      - status: 200
+  tests: # headers as dict (bad practice)
+      status: 200
