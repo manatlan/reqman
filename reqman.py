@@ -306,6 +306,7 @@ def DYNAMIC(x, env: dict) -> T.Union[str, None]:
     pass  # will be overriden (see below vv)
 
 def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
+    orig=Env(elem)
     for i in path.strip(".").split("."):
         try:
             if type(elem) == list:
@@ -318,6 +319,10 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
                     return len(list(elem.keys()))
                 else:
                     elem = elem.get(i, NotFound)
+
+                    if isPython(elem):
+                        elem=orig.transform(None, i)
+
             elif type(elem) == str:
                 if i == "size":
                     return len(elem)
@@ -412,13 +417,14 @@ class Env(dict):
             except Exception as e:
                 raise RMFormatException("Env conf is not yaml")
 
-        if type(d) is not dict:
-            raise RMFormatException("Env conf is not a dict")
+        if type(d) not in [dict,Env]:
+            # raise RMFormatException("Env conf is not a dict %s" % str(d))
+            d={}
 
         self.__shared={} # shared saved scope between all cloned Env
         self.__global={} # shared global saved scope between all cloned Env (from BEGIN only)
 
-        dict.__init__(self,d)
+        dict.__init__(self,dict(d))
         self.cookiejar = CookieStore()
 
 
@@ -546,12 +552,7 @@ class Env(dict):
                         else:
                             return ll
                     #-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
-                    x=jpath(self, var)
-                    if isPython(x):
-                        ld,lf=var.split(".",1)
-                        r=self.transform(None, ld)
-                        x=jpath(r,lf)
-                    return x
+                    return jpath(self, var)
 
                 elif var in self:
                     if isPython(self[var]):
@@ -2121,6 +2122,9 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 if __name__=="__main__":
     sys.exit(main())
+
+    # *** FOR DEDUG ***
     # import fakereqman
-    # sys.argv=["","REALTESTS/auto_980_xml.yml","--k"]
+    # sys.argv=["","REALTESTS/auto_check_values.yml"]
     # fakereqman.main()
+

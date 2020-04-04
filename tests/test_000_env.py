@@ -30,11 +30,13 @@ def test_createEnv():
     assert reqman.Env( "a: 42" ) == {"a":42}
 
 def test_createEnvBad():
-    with pytest.raises(reqman.RMFormatException):
-        reqman.Env( list("abc") )
+    assert reqman.Env( list("abc") ) == {}
+    assert reqman.Env( "[1,2,3]" ) == {}
+    # with pytest.raises(reqman.RMFormatException):
+    #     reqman.Env( list("abc") )
 
-    with pytest.raises(reqman.RMFormatException):
-        reqman.Env( "[1,2,3]" )
+    # with pytest.raises(reqman.RMFormatException):
+    #     reqman.Env( "[1,2,3]" )
 
     with pytest.raises(reqman.RMFormatException):
         reqman.Env( "- yolo\nbad: yaml" )
@@ -57,6 +59,11 @@ def test_jpath():
     assert reqman.jpath(env, "tata.l.1") == "b"
     assert reqman.jpath(env, "tata.l.1.size") == 1
     assert reqman.jpath(env, "tata.l.size") == 3
+
+def test_jpath_python():
+    env=dict(fct="return dict(a=dict(b=42))")
+    assert reqman.jpath( env, "fct.size") == 1
+    assert reqman.jpath( env, "fct.a.b") == 42
 
 def test_simple():
     dt = datetime.datetime.now()

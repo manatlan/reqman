@@ -1,4 +1,4 @@
-#!python3 fakereqman.py valid:1111111111111 --b 
+#!python3 fakereqman.py valid:1111111111111111111111111 --b 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -13,8 +13,13 @@ headers:  # headers as list of dict (bad practice)
 params:
   fct: |
     return dict(a=dict(b=42))
+  fct2: |
+    return list("abc")
   fbytes:
     return b"ABCD"
+  trans:
+    return x and "-%s-" %x
+  known: 42
 tests: 
   - status: 200
   - status: . = 200
@@ -29,6 +34,22 @@ tests:
         - 201
   - json.info.size: 3   # size of dict
   - json.infos.size: 3  # size of list
-  - fct.a.b: 42
+
   - fbytes: <<fbytes>>
 
+  - unknown|trans: null
+  - known: 42
+  - known|trans: "-42-"
+
+  - fct.a.b: 42
+  - fct2.0: a
+  - fct2.-1: c
+
+  - fct.size: 1
+  - fct.a.size: 1
+  - fct2.size: 3
+
+  - fct.unknown: null
+  - fct.unknown.size: null
+  - fct2.unknown.size: null
+  - fct2.unknown.size: null
