@@ -1,0 +1,51 @@
+#!python3 fakereqman.py 
+#:valid:111,111,111,11,111,11,11 --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- CONTEXT:
+  - GET: /testCookie/create
+    tests:
+      - status: 200
+      - set-cookie: cpt=0; Path=/
+      - content: create
+
+  - GET: /testCookie/inc
+    tests:
+      - status: 200
+      - set-cookie: cpt=1; Path=/
+      - content: inc
+
+  - GET: /testCookie/inc
+    tests:
+      - status: 200
+      - set-cookie: cpt=2; Path=/
+      - content: inc
+
+  - GET: /testCookie/view
+    tests:
+      - status: 200
+      - content: "2"
+
+  - GET: /testCookie/inc
+    tests:
+      - status: 200
+      - set-cookie: cpt=3; Path=/
+      - content: inc
+
+  - GET: /testCookie/del
+    tests:
+      - status: 200
+      - content: del
+
+  - GET: /testCookie/view
+    tests:
+      - status: 200
+      - content: "no"
+
+- call: CONTEXT
+  params:
+    root: https://manatlan.alwaysdata.net

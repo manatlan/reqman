@@ -33,6 +33,6 @@
   tests:
     - status: 200
     - content: "ok"
-    - msg: h\xe9h\xe9     # test header
-    - Msg: h\xe9h\xe9     # test header mixed case
-    - MSG: h\xe9h\xe9     # test header mixed case
+    - msg: héhé     # test header
+    - Msg: héhé     # test header mixed case
+    - MSG: héhé     # test header mixed case

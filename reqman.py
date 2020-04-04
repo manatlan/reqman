@@ -254,7 +254,7 @@ async def request(method,url,body:bytes,headers, timeout=None):
                     txt=await r.text()
                     content=txt.encode("utf-8") # force bytes to be in utf8
                     
-            h={k:ascii(v) for k,v in dict(r.headers).items()} # avoid surrogate (because headers are ascii only!)
+            h={k:v for k,v in dict(r.headers).items()} # avoid surrogate (because headers are ascii only!)
             info = "HTTP/%s.%s %s %s" % (r.version.major,r.version.minor, int(r.status), r.reason)
             return r.status, h, Content(content), info
     except aiohttp.client_exceptions.ClientConnectorError as e:
@@ -1108,7 +1108,7 @@ class Req(ReqItem):
         envResponse = scope.clone()
         envResponse["content"] = ex.content
         envResponse["status"] = ex.status
-        envResponse["header"] = {k.lower():v[1:-1] for k,v in ex.outHeaders.items()}  # NEW !!!!
+        envResponse["header"] = {k.lower():v for k,v in ex.outHeaders.items()}  # NEW !!!!
         #TODO: expose time ?
         try:
             envResponse["json"] = ex.content.toJson()
@@ -1149,7 +1149,7 @@ class Req(ReqItem):
                 print("*",cy(ex.method),ex.url,"-->",cw(ex.content if ex.status is None else ex.status))
 
                 if outputConsole == OutputConsole.FULL:
-                    display=lambda h: "\n".join(["%s: %s" %(k,v[1:-1]) for k,v in h.items()])
+                    display=lambda h: "\n".join(["%s: %s" %(k,v) for k,v in h.items()])
                     if ex.inHeaders: print( padLeft( display(ex.inHeaders) ) )
                     if ex.body: print(padLeft(ex.bodyContent))
                     print(padLeft("-"*75))

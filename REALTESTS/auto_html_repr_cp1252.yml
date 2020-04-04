@@ -33,4 +33,4 @@
   tests:
     - status: 200
     - content: "ok"
-    - msg: h\xe9h\xe9
+    - msg: héhé
