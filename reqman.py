@@ -431,10 +431,16 @@ class Env(dict):
     def _getProc(self,name):
         return Reqs(yaml.dump(self[name]) if name in self else "",self,name=name)
 
-    def getBEGIN(self):
-        return self._getProc("BEGIN")
-    def getEND(self):
-        return self._getProc("END")
+    def getBEGIN(self,local=False):
+        if local:
+            return self._getProc(".BEGIN")
+        else:
+            return self._getProc("BEGIN")
+    def getEND(self,local=False):
+        if local:
+            return self._getProc(".END")
+        else:
+            return self._getProc("END")
 
 
     def save(self,key,value,isGlobal=False):
@@ -485,8 +491,6 @@ class Env(dict):
                 switches=self.get("switchs",{})
             if switch in switches:
                 dict_merge(self,switches[switch])
-            else:
-                raise RMException("bad switch '%s'" % switch)
 
     def replaceObj(self, v: T.Any) -> T.Any:  # same as txtReplace() but for "object" (json'able)
         if type(v) is bytes:
@@ -644,11 +648,10 @@ class Env(dict):
 
 
 class Reqs(list):
-    def __init__( self, obj:T.Union[str,FString], env=None, trace=False, name="<YamlString>" ):
+    def __init__( self, obj:T.Union[str,FString], env=None, trace=False, name="<YamlString>",switches=[] ):
         self.__proc={}
         self._trace=trace
         self.exchanges=None   # list of Exchange
-        # self.name=type(obj) is FString and os.path.relpath(obj.filename, os.getcwd()) or name
         self.name=obj.filename if type(obj) is FString else name
 
 
@@ -659,8 +662,6 @@ class Reqs(list):
         elif type(env) is dict:
             self.env=Env(env)
 
-        # if "BEGIN" in self.env: del self.env["BEGIN"]
-        # if "END" in self.env: del self.env["END"]
 
         def controle(obj) -> T.List:
             """ Controle that 'obj' is a list of dict, and is valid """
@@ -674,13 +675,24 @@ class Reqs(list):
                 raise self._errorFormat("Reqs: bad object content")
             # here 'obj' is a list of dict
 
-            #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
-            # for idx,statement in enumerate(obj):
-            #     if isinstance(statement,dict) and len(statement)==1 and "conf" in statement:
-            #         self.env.update( statement["conf"] )
-            #         del obj[idx]
-            #         print(cy("**WARNING**"), "%s use self conf" % self.name)
-            #         break
+            #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+            for idx,statement in enumerate(obj):
+                if isinstance(statement,dict) and len(statement)==1 and "conf" in statement:
+
+                    s=statement["conf"]
+                    ss=json.dumps(s)
+                    ss=ss.replace('"BEGIN"','".BEGIN"') #TODO: do better here!
+                    ss=ss.replace('"END"','".END"')
+                    s=json.loads(ss)
+
+                    localEnv=Env(s)       
+                    for switch in switches:
+                        localEnv.mergeSwitch(switch)
+
+                    self.env.update( dict(localEnv) )
+                    del obj[idx]
+                    print(cy("**WARNING**"), "%s use self conf" % self.name)
+                    break
             #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
             liste=[]
@@ -863,11 +875,11 @@ class Reqs(list):
 
         
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-        # reqsBegin=self.env.getBEGIN() if self.name not in ["BEGIN","END"] else None
-        # reqsEnd=self.env.getEND() if self.name not in ["BEGIN","END"] else None
-        # if reqsBegin is not None:
-        #     for r in reqsBegin:
-        #         ll.append( await r.asyncExecute(self.env,http,outputConsole=outputConsole) )                
+        reqsBegin=self.env.getBEGIN(local=True)
+        reqsEnd=self.env.getEND(local=True) 
+        if reqsBegin is not None:
+            for r in reqsBegin:
+                ll.append( await r.asyncExecute(self.env,http,outputConsole=outputConsole) )                
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
 
@@ -889,9 +901,9 @@ class Reqs(list):
 
 
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-        # if reqsEnd is not None:
-        #     for r in reqsEnd:
-        #         ll.append( await r.asyncExecute(self.env,http,outputConsole=outputConsole) )                
+        if reqsEnd is not None:
+            for r in reqsEnd:
+                ll.append( await r.asyncExecute(self.env,http,outputConsole=outputConsole) )                
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         self.exchanges = ll
@@ -1521,7 +1533,7 @@ class Reqman:
                 reqs.env = scope
                 lreqs.append( reqs )
             else:
-                lreqs.append( Reqs( yml, scope ) )   #(no need to clone) scope is cloned at execution time!
+                lreqs.append( Reqs( yml, scope ,switches=switches) )   #(no need to clone) scope is cloned at execution time!
 
 
         results=[]
@@ -1619,8 +1631,18 @@ class ReqmanCommand:
 
         rqc=findRCup(cp)
         if rqc:
-            # os.chdir( os.path.dirname(rqc) ) # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: needed ?
             self._r.env=Env( FString(rqc))
+
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+        self.fileSwitches=[]
+        for i in files:
+            try:
+                for s in yaml.load(FString(i),Loader=yaml.FullLoader):
+                    if "conf" in s:
+                        self.fileSwitches.extend( list(Env(s["conf"]).switches) )
+            except:
+                pass
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
 
         for k,v in penv.items():    # add param's input env into env
             self._r.env[k]=v
@@ -1634,7 +1656,7 @@ class ReqmanCommand:
 
     @property
     def switches(self):
-        return self._r.switches
+        return self._r.switches+self.fileSwitches
 
     def execute(self, switches=[], paralleliz=False, outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanResult:
         self._r.outputConsole=outputConsole
@@ -2023,6 +2045,8 @@ def main(fakeServer=None,hookResults=None) -> int:
                 rr=ReqmanDualResult(rr1,rr2)
             else:
                 r=ReqmanCommand(*files)
+                if not all( [s in [i[0] for i in r.switches] for s in switches] ): raise RMCommandException("bad switch")
+                if not all( [s in [i[0] for i in r.switches] for s in dswitches] ): raise RMCommandException("bad switch")
                 if r.nbFiles<1:  raise RMCommandException("no yml files found")
 
                 rr=loop.run_until_complete( r.asyncExecuteDual(switches,dswitches,outputConsole=outputConsole,fakeServer=fakeServer) )
@@ -2044,6 +2068,7 @@ def main(fakeServer=None,hookResults=None) -> int:
                     rr=loop.run_until_complete( r.asyncExecute(switches,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
             else:
                 r=ReqmanCommand(*files)
+                if not all( [s in [i[0] for i in r.switches] for s in switches] ): raise RMCommandException("bad switch")
                 if r.nbFiles<1:  raise RMCommandException("no yml files found")
 
                 rr=loop.run_until_complete( r.asyncExecute(switches,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )

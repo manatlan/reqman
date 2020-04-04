@@ -17,23 +17,8 @@ def teardown_module():
 
 @pytest.mark.parametrize('file', glob("REALTESTS/auto_*.yml") )
 def test_file(file):
-    txt=reqman.FString(file)
-    firstLine=txt.splitlines()[0]
-    
-    # get args from the shebang on the yaml
-    cmd,params=(firstLine.split("reqman.py"))
-    args=params.strip().split(" ")
-
-    # remove "--b" to avoid opening tabs
-    if "--b" in args: args.remove("--b")
-
-    # and do the tests with optionnal "valid:x:x:x"
-    err=run(["FAKEREQMAN",file] + args)
+    err=run(["FAKEREQMAN",file])
     assert err=="", "File '%s' : %s" % (file,err)
-
-    err=run(["FAKEREQMAN",file] + args + ["--o"])
-    assert err=="", "File '%s' : %s" % (file,err)    
-
 
 def run(params):
     sys.argv=params
@@ -46,5 +31,4 @@ def run(params):
 
     output=fo.getvalue()+fe.getvalue()
     return err
-
 

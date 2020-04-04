@@ -1,4 +1,5 @@
-#!python3 fakereqman.py valid:ERROR --b -UNKNWON
+#!python3 fakereqman.py
+#:valid:ERROR --b -UNKNWON
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)

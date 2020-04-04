@@ -151,22 +151,13 @@ def main( runServer=False ):
     retourne 1 : si valid est ko
     retourne None : si pas validation
     """
-
-
     class RR: pass
     o=RR()
 
-    #check valid in argv -> valid
-    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    removeArgIdx=None
-    valid=None
-    for idx, argv in enumerate(sys.argv):
-        if argv.startswith("valid:"):
-            valid = argv[6:]
-            removeArgIdx=idx
-    if removeArgIdx:
-        del sys.argv[removeArgIdx]
-    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    cmds=sys.argv[:]
+    #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
+    newValids=[i[8:].strip().split(" ") for i in reqman.FString(cmds[1]).splitlines() if i.startswith("#:valid:")]
+    #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
 
     try:
         if runServer:
@@ -175,18 +166,27 @@ def main( runServer=False ):
             import time
             time.sleep(1) # wait server start ;-(
 
+        valid,*args=newValids[0]
+        if runServer==False and "--b" in args: args.remove("--b") # remove --b when pytest ;-)
+        sys.argv = cmds + args
+        
         rc=reqman.main(hookResults=o)
     finally:
         if runServer:
             ws.stop()
-
-    frc=None
+    
     if rc>=0 and hasattr(o,"rr"):
         details=[]
+        details2=[]
         for i in o.rr.results:
             for j in i.exchanges:
-                details.append("".join([str(int(t)) for t in j.tests]))
+                if type(j)==tuple:
+                    details.append("".join([str(int(t)) for t in j[0].tests]))
+                    details2.append("".join([str(int(t)) for t in j[1].tests]))
+                else:
+                    details.append("".join([str(int(t)) for t in j.tests]))
         toValid=",".join(details)
+        if details2: toValid+=":"+",".join(details2)
         
         if valid:
             err=checkSign(valid,toValid)
@@ -197,7 +197,7 @@ def main( runServer=False ):
     else:
         toValid="ERROR"
         if valid:
-            err="" if valid==toValid else "no error"
+            err="" if valid==toValid else "mismatch (%s!=%s)" % (valid,toValid)
             print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
         else:
             print("> No validation check! (valid:%s)" % toValid)
