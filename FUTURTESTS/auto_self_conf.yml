@@ -5,13 +5,6 @@
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 
-# SELFCONF test (currently, it's only a weird proc (uncallable ;-))
-# SELFCONF test (currently, it's only a weird proc (uncallable ;-))
-# SELFCONF test (currently, it's only a weird proc (uncallable ;-))
-# SELFCONF test (currently, it's only a weird proc (uncallable ;-))
-# SELFCONF test (currently, it's only a weird proc (uncallable ;-))
-# SELFCONF test (currently, it's only a weird proc (uncallable ;-))
-
 - conf:
     root: http://localhost:11111
     rsc: bigtxt

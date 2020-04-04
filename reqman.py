@@ -428,15 +428,13 @@ class Env(dict):
         self.cookiejar = CookieStore()
 
 
-    # def _getProc(self,name):
-    #     return Reqs(yaml.dump(self[name]) if name in self else "",self,name=name) if name in self else None
+    def _getProc(self,name):
+        return Reqs(yaml.dump(self[name]) if name in self else "",self,name=name)
 
     def getBEGIN(self):
-        return Reqs(yaml.dump(self["BEGIN"]) if "BEGIN" in self else "",self,name="BEGIN")
-        # return self._getProc("BEGIN")
+        return self._getProc("BEGIN")
     def getEND(self):
-        return Reqs(yaml.dump(self["END"]) if "END" in self else "",self,name="END") if "END" in self else None
-        # return self._getProc("END")
+        return self._getProc("END")
 
 
     def save(self,key,value,isGlobal=False):
