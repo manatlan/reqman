@@ -147,9 +147,9 @@ def checkSign(sign1,sign2):
 
 def main( cmds, runServer=False ):
     """
-    retourne 0 : si valid est ok
-    retourne 1 : si valid est ko
-    retourne None : si pas validation
+    yield "" : si valid est ok
+    yield "error" : si valid est ko
+    yield None : si pas validation
     """
     class RR: pass
     o=RR()
