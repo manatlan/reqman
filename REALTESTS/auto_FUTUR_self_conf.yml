@@ -1,8 +1,8 @@
 #!python3 fakereqman.py 
-#:valid:1,1,1 --b
+#:valid:1 --b
 #:valid:1,1,1 --b -yolo
 #:valid:1,1,1 --b -yolo --s
-#:valid:1,1,1:1,1,1 --b +yolo
+#:valid:1:1,1,1 --b +yolo
 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
@@ -12,22 +12,19 @@
 
 - conf:
     root: http://localhost:11111
-    rsc: bigtxt
-
-    BEGIN:
-      GET: http://localhost:11111/get_txt
-      tests:
-        status: 200
-    END:
-      GET: http://localhost:11111/get_txt
-      tests:
-        status: 200
 
     switches:
       yolo:
-        rsc: get_txt
+        BEGIN:
+          GET: http://localhost:11111/get_txt
+          tests:
+            status: 200
+        END:
+          GET: http://localhost:11111/get_txt
+          tests:
+            status: 200
 
-- GET: /<<rsc>>
+- GET: /get_txt
   tests:
     - status: 200
 

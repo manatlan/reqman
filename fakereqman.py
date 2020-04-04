@@ -179,8 +179,8 @@ def main( runServer=False ):
                 for i in o.rr.results:
                     for j in i.exchanges:
                         if type(j)==tuple:
-                            details.append("".join([str(int(t)) for t in j[0].tests]))
-                            details2.append("".join([str(int(t)) for t in j[1].tests]))
+                            if j[0]: details.append("".join([str(int(t)) for t in j[0].tests]))
+                            if j[1]: details2.append("".join([str(int(t)) for t in j[1].tests]))
                         else:
                             details.append("".join([str(int(t)) for t in j.tests]))
                 toValid=",".join(details)
