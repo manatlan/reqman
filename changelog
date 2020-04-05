@@ -2,7 +2,8 @@ THE FUTURE 2.4.0
 - EVOL: simple "if statement" !
 - remove old shebang system
 - FIX: jpath can now resolve python methods too !!! (in a good way)
-- selfconf in preparation
+- selfconf is enabled
+- EVOL: command line var params are guessed now (from json string)!
 
 2.3.10 (3/4/20)
 - EVOL: (new test system) tests on all vars, with methods too

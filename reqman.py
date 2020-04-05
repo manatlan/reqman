@@ -1647,7 +1647,7 @@ class ReqmanCommand:
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
 
         for k,v in penv.items():    # add param's input env into env
-            self._r.env[k]=v
+            self._r.env[k]=guessValue(v)
 
         for i in files:
             self._r.add(FString(i))
