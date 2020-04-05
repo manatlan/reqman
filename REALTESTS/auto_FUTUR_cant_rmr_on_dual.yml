@@ -1,6 +1,6 @@
 #!python3 fakereqman.py 
-#:valid:1,1,1 -yolo
-#:valid:ERROR +yolo --s               # can't save RMR when DUAL MODE!
+#:valid:1,1,1 THIS -yolo
+#:valid:ERROR THIS +yolo --s               # can't save RMR when DUAL MODE!
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)

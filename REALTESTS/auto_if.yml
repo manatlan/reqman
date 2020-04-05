@@ -1,5 +1,5 @@
-#!python3 fakereqman.py 
-#:valid:1,1 --b 
+#!python3 fakereqman.py
+#:valid:1,1 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -36,7 +36,7 @@
       ok: True
       v: 11
 
-- call: 
+- call:
     - notcallable
     - all
   params:

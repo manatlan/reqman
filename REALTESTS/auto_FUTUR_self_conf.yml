@@ -1,8 +1,8 @@
-#!python3 fakereqman.py 
-#:valid:1 --b
-#:valid:1,1,1 --b -yolo
-#:valid:1,1,1 --b    -yolo    --S
-#:valid:1:1,1,1 --b +yolo
+#!python3 fakereqman.py
+#:valid:1 THIS --b
+#:valid:1,1,1 THIS --b -yolo
+#:valid:1,1,1 THIS --b    -yolo    --S
+#:valid:1:1,1,1 THIS --b +yolo
 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------

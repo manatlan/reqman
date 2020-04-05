@@ -1,6 +1,6 @@
 #!python3 fakereqman.py 
-#:valid:1111111111111111111111111 --b 
-#:valid:1111111111111111111111111 --o     # a test for output in console only ;-)
+#:valid:1111111111111111111111111 THIS --b 
+#:valid:1111111111111111111111111 THIS --o     # a test for output in console only ;-)
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)

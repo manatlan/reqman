@@ -175,7 +175,7 @@ def checkSign(sign1,sign2):
                         diffs=[i+1 for i,(a1,a2)  in enumerate(zip(t1,t2)) if a1!=a2]
                         return "Req %s fail on its %s test" % (idx+1,diffs[0])
 
-def main( cmds, avoidBrowser=True ):
+def main( file, avoidBrowser=True ):
     """
     yield "" : si valid est ok
     yield "error" : si valid est ko
@@ -185,13 +185,14 @@ def main( cmds, avoidBrowser=True ):
     o=RR()
 
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
-    newValids=[i[8:-i.rfind('#') or None].strip().split() for i in reqman.FString(cmds[1]).splitlines() if i.startswith("#:valid:")]
+    newValids=[i[8:-i.rfind('#') or None].strip().split() for i in reqman.FString(file).splitlines() if i.startswith("#:valid:")]
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
 
     for newValid in newValids:
         valid,*args=newValid
+        args=[file if i=="THIS" else i for i in args]
         if avoidBrowser==True and "--b" in args: args.remove("--b") # remove --b when pytest ;-)
-        sys.argv = cmds + args
+        sys.argv = ["reqman"] + args
         
         rc=reqman.main(hookResults=o)
 
@@ -235,11 +236,12 @@ if __name__=="__main__":
         import time
         time.sleep(1) # wait server start ;-(
 
-        for err in main(sys.argv[:],avoidBrowser=False):
+        for err in main(sys.argv[1],avoidBrowser=False):
             if err is None:
                 sys.exit( -1)
             elif err:
                 sys.exit(1)
+        print("*** ALL IS OK ***")
         sys.exit(0)
     finally:
         ws.stop()

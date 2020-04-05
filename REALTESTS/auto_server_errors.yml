@@ -1,5 +1,5 @@
-#!python3 fakereqman.py 
-#:valid:00,00,11,11 --b 
+#!python3 fakereqman.py
+#:valid:00,00,11,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -13,7 +13,7 @@
           - status: 200
           - content: nimp
 
-      - GET: htxxtp:/localhost.17219 
+      - GET: htxxtp:/localhost.17219
         tests:
           - status: 200
           - content: nimp

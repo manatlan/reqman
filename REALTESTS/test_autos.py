@@ -24,7 +24,7 @@ def test_file(file):
         testdir = tempfile.mkdtemp()
         os.chdir( testdir )
 
-        err=run(["FAKEREQMAN",file])
+        err=run(file)
         assert err=="", "File '%s' : %s" % (file,err)
 
     finally:

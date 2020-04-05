@@ -1,6 +1,6 @@
 #!python3 fakereqman.py
-#:valid:0                                        # no root -> unreachable
-#:valid:1 --b root:http://localhost:11111
+#:valid:0 THIS                                        # no root -> unreachable
+#:valid:1 THIS --b root:http://localhost:11111
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
