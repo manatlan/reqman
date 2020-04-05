@@ -1,0 +1,26 @@
+#!python3 fakereqman.py 
+#:valid:ERROR --b +yolo --s               # can't save RMR when DUAL MODE!
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- conf:
+    root: http://localhost:11111
+
+    switches:
+      yolo:
+        BEGIN:
+          GET: http://localhost:11111/get_txt
+          tests:
+            status: 200
+        END:
+          GET: http://localhost:11111/get_txt
+          tests:
+            status: 200
+
+- GET: /get_txt
+  tests:
+    - status: 200
+

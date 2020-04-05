@@ -1379,8 +1379,8 @@ class TestResult(list):
                 else:
                     test, opOK, opKO, val = (
                         bool,
-                        "matchs any",
-                        "doesn't match any",
+                        "in",
+                        "not in",
                         values,
                     )
 
@@ -1447,8 +1447,9 @@ class ReqmanResult(Result):
     def switches(self):
         return self.infos[0]["switches"] #TODO: not top (but needed for replaying)
 
-    def saveRMR(self):
-        name="_".join( [self.infos[0]["date"].strftime("%y%m%d_%H%M")] + self.infos[0]["switches"] )+".rmr"
+    def saveRMR(self,name=None):
+        if name is None:
+            name="_".join( [self.infos[0]["date"].strftime("%y%m%d_%H%M")] + self.infos[0]["switches"] )+".rmr"
         with open(name, 'wb') as fid:
             x=pickle.dumps(self)
             fid.write(b"RMR1"+zlib.compress(x))
@@ -2045,6 +2046,9 @@ def main(fakeServer=None,hookResults=None) -> int:
                 rr=ReqmanDualResult(rr1,rr2)
             else:
                 r=ReqmanCommand(*files)
+                if saveRMR:
+                    raise RMCommandException("Can't save dual results ;-)")
+
                 if not all( [s in [i[0] for i in r.switches] for s in switches] ): raise RMCommandException("bad switch")
                 if not all( [s in [i[0] for i in r.switches] for s in dswitches] ): raise RMCommandException("bad switch")
                 if r.nbFiles<1:  raise RMCommandException("no yml files found")
@@ -2076,8 +2080,6 @@ def main(fakeServer=None,hookResults=None) -> int:
         if saveRMR:
             if isinstance(rr,ReqmanResult):
                 print("Save RMR:",rr.saveRMR())
-            else:
-                print("Can't save dual results ;-)")
 
         if outputHtmlFile:
             with codecs.open(outputHtmlFile, "w+", "utf-8-sig") as fid:

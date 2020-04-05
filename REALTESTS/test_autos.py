@@ -2,23 +2,35 @@ import sys,os,io,contextlib
 from glob import glob
 import pytest
 import fakereqman, reqman
+import os,tempfile,shutil
 
-ws=None
+WS=None
 def setup_module():
-    global ws
-    ws=fakereqman.FakeWebServer(11111)
-    ws.start()
+    global WS
+    WS=fakereqman.FakeWebServer(11111)
+    WS.start()
     import time
     time.sleep(1)   
 
-def teardown_module():
-    global ws
-    ws.stop()
 
-@pytest.mark.parametrize('file', glob("REALTESTS/auto_*.yml") )
+def teardown_module():
+    global WS
+    WS.stop()
+
+@pytest.mark.parametrize('file', glob( os.path.join( os.path.dirname(__file__),"auto_*.yml")) )
 def test_file(file):
-    err=run(["FAKEREQMAN",file])
-    assert err=="", "File '%s' : %s" % (file,err)
+    try:
+        precdir = os.getcwd()
+        testdir = tempfile.mkdtemp()
+        os.chdir( testdir )
+
+        err=run(["FAKEREQMAN",file])
+        assert err=="", "File '%s' : %s" % (file,err)
+
+    finally:
+        os.chdir( precdir )
+        shutil.rmtree(testdir)        
+
 
 def run(params):
     err=""

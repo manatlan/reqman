@@ -185,7 +185,7 @@ def main( cmds, runServer=False ):
     o=RR()
 
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
-    newValids=[i[8:].strip().split(" ") for i in reqman.FString(cmds[1]).splitlines() if i.startswith("#:valid:")]
+    newValids=[i[8:i.find('#') or None].strip().split(" ") for i in reqman.FString(cmds[1]).splitlines() if i.startswith("#:valid:")]
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
 
     try:
