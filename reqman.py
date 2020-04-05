@@ -1039,11 +1039,11 @@ class Req(ReqItem):
 
         root = scope.get("root",None) # global root
         gheaders = scope.get("headers",None) # global header
-        timeout = scope.get("timeout",None) # global timeout
         try:
+            timeout = scope.get("timeout",None) # global timeout
             timeout = timeout and float(timeout) / 1000.0 or None
         except ValueError:
-            pass
+            timeout=None
 
         method, path, body, headers = self.method, self.path, self.body, self.headers
         doc, tests, saves = self.doc, self.tests, self.saves
@@ -1099,7 +1099,8 @@ class Req(ReqItem):
         except (RMPyException,RMFormatException,RMNonResolvedVars) as e: # RMFormatException for headers resolver !
             ex=Exchange(method,gpath,gpath,body or "", headers, None,{},str(e),"TEST EXCEPTION",0)
         except Exception as e: # RMFormatException for headers resolver !
-            ex=Exchange(method,gpath,gpath,body or "", headers, 500,{},str(e),"TEST EXCEPTION",0)
+            ex=Exchange(method,gpath,gpath,body or "", headers, 500,{},str(e),"TEST EXCEPTION (bug)",0)
+            print(e)
         finally:
             assert ex
             self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
