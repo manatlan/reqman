@@ -2016,8 +2016,10 @@ def main(fakeServer=None,hookResults=None) -> int:
                 outputConsole=OutputConsole.MINIMAL_ONLYKO
             elif p=="i":
                 pass # already managed (see below ^)                
-            elif p=="s":
+            elif p=="s" :
                 saveRMR=True
+            elif p=="S" :
+                saveRMR=2
             elif p=="r": #TODO: write tests for thoses 3 conditions
                 if switches: raise RMCommandException("Can't set replay mode with switches")
                 if dswitches: raise RMCommandException("Can't set replay mode with switches")
@@ -2079,7 +2081,7 @@ def main(fakeServer=None,hookResults=None) -> int:
 
         if saveRMR:
             if isinstance(rr,ReqmanResult):
-                print("Save RMR:",rr.saveRMR())
+                print("Save RMR:",rr.saveRMR( "reqman.rmr" if saveRMR==2 else None))
 
         if outputHtmlFile:
             with codecs.open(outputHtmlFile, "w+", "utf-8-sig") as fid:
