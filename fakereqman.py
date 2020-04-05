@@ -186,7 +186,6 @@ def main( cmds, runServer=False ):
 
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
     newValids=[i[8:-i.rfind('#') or None].strip().split() for i in reqman.FString(cmds[1]).splitlines() if i.startswith("#:valid:")]
-    print("====================",newValids)
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
 
     try:
@@ -203,7 +202,8 @@ def main( cmds, runServer=False ):
             
             rc=reqman.main(hookResults=o)
 
-            if rc>=0 and hasattr(o,"rr"):
+            if rc>=0:
+                assert hasattr(o,"rr"),"no hookResults ?!"
                 details=[]
                 details2=[]
                 for i in o.rr.results:
