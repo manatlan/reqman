@@ -37,7 +37,7 @@ def run(params):
     fo,fe = io.StringIO(),io.StringIO()
     with contextlib.redirect_stderr(fe):
         with contextlib.redirect_stdout(fo):
-            for err in fakereqman.main(params,runServer=False):
+            for err in fakereqman.main(params,avoidBrowser=True):
                 if err:
                     break
 
