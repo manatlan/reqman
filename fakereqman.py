@@ -185,7 +185,7 @@ def main( file, avoidBrowser=True ):
     o=RR()
 
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
-    newValids=[i[8:-i.rfind('#') or None].strip().split() for i in reqman.FString(file).splitlines() if i.startswith("#:valid:")]
+    newValids=[i[8:i.rfind('#') or None].strip().split() for i in reqman.FString(file).splitlines() if i.startswith("#:valid:")]
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
 
     for newValid in newValids:

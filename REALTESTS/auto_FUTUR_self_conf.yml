@@ -2,7 +2,7 @@
 #:valid:1 THIS --b
 #:valid:1,1,1 THIS --b -yolo
 #:valid:1,1,1 THIS --b    -yolo    --S
-#:valid:1,1,1:0 --r reqman.rmr --b
+#:valid:1,1,1:0 --r reqman.rmr --b            # ?!?!
 #:valid:1:1,1,1 THIS --b +yolo
 
 # -*- coding: utf-8 -*-
