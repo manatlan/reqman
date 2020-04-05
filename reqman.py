@@ -1623,7 +1623,7 @@ class ReqmanCommand:
                 key,value = p.split(":",1)
                 penv[key]=value
             else:
-                raise RMException("bad param: %s" % p)  # TODO: better here
+                raise RMException("bad param: '%s'" % p)  # TODO: better here
 
         files=[os.path.abspath(i) for i in files]  #TODO: really needed ?
 

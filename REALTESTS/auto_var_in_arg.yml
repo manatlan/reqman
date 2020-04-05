@@ -1,4 +1,5 @@
 #!python3 fakereqman.py
+#:valid:0                                        # no root -> unreachable
 #:valid:1 --b root:http://localhost:11111
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------

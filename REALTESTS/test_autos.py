@@ -42,5 +42,6 @@ def run(params):
                     break
 
     output=fo.getvalue()+fe.getvalue()
+    print(output)
     return err
 
