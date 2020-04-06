@@ -4,6 +4,8 @@ THE FUTURE 2.4.0
 - FIX: jpath can now resolve python methods too !!! (in a good way)
 - selfconf is enabled
 - EVOL: command line var params are guessed now (from json string)!
+- FIX: trouble encodings.idna
+- RMR2!
 
 2.3.10 (3/4/20)
 - EVOL: (new test system) tests on all vars, with methods too

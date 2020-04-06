@@ -25,6 +25,7 @@ import pickle,zlib,hashlib
 import http.cookiejar
 import concurrent,ssl
 from xml.dom import minidom
+import encodings.idna
 
 # import httpcore # see "pip install httpcore"
 import aiohttp # see "pip install aiohttp"
@@ -129,6 +130,12 @@ def comparable(l):
     for x1,x2 in l:
         return x1==x2
 
+def renameKeyInDict(d,oname,nname):
+    for k,v in d.items():
+        if k==oname:
+            d[nname] = d.pop(k)
+        if isinstance(v,dict):
+            renameKeyInDict(v,oname,nname)
 
 def ustr(x): # ensure str are utf8 inside
     # assert type(x)==str
@@ -648,7 +655,7 @@ class Env(dict):
 
 
 class Reqs(list):
-    def __init__( self, obj:T.Union[str,FString], env=None, trace=False, name="<YamlString>",switches=[] ):
+    def __init__( self, obj:T.Union[str,FString], env=None, trace=False, name="<YamlString>" ):
         self.__proc={}
         self._trace=trace
         self.exchanges=None   # list of Exchange
@@ -675,26 +682,6 @@ class Reqs(list):
                 raise self._errorFormat("Reqs: bad object content")
             # here 'obj' is a list of dict
 
-            #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-            for idx,statement in enumerate(obj):
-                if isinstance(statement,dict) and len(statement)==1 and "conf" in statement:
-
-                    s=statement["conf"]
-                    ss=json.dumps(s)
-                    ss=ss.replace('"BEGIN"','".BEGIN"') #TODO: do better here!
-                    ss=ss.replace('"END"','".END"')
-                    s=json.loads(ss)
-
-                    localEnv=Env(s)       
-                    for switch in switches:
-                        localEnv.mergeSwitch(switch)
-
-                    self.env.update( dict(localEnv) )
-                    del obj[idx]
-                    print(cy("**WARNING**"), "%s use self conf" % self.name)
-                    break
-            #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
-
             liste=[]
             for i in obj:
                 if isinstance(i,str):
@@ -706,6 +693,19 @@ class Reqs(list):
                 elif isinstance(i,dict):
                     keys=list(i.keys())
                     if len(keys)==1 and (keys[0] not in KNOWNVERBS+["call"]) and (type(i[keys[0]]) in [dict,list]):
+
+                        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+                        if "conf" in keys:
+                            s=i["conf"]
+                            self._assertType("conf",s,[dict])
+
+                            if any( [type(i) is ReqConf for i in liste] ):
+                                raise self._errorFormat("Reqs: multiple 'conf' (only one is possible)")
+
+                            liste.insert(0, ReqConf(s) )
+                            continue
+                        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+
                         # it's a definition of a proc's named 'key', content = value
                         key=keys[0]
                         value=i[key]
@@ -815,11 +815,13 @@ class Reqs(list):
             raise self._errorFormat("TT: %s is malformed, not a %s" % (name,types))
 
     def execute(self,http=None,outputConsole=OutputConsole.MINIMAL) -> list:
+        """ call asyncReqsExecute in sync, used only in old pytests """
+        switches=[]
         loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.asyncExecute(http,outputConsole=outputConsole))
+        return loop.run_until_complete(self.asyncReqsExecute(switches,http,outputConsole=outputConsole))
 
-    async def asyncExecute(self,http=None,outputConsole=OutputConsole.MINIMAL) -> list:
-
+    async def asyncReqsExecute(self,switches:list,http=None,outputConsole=OutputConsole.MINIMAL) -> list:
+        assert type(switches) is list
         ############################################# live console
         if len(self)>0 and outputConsole in [ OutputConsole.MINIMAL, OutputConsole.FULL ]:
             print("TEST:",cb(self.name))
@@ -870,21 +872,34 @@ class Reqs(list):
                         for l,s,r in _test(i.reqs,scope,level+1):
                             r.updateParams( {"params": fparam} )
                             yield l,s,r
+                elif isinstance(i, ReqConf):
+                    pass # already treated !
+                else:
+                    raise RMException("Reqs: unwaited object %s" % i)
 
-        ll=[]
+        gscope=self.env.clone()
 
-        
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-        reqsBegin=self.env.getBEGIN(local=True)
-        reqsEnd=self.env.getEND(local=True) 
+        ll=[]
+        for i in self:
+            if isinstance(i, ReqConf):
+                print(cy("**WARNING**"), "%s use self conf" % self.name)
+
+                localEnv=Env( i.conf )   
+                for switch in switches:
+                    localEnv.mergeSwitch(switch)
+
+                gscope.update( dict(localEnv) )
+
+        reqsBegin=gscope.getBEGIN(local=True)
+        reqsEnd=gscope.getEND(local=True) 
         if reqsBegin is not None:
             for r in reqsBegin:
-                ll.append( await r.asyncExecute(self.env,http,outputConsole=outputConsole) )                
+                ll.append( await r.asyncReqExecute(gscope,http,outputConsole=outputConsole) )                
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
 
-        for l,s,r in _test(self,self.env):
-
+        for l,s,r in _test(self,gscope):
             doIf=True
             if r.ifs:
                 envIf=s.clone()
@@ -892,18 +907,16 @@ class Reqs(list):
                 doIf=all( [envIf.replaceObjOrNone( i ) for i in r.ifs] )
 
             if doIf:
-                ex=await r.asyncExecute(s,http,outputConsole=outputConsole)
+                ex=await r.asyncReqExecute(s,http,outputConsole=outputConsole)
                 ll.append( ex )
                 log(l,"  >>> EXECUTE:",ex)
             else:
                 print( cy("**WARNING**"), "'if statement' not resolved" )
 
-
-
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
         if reqsEnd is not None:
             for r in reqsEnd:
-                ll.append( await r.asyncExecute(self.env,http,outputConsole=outputConsole) )                
+                ll.append( await r.asyncReqExecute(gscope,http,outputConsole=outputConsole) )                
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         self.exchanges = ll
@@ -915,6 +928,19 @@ class Reqs(list):
 
 
 class ReqItem: pass
+
+class ReqConf(ReqItem):
+    def __init__(self,conf:dict):
+
+        conf=clone(conf)
+        renameKeyInDict(conf,"BEGIN",".BEGIN")
+        renameKeyInDict(conf,"END",".END")
+        
+        self.conf=conf
+
+    def __repr__(self):
+        return "<ReqConf %s>" % self.conf
+
 
 class ReqGroup(ReqItem):
     def __init__(self,reqs:list,foreach,params):
@@ -1033,7 +1059,7 @@ class Req(ReqItem):
         if self.saves: l.append("\tsaves: %s" % (self.saves))
         return "\n".join(l)
 
-    async def asyncExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange:
+    async def asyncReqExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange:
         scope=gscope.clone() # important
         dict_merge(scope,self.params)
 
@@ -1415,7 +1441,7 @@ class ReqmanResult(Result):
         if not name.endswith(".rmr"): name=name+".rmr"
         with open(name, 'rb') as fid:
             buf=fid.read()
-            assert buf[:4] == b"RMR1" #TODO
+            assert buf[:4] == b"RMR2" #TODO
             x=zlib.decompress(buf[4:])
             return pickle.loads(x)
 
@@ -1453,7 +1479,7 @@ class ReqmanResult(Result):
             name="_".join( [self.infos[0]["date"].strftime("%y%m%d_%H%M")] + self.infos[0]["switches"] )+".rmr"
         with open(name, 'wb') as fid:
             x=pickle.dumps(self)
-            fid.write(b"RMR1"+zlib.compress(x))
+            fid.write(b"RMR2"+zlib.compress(x))
         return name
 
 class ReqmanDualResult(Result):
@@ -1535,17 +1561,17 @@ class Reqman:
                 reqs.env = scope
                 lreqs.append( reqs )
             else:
-                lreqs.append( Reqs( yml, scope ,switches=switches) )   #(no need to clone) scope is cloned at execution time!
+                lreqs.append( Reqs( yml, scope) )   #(no need to clone) scope is cloned at execution time!
 
 
         results=[]
 
         if reqsBegin is not None:
-            await reqsBegin.asyncExecute(http)
+            await reqsBegin.asyncReqsExecute(switches, http)
             results.append( reqsBegin )
 
         if paralleliz:
-            ll=[reqs.asyncExecute(http, outputConsole=self.outputConsole) for reqs in lreqs]
+            ll=[reqs.asyncReqsExecute(switches, http, outputConsole=self.outputConsole) for reqs in lreqs]
 
             sem = asyncio.Semaphore(10) # ten concurrent coroutine max
             async with sem:
@@ -1553,13 +1579,12 @@ class Reqman:
             results += lreqs
         else:
             for reqs in lreqs:
-                await reqs.asyncExecute(http, outputConsole=self.outputConsole)
+                await reqs.asyncReqsExecute(switches, http, outputConsole=self.outputConsole)
                 results.append( reqs)
 
         if reqsEnd is not None:
-            await reqsEnd.asyncExecute(http, outputConsole=self.outputConsole)
+            await reqsEnd.asyncReqsExecute(switches, http, outputConsole=self.outputConsole)
             results.append( reqsEnd )
-
 
         r=ReqmanResult(results,switches,self.env)
         #============================= LIVE CONSOLE
@@ -1579,7 +1604,7 @@ async def testContent(content: str, env: dict = {}, http=None) -> ReqmanResult:
     """ test a yml 'content' against env (easy wrapper for main call )"""
     if not isinstance(env,Env): env=Env(env)
     reqs = Reqs(content,env=env)
-    await reqs.asyncExecute(http=http, outputConsole=OutputConsole.NO)
+    await reqs.asyncReqsExecute([],http=http, outputConsole=OutputConsole.NO)
 
     return ReqmanResult( [reqs],[], env )
 
@@ -2150,9 +2175,4 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 if __name__=="__main__":
     sys.exit(main())
-
-    # *** FOR DEDUG ***
-    # import fakereqman
-    # sys.argv=["","REALTESTS/auto_check_values.yml"]
-    # fakereqman.main()
 

@@ -1,0 +1,38 @@
+#!python3 fakereqman.py
+#:valid:1 THIS --o:AEFF_solo_default.html --b
+#:valid:1,1,1 THIS -yolo --o:AEFF_solo_yolo.html --b
+#:valid:1:1,1,1 THIS +yolo --o:AEFF_dual_default-vs-yolo.html --b
+
+#:valid:1 THIS --S
+#:valid:1:1 --r reqman.rmr --b --o:AEFF_dual_solo-vs-fresh.html
+#:valid:ERROR --r reqman.rmr -yolo                                #Can't set replay mode with switches
+#:valid:ERROR --r reqman.rmr +yolo                                #Can't set replay mode with switches
+
+#:valid:1 reqman.rmr --o:AEFF_solo_rmr.html --b                         # just output the html
+#:valid:1,1,1 reqman.rmr -yolo --o:AEFF_solo_rmr.html --b               # replay rmr with yolo (single)
+#:valid:1:1,1,1 reqman.rmr +yolo --o:AEFF_dual_rmr-vs-yolo.html --b     # replay rmr with yolo (dual)
+
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- conf:
+    root: http://localhost:11111
+
+    switches:
+      yolo:
+        BEGIN:
+          GET: http://localhost:11111/get_txt
+          tests:
+            status: 200
+        END:
+          GET: http://localhost:11111/get_txt
+          tests:
+            status: 200
+
+- GET: /get_txt
+  tests:
+    - status: 200
+

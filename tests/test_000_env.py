@@ -191,4 +191,12 @@ def test_switches():
         obj1=dict(root="https://w1"),
     ))
     assert list(env.switches)==[('obj1', 'https://w1')]
-    
+
+def test_renameKeys():
+    dd=dict(
+        KEY="kiki",
+        a=42,
+        b=dict(KEY=12,c=13),
+    )
+    reqman.renameKeyInDict(dd,"KEY","MyKey")
+    assert dd=={'a': 42, 'b': {'c': 13, 'MyKey': 12}, 'MyKey': 'kiki'}

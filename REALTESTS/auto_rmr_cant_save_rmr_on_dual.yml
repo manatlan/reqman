@@ -1,11 +1,10 @@
-#!python3 fakereqman.py
-#:valid:1 THIS --b
-#:valid:1,1,1 THIS --b -yolo
-#:valid:1,1,1 THIS --b    -yolo    --S
-#:valid:1,1,1:0 --r reqman.rmr --b            # ?!?!
-#:valid:1:1,1,1 THIS --b +yolo
+#!python3 fakereqman.py 
+#:valid:1 THIS --b --o:AEFF_solo_default.html
+#:valid:1,1,1 THIS -yolo --b --o:AEFF_solo_yolo.html
+#:valid:1:1,1,1 THIS +yolo --b  
+#:valid:ERROR THIS +yolo --s               # can't save RMR when DUAL MODE!
 
-# -*- coding: utf-8 -*-
+## -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
 #    (works in vs code, press F5)

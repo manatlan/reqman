@@ -157,7 +157,7 @@ class FakeWebServer(threading.Thread): # the webserver is ran on a separated thr
 
 
 
-def checkSign(sign1,sign2):
+def checkSign(sign1,sign2,args):
     """ Return the error or '' """
     if sign1==sign2:
         return "" # no error
@@ -165,15 +165,15 @@ def checkSign(sign1,sign2):
         dsign1=sign1.split(',')
         dsign2=sign2.split(',')
         if len(dsign1)!=len(dsign2):
-            return "Not same number of requests (is there a new ?)"
+            return "Not same number of requests (is there a new ?), for %s" % args
         else:
             for idx,(t1,t2) in enumerate(zip(dsign1,dsign2)):
                 if len(t1) != len(t2):
-                    return "Req %s has %s tests (expected %s)" % (idx+1,len(t2),len(t1))
+                    return "Req %s has %s tests (expected %s), for %s" % (idx+1,len(t2),len(t1),args)
                 else:
                     if t1!=t2:
                         diffs=[i+1 for i,(a1,a2)  in enumerate(zip(t1,t2)) if a1!=a2]
-                        return "Req %s fail on its %s test" % (idx+1,diffs[0])
+                        return "Req %s fail on its %s test, for %s" % (idx+1,diffs[0],args)
 
 def main( file, avoidBrowser=True ):
     """
@@ -211,7 +211,7 @@ def main( file, avoidBrowser=True ):
             if details2: toValid+=":"+",".join(details2)
             
             if valid:
-                err=checkSign(valid,toValid)
+                err=checkSign(valid,toValid,args)
                 print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
             else:
                 print("> No validation check! (valid:%s)" % toValid)
@@ -219,7 +219,7 @@ def main( file, avoidBrowser=True ):
         else:
             toValid="ERROR"
             if valid:
-                err="" if valid==toValid else "mismatch (%s!=%s)" % (valid,toValid)
+                err="" if valid==toValid else "mismatch (%s!=%s, for %s)" % (valid,toValid,args)
                 print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
             else:
                 print("> No validation check! (valid:%s)" % toValid)
@@ -230,6 +230,9 @@ def main( file, avoidBrowser=True ):
 
 
 if __name__=="__main__":
+    
+    # sys.argv=["","REALTESTS/rmr_self_conf.yml"] # *** FOR running in DEDUG MODE ***
+
     try:
         ws=FakeWebServer(11111)
         ws.start()
