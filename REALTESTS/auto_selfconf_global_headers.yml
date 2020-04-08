@@ -1,0 +1,20 @@
+#!python3 fakereqman.py
+#:valid:111 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- conf:
+    root: http://localhost:11111
+    headers:
+      X-My: Hello
+
+- POST: /ping
+  body: hello
+  tests:
+    - status: 201
+    - content: hello
+    - headers.X-My: Hello
+

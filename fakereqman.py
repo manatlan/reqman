@@ -7,6 +7,12 @@ import json,asyncio
 
 routes = web.RouteTableDef()
 
+@routes.post('/ping')
+async def hello(request):
+    b=await request.read()
+    return web.Response(status=201,body=b,headers=request.headers)
+
+
 @routes.get('/set')
 async def hello(request):
     return web.Response(status=200,text=request.query.get("value","?"))
@@ -197,25 +203,27 @@ def main( file, avoidBrowser=True ):
         rc=reqman.main(hookResults=o)
 
         if rc>=0:
-            assert hasattr(o,"rr"),"no hookResults ?!"
-            details=[]
-            details2=[]
-            for i in o.rr.results:
-                for j in i.exchanges:
-                    if type(j)==tuple:
-                        if j[0]: details.append("".join([str(int(t)) for t in j[0].tests]))
-                        if j[1]: details2.append("".join([str(int(t)) for t in j[1].tests]))
-                    else:
-                        details.append("".join([str(int(t)) for t in j.tests]))
-            toValid=",".join(details)
-            if details2: toValid+=":"+",".join(details2)
-            
-            if valid:
-                err=checkSign(valid,toValid,args)
-                print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
+            if hasattr(o,"rr"):
+                details=[]
+                details2=[]
+                for i in o.rr.results:
+                    for j in i.exchanges:
+                        if type(j)==tuple:
+                            if j[0]: details.append("".join([str(int(t)) for t in j[0].tests]))
+                            if j[1]: details2.append("".join([str(int(t)) for t in j[1].tests]))
+                        else:
+                            details.append("".join([str(int(t)) for t in j.tests]))
+                toValid=",".join(details)
+                if details2: toValid+=":"+",".join(details2)
+                
+                if valid:
+                    err=checkSign(valid,toValid,args)
+                    print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
+                else:
+                    print("> No validation check! (valid:%s)" % toValid)
+                    err=None
             else:
-                print("> No validation check! (valid:%s)" % toValid)
-                err=None
+                err=""    #TODO: do something here (see test "new url")
         else:
             toValid="ERROR"
             if valid:
