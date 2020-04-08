@@ -1,5 +1,5 @@
 #!python3 fakereqman.py
-#:valid: new http://localhost:11111
+#:valid:1 new http://localhost:11111/get_json
 #:valid:1 0010_test.rml
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
