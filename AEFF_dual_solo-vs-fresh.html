@@ -1,0 +1,144 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title> 1/1 vs  1/1</title>
+<meta name="description" content="reqman 2.4.0.0">
+<style>
+* { box-sizing: border-box;}
+.click {cursor:pointer}
+html,body {width:100%;height:100%;margin:0px;padding:0px}
+h3,h4 {padding:0px;margin:0px}
+h3 {color: blue;margin-top:22px;}
+h4 {padding:4px;background:#eee}
+h4:hover {background: linear-gradient(to right,#EEE,white) !important}
+h4 i {color:#AAA;font-weight: normal;font-size:0.9em}
+body {font-family: sans-serif;font-size:90%}
+pre {padding:4px;border:1px solid #CCC;max-height:300px;margin:2px;width:95%;display:block;overflow:auto;background:white}
+.OK {color:green}
+.KO {color:red}
+div.r {margin:4px;background: linear-gradient(#EEE,white);margin-left:10px}
+div.hide > div.h {background:white}
+div.hide > h4 {background:white}
+div.h {display:flex; flex-flow: row nowrap;padding-left:10px}
+div.h > div {flex: 1 0 50%}
+.nonp * {color:#888 !important;text-decoration: line-through;}
+.expanderContent   {
+    padding: 0;
+    max-height: 700px;
+    opacity: 1;
+    overflow-y: auto;
+    transition: 0.3s ease all;
+    padding:4px;
+    font-size:0.9em;
+}
+.hide .expanderContent {
+    max-height: 0;
+    opacity: 0;
+    padding:0px
+}
+
+.cc:before{ 
+  content:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAARCAYAAADUryzEAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AMVCjI2TjtqdwAAAKlJREFUOMvd1LEJAjEYxfHfSUC0EezcQRB7KxsXcABLwQlcwh0EwQGcwDEcwcLCVvG0SXVezlMLwQevSPj4f/keSaCPE+41/KSABVpYx3VK7RQgwxmzwn6qHvJojUJBJx71+sI3TMo6LSN5XzFKjgG26BYBzdhhrFo7jMpGEDPJ1FTDl/oTwFuhlQFWmH4KCDhE/yaDUHJNAzap5xtrhqncejjW+BcumMMD+Ycv+JwSPxAAAAAASUVORK5CYII=) ;
+  position:relative; 
+  left:0px;
+  top:5px;
+ }
+
+.blinking{
+    animation:blinkingText .3s;
+}
+@keyframes blinkingText{
+    0%{     opacity: 1 }
+    60%{    opacity: 0 }
+    100%{   opacity: 1 }
+}
+
+</style>
+<script>
+function copyToClipboard( obj ) {
+    obj.classList.toggle("blinking")
+    setTimeout( function() {obj.classList.toggle("blinking")}, 300)
+    var str=obj.textContent;
+    
+    const el = document.createElement('textarea');
+    el.value = str;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+}; 
+</script>
+</head>
+<body>
+<div class="h" style="position:sticky">
+    <div>
+        <span style="float:right;padding:4px"><b></b> 2020-04-08 18:27:01<br/>
+            <span style="float:right">1/1</span>
+        </span>
+    </div>
+    <div>
+        <span style="float:right;padding:4px"><b></b> 2020-04-08 18:27:01<br/>
+            <span style="float:right">1/1</span>
+        </span>
+    </div>
+</div>
+
+<div class="f">
+    <h3>File: ../../../Bureau/reqman/REALTESTS/auto_rmr_with_rconf/test.yml</h3>
+
+    <div class="r hide">
+        <h4 class="click" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details">
+            <b>GET</b>
+            /get_txt <b style="float:right">200</b>
+            <br/>
+            <i></i>
+
+        </h4>
+
+<div class="h s expanderContent"><a class="cc click" onclick="copyToClipboard( this.parentNode )" title="copy"></a>
+    <div style="width:50%">
+<pre>
+GET http://localhost:11111/get_txt
+</pre>
+--> HTTP/1.1 200 OK
+
+<pre>
+<b>Content-Type</b>: text/plain; charset=utf-8
+<b>Content-Length</b>: 16
+<b>Date</b>: Wed, 08 Apr 2020 16:27:01 GMT
+<b>Server</b>: Python/3.7 aiohttp/3.5.4
+Héllo ça và ?</pre>
+    </div>
+    <div style="width:50%">
+<pre>
+GET http://localhost:11111/get_txt
+</pre>
+--> HTTP/1.1 200 OK
+
+<pre>
+<b>Content-Type</b>: text/plain; charset=utf-8
+<b>Content-Length</b>: 16
+<b>Date</b>: Wed, 08 Apr 2020 16:27:01 GMT
+<b>Server</b>: Python/3.7 aiohttp/3.5.4
+Héllo ça và ?</pre>
+    </div>
+</div>
+
+
+
+<div class="h">
+    <div style="width:50%" class="False">
+            <li class="OK" title="200">OK : status = 200</li>
+    </div>
+    <div style="width:50%" class="False">
+            <li class="OK" title="200">OK : status = 200</li>
+    </div>
+</div>
+
+    </div>
+
+
+</div>
+</body>
+</html>

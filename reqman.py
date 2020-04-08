@@ -478,7 +478,7 @@ class Env(dict):
             for k in switches:
                 yield k,self["switches"].get(k,{}).get("doc","???")
         elif "switchs" in self.keys():
-            # new system (hourraaaaa !!!! )
+            # new system (but with bad name)
             switches=self["switchs"].keys()
             for k in switches:
                 yield k,self["switchs"].get(k,{}).get("doc","???")
