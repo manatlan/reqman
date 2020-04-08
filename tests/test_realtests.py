@@ -17,7 +17,8 @@ def teardown_module():
     global WS
     WS.stop()
 
-@pytest.mark.parametrize('file', glob( os.path.join( os.path.dirname(__file__),"auto_*.yml")) + glob( os.path.join( os.path.dirname(__file__),"auto_*/*.yml")) )
+F=os.path.join(os.path.dirname(os.path.dirname(__file__)),"REALTESTS")
+@pytest.mark.parametrize('file', glob( os.path.join( F,"auto_*.yml")) + glob( os.path.join( F,"auto_*/*.yml")) )
 def test_file(file):
     try:
         precdir = os.getcwd()
