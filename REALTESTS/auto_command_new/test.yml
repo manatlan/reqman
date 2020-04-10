@@ -1,6 +1,8 @@
 #!python3 fakereqman.py
 #:valid:1 new http://localhost:11111/get_json
 #:valid:1 0010_test.rml
+#:valid:1 new http://localhost:11111/get_txt
+#:valid:1,1 . --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)

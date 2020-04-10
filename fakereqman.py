@@ -4,6 +4,7 @@
     
 from aiohttp import web
 import json,asyncio
+import os, tempfile, shutil
 
 routes = web.RouteTableDef()
 
@@ -180,61 +181,70 @@ def checkSign(sign1,sign2,args):
                     if t1!=t2:
                         diffs=[i+1 for i,(a1,a2)  in enumerate(zip(t1,t2)) if a1!=a2]
                         return "Req %s fail on its %s test, for %s" % (idx+1,diffs[0],args)
-
 def main( file, avoidBrowser=True ):
     """
     yield "" : si valid est ok
     yield "error" : si valid est ko
     yield None : si pas validation
     """
-    class RR: pass
+    class RR: 
+        rr=None
     o=RR()
 
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
     newValids=[i[8:i.rfind('#') or None].strip().split() for i in reqman.FString(file).splitlines() if i.startswith("#:valid:")]
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
+    try:
+        precdir = os.getcwd()
+        testdir = tempfile.mkdtemp()
+        os.chdir( testdir )
 
-    for newValid in newValids:
-        valid,*args=newValid
-        args=[file if i=="THIS" else i for i in args]
-        if avoidBrowser==True and "--b" in args: args.remove("--b") # remove --b when pytest ;-)
-        sys.argv = ["reqman"] + args
-        
-        rc=reqman.main(hookResults=o)
 
-        if rc>=0:
-            if hasattr(o,"rr"):
-                details=[]
-                details2=[]
-                for i in o.rr.results:
-                    for j in i.exchanges:
-                        if type(j)==tuple:
-                            if j[0]: details.append("".join([str(int(t)) for t in j[0].tests]))
-                            if j[1]: details2.append("".join([str(int(t)) for t in j[1].tests]))
-                        else:
-                            details.append("".join([str(int(t)) for t in j.tests]))
-                toValid=",".join(details)
-                if details2: toValid+=":"+",".join(details2)
-                
+
+        for newValid in newValids:
+            valid,*args=newValid
+            args=[file if i=="THIS" else i for i in args]
+            if avoidBrowser==True and "--b" in args: args.remove("--b") # remove --b when pytest ;-)
+            sys.argv = ["reqman"] + args
+            
+            rc=reqman.main(hookResults=o)
+            o.rr=None
+            if rc>=0:
+                if o.rr:
+                    details=[]
+                    details2=[]
+                    for i in o.rr.results:
+                        for j in i.exchanges:
+                            if type(j)==tuple:
+                                if j[0]: details.append("".join([str(int(t)) for t in j[0].tests]))
+                                if j[1]: details2.append("".join([str(int(t)) for t in j[1].tests]))
+                            else:
+                                details.append("".join([str(int(t)) for t in j.tests]))
+                    toValid=",".join(details)
+                    if details2: toValid+=":"+",".join(details2)
+                    
+                    if valid:
+                        err=checkSign(valid,toValid,args)
+                        print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
+                    else:
+                        print("> No validation check! (valid:%s)" % toValid)
+                        err=None
+                else:
+                    err=""    #TODO: do something here (see test "new url")
+            else:
+                toValid="ERROR"
                 if valid:
-                    err=checkSign(valid,toValid,args)
+                    err="" if valid==toValid else "mismatch (%s!=%s, for %s)" % (valid,toValid,args)
                     print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
                 else:
                     print("> No validation check! (valid:%s)" % toValid)
-                    err=None
-            else:
-                err=""    #TODO: do something here (see test "new url")
-        else:
-            toValid="ERROR"
-            if valid:
-                err="" if valid==toValid else "mismatch (%s!=%s, for %s)" % (valid,toValid,args)
-                print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
-            else:
-                print("> No validation check! (valid:%s)" % toValid)
-                err=None    
+                    err=None    
 
-        yield err
+            yield err
     
+    finally:
+        os.chdir( precdir )
+        shutil.rmtree(testdir)   
 
 
 if __name__=="__main__":

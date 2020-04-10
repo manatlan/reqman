@@ -20,17 +20,8 @@ def teardown_module():
 F=os.path.join(os.path.dirname(os.path.dirname(__file__)),"REALTESTS")
 @pytest.mark.parametrize('file', glob( os.path.join( F,"auto_*.yml")) + glob( os.path.join( F,"auto_*/*.yml")) )
 def test_file(file):
-    try:
-        precdir = os.getcwd()
-        testdir = tempfile.mkdtemp()
-        os.chdir( testdir )
-
-        err=run(file)
-        assert err=="", "File '%s' : %s" % (file,err)
-
-    finally:
-        os.chdir( precdir )
-        shutil.rmtree(testdir)        
+    err=run(file)
+    assert err=="", "File '%s' : %s" % (file,err)
 
 
 def run(params):
