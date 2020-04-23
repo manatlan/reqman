@@ -1,0 +1,46 @@
+#!python3 fakereqman.py
+#:valid:11111111111111111111111 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- POST: http://localhost:11111/ping
+  headers:
+    X-Test: test
+  body: hello
+  tests:
+    - status: 201
+
+    # old
+    - content: hello
+    - content: hel          # old can contains !
+
+    - x-test: es            # old can contains ! and mixed case header
+    - X-TesT: es            # old can contains ! and mixed case header
+
+    # newest
+    - headers.x-test: test  # header lowercased!
+    - headers.x-test: . ? es
+    - headers.X-Test: null
+
+    - header.X-Test: null   # old way (2.3.10 < 2.4)
+    - header.x-test: null   # old way (2.3.10 < 2.4)
+
+    # ultra newest
+    - response.status: 201
+    - response.content: hello
+    - response.content: .? hel
+    - response.headers.X-Test: null
+    - response.headers.x-test: test # header lowercased!
+    - response.headers.x-test: .? es
+
+    - request.path: http://localhost:11111/ping
+    - request.method: POST
+    - request.content: hello
+    - request.content: .? hel
+    - request.headers.X-Test: null
+    - request.headers.x-test: test # header lowercased!
+    - request.headers.x-test: .? es # header lowercased!
+

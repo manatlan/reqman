@@ -34,7 +34,13 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.4.0.0" #only SemVer (the last ".0" is win only)
+__version__="PRE2.4.0.0" #only SemVer (the last ".0" is win only)
+
+"""
+- verifier que les tests continuent pas passer, suite a l'ajout request/response
+- harmoniser .header -> .headers
+- s'assurer des noms request/response ou objet rm.request / rm.response ?!
+"""
 
 
 try:  # colorama is optionnal
@@ -82,8 +88,11 @@ def isPython(x):
 
 def jdumps(o,*a,**k):
     k["ensure_ascii"]=False
+    #~ k["default"]=serialize
     return json.dumps(o,*a,**k)
 
+#~ def serialize(obj):
+    #~ return str(obj)
 
 def izip(ex1,ex2):
     pop= lambda ex: len(ex)>0 and ex.pop(0) or None
@@ -206,8 +215,13 @@ class Content:
         return json.loads( self.__b.decode() )
     def toXml(self):
         return Xml( repr(self) )
-    def bytes(self):
+    def __bytes__(self):
         return self.__b
+
+class RmDict(dict):
+    def __init__(self,**kargs):
+        self.__dict__.update(kargs)
+        dict.__init__(self,**kargs)
 
 
 """
@@ -321,7 +335,7 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
                     return len(elem)
                 else:
                     elem = elem[int(i)]
-            elif type(elem) in [dict,Env]:
+            elif isinstance(elem,dict):
                 if i == "size":
                     return len(list(elem.keys()))
                 else:
@@ -503,7 +517,7 @@ class Env(dict):
         if type(v) is bytes:
             return v
         elif type(v) is Content: # (when save to var)
-            return v.bytes()
+            return bytes(v)
         elif type(v) is not str:
             v=jdumps(v)
 
@@ -544,7 +558,35 @@ class Env(dict):
                         content = None
 
                     for m in method.split("|"):
-                        content = self.replaceObj( content )    ## important, resolv inner method first .... see tests 044, 045, 046
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        if type(content) != RmDict:   # !!!!!!!!!!!!!!!!!!!!!!
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                            content = self.replaceObj( content )    ## important, resolv inner method first .... see tests 044, 045, 046
 
                         content = self.transform(content, m)
                     return content
@@ -1135,7 +1177,7 @@ class Req(ReqItem):
         envResponse = scope.clone()
         envResponse["content"] = ex.content
         envResponse["status"] = ex.status
-        envResponse["header"] = {k.lower():v for k,v in ex.outHeaders.items()}  # NEW !!!!
+        envResponse["headers"] = {k.lower():v for k,v in ex.outHeaders.items()}  # NEW !!!! (2.3.10)
         #TODO: expose time ?
         try:
             envResponse["json"] = ex.content.toJson()
@@ -1145,8 +1187,21 @@ class Req(ReqItem):
             envResponse["xml"] = ex.content.toXml()
         except:
             pass
+            
+        envResponse["request"]=RmDict(   # new
+            path = ex.url,
+            method = ex.method,
+            content = ex.bodyContent,
+            headers = {k.lower():v for k,v in ex.inHeaders.items()}
+        )
+        envResponse["response"]=RmDict(   # new
+            status= envResponse["status"],
+            content= envResponse["content"],
+            headers= envResponse["headers"], ## headers != header !!!!!!!!!!!!! harmoniser !!!
+            json= envResponse.get("json",None),
+            xml= envResponse.get("xml",None),
+        )
         #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-
 
         try:
             for s in saves:
@@ -1280,7 +1335,7 @@ def guessValue(txt):
 def getValOpe(v):
     try:
         if type(v) == str and v.startswith("."):
-            g = re.match(r"^\. *([!=<>]{1,2}) *(.+)$", v)
+            g = re.match(r"^\. *([\?!=<>]{1,2}) *(.+)$", v)
             if g:
                 op, v = g.groups()
                 if op == "==":  # not needed really, but just for compatibility
@@ -1317,6 +1372,13 @@ def getValOpe(v):
                         "<",
                         ">=",
                     )
+                elif op == "?":
+                    return (
+                        v,
+                        lambda a, b: str(a) in str(b),
+                        "contains",
+                        "doesn't contain",
+                    )
     except (
         yaml.scanner.ScannerError,
         yaml.constructor.ConstructorError,
@@ -1342,7 +1404,8 @@ class TestResult(list):
 
 
             firstWord = re.split(r"[\.|]",what)[0]
-            testContains = False # true pour contant & headers !!!!!
+            testContains = False # true pour content & "old headers" !!!!!
+            # to ensure compatibility with < 2.3.8
             if firstWord=="content":
                 testContains=True
             elif firstWord=="status":
@@ -1351,14 +1414,14 @@ class TestResult(list):
                 testContains=False
             elif firstWord=="xml":
                 testContains=False
-            elif firstWord=="header":
-                testContains=True
+            elif firstWord=="headers":
+                testContains=False
             else: # header
-                if "header" in env:
+                if "headers" in env:
                     header=what.lower()
-                    if header in env["header"]:
-                        print( cy("**DEPRECATED**"), "use new header syntax in tests (- header.%s: ...)"%what )
-                        tvalue = env["header"][header]
+                    if header in env["headers"]:
+                        print( cy("**DEPRECATED**"), "use new header syntax in tests (- headers.%s: ...)"%what )
+                        tvalue = env["headers"][header]
                         testContains=True
 
             # test if all match as json (list, dict, str ...)
@@ -2175,4 +2238,4 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 if __name__=="__main__":
     sys.exit(main())
-
+    

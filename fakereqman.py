@@ -181,6 +181,7 @@ def checkSign(sign1,sign2,args):
                     if t1!=t2:
                         diffs=[i+1 for i,(a1,a2)  in enumerate(zip(t1,t2)) if a1!=a2]
                         return "Req %s fail on its %s test, for %s" % (idx+1,diffs[0],args)
+
 def main( file, avoidBrowser=True ):
     """
     yield "" : si valid est ok
@@ -208,26 +209,28 @@ def main( file, avoidBrowser=True ):
             sys.argv = ["reqman"] + args
             
             rc=reqman.main(hookResults=o)
-            o.rr=None
             if rc>=0:
-                if o.rr:
+                if hasattr(o,"rr"):
                     details=[]
                     details2=[]
-                    for i in o.rr.results:
-                        for j in i.exchanges:
-                            if type(j)==tuple:
-                                if j[0]: details.append("".join([str(int(t)) for t in j[0].tests]))
-                                if j[1]: details2.append("".join([str(int(t)) for t in j[1].tests]))
-                            else:
-                                details.append("".join([str(int(t)) for t in j.tests]))
-                    toValid=",".join(details)
-                    if details2: toValid+=":"+",".join(details2)
-                    
-                    if valid:
-                        err=checkSign(valid,toValid,args)
-                        print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
+                    if o.rr and o.rr.results:
+                        for i in o.rr.results:
+                            for j in i.exchanges:
+                                if type(j)==tuple:
+                                    if j[0]: details.append("".join([str(int(t)) for t in j[0].tests]))
+                                    if j[1]: details2.append("".join([str(int(t)) for t in j[1].tests]))
+                                else:
+                                    details.append("".join([str(int(t)) for t in j.tests]))
+                        toValid=",".join(details)
+                        if details2: toValid+=":"+",".join(details2)
+                        
+                        if valid:
+                            err=checkSign(valid,toValid,args)
+                            print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
+                        else:
+                            print("> No validation check! (valid:%s)" % toValid)
+                            err=None
                     else:
-                        print("> No validation check! (valid:%s)" % toValid)
                         err=None
                 else:
                     err=""    #TODO: do something here (see test "new url")
@@ -249,7 +252,7 @@ def main( file, avoidBrowser=True ):
 
 if __name__=="__main__":
     
-    # sys.argv=["","REALTESTS/rmr_self_conf.yml"] # *** FOR running in DEDUG MODE ***
+    # sys.argv=["","REALTESTS/auto_new_response_request.yml"] # *** FOR running in DEDUG MODE ***
 
     try:
         ws=FakeWebServer(11111)
