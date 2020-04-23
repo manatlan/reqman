@@ -1,5 +1,5 @@
 THE FUTURE 2.4.0
-- EVOL: new compare operator ".?" (??????????????????????)
+- EVOL: new compare operator ".?"/".!?" (contains/doesnt contains)
 - EVOL: simple "if statement" !
 - remove old shebang system
 - FIX: jpath can now resolve python methods too !!! (in a good way)

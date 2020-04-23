@@ -1338,9 +1338,7 @@ def getValOpe(v):
             g = re.match(r"^\. *([\?!=<>]{1,2}) *(.+)$", v)
             if g:
                 op, v = g.groups()
-                if op == "==":  # not needed really, but just for compatibility
-                    return v, lambda a, b: b == a, "=", "!="
-                elif op == "=":  # not needed really, but just for compatibility
+                if op in ["==","="]:  # not needed really, but just for compatibility
                     return v, lambda a, b: b == a, "=", "!="
                 elif op == "!=":
                     return v, lambda a, b: b != a, "!=", "="
@@ -1378,6 +1376,13 @@ def getValOpe(v):
                         lambda a, b: str(a) in str(b),
                         "contains",
                         "doesn't contain",
+                    )
+                elif op in ["!?","?!"]:
+                    return (
+                        v,
+                        lambda a, b: str(a) not in str(b),
+                        "doesn't contain",
+                        "contains",
                     )
     except (
         yaml.scanner.ScannerError,
