@@ -36,12 +36,6 @@ import xpath # see "pip install py-dom-xpath-six"
 #95%: python3 -m pytest --cov-report html --cov=reqman .
 __version__="PRE2.4.0.0" #only SemVer (the last ".0" is win only)
 
-"""
-- verifier que les tests continuent pas passer, suite a l'ajout request/response
-- harmoniser .header -> .headers
-- s'assurer des noms request/response ou objet rm.request / rm.response ?!
-"""
-
 
 try:  # colorama is optionnal
     from colorama import init, Fore, Style
