@@ -200,3 +200,13 @@ def test_renameKeys():
     )
     reqman.renameKeyInDict(dd,"KEY","MyKey")
     assert dd=={'a': 42, 'b': {'c': 13, 'MyKey': 12}, 'MyKey': 'kiki'}
+
+def test_HeadersMixed():
+    dd=reqman.HeadersMixedCase(
+        KeY="kiki",
+    )
+    assert dd["KeY"]=="kiki"
+    assert dd["key"]=="kiki"
+    assert dd["key2"]==None
+    assert dd.get("key")=="kiki"
+    assert dd.get("key2")==None

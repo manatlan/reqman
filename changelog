@@ -1,4 +1,6 @@
 THE FUTURE 2.4.0
+- response.time is here !
+- "save" can now be tested (save executed before test, and save in envResponse)
 - EVOL: new compare operator ".?"/".!?" (contains/doesnt contains)
 - EVOL: simple "if statement" !
 - remove old shebang system

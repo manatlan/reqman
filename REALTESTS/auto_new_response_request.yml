@@ -1,5 +1,5 @@
 #!python3 fakereqman.py
-#:valid:1111111111111111111111111 THIS --b
+#:valid:1111111111111111111111111111111 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -7,11 +7,23 @@
 #--------------------------------------------------------------
 
 - POST: http://localhost:11111/ping
+  doc: Taking <<response.time>> <<rm>>
   headers:
     X-Test: test
   body: hello
+  params:
+    inMethod: |
+      return True
+  save:
+      isOK1: <<response|inMethod>>
+      isOK2: <<response.content|inMethod>>
+      isOK3: <<rm.response.content|inMethod>>
   tests:
     - status: 201
+
+    - isOK1: True
+    - isOK2: True
+    - isOK3: True
 
     # old
     - content: hello
@@ -25,16 +37,18 @@
     - headers.x-test: . ? es
     - headers.x-test: . !? xxx
     - headers.x-test: . ?! xxx
-    - headers.X-Test: null
+    - headers.X-Test: test    # mixed case heaser works
 
     - header.X-Test: null   # old way (2.3.10 < 2.4)
     - header.x-test: null   # old way (2.3.10 < 2.4)
 
     # ultra newest
+    - response.time: .<100    # ms
+
     - response.status: 201
     - response.content: hello
     - response.content: .? hel
-    - response.headers.X-Test: null
+    - response.headers.X-Test: test # mixed case heaser works
     - response.headers.x-test: test # header lowercased!
     - response.headers.x-test: .? es
 
@@ -42,7 +56,10 @@
     - request.method: POST
     - request.content: hello
     - request.content: .? hel
-    - request.headers.X-Test: null
+    - request.headers.X-Test: test # mixed case heaser works
     - request.headers.x-test: test # header lowercased!
     - request.headers.x-test: .? es # header lowercased!
 
+    # confidential (the full exchange is in "rm")
+    - rm.response.status: 201
+    - rm.request.method: POST

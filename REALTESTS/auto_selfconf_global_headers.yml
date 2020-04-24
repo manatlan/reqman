@@ -16,6 +16,6 @@
   tests:
     - status: 201
     - content: hello
-    - headers.X-My: null   # in headers, its lowercased !
+    - headers.X-mY: Hello   # mixed case heaser works
     - headers.x-my: Hello
 

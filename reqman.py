@@ -212,9 +212,15 @@ class Content:
     def __repr__(self) -> str:
         return toStr(self.__b)
     def toJson(self):
-        return json.loads( self.__b.decode() )
+        try:
+            return json.loads( self.__b.decode() )
+        except:
+            return None
     def toXml(self):
-        return Xml( repr(self) )
+        try:
+            return Xml( repr(self) )
+        except:
+            return None
     def __bytes__(self):
         return self.__b
 
@@ -223,6 +229,15 @@ class RmDict(dict):
         self.__dict__.update(kargs)
         dict.__init__(self,**kargs)
 
+class HeadersMixedCase(dict):
+    def __init__(self,**kargs):
+        dict.__init__(self,**kargs)
+    def __getitem__(self,key):
+        d={k.lower():v for k,v in self.items()}
+        return d.get( key.lower(), None )
+    def get(self,key,default=None):
+        d={k.lower():v for k,v in self.items()}
+        return d.get( key.lower(), default )
 
 """
 AHTTP = httpcore.AsyncClient(verify=False)
@@ -275,9 +290,8 @@ async def request(method,url,body:bytes,headers, timeout=None):
                     txt=await r.text()
                     content=txt.encode("utf-8") # force bytes to be in utf8
                     
-            h={k:v for k,v in dict(r.headers).items()} # avoid surrogate (because headers are ascii only!)
             info = "HTTP/%s.%s %s %s" % (r.version.major,r.version.minor, int(r.status), r.reason)
-            return r.status, h, Content(content), info
+            return r.status,  dict(r.headers), Content(content), info
     except aiohttp.client_exceptions.ClientConnectorError as e:
         return None, {}, "Unreachable", ""        
     except concurrent.futures._base.TimeoutError as e:
@@ -414,9 +428,9 @@ class Exchange:
         self.url=url
         self.body=body
         self.bodyContent=Content(body)
-        self.inHeaders=inHeaders
+        self.inHeaders=HeadersMixedCase(**inHeaders)
         self.status = status
-        self.outHeaders = outHeaders
+        self.outHeaders = HeadersMixedCase(**outHeaders)
         self.content = content
         self.info = info
         self.time=time
@@ -558,34 +572,7 @@ class Env(dict):
                         content = None
 
                     for m in method.split("|"):
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        if type(content) != RmDict:   # !!!!!!!!!!!!!!!!!!!!!!
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
-                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!! A TESTER CA
+                        if type(content) != RmDict:   # No try to replace things on a RmDict
                             content = self.replaceObj( content )    ## important, resolv inner method first .... see tests 044, 045, 046
 
                         content = self.transform(content, m)
@@ -1157,7 +1144,6 @@ class Req(ReqItem):
                     raise RMNonResolvedVars("Header `%s` non resolved" % k)
             #=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 
-            if doc: doc = scope.replaceTxt(doc)
             tests= [{list(d.keys())[0] : scope.replaceObj( list(d.values())[0]) } for d in tests] # cast value as str
 
             # set cookies in request according env
@@ -1168,58 +1154,70 @@ class Req(ReqItem):
             ex=Exchange(method,gpath,gpath,body or "", headers, None,{},str(e),"TEST EXCEPTION",0)
         except Exception as e: # RMFormatException for headers resolver !
             ex=Exchange(method,gpath,gpath,body or "", headers, 500,{},str(e),"TEST EXCEPTION (bug)",0)
-            print(e)
         finally:
             assert ex
             self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
 
         #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
         envResponse = scope.clone()
-        envResponse["content"] = ex.content
-        envResponse["status"] = ex.status
-        envResponse["headers"] = {k.lower():v for k,v in ex.outHeaders.items()}  # NEW !!!! (2.3.10)
-        #TODO: expose time ?
-        try:
-            envResponse["json"] = ex.content.toJson()
-        except:
-            pass
-        try:
-            envResponse["xml"] = ex.content.toXml()
-        except:
-            pass
-            
+        contentAsJson=ex.content.toJson() if type(ex.content) == Content else None
+        contentAsXml=ex.content.toXml() if type(ex.content) == Content else None
+
         envResponse["request"]=RmDict(   # new
             path = ex.url,
             method = ex.method,
-            content = ex.bodyContent,
-            headers = {k.lower():v for k,v in ex.inHeaders.items()}
+            content = ex.bodyContent,   # Content type
+            headers = ex.inHeaders,     # HeadersMixedCase type
         )
         envResponse["response"]=RmDict(   # new
-            status= envResponse["status"],
-            content= envResponse["content"],
-            headers= envResponse["headers"], ## headers != header !!!!!!!!!!!!! harmoniser !!!
-            json= envResponse.get("json",None),
-            xml= envResponse.get("xml",None),
+            status= ex.status,
+            content=ex.content,         # Content type
+            headers= ex.outHeaders,     # HeadersMixedCase type
+            time=ex.time,
         )
+        
+        envResponse["rm"]=RmDict(
+            response=envResponse["response"],
+            request=envResponse["request"],
+        )
+
+        # shorhands (historik)
+        envResponse["content"] = envResponse["response"]["content"]
+        envResponse["status"] = envResponse["response"]["status"]
+        envResponse["headers"] = envResponse["response"]["headers"]
+
+        if contentAsJson:
+            envResponse["response"]["json"] = contentAsJson
+            envResponse["json"] = contentAsJson # shothands (historik)
+
+        if contentAsXml:
+            envResponse["response"]["xml"] = contentAsXml
+            envResponse["xml"] = contentAsXml # shothands (historik)
+
         #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
-        try:
+        try: # postsave
             for s in saves:
                 for saveKey, saveWhat in s.items():
-                    self.parent.env.save(saveKey, envResponse.replaceObj(saveWhat), self.parent.name=="BEGIN" )
-                    # gscope.save(saveKey, postSaveScope.replaceObj(saveWhat) ) # NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+                    v=envResponse.replaceObj(saveWhat)
+                    self.parent.env.save(saveKey, v, self.parent.name=="BEGIN" )
+                    envResponse[saveKey]=v
         except RMPyException as e:
             ex.status=None
             ex.content = e
             ex.info="SAVE EXCEPTION"
 
-        # important !
-        envResponse["content"] = ex.content
-        envResponse["status"] = ex.status
+            # important ! (not top ;-( )
+            envResponse["content"] = ex.content
+            envResponse["status"] = ex.status
+            envResponse["response"]["content"] = ex.content
+            envResponse["response"]["status"] = ex.status
+            envResponse["rm"]["response"]["content"] = ex.content
+            envResponse["rm"]["response"]["status"] = ex.status
 
         # upgrade 'ex' !
         ex.id = uid.hexdigest()
-        ex.doc = doc
+        ex.doc = envResponse.replaceTxt(doc) if doc else None
         ex.scope = scope
         ex.nolimit = self.nolimit
         ex.tests = TestResult(tests,envResponse,ex.status)
@@ -1286,7 +1284,8 @@ async def asyncExecute(method, path, url, body, headers,http=None,timeout=None) 
         status,outHeaders,content,info = await http(method, url, body, headers, timeout=timeout)
 
 
-    time =datetime.datetime.now() - t1
+    diff = (datetime.datetime.now() - t1)
+    time=(diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
     return Exchange(method, path, url, body, headers,status, outHeaders,content, info,time)
 
 
@@ -1394,7 +1393,7 @@ def getValOpe(v):
 
 
 def lowerIfHeader(t:str):
-    if t.startswith("header."):
+    if t.startswith("headers."):
         tt=t.split("|",1)
         t="|".join( [tt[0].lower()] + tt[1:] )
     return t
@@ -1423,10 +1422,10 @@ class TestResult(list):
                 testContains=False
             else: # header
                 if "headers" in env:
-                    header=what.lower()
-                    if header in env["headers"]:
+                    v=env["headers"][what]
+                    if v:
                         print( cy("**DEPRECATED**"), "use new header syntax in tests (- headers.%s: ...)"%what )
-                        tvalue = env["headers"][header]
+                        tvalue = v
                         testContains=True
 
             # test if all match as json (list, dict, str ...)
@@ -2243,4 +2242,3 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 if __name__=="__main__":
     sys.exit(main())
-    
