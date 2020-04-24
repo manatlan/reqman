@@ -63,3 +63,4 @@ def test_simple():
     assert "<entete>" in env.replaceTxt("hello '<<xml>>'")
 
     print(env["xml"])
+

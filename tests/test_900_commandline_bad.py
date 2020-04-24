@@ -36,8 +36,8 @@ def test_EXECUTION_bad_switch(exe):
         fid.write("")
     r=exe(".","-unknown")
     assert r.rc==-1
-    assert "ERROR EXECUTION: bad switch" in r.console
-    assert "USAGE" not in r.console
+    assert "ERROR COMMAND: bad switch" in r.console
+    assert "USAGE" in r.console
 
 
 

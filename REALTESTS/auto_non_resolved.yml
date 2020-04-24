@@ -1,0 +1,32 @@
+#!python3 fakereqman.py
+#:valid:0,0,0,1,0 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- POST: http://localhost:11111/bigtxt
+  body: <<unknown>>
+  tests:
+    status: 200
+
+- GET: http://localhost:11111/<<unknown>>
+  tests:
+    status: 200
+
+- GET: http://localhost:11111/get_txt
+  headers:
+    myHeader: <<unknown>>
+  tests:
+    status: 200
+
+- GET: http://localhost:11111/get_txt
+  doc: <<unknown>> # OSEF :-)
+  tests:
+    status: 200
+
+- GET: http://localhost:11111/get_txt
+  tests:
+    status: <<unknown>> # OSEF :-)
+

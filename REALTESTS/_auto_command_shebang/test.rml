@@ -1,0 +1,5 @@
+#! --b
+
+- GET: /get_txt # same as "auto_rmr_cant_save_rmr_on_dual.yml" but with a reqman.conf
+  tests:
+    - status: 200

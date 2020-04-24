@@ -4,12 +4,49 @@
     
 from aiohttp import web
 import json,asyncio
+import os, tempfile, shutil
 
 routes = web.RouteTableDef()
+
+@routes.post('/ping')
+async def hello(request):
+    b=await request.read()
+    return web.Response(status=201,body=b,headers=request.headers)
+
 
 @routes.get('/set')
 async def hello(request):
     return web.Response(status=200,text=request.query.get("value","?"))
+
+@routes.get('/cookie')
+async def cookie(request):
+    resp=web.Response(status=200,text="?")
+    
+    argv=request.query.get("value","?")
+    if argv=="create":
+        resp.set_cookie("cpt",0)
+        msg= "create"
+    elif argv=="inc":
+        cpt=int(request.cookies.get("cpt",-1))
+        if cpt>=0:
+            resp.set_cookie("cpt",cpt+1)
+            msg="inc"
+        else:
+            msg="no"
+    elif argv=="view":
+        cpt=int(request.cookies.get("cpt",-1))
+        if cpt>=0:
+            msg=str(cpt)
+        else:
+            msg="no"
+    elif argv=="del":
+        resp.del_cookie("cpt")
+        msg="del"
+    else:
+        msg="???"
+
+    resp.text=msg
+    return resp
 
 @routes.get('/bigtxt')
 async def hello(request):
@@ -127,7 +164,7 @@ class FakeWebServer(threading.Thread): # the webserver is ran on a separated thr
 
 
 
-def checkSign(sign1,sign2):
+def checkSign(sign1,sign2,args):
     """ Return the error or '' """
     if sign1==sign2:
         return "" # no error
@@ -135,83 +172,101 @@ def checkSign(sign1,sign2):
         dsign1=sign1.split(',')
         dsign2=sign2.split(',')
         if len(dsign1)!=len(dsign2):
-            return "Not same number od requests (is there a new ?)"
+            return "Not same number of requests (is there a new ?), for %s" % args
         else:
             for idx,(t1,t2) in enumerate(zip(dsign1,dsign2)):
                 if len(t1) != len(t2):
-                    return "Req %s has %s tests (expected %s)" % (idx+1,len(t2),len(t1))
+                    return "Req %s has %s tests (expected %s), for %s" % (idx+1,len(t2),len(t1),args)
                 else:
                     if t1!=t2:
                         diffs=[i+1 for i,(a1,a2)  in enumerate(zip(t1,t2)) if a1!=a2]
-                        return "Req %s fail on its %s test" % (idx+1,diffs[0])
+                        return "Req %s fail on its %s test, for %s" % (idx+1,diffs[0],args)
 
-def main( runServer=False ):
+def main( file, avoidBrowser=True ):
     """
-    retourne 0 : si valid est ok
-    retourne 1 : si valid est ko
-    retourne None : si pas validation
+    yield "" : si valid est ok
+    yield "error" : si valid est ko
+    yield None : si pas validation
     """
-
-
-    class RR: pass
+    class RR: 
+        rr=None
     o=RR()
 
-    #check valid in argv -> valid
-    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    removeArgIdx=None
-    valid=None
-    for idx, argv in enumerate(sys.argv):
-        if argv.startswith("valid:"):
-            valid = argv[6:]
-            removeArgIdx=idx
-    if removeArgIdx:
-        del sys.argv[removeArgIdx]
-    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
+    #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
+    newValids=[i[8:i.rfind('#') or None].strip().split() for i in reqman.FString(file).splitlines() if i.startswith("#:valid:")]
+    #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
     try:
-        if runServer:
-            ws=FakeWebServer(11111)
-            ws.start()
-            import time
-            time.sleep(1) # wait server start ;-(
+        precdir = os.getcwd()
+        testdir = tempfile.mkdtemp()
+        os.chdir( testdir )
 
-        rc=reqman.main(hookResults=o)
+
+
+        for newValid in newValids:
+            valid,*args=newValid
+            args=[file if i=="THIS" else i for i in args]
+            if avoidBrowser==True and "--b" in args: args.remove("--b") # remove --b when pytest ;-)
+            sys.argv = ["reqman"] + args
+            
+            rc=reqman.main(hookResults=o)
+            if rc>=0:
+                if hasattr(o,"rr"):
+                    details=[]
+                    details2=[]
+                    if o.rr and o.rr.results:
+                        for i in o.rr.results:
+                            for j in i.exchanges:
+                                if type(j)==tuple:
+                                    if j[0]: details.append("".join([str(int(t)) for t in j[0].tests]))
+                                    if j[1]: details2.append("".join([str(int(t)) for t in j[1].tests]))
+                                else:
+                                    details.append("".join([str(int(t)) for t in j.tests]))
+                        toValid=",".join(details)
+                        if details2: toValid+=":"+",".join(details2)
+                        
+                        if valid:
+                            err=checkSign(valid,toValid,args)
+                            print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
+                        else:
+                            print("> No validation check! (valid:%s)" % toValid)
+                            err=None
+                    else:
+                        err=None
+                else:
+                    err=""    #TODO: do something here (see test "new url")
+            else:
+                toValid="ERROR"
+                if valid:
+                    err="" if valid==toValid else "mismatch (%s!=%s, for %s)" % (valid,toValid,args)
+                    print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
+                else:
+                    print("> No validation check! (valid:%s)" % toValid)
+                    err=None    
+
+            yield err
+    
     finally:
-        if runServer:
-            ws.stop()
-
-    frc=None
-    if rc>=0 and hasattr(o,"rr"):
-        details=[]
-        for i in o.rr.results:
-            for j in i.exchanges:
-                details.append("".join([str(int(t)) for t in j.tests]))
-        toValid=",".join(details)
-        
-        if valid:
-            err=checkSign(valid,toValid)
-            print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
-        else:
-            print("> No validation check! (valid:%s)" % toValid)
-            err=None
-    else:
-        toValid="ERROR"
-        if valid:
-            err="" if valid==toValid else "no error"
-            print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
-        else:
-            print("> No validation check! (valid:%s)" % toValid)
-            err=None
-
-    return err
+        os.chdir( precdir )
+        shutil.rmtree(testdir)   
 
 
 if __name__=="__main__":
-    err=main(runServer=True)
-    if err is None:
-        sys.exit( -1)
-    elif err=="":
+    
+    # sys.argv=["","REALTESTS/auto_new_response_request.yml"] # *** FOR running in DEDUG MODE ***
+
+    try:
+        ws=FakeWebServer(11111)
+        ws.start()
+        import time
+        time.sleep(1) # wait server start ;-(
+
+        for err in main(sys.argv[1],avoidBrowser=False):
+            if err is None:
+                sys.exit( -1)
+            elif err:
+                sys.exit(1)
+        print("*** ALL IS OK ***")
         sys.exit(0)
-    else:
-        sys.exit(1)
+    finally:
+        ws.stop()
 

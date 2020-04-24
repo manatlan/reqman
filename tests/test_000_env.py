@@ -30,11 +30,13 @@ def test_createEnv():
     assert reqman.Env( "a: 42" ) == {"a":42}
 
 def test_createEnvBad():
-    with pytest.raises(reqman.RMFormatException):
-        reqman.Env( list("abc") )
+    assert reqman.Env( list("abc") ) == {}
+    assert reqman.Env( "[1,2,3]" ) == {}
+    # with pytest.raises(reqman.RMFormatException):
+    #     reqman.Env( list("abc") )
 
-    with pytest.raises(reqman.RMFormatException):
-        reqman.Env( "[1,2,3]" )
+    # with pytest.raises(reqman.RMFormatException):
+    #     reqman.Env( "[1,2,3]" )
 
     with pytest.raises(reqman.RMFormatException):
         reqman.Env( "- yolo\nbad: yaml" )
@@ -57,6 +59,11 @@ def test_jpath():
     assert reqman.jpath(env, "tata.l.1") == "b"
     assert reqman.jpath(env, "tata.l.1.size") == 1
     assert reqman.jpath(env, "tata.l.size") == 3
+
+def test_jpath_python():
+    env=dict(fct="return dict(a=dict(b=42))")
+    assert reqman.jpath( env, "fct.size") == 1
+    assert reqman.jpath( env, "fct.a.b") == 42
 
 def test_simple():
     dt = datetime.datetime.now()
@@ -184,4 +191,22 @@ def test_switches():
         obj1=dict(root="https://w1"),
     ))
     assert list(env.switches)==[('obj1', 'https://w1')]
-    
+
+def test_renameKeys():
+    dd=dict(
+        KEY="kiki",
+        a=42,
+        b=dict(KEY=12,c=13),
+    )
+    reqman.renameKeyInDict(dd,"KEY","MyKey")
+    assert dd=={'a': 42, 'b': {'c': 13, 'MyKey': 12}, 'MyKey': 'kiki'}
+
+def test_HeadersMixed():
+    dd=reqman.HeadersMixedCase(
+        KeY="kiki",
+    )
+    assert dd["KeY"]=="kiki"
+    assert dd["key"]=="kiki"
+    assert dd["key2"]==None
+    assert dd.get("key")=="kiki"
+    assert dd.get("key2")==None

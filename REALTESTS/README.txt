@@ -1,6 +1,6 @@
-Here, there will be more "Real tests" (the "examples" will be removed)
+Here, there will be more "Real tests"
 !!! News tests will be in "realtests" !!!
 
-python3.7 -m pytest REALTESTS
-python3 -m pytest --cov-report html --cov=reqman REALTESTS/   --> 71% cov currently
-python3 -m pytest --cov-report html --cov=reqman tests/ REALTESTS/   --> 95% cov currently
+python3.7 -m pytest tests                                                     --> official tests ;-)
+python3.7 -m pytest --cov-report html --cov=reqman tests/test_realtests.py    --> 91% cov currently
+python3.7 -m pytest --cov-report html --cov=reqman tests                      --> 97% cov currently

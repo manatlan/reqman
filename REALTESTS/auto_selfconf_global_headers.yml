@@ -1,18 +1,21 @@
 #!python3 fakereqman.py
-#:valid:ERROR THIS --b
+#:valid:1111 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 
-- GET: http://localhost:11111/get_json
+- conf:
+    root: http://localhost:11111
+    headers:
+      X-My: Hello
+
+- POST: /ping
+  body: hello
   tests:
-    - status: 200
-- GET: http://localhost:11111/get_json
-  foreach: <<i|method>>
-  params:
-    i: 0
-    method: return 12/x
-  tests:
-    - status: 200
+    - status: 201
+    - content: hello
+    - headers.X-mY: Hello   # mixed case heaser works
+    - headers.x-my: Hello
+

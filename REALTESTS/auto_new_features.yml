@@ -1,4 +1,5 @@
-#!python3 fakereqman.py valid:111111,111111111 --b 
+#!python3 fakereqman.py
+#:valid:111111,11111111 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -19,15 +20,14 @@
 
 - new:
 
-    - GET: http://localhost:11111/get_json
+    - GET: +http://localhost:11111/get_json
       doc: new mechanism tests
       tests:
         - status|testInt: ok                #new
         - json.info.n|testInt: ok           #new
         - json.msg|testStr: ok              #new
-        - header.X-MyHeader: hello          #new
-        - header.x-myheader: hel            #new (contains)
-        - header.x-myHEADer|upper|decor: XHELLOX    #new
+        - headers.x-myheader: hello          #new (lowercased!)
+        - headers.x-myheader|upper|decor: XHELLOX    #new (lowercased!)
 
         - mybool: true                      # can test real var too !
         - kiki: null                        # unknown var is None/null

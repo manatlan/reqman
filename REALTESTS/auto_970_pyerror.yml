@@ -1,4 +1,5 @@
-#!python3 fakereqman.py valid:1,0,0,0,0,1,0 --b 
+#!python3 fakereqman.py
+#:valid:1,0,0,0,0,1,0 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -50,7 +51,7 @@
   tests:
     - status: 200
 - GET: http://localhost:11111/get_json
-  save: 
+  save:
     r: <<i|method>>
   params:
     i: 0

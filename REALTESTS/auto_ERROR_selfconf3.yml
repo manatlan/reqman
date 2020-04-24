@@ -1,18 +1,14 @@
 #!python3 fakereqman.py
-#:valid:ERROR THIS --b
+#:valid:ERROR THIS 
+
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
+- conf:
+    42
+- GET: http://localhost:11111/get_txt
+  tests:
+    - status: <<v200>>
 
-- GET: http://localhost:11111/get_json
-  tests:
-    - status: 200
-- GET: http://localhost:11111/get_json
-  foreach: <<i|method>>
-  params:
-    i: 0
-    method: return 12/x
-  tests:
-    - status: 200

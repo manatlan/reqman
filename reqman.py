@@ -25,6 +25,7 @@ import pickle,zlib,hashlib
 import http.cookiejar
 import concurrent,ssl
 from xml.dom import minidom
+import encodings.idna
 
 # import httpcore # see "pip install httpcore"
 import aiohttp # see "pip install aiohttp"
@@ -33,7 +34,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.3.10.0" #only SemVer (the last ".0" is win only)
+__version__="2.4.0.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -53,7 +54,7 @@ except ImportError:
     cy = cr = cg = cb = cw = lambda t: t
 
 KNOWNVERBS=["GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT"]
-KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body" ]
+KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body","if" ]
 REQMAN_CONF="reqman.conf"
 
 class OutputConsole(enum.Enum):
@@ -81,8 +82,11 @@ def isPython(x):
 
 def jdumps(o,*a,**k):
     k["ensure_ascii"]=False
+    #~ k["default"]=serialize
     return json.dumps(o,*a,**k)
 
+#~ def serialize(obj):
+    #~ return str(obj)
 
 def izip(ex1,ex2):
     pop= lambda ex: len(ex)>0 and ex.pop(0) or None
@@ -129,6 +133,12 @@ def comparable(l):
     for x1,x2 in l:
         return x1==x2
 
+def renameKeyInDict(d,oname,nname):
+    for k,v in d.items():
+        if k==oname:
+            d[nname] = d.pop(k)
+        if isinstance(v,dict):
+            renameKeyInDict(v,oname,nname)
 
 def ustr(x): # ensure str are utf8 inside
     # assert type(x)==str
@@ -196,12 +206,32 @@ class Content:
     def __repr__(self) -> str:
         return toStr(self.__b)
     def toJson(self):
-        return json.loads( self.__b.decode() )
+        try:
+            return json.loads( self.__b.decode() )
+        except:
+            return None
     def toXml(self):
-        return Xml( repr(self) )
-    def bytes(self):
+        try:
+            return Xml( repr(self) )
+        except:
+            return None
+    def __bytes__(self):
         return self.__b
 
+class RmDict(dict):
+    def __init__(self,**kargs):
+        self.__dict__.update(kargs)
+        dict.__init__(self,**kargs)
+
+class HeadersMixedCase(dict):
+    def __init__(self,**kargs):
+        dict.__init__(self,**kargs)
+    def __getitem__(self,key):
+        d={k.lower():v for k,v in self.items()}
+        return d.get( key.lower(), None )
+    def get(self,key,default=None):
+        d={k.lower():v for k,v in self.items()}
+        return d.get( key.lower(), default )
 
 """
 AHTTP = httpcore.AsyncClient(verify=False)
@@ -254,9 +284,8 @@ async def request(method,url,body:bytes,headers, timeout=None):
                     txt=await r.text()
                     content=txt.encode("utf-8") # force bytes to be in utf8
                     
-            h={k:ascii(v) for k,v in dict(r.headers).items()} # avoid surrogate (because headers are ascii only!)
             info = "HTTP/%s.%s %s %s" % (r.version.major,r.version.minor, int(r.status), r.reason)
-            return r.status, h, Content(content), info
+            return r.status,  dict(r.headers), Content(content), info
     except aiohttp.client_exceptions.ClientConnectorError as e:
         return None, {}, "Unreachable", ""        
     except concurrent.futures._base.TimeoutError as e:
@@ -306,6 +335,7 @@ def DYNAMIC(x, env: dict) -> T.Union[str, None]:
     pass  # will be overriden (see below vv)
 
 def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
+    orig=Env(elem)
     for i in path.strip(".").split("."):
         try:
             if type(elem) == list:
@@ -313,11 +343,15 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
                     return len(elem)
                 else:
                     elem = elem[int(i)]
-            elif type(elem) in [dict,Env]:
+            elif isinstance(elem,dict):
                 if i == "size":
                     return len(list(elem.keys()))
                 else:
                     elem = elem.get(i, NotFound)
+
+                    if isPython(elem):
+                        elem=orig.transform(None, i)
+
             elif type(elem) == str:
                 if i == "size":
                     return len(elem)
@@ -388,9 +422,9 @@ class Exchange:
         self.url=url
         self.body=body
         self.bodyContent=Content(body)
-        self.inHeaders=inHeaders
+        self.inHeaders=HeadersMixedCase(**inHeaders)
         self.status = status
-        self.outHeaders = outHeaders
+        self.outHeaders = HeadersMixedCase(**outHeaders)
         self.content = content
         self.info = info
         self.time=time
@@ -412,14 +446,30 @@ class Env(dict):
             except Exception as e:
                 raise RMFormatException("Env conf is not yaml")
 
-        if type(d) is not dict:
-            raise RMFormatException("Env conf is not a dict")
+        if type(d) not in [dict,Env]:
+            # raise RMFormatException("Env conf is not a dict %s" % str(d))
+            d={}
 
         self.__shared={} # shared saved scope between all cloned Env
         self.__global={} # shared global saved scope between all cloned Env (from BEGIN only)
 
-        dict.__init__(self,d)
+        dict.__init__(self,dict(d))
         self.cookiejar = CookieStore()
+
+
+    def _getProc(self,name):
+        return Reqs(yaml.dump(self[name]) if name in self else "",self,name=name)
+
+    def getBEGIN(self,local=False):
+        if local:
+            return self._getProc(".BEGIN")
+        else:
+            return self._getProc("BEGIN")
+    def getEND(self,local=False):
+        if local:
+            return self._getProc(".END")
+        else:
+            return self._getProc("END")
 
 
     def save(self,key,value,isGlobal=False):
@@ -450,7 +500,7 @@ class Env(dict):
             for k in switches:
                 yield k,self["switches"].get(k,{}).get("doc","???")
         elif "switchs" in self.keys():
-            # new system (hourraaaaa !!!! )
+            # new system (but with bad name)
             switches=self["switchs"].keys()
             for k in switches:
                 yield k,self["switchs"].get(k,{}).get("doc","???")
@@ -470,14 +520,12 @@ class Env(dict):
                 switches=self.get("switchs",{})
             if switch in switches:
                 dict_merge(self,switches[switch])
-            else:
-                raise RMException("bad switch '%s'" % switch)
 
     def replaceObj(self, v: T.Any) -> T.Any:  # same as txtReplace() but for "object" (json'able)
         if type(v) is bytes:
             return v
         elif type(v) is Content: # (when save to var)
-            return v.bytes()
+            return bytes(v)
         elif type(v) is not str:
             v=jdumps(v)
 
@@ -518,7 +566,8 @@ class Env(dict):
                         content = None
 
                     for m in method.split("|"):
-                        content = self.replaceObj( content )    ## important, resolv inner method first .... see tests 044, 045, 046
+                        if type(content) != RmDict:   # No try to replace things on a RmDict
+                            content = self.replaceObj( content )    ## important, resolv inner method first .... see tests 044, 045, 046
 
                         content = self.transform(content, m)
                     return content
@@ -535,12 +584,7 @@ class Env(dict):
                         else:
                             return ll
                     #-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
-                    x=jpath(self, var)
-                    if isPython(x):
-                        ld,lf=var.split(".",1)
-                        r=self.transform(None, ld)
-                        x=jpath(r,lf)
-                    return x
+                    return jpath(self, var)
 
                 elif var in self:
                     if isPython(self[var]):
@@ -638,7 +682,6 @@ class Reqs(list):
         self.__proc={}
         self._trace=trace
         self.exchanges=None   # list of Exchange
-        # self.name=type(obj) is FString and os.path.relpath(obj.filename, os.getcwd()) or name
         self.name=obj.filename if type(obj) is FString else name
 
 
@@ -648,6 +691,7 @@ class Reqs(list):
             self.env=env.clone(cloneSharedScope=False) # remove shared one
         elif type(env) is dict:
             self.env=Env(env)
+
 
         def controle(obj) -> T.List:
             """ Controle that 'obj' is a list of dict, and is valid """
@@ -660,6 +704,7 @@ class Reqs(list):
             else:
                 raise self._errorFormat("Reqs: bad object content")
             # here 'obj' is a list of dict
+
             liste=[]
             for i in obj:
                 if isinstance(i,str):
@@ -671,6 +716,19 @@ class Reqs(list):
                 elif isinstance(i,dict):
                     keys=list(i.keys())
                     if len(keys)==1 and (keys[0] not in KNOWNVERBS+["call"]) and (type(i[keys[0]]) in [dict,list]):
+
+                        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+                        if "conf" in keys:
+                            s=i["conf"]
+                            self._assertType("conf",s,[dict])
+
+                            if any( [type(i) is ReqConf for i in liste] ):
+                                raise self._errorFormat("Reqs: multiple 'conf' (only one is possible)")
+
+                            liste.insert(0, ReqConf(s) )
+                            continue
+                        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+
                         # it's a definition of a proc's named 'key', content = value
                         key=keys[0]
                         value=i[key]
@@ -706,6 +764,7 @@ class Reqs(list):
 
 
                                 for r in reqs: # surcharge reqs from 'i'
+                                    r.updateIf(i)
                                     r.updateBody(i)
                                     r.updateDoc(i)
                                     r.updateHeaders(i)
@@ -730,6 +789,7 @@ class Reqs(list):
                                 raise self._errorFormat("Reqs: The action %s should contains a path/string" % method)
 
                             r=Req(method,path,self)
+                            r.updateIf(i)
                             r.updateBody(i)
                             r.updateDoc(i)
                             r.updateHeaders(i)
@@ -778,11 +838,13 @@ class Reqs(list):
             raise self._errorFormat("TT: %s is malformed, not a %s" % (name,types))
 
     def execute(self,http=None,outputConsole=OutputConsole.MINIMAL) -> list:
+        """ call asyncReqsExecute in sync, used only in old pytests """
+        switches=[]
         loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.asyncExecute(http,outputConsole=outputConsole))
+        return loop.run_until_complete(self.asyncReqsExecute(switches,http,outputConsole=outputConsole))
 
-    async def asyncExecute(self,http=None,outputConsole=OutputConsole.MINIMAL) -> list:
-
+    async def asyncReqsExecute(self,switches:list,http=None,outputConsole=OutputConsole.MINIMAL) -> list:
+        assert type(switches) is list
         ############################################# live console
         if len(self)>0 and outputConsole in [ OutputConsole.MINIMAL, OutputConsole.FULL ]:
             print("TEST:",cb(self.name))
@@ -806,7 +868,8 @@ class Reqs(list):
                 if isinstance(i, Req):
                     log(level,"* Req:",oneline(i))
                     yield level,gscope,i.clone() # this clone has no effect ;-)
-                if isinstance(i, ReqGroup):
+
+                elif isinstance(i, ReqGroup):
                     scope=gscope.clone() #important
 
                     log(level,"* ReqGroup:",len(i.reqs),"ReqItem(s)")
@@ -832,12 +895,52 @@ class Reqs(list):
                         for l,s,r in _test(i.reqs,scope,level+1):
                             r.updateParams( {"params": fparam} )
                             yield l,s,r
+                elif isinstance(i, ReqConf):
+                    pass # already treated !
+                else:
+                    raise RMException("Reqs: unwaited object %s" % i)
 
+        gscope=self.env.clone()
+
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
         ll=[]
-        for l,s,r in _test(self,self.env):
-            ex=await r.asyncExecute(s,http,outputConsole=outputConsole)
-            ll.append( ex )
-            log(l,"  >>> EXECUTE:",ex)
+        for i in self:
+            if isinstance(i, ReqConf):
+                print(cy("**WARNING**"), "%s use self conf" % self.name)
+
+                localEnv=Env( i.conf )   
+                for switch in switches:
+                    localEnv.mergeSwitch(switch)
+
+                gscope.update( dict(localEnv) )
+
+        reqsBegin=gscope.getBEGIN(local=True)
+        reqsEnd=gscope.getEND(local=True) 
+        if reqsBegin is not None:
+            for r in reqsBegin:
+                ll.append( await r.asyncReqExecute(gscope,http,outputConsole=outputConsole) )                
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+
+
+        for l,s,r in _test(self,gscope):
+            doIf=True
+            if r.ifs:
+                envIf=s.clone()
+                dict_merge(envIf,r.params)
+                doIf=all( [envIf.replaceObjOrNone( i ) for i in r.ifs] )
+
+            if doIf:
+                ex=await r.asyncReqExecute(s,http,outputConsole=outputConsole)
+                ll.append( ex )
+                log(l,"  >>> EXECUTE:",ex)
+            else:
+                print( cy("**WARNING**"), "'if statement' not resolved" )
+
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+        if reqsEnd is not None:
+            for r in reqsEnd:
+                ll.append( await r.asyncReqExecute(gscope,http,outputConsole=outputConsole) )                
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         self.exchanges = ll
         return ll
@@ -849,12 +952,28 @@ class Reqs(list):
 
 class ReqItem: pass
 
+class ReqConf(ReqItem):
+    def __init__(self,conf:dict):
+
+        conf=clone(conf)
+        renameKeyInDict(conf,"BEGIN",".BEGIN")
+        renameKeyInDict(conf,"END",".END")
+        
+        self.conf=conf
+
+    def __repr__(self):
+        return "<ReqConf %s>" % self.conf
+
+
 class ReqGroup(ReqItem):
     def __init__(self,reqs:list,foreach,params):
         self.reqs = reqs
         self.foreach = foreach
         self.scope = params
 
+    def updateIf( self, o: dict ):
+        for r in self.reqs:
+            r.updateIf(o)
     def updateHeaders( self, o: dict ):
         for r in self.reqs:
             r.updateHeaders(o)
@@ -897,6 +1016,7 @@ class Req(ReqItem):
         self.body=None # or str,dict,list,bool,bytes,int,float
         self.doc=None # or str
         self.saves=[]
+        self.ifs=[]
 
     def clone(self):
         r=Req(self.method,self.path,self.parent)
@@ -907,7 +1027,14 @@ class Req(ReqItem):
         r.doc = clone(self.doc)
         r.saves = clone(self.saves)
         r.nolimit=clone(self.nolimit)
+        r.ifs=clone(self.ifs)
         return r
+
+    def updateIf( self, o: dict ): # merge headers
+        if 'if' in o:
+            v=o.get("if",None)
+            self.parent._assertType("if",v,[str,int,bool,float])
+            self.ifs.append(v)
 
     def updateHeaders( self, o: dict ): # merge headers
         headers=o.get("headers",{})
@@ -946,6 +1073,7 @@ class Req(ReqItem):
     def __repr__(self):
         l=[]
         l.append("<Req %s: %s>" % (self.method,self.path))
+        if self.ifs: l.append("\tif: %s" % (self.ifs))
         if self.headers: l.append("\theaders: %s" % (self.headers))
         if self.params: l.append("\tparams: %s" % (self.params))
         if self.tests: l.append("\ttests: %s" % (self.tests))
@@ -954,17 +1082,17 @@ class Req(ReqItem):
         if self.saves: l.append("\tsaves: %s" % (self.saves))
         return "\n".join(l)
 
-    async def asyncExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange:
+    async def asyncReqExecute(self,gscope,http=None,outputConsole=OutputConsole.MINIMAL) -> Exchange:
         scope=gscope.clone() # important
         dict_merge(scope,self.params)
 
         root = scope.get("root",None) # global root
         gheaders = scope.get("headers",None) # global header
-        timeout = scope.get("timeout",None) # global timeout
         try:
+            timeout = scope.get("timeout",None) # global timeout
             timeout = timeout and float(timeout) / 1000.0 or None
         except ValueError:
-            pass
+            timeout=None
 
         method, path, body, headers = self.method, self.path, self.body, self.headers
         doc, tests, saves = self.doc, self.tests, self.saves
@@ -1010,7 +1138,6 @@ class Req(ReqItem):
                     raise RMNonResolvedVars("Header `%s` non resolved" % k)
             #=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 
-            if doc: doc = scope.replaceTxt(doc)
             tests= [{list(d.keys())[0] : scope.replaceObj( list(d.values())[0]) } for d in tests] # cast value as str
 
             # set cookies in request according env
@@ -1020,51 +1147,74 @@ class Req(ReqItem):
         except (RMPyException,RMFormatException,RMNonResolvedVars) as e: # RMFormatException for headers resolver !
             ex=Exchange(method,gpath,gpath,body or "", headers, None,{},str(e),"TEST EXCEPTION",0)
         except Exception as e: # RMFormatException for headers resolver !
-            ex=Exchange(method,gpath,gpath,body or "", headers, 500,{},str(e),"TEST EXCEPTION",0)
+            ex=Exchange(method,gpath,gpath,body or "", headers, 500,{},str(e),"TEST EXCEPTION (bug)",0)
         finally:
             assert ex
             self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
 
         #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
         envResponse = scope.clone()
-        envResponse["content"] = ex.content
-        envResponse["status"] = ex.status
-        envResponse["header"] = {k.lower():v[1:-1] for k,v in ex.outHeaders.items()}  # NEW !!!!
-        #TODO: expose time ?
-        try:
-            envResponse["json"] = ex.content.toJson()
-        except:
-            pass
-        try:
-            envResponse["xml"] = ex.content.toXml()
-        except:
-            pass
+        contentAsJson=ex.content.toJson() if type(ex.content) == Content else None
+        contentAsXml=ex.content.toXml() if type(ex.content) == Content else None
+
+        envResponse["request"]=RmDict(   # new
+            path = ex.url,
+            method = ex.method,
+            content = ex.bodyContent,   # Content type
+            headers = ex.inHeaders,     # HeadersMixedCase type
+        )
+        envResponse["response"]=RmDict(   # new
+            status= ex.status,
+            content=ex.content,         # Content type
+            headers= ex.outHeaders,     # HeadersMixedCase type
+            time=ex.time,
+        )
+        
+        envResponse["rm"]=RmDict(
+            response=envResponse["response"],
+            request=envResponse["request"],
+        )
+
+        # shorhands (historik)
+        envResponse["content"] = envResponse["response"]["content"]
+        envResponse["status"] = envResponse["response"]["status"]
+        envResponse["headers"] = envResponse["response"]["headers"]
+
+        if contentAsJson:
+            envResponse["response"]["json"] = contentAsJson
+            envResponse["json"] = contentAsJson # shothands (historik)
+
+        if contentAsXml:
+            envResponse["response"]["xml"] = contentAsXml
+            envResponse["xml"] = contentAsXml # shothands (historik)
+
         #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
-
-        try:
+        try: # postsave
             for s in saves:
                 for saveKey, saveWhat in s.items():
-                    self.parent.env.save(saveKey, envResponse.replaceObj(saveWhat), self.parent.name=="BEGIN" )
-                    # gscope.save(saveKey, postSaveScope.replaceObj(saveWhat) ) # NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+                    v=envResponse.replaceObj(saveWhat)
+                    self.parent.env.save(saveKey, v, self.parent.name=="BEGIN" )
+                    envResponse[saveKey]=v
         except RMPyException as e:
             ex.status=None
             ex.content = e
-            ex.info="TEST EXCEPTION"
+            ex.info="SAVE EXCEPTION"
 
-        # important !
-        envResponse["content"] = ex.content
-        envResponse["status"] = ex.status
+            # important ! (not top ;-( )
+            envResponse["content"] = ex.content
+            envResponse["status"] = ex.status
+            envResponse["response"]["content"] = ex.content
+            envResponse["response"]["status"] = ex.status
+            envResponse["rm"]["response"]["content"] = ex.content
+            envResponse["rm"]["response"]["status"] = ex.status
 
         # upgrade 'ex' !
         ex.id = uid.hexdigest()
-        ex.doc = doc
+        ex.doc = envResponse.replaceTxt(doc) if doc else None
         ex.scope = scope
         ex.nolimit = self.nolimit
-        #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
         ex.tests = TestResult(tests,envResponse,ex.status)
-        # ex.tests = TestResultOld(tests,ex.status, ex.content , ex.outHeaders)
-        #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
         #=================================================== LIVE CONSOLE
         if outputConsole != OutputConsole.NO:
@@ -1073,7 +1223,7 @@ class Req(ReqItem):
                 print("*",cy(ex.method),ex.url,"-->",cw(ex.content if ex.status is None else ex.status))
 
                 if outputConsole == OutputConsole.FULL:
-                    display=lambda h: "\n".join(["%s: %s" %(k,v[1:-1]) for k,v in h.items()])
+                    display=lambda h: "\n".join(["%s: %s" %(k,v) for k,v in h.items()])
                     if ex.inHeaders: print( padLeft( display(ex.inHeaders) ) )
                     if ex.body: print(padLeft(ex.bodyContent))
                     print(padLeft("-"*75))
@@ -1128,7 +1278,8 @@ async def asyncExecute(method, path, url, body, headers,http=None,timeout=None) 
         status,outHeaders,content,info = await http(method, url, body, headers, timeout=timeout)
 
 
-    time =datetime.datetime.now() - t1
+    diff = (datetime.datetime.now() - t1)
+    time=(diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
     return Exchange(method, path, url, body, headers,status, outHeaders,content, info,time)
 
 
@@ -1177,12 +1328,10 @@ def guessValue(txt):
 def getValOpe(v):
     try:
         if type(v) == str and v.startswith("."):
-            g = re.match(r"^\. *([!=<>]{1,2}) *(.+)$", v)
+            g = re.match(r"^\. *([\?!=<>]{1,2}) *(.+)$", v)
             if g:
                 op, v = g.groups()
-                if op == "==":  # not needed really, but just for compatibility
-                    return v, lambda a, b: b == a, "=", "!="
-                elif op == "=":  # not needed really, but just for compatibility
+                if op in ["==","="]:  # not needed really, but just for compatibility
                     return v, lambda a, b: b == a, "=", "!="
                 elif op == "!=":
                     return v, lambda a, b: b != a, "!=", "="
@@ -1214,6 +1363,20 @@ def getValOpe(v):
                         "<",
                         ">=",
                     )
+                elif op == "?":
+                    return (
+                        v,
+                        lambda a, b: str(a) in str(b),
+                        "contains",
+                        "doesn't contain",
+                    )
+                elif op in ["!?","?!"]:
+                    return (
+                        v,
+                        lambda a, b: str(a) not in str(b),
+                        "doesn't contain",
+                        "contains",
+                    )
     except (
         yaml.scanner.ScannerError,
         yaml.constructor.ConstructorError,
@@ -1223,11 +1386,11 @@ def getValOpe(v):
     return v, lambda a, b: a == b, "=", "!="
 
 
-def lowerIfHeader(t:str):
-    if t.startswith("header."):
-        tt=t.split("|",1)
-        t="|".join( [tt[0].lower()] + tt[1:] )
-    return t
+# def lowerIfHeader(t:str):
+#     if t.startswith("headers."):
+#         tt=t.split("|",1)
+#         t="|".join( [tt[0]] + tt[1:] )
+#     return t
 
 class TestResult(list):
     def __init__(self, tests, env, status) -> None:
@@ -1235,11 +1398,13 @@ class TestResult(list):
         results = []
         for test in tests:
             what, value = list(test.keys())[0], list(test.values())[0]
-            tvalue=env.replaceObjOrNone("<<%s>>" % lowerIfHeader(what))
+            # tvalue=env.replaceObjOrNone("<<%s>>" % lowerIfHeader(what))
+            tvalue=env.replaceObjOrNone("<<%s>>" % what)
 
 
             firstWord = re.split(r"[\.|]",what)[0]
-            testContains = False # true pour contant & headers !!!!!
+            testContains = False # true pour content & "old headers" !!!!!
+            # to ensure compatibility with < 2.3.8
             if firstWord=="content":
                 testContains=True
             elif firstWord=="status":
@@ -1248,14 +1413,14 @@ class TestResult(list):
                 testContains=False
             elif firstWord=="xml":
                 testContains=False
-            elif firstWord=="header":
-                testContains=True
+            elif firstWord=="headers":
+                testContains=False
             else: # header
-                if "header" in env:
-                    header=what.lower()
-                    if header in env["header"]:
-                        print( cy("**DEPRECATED**"), "use new header syntax in tests (- header.%s: ...)"%what )
-                        tvalue = env["header"][header]
+                if "headers" in env:
+                    v=env["headers"][what]
+                    if v:
+                        print( cy("**DEPRECATED**"), "use new header syntax in tests (- headers.%s: ...)"%what )
+                        tvalue = v
                         testContains=True
 
             # test if all match as json (list, dict, str ...)
@@ -1303,8 +1468,8 @@ class TestResult(list):
                 else:
                     test, opOK, opKO, val = (
                         bool,
-                        "matchs any",
-                        "doesn't match any",
+                        "in",
+                        "not in",
                         values,
                     )
 
@@ -1338,7 +1503,7 @@ class ReqmanResult(Result):
         if not name.endswith(".rmr"): name=name+".rmr"
         with open(name, 'rb') as fid:
             buf=fid.read()
-            assert buf[:4] == b"RMR1" #TODO
+            assert buf[:4] == b"RMR2" #TODO
             x=zlib.decompress(buf[4:])
             return pickle.loads(x)
 
@@ -1371,11 +1536,12 @@ class ReqmanResult(Result):
     def switches(self):
         return self.infos[0]["switches"] #TODO: not top (but needed for replaying)
 
-    def saveRMR(self):
-        name="_".join( [self.infos[0]["date"].strftime("%y%m%d_%H%M")] + self.infos[0]["switches"] )+".rmr"
+    def saveRMR(self,name=None):
+        if name is None:
+            name="_".join( [self.infos[0]["date"].strftime("%y%m%d_%H%M")] + self.infos[0]["switches"] )+".rmr"
         with open(name, 'wb') as fid:
             x=pickle.dumps(self)
-            fid.write(b"RMR1"+zlib.compress(x))
+            fid.write(b"RMR2"+zlib.compress(x))
         return name
 
 class ReqmanDualResult(Result):
@@ -1447,25 +1613,27 @@ class Reqman:
         for switch in switches:
             scope.mergeSwitch(switch)
 
-        reqsBegin=Reqs(yaml.dump(scope["BEGIN"]) if "BEGIN" in scope else "",scope,name="BEGIN")
-        reqsEnd=Reqs(yaml.dump(scope["END"]) if "END" in scope else "",scope,name="END") if "END" in scope else None
-
-        results=[]
-
-        if reqsBegin is not None:
-            await reqsBegin.asyncExecute(http)
-            results.append( reqsBegin )
+        reqsBegin=scope.getBEGIN()
+        reqsEnd=scope.getEND()
 
         lreqs=[]
         for yml in self.ymls:
             if isinstance(yml,Reqs):
-                yml.env = scope
-                lreqs.append( yml )
+                reqs=yml
+                reqs.env = scope
+                lreqs.append( reqs )
             else:
-                lreqs.append( Reqs( yml, scope ) )   #(no need to clone) scope is cloned at execution time!
+                lreqs.append( Reqs( yml, scope) )   #(no need to clone) scope is cloned at execution time!
+
+
+        results=[]
+
+        if reqsBegin is not None:
+            await reqsBegin.asyncReqsExecute(switches, http)
+            results.append( reqsBegin )
 
         if paralleliz:
-            ll=[reqs.asyncExecute(http, outputConsole=self.outputConsole) for reqs in lreqs]
+            ll=[reqs.asyncReqsExecute(switches, http, outputConsole=self.outputConsole) for reqs in lreqs]
 
             sem = asyncio.Semaphore(10) # ten concurrent coroutine max
             async with sem:
@@ -1473,13 +1641,12 @@ class Reqman:
             results += lreqs
         else:
             for reqs in lreqs:
-                await reqs.asyncExecute(http, outputConsole=self.outputConsole)
+                await reqs.asyncReqsExecute(switches, http, outputConsole=self.outputConsole)
                 results.append( reqs)
 
         if reqsEnd is not None:
-            await reqsEnd.asyncExecute(http, outputConsole=self.outputConsole)
+            await reqsEnd.asyncReqsExecute(switches, http, outputConsole=self.outputConsole)
             results.append( reqsEnd )
-
 
         r=ReqmanResult(results,switches,self.env)
         #============================= LIVE CONSOLE
@@ -1499,7 +1666,7 @@ async def testContent(content: str, env: dict = {}, http=None) -> ReqmanResult:
     """ test a yml 'content' against env (easy wrapper for main call )"""
     if not isinstance(env,Env): env=Env(env)
     reqs = Reqs(content,env=env)
-    await reqs.asyncExecute(http=http, outputConsole=OutputConsole.NO)
+    await reqs.asyncReqsExecute([],http=http, outputConsole=OutputConsole.NO)
 
     return ReqmanResult( [reqs],[], env )
 
@@ -1544,7 +1711,7 @@ class ReqmanCommand:
                 key,value = p.split(":",1)
                 penv[key]=value
             else:
-                raise RMException("bad param: %s" % p)  # TODO: better here
+                raise RMException("bad param: '%s'" % p)  # TODO: better here
 
         files=[os.path.abspath(i) for i in files]  #TODO: really needed ?
 
@@ -1553,11 +1720,21 @@ class ReqmanCommand:
 
         rqc=findRCup(cp)
         if rqc:
-            # os.chdir( os.path.dirname(rqc) ) # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: needed ?
             self._r.env=Env( FString(rqc))
 
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
+        self.fileSwitches=[]
+        for i in files:
+            try:
+                for s in yaml.load(FString(i),Loader=yaml.FullLoader):
+                    if "conf" in s:
+                        self.fileSwitches.extend( list(Env(s["conf"]).switches) )
+            except:
+                pass
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
         for k,v in penv.items():    # add param's input env into env
-            self._r.env[k]=v
+            self._r.env[k]=guessValue(v)
 
         for i in files:
             self._r.add(FString(i))
@@ -1568,7 +1745,7 @@ class ReqmanCommand:
 
     @property
     def switches(self):
-        return self._r.switches
+        return self._r.switches+self.fileSwitches
 
     def execute(self, switches=[], paralleliz=False, outputConsole=OutputConsole.MINIMAL,fakeServer=None) -> ReqmanResult:
         self._r.outputConsole=outputConsole
@@ -1873,10 +2050,8 @@ def main(fakeServer=None,hookResults=None) -> int:
     #extract sys.argv in --> files,rparams,switch
     files,rparams,switches,dswitches=extractParams(params)
 
-
-    isOldSheBang = len(files)==1 and rparams==[] and switches==[] and dswitches==[] and not files[0].endswith(".rmr") # DEPRECATED
     isNewSheBang = len(files)==1 and rparams==["i"] and switches==[] and dswitches==[] and not files[0].endswith(".rmr")
-    if isOldSheBang or isNewSheBang:
+    if isNewSheBang:
         f=files[0]
         if os.path.isfile(f):
             with open(f,"r") as fid:
@@ -1929,8 +2104,10 @@ def main(fakeServer=None,hookResults=None) -> int:
                 outputConsole=OutputConsole.MINIMAL_ONLYKO
             elif p=="i":
                 pass # already managed (see below ^)                
-            elif p=="s":
+            elif p=="s" :
                 saveRMR=True
+            elif p=="S" :
+                saveRMR=2
             elif p=="r": #TODO: write tests for thoses 3 conditions
                 if switches: raise RMCommandException("Can't set replay mode with switches")
                 if dswitches: raise RMCommandException("Can't set replay mode with switches")
@@ -1959,6 +2136,11 @@ def main(fakeServer=None,hookResults=None) -> int:
                 rr=ReqmanDualResult(rr1,rr2)
             else:
                 r=ReqmanCommand(*files)
+                if saveRMR:
+                    raise RMCommandException("Can't save dual results ;-)")
+
+                if not all( [s in [i[0] for i in r.switches] for s in switches] ): raise RMCommandException("bad switch")
+                if not all( [s in [i[0] for i in r.switches] for s in dswitches] ): raise RMCommandException("bad switch")
                 if r.nbFiles<1:  raise RMCommandException("no yml files found")
 
                 rr=loop.run_until_complete( r.asyncExecuteDual(switches,dswitches,outputConsole=outputConsole,fakeServer=fakeServer) )
@@ -1980,15 +2162,14 @@ def main(fakeServer=None,hookResults=None) -> int:
                     rr=loop.run_until_complete( r.asyncExecute(switches,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
             else:
                 r=ReqmanCommand(*files)
+                if not all( [s in [i[0] for i in r.switches] for s in switches] ): raise RMCommandException("bad switch")
                 if r.nbFiles<1:  raise RMCommandException("no yml files found")
 
                 rr=loop.run_until_complete( r.asyncExecute(switches,paralleliz=paralleliz,outputConsole=outputConsole,fakeServer=fakeServer) )
 
         if saveRMR:
             if isinstance(rr,ReqmanResult):
-                print("Save RMR:",rr.saveRMR())
-            else:
-                print("Can't save dual results ;-)")
+                print("Save RMR:",rr.saveRMR( "reqman.rmr" if saveRMR==2 else None))
 
         if outputHtmlFile:
             with codecs.open(outputHtmlFile, "w+", "utf-8-sig") as fid:
@@ -2056,6 +2237,3 @@ Test a http service with pre-made scenarios, whose are simple yaml files
 
 if __name__=="__main__":
     sys.exit(main())
-    # import fakereqman
-    # sys.argv=["","REALTESTS/auto_980_xml.yml","--k"]
-    # fakereqman.main()

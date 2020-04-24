@@ -1,3 +1,17 @@
+2.4.0 (24/4/20)
+- BIG EVOL: new compare operator ".?"/".!?" (contains/doesnt contains)
+- BIG EVOL: simple "if statement" !
+- BIG EVOL: selfconf is enabled
+- BIG EVOL: new object response, request & rm (full exchange)
+- BIG EVOL: a lot more tnr (with fakereqman shebang) ... see REALTESTS!
+- EVOL: response.time is now here !
+- EVOL: command line var params are guessed now (from json string)!
+- FIX: "save" can now be tested (save executed before test, and save in envResponse)
+- FIX: remove old shebang system
+- FIX: jpath can now resolve python methods too !!! (in a good way)
+- FIX: trouble encodings.idna
+- RMR2 (lose compatibility with previous rmr)
+
 2.3.10 (3/4/20)
 - EVOL: (new test system) tests on all vars, with methods too
 - EVOL: new test header syntax (header.xxx)

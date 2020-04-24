@@ -1,4 +1,5 @@
-#!python3 fakereqman.py valid:1111,111,111,11,111 --b
+#!python3 fakereqman.py
+#:valid:1111,111,111,11,111 THIS --b
 # -*- coding: Windows-1252 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -32,4 +33,4 @@
   tests:
     - status: 200
     - content: "ok"
-    - msg: h\xe9h\xe9
+    - msg: héhé
