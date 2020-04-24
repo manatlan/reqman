@@ -1392,11 +1392,11 @@ def getValOpe(v):
     return v, lambda a, b: a == b, "=", "!="
 
 
-def lowerIfHeader(t:str):
-    if t.startswith("headers."):
-        tt=t.split("|",1)
-        t="|".join( [tt[0].lower()] + tt[1:] )
-    return t
+# def lowerIfHeader(t:str):
+#     if t.startswith("headers."):
+#         tt=t.split("|",1)
+#         t="|".join( [tt[0]] + tt[1:] )
+#     return t
 
 class TestResult(list):
     def __init__(self, tests, env, status) -> None:
@@ -1404,7 +1404,8 @@ class TestResult(list):
         results = []
         for test in tests:
             what, value = list(test.keys())[0], list(test.values())[0]
-            tvalue=env.replaceObjOrNone("<<%s>>" % lowerIfHeader(what))
+            # tvalue=env.replaceObjOrNone("<<%s>>" % lowerIfHeader(what))
+            tvalue=env.replaceObjOrNone("<<%s>>" % what)
 
 
             firstWord = re.split(r"[\.|]",what)[0]
