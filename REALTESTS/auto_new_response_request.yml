@@ -1,5 +1,5 @@
 #!python3 fakereqman.py
-#:valid:1111111111111111111111111111111 THIS --b
+#:valid:11111111111111111111111111111111 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -13,17 +13,25 @@
   body: hello
   params:
     inMethod: |
+      assert x
+      return True
+    testRmDict: |
+      assert x
+      assert x.status
+      assert x["status"]
       return True
   save:
       isOK1: <<response|inMethod>>
       isOK2: <<response.content|inMethod>>
       isOK3: <<rm.response.content|inMethod>>
+      isOK4: <<response|testRmDict>>
   tests:
     - status: 201
 
     - isOK1: True
     - isOK2: True
     - isOK3: True
+    - isOK4: True
 
     # old
     - content: hello
