@@ -34,7 +34,7 @@ import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.4.0.0" #only SemVer (the last ".0" is win only)
+__version__="2.4.1.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -134,7 +134,7 @@ def comparable(l):
         return x1==x2
 
 def renameKeyInDict(d,oname,nname):
-    for k,v in d.items():
+    for k,v in list(d.items()):
         if k==oname:
             d[nname] = d.pop(k)
         if isinstance(v,dict):

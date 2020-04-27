@@ -1,3 +1,6 @@
+2.4.1 (27/4/20)
+- FIX: for py3.8, RuntimeError: dictionary keys changed during iteration
+
 2.4.0 (24/4/20)
 - BIG EVOL: new compare operator ".?"/".!?" (contains/doesnt contains)
 - BIG EVOL: simple "if statement" !
