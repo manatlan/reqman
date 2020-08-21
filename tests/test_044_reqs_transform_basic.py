@@ -17,7 +17,7 @@ def test_simplest_chaining(Reqs):
     y="""
 - GET: /<<v|upper|lower>>
   params:
-    v: Hello  
+    v: Hello
     upper: return x.upper()
     lower: return x.lower()
 """
@@ -31,7 +31,7 @@ def test_simplest_transciant(Reqs):
 - GET: /<<param>>
   params:
     param: <<v|upper>>
-    v: hello  
+    v: hello
     upper: return x.upper()
 """
     l=Reqs(y,trace=True)
@@ -50,8 +50,25 @@ def test_pass_object_to_method(Reqs):
         nimp: 42
     getVal: return x.get("value")
 """
-    l=Reqs(y,trace=True)    
+    l=Reqs(y,trace=True)
     ll=l.execute( {"/hello" : (200,"ok")} )
     assert ll[0].url == "/hello"
 
+
+def test_pass_object_to_method_jwt(Reqs):
+    y="""
+- GET: /hello
+  headers:
+    Authorization: Bearer <<data|createJwt>>
+  params:
+    data:
+        value: "hello"
+        nimp: 42
+    createJwt: |
+        import jwt
+        return jwt.encode(data,"").decode()
+"""
+    l=Reqs(y,trace=True)
+    ll=l.execute( {"/hello" : (200,"ok")} )
+    assert ll[0].url == "/hello"
 

@@ -27,14 +27,17 @@ import concurrent,ssl
 from xml.dom import minidom
 import encodings.idna
 
+
 # import httpcore # see "pip install httpcore"
 import aiohttp # see "pip install aiohttp"
 import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 import xpath # see "pip install py-dom-xpath-six"
 
+import jwt # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
+
 #95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__="2.4.1.0" #only SemVer (the last ".0" is win only)
+__version__="2.4.2.0" #only SemVer (the last ".0" is win only)
 
 
 try:  # colorama is optionnal
@@ -283,11 +286,11 @@ async def request(method,url,body:bytes,headers, timeout=None):
                 if not isBytes(content):
                     txt=await r.text()
                     content=txt.encode("utf-8") # force bytes to be in utf8
-                    
+
             info = "HTTP/%s.%s %s %s" % (r.version.major,r.version.minor, int(r.status), r.reason)
             return r.status,  dict(r.headers), Content(content), info
     except aiohttp.client_exceptions.ClientConnectorError as e:
-        return None, {}, "Unreachable", ""        
+        return None, {}, "Unreachable", ""
     except concurrent.futures._base.TimeoutError as e:
         return None, {}, "Timeout", ""
     except aiohttp.client_exceptions.InvalidURL as e:
@@ -908,17 +911,17 @@ class Reqs(list):
             if isinstance(i, ReqConf):
                 print(cy("**WARNING**"), "%s use self conf" % self.name)
 
-                localEnv=Env( i.conf )   
+                localEnv=Env( i.conf )
                 for switch in switches:
                     localEnv.mergeSwitch(switch)
 
                 gscope.update( dict(localEnv) )
 
         reqsBegin=gscope.getBEGIN(local=True)
-        reqsEnd=gscope.getEND(local=True) 
+        reqsEnd=gscope.getEND(local=True)
         if reqsBegin is not None:
             for r in reqsBegin:
-                ll.append( await r.asyncReqExecute(gscope,http,outputConsole=outputConsole) )                
+                ll.append( await r.asyncReqExecute(gscope,http,outputConsole=outputConsole) )
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
 
@@ -939,7 +942,7 @@ class Reqs(list):
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
         if reqsEnd is not None:
             for r in reqsEnd:
-                ll.append( await r.asyncReqExecute(gscope,http,outputConsole=outputConsole) )                
+                ll.append( await r.asyncReqExecute(gscope,http,outputConsole=outputConsole) )
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         self.exchanges = ll
@@ -958,7 +961,7 @@ class ReqConf(ReqItem):
         conf=clone(conf)
         renameKeyInDict(conf,"BEGIN",".BEGIN")
         renameKeyInDict(conf,"END",".END")
-        
+
         self.conf=conf
 
     def __repr__(self):
@@ -1169,7 +1172,7 @@ class Req(ReqItem):
             headers= ex.outHeaders,     # HeadersMixedCase type
             time=ex.time,
         )
-        
+
         envResponse["rm"]=RmDict(
             response=envResponse["response"],
             request=envResponse["request"],
@@ -1461,7 +1464,7 @@ class TestResult(list):
                     if bool:
                         break
 
-                bool=bool and status!=None # make test KO if status is invalid 
+                bool=bool and status!=None # make test KO if status is invalid
 
                 if len(values) == 1:
                     test, opOK, opKO, val = bool, opOK, opKO, value
@@ -1731,7 +1734,7 @@ class ReqmanCommand:
                         self.fileSwitches.extend( list(Env(s["conf"]).switches) )
             except:
                 pass
-        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         for k,v in penv.items():    # add param's input env into env
             self._r.env[k]=guessValue(v)
@@ -1847,9 +1850,9 @@ div.h > div {flex: 1 0 50%}
     padding:0px
 }
 
-.cc:before{ 
+.cc:before{
   content:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAARCAYAAADUryzEAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AMVCjI2TjtqdwAAAKlJREFUOMvd1LEJAjEYxfHfSUC0EezcQRB7KxsXcABLwQlcwh0EwQGcwDEcwcLCVvG0SXVezlMLwQevSPj4f/keSaCPE+41/KSABVpYx3VK7RQgwxmzwn6qHvJojUJBJx71+sI3TMo6LSN5XzFKjgG26BYBzdhhrFo7jMpGEDPJ1FTDl/oTwFuhlQFWmH4KCDhE/yaDUHJNAzap5xtrhqncejjW+BcumMMD+Ycv+JwSPxAAAAAASUVORK5CYII=) ;
-  position:relative; 
+  position:relative;
   left:0px;
   top:5px;
  }
@@ -1869,14 +1872,14 @@ function copyToClipboard( obj ) {
     obj.classList.toggle("blinking")
     setTimeout( function() {obj.classList.toggle("blinking")}, 300)
     var str=obj.textContent;
-    
+
     const el = document.createElement('textarea');
     el.value = str;
     document.body.appendChild(el);
     el.select();
     document.execCommand('copy');
     document.body.removeChild(el);
-}; 
+};
 </script>
 </head>
 <body>
@@ -2103,7 +2106,7 @@ def main(fakeServer=None,hookResults=None) -> int:
             if p=="k":
                 outputConsole=OutputConsole.MINIMAL_ONLYKO
             elif p=="i":
-                pass # already managed (see below ^)                
+                pass # already managed (see below ^)
             elif p=="s" :
                 saveRMR=True
             elif p=="S" :

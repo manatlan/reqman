@@ -2,9 +2,8 @@ import setuptools
 from reqman import __version__
 
 setuptools.setup(
-    name='reqman',    
+    name='reqman',
     version=__version__,
-    # scripts=['reqman.py'],
     entry_points={
         'console_scripts': [
             'reqman = reqman:main',
@@ -29,5 +28,6 @@ setuptools.setup(
           'pyyaml >= 4.2b1',
           'stpl >= 1.13.2',
           'colorama',
-    ],    
+          "pyjwt",
+    ],
 )

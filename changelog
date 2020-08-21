@@ -1,3 +1,6 @@
+2.4.2 (21/8/20)
+- EVOL: include pyjwt in the core (useful for py methods in yml)
+
 2.4.1 (27/4/20)
 - FIX: for py3.8, RuntimeError: dictionary keys changed during iteration
 
@@ -50,7 +53,7 @@
 - FIX: a TypeError when comparing differents types
 
 2.3.2 (10/3/2020)
-- EVOL : xml/xpath returns always a list ! 
+- EVOL : xml/xpath returns always a list !
 
 2.3.1 (9/3/2020)
 - FIX : resolve trouble
@@ -59,7 +62,7 @@
 - EVOL : xml/xpath tests enabled !
 
 2.2.6.0 (04/03/2020)
-- EVOL: Add proxy support (via HTTP(S)_PROXY environment variables), thanks @iamhsa 
+- EVOL: Add proxy support (via HTTP(S)_PROXY environment variables), thanks @iamhsa
 - FIX: dual result now display ok/total per view (not the cumulative one)
 
 2.2.5.0 (31/01/2020)
@@ -117,7 +120,7 @@
 - add stpl to setup.py (ouppssss)
 2.0.6.0 (2019)
 - better shebang (linux compat)
-- FIX: win cross device test enabled 
+- FIX: win cross device test enabled
 - evol: better test value display
 2.0.5.0 (2019)
 - FIX: local params are overrided by higher params (pato style)
