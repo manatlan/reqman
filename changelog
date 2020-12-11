@@ -1,5 +1,8 @@
-2.5.0 (XX/XX/XX)
-- EVOL: include pyjwt in the core (useful for py methods in yml)
+2.5.1 (11/12/20)
+- no more warning of "if non resolved"
+
+2.5.0 (07/12/20)
+- bug fixes
 
 2.4.2 (21/8/20)
 - EVOL: include pyjwt in the core (useful for py methods in yml)
