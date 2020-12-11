@@ -1,3 +1,6 @@
+2.5.0 (XX/XX/XX)
+- EVOL: include pyjwt in the core (useful for py methods in yml)
+
 2.4.2 (21/8/20)
 - EVOL: include pyjwt in the core (useful for py methods in yml)
 
