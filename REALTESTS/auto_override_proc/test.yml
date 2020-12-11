@@ -1,0 +1,24 @@
+#!python3 fakereqman.py
+#:valid:11,1 THIS --b
+#:valid:11,1 THIS --b -yolo
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- if: <<isYolo>>
+  call: JUSTDOIT
+  tests:
+    - status: 200
+    - content: overrided
+
+- if: <<isYolo|not>>
+  call: JUSTDOIT
+  tests:
+    - status: 200
+    - content: original
+
+- GET: /get_txt 
+  tests:
+    - status: 200
