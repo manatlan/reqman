@@ -1,3 +1,7 @@
+2.6.0 (19/02/21)
+- EVOL: ENV.path (path to the folder containing the reqman.conf) is available in python method
+- FIX: allow setting multiple cookies (Set-Cookie is now a list, in outHeaders)
+
 2.5.1 (11/12/20)
 - no more warning of "if non resolved"
 

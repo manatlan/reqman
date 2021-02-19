@@ -37,7 +37,7 @@ import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 
 # 95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "2.5.1.0"  # only SemVer (the last ".0" is win only)
+__version__ = "2.6.0.0"  # only SemVer (the last ".0" is win only)
 # bug fixes
 
 
@@ -183,6 +183,14 @@ def ustr(x):  # ensure str are utf8 inside
         else:
             return str(x)
 
+def genKV(headers):
+    for k, v in headers.items():
+        if type(v) == list:  # cookies values (Set-Cookie) is possibly a list
+            for i in v:
+                yield (k, i)
+        else:
+            yield (k, v)
+
 
 class CookieStore(http.cookiejar.CookieJar):  # TODO: can do a lot better with httpcore
     """ Manage cookiejar for httplib-like """
@@ -202,7 +210,6 @@ class CookieStore(http.cookiejar.CookieJar):  # TODO: can do a lot better with h
 
     def extract(self, url: str, outHeaders: dict) -> None:
         if url and url.lower().startswith("http"):
-            headers = outHeaders.items()
 
             class FakeResponse(http.client.HTTPResponse):
                 def __init__(self, headers=[], url=None) -> None:
@@ -216,8 +223,9 @@ class CookieStore(http.cookiejar.CookieJar):  # TODO: can do a lot better with h
                 def info(self):
                     return self._headers
 
-            response = FakeResponse([": ".join([k, v]) for k, v in headers], url)
-            self.extract_cookies(response, urllib.request.Request(url))
+            ll = ["%s: %s" % (k, v) for k, v in genKV(outHeaders)]
+
+            self.extract_cookies(FakeResponse(ll, url), urllib.request.Request(url))
 
     def export(self) -> T.List[dict]:
         ll = []
@@ -349,7 +357,10 @@ async def request(method, url, body: bytes, headers, timeout=None):
                 int(r.status),
                 r.reason,
             )
-            return r.status, dict(r.headers), Content(content), info
+            outHeaders = dict(r.headers)
+            if "Set-Cookie" in r.headers:
+                outHeaders["Set-Cookie"] = list(r.headers.getall("Set-Cookie"))
+            return r.status, outHeaders, Content(content), info
     except aiohttp.client_exceptions.ClientConnectorError as e:
         return None, {}, "Unreachable", ""
     except concurrent.futures._base.TimeoutError as e:
@@ -531,7 +542,10 @@ class Exchange:
 
 
 class Env(dict):
-    def __init__(self, d=None):
+    path=None
+
+    def __init__(self, d=None, path=None):
+        self.path=path and os.path.dirname(path) or None
         if not d:
             d = {}
 
@@ -590,6 +604,7 @@ class Env(dict):
         ):  # used (at false) at each Reqs() constructor (to start on a sane base)
             dict_merge(newOne, self.__shared)  # declare those of the shared scope !!!
             newOne.__shared = self.__shared  # mk a ref to shared
+        newOne.path=self.path
         return newOne
 
     @property
@@ -1090,8 +1105,6 @@ class Reqs(list):
                 ex = await r.asyncReqExecute(s, http, outputConsole=outputConsole)
                 ll.append(ex)
                 log(l, "  >>> EXECUTE:", ex)
-            # else:
-            #     print(cy("**WARNING**"), "'if statement' not resolved")
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
         if reqsEnd is not None:
@@ -1451,9 +1464,8 @@ class Req(ReqItem):
                 )
 
                 if outputConsole == OutputConsole.FULL:
-                    display = lambda h: "\n".join(
-                        ["%s: %s" % (k, v) for k, v in h.items()]
-                    )
+                    display = lambda h: "\n".join(["%s: %s" % (k,v) for k,v in genKV(h)])
+
                     if ex.inHeaders:
                         print(padLeft(display(ex.inHeaders)))
                     if ex.body:
@@ -1994,7 +2006,7 @@ class ReqmanCommand:
 
         rqc = findRCup(cp)
         if rqc:
-            self._r.env = Env(FString(rqc))
+            self._r.env = Env(FString(rqc),rqc)
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
         self.fileSwitches = []
@@ -2218,7 +2230,7 @@ function copyToClipboard( obj ) {
 --> {{x.info}}
 
 <pre>
-%for k,v in x.outHeaders.items():
+%for k,v in genKV(x.outHeaders):
 <b>{{k}}</b>: {{limit(v,isLimit and LIMIT.HEADERVALUE)}}
 %end
 {{limit(prettify(x.content),isLimit and LIMIT.BODY)}}</pre>
@@ -2291,6 +2303,7 @@ function copyToClipboard( obj ) {
         version=__version__,
         limit=limit,
         LIMIT=LIMIT,
+        genKV=genKV,
     )
 
 
