@@ -37,7 +37,7 @@ import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 
 # 95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "2.6.0.0"  # only SemVer (the last ".0" is win only)
+__version__ = "2.6.1.0"  # only SemVer (the last ".0" is win only)
 # bug fixes
 
 
@@ -552,7 +552,7 @@ class Env(dict):
         if isinstance(d, str):
             d = ustr(d)
             try:
-                d = yaml.load(d, Loader=yaml.FullLoader)
+                d = yaml.load(d, Loader=yaml.SafeLoader)
             except Exception as e:
                 raise RMFormatException("Env conf is not yaml")
 
@@ -969,7 +969,7 @@ class Reqs(list):
         if isinstance(obj, str):
             obj = ustr(obj)
             try:
-                y = yaml.load(obj, Loader=yaml.FullLoader)
+                y = yaml.load(obj, Loader=yaml.SafeLoader)
             except Exception as e:
                 raise self._errorFormat("Reqs: YML syntax in %s\n%s" % (self.name, e))
 
@@ -2012,7 +2012,7 @@ class ReqmanCommand:
         self.fileSwitches = []
         for i in files:
             try:
-                for s in yaml.load(FString(i), Loader=yaml.FullLoader):
+                for s in yaml.load(FString(i), Loader=yaml.SafeLoader):
                     if "conf" in s:
                         self.fileSwitches.extend(list(Env(s["conf"]).switches))
             except:

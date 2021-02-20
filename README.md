@@ -38,7 +38,7 @@ All configurations is done via simple yaml files, editable with any text editors
    * generate conf/rml (with 'new' command)
    * can paralleliz tests (option `--p`)
    * versionning
-   * NEW 2.0 : 
+   * NEW 2.0 :
        * rewrite from scratch, a lot stronger & speeder !
        * advanced save mechanisms
        * new switches system
@@ -60,7 +60,7 @@ If you are on an *nix platform, you can start with pip :
 
 it will install the _reqman_ script in your path (perhaps, you'll need to Add the path `~/.local/bin` to the _PATH_ environment variable.)
 
-If you are on microsoft windows, just download [reqman.exe (v2)](https://github.com/manatlan/reqman/blob/master/dist/reqman.exe). [The old v1 reqman.exe, is still there](https://github.com/manatlan/reqman/blob/reqman1.4.4.0/dist/reqman.exe), and add it in your path. 
+If you are on microsoft windows, just download [reqman.exe (v2)](https://github.com/manatlan/reqman/blob/master/dist/reqman.exe). [The old v1 reqman.exe, is still there](https://github.com/manatlan/reqman/blob/reqman1.4.4.0/dist/reqman.exe), and add it in your path.
 
 
 ## Getting started : let's go
@@ -111,7 +111,7 @@ Now, you have created your first _switch_. And try to run your tests like this:
     $ reqman.py . -test
 
 It will run your tests against the _root_ defined in _test_ section ; and the test is KO, because _reqman_ doesn't exist on test.pypi.org !
-In fact; all declared things under _test_ will replace those at the top ! So you can declare multiple environments, with multiple switches ! 
+In fact; all declared things under _test_ will replace those at the top ! So you can declare multiple environments, with multiple switches !
 
 But you can declare what you want, now edit _reqman.conf_ like this :
 
@@ -170,4 +170,4 @@ _reqman_ will return an `exit code` which contains the number of KO tests : 0 if
 
 Use and abuse !
 
-
+[![huntr](https://cdn.huntr.dev/huntr_security_badge.svg)](https://huntr.dev)
