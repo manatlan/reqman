@@ -37,7 +37,7 @@ import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 
 # 95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "2.6.1.0"  # only SemVer (the last ".0" is win only)
+__version__ = "2.7.0.0"  # only SemVer (the last ".0" is win only)
 # bug fixes
 
 
@@ -588,6 +588,10 @@ class Env(dict):
         self.__shared[key] = value
         if isGlobal:
             self.__global[key] = value
+
+    @property
+    def globals(self):
+        return self.__global
 
     def clone(self, cloneSharedScope=True):
         newOne = Env({})
@@ -1429,7 +1433,7 @@ class Req(ReqItem):
             for s in saves:
                 for saveKey, saveWhat in s.items():
                     v = envResponse.replaceObj(saveWhat)
-                    self.parent.env.save(saveKey, v, self.parent.name == "BEGIN")
+                    self.parent.env.save(saveKey, v, self.parent.name in ["BEGIN","END"])
                     envResponse[saveKey] = v
         except RMPyException as e:
             ex.status = None
@@ -2022,8 +2026,12 @@ class ReqmanCommand:
         for k, v in penv.items():  # add param's input env into env
             self._r.env[k] = guessValue(v)
 
-        for i in files:
-            self._r.add(FString(i))
+        if len(files)==1 and os.path.basename(files[0])==REQMAN_CONF:
+            # special case of "reqman.exe reqman.conf"
+            self._r.ymls=[""]
+        else:
+            for i in files:
+                self._r.add(FString(i))
 
     @property
     def nbFiles(self):
@@ -2351,7 +2359,7 @@ def extractParams(params):
         if param.startswith("--"):
             # reqman param
             p = param[2:]
-            if p.startswith("o"):
+            if p.startswith("o") or p.startswith("x"):
                 rparams.append(p)
             else:  # ability to group param (ex: --kspb)
                 for i in p:
@@ -2432,6 +2440,7 @@ def main(fakeServer=None, hookResults=None) -> int:
         openBrowser = False
         saveRMR = False
         replayRMR = False
+        outputContent=None
         for p in rparams:
             if p == "k":
                 outputConsole = OutputConsole.MINIMAL_ONLYKO
@@ -2460,6 +2469,10 @@ def main(fakeServer=None, hookResults=None) -> int:
                     outputConsole = OutputConsole.FULL
             elif p.startswith("b"):
                 openBrowser = True
+            elif p.startswith("x"):
+                outputContent = p[1:].strip(":= ")
+                if not outputContent:
+                    raise RMCommandException("You should provide a var'name with --x:<varname>")
             else:
                 raise RMCommandException("bad option '%s'" % p)
 
@@ -2565,7 +2578,23 @@ def main(fakeServer=None, hookResults=None) -> int:
         if hookResults is not None:  # for tests only
             hookResults.rr = rr
 
-        return rr.code
+        if outputContent!=None:
+            x=r._r.env.get(outputContent,None)
+            if x is None:
+                x=r._r.env.globals.get(outputContent,None)
+
+            if x :
+                if isPython(x):
+                    x= r._r.env.transform(None, outputContent)
+                else:
+                    x=r._r.env.replaceObjOrNone(x)
+
+            if type(x) in [list,dict]:
+                return json.dumps( x )
+            else:
+                return x
+        else:
+            return rr.code
 
     except KeyboardInterrupt:
         print("\nERROR: process interrupted")
@@ -2599,6 +2628,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         --s        : Save RMR file
         --r        : Replay the given RMR file in dual mode
         --i        : Use SHEBANG params (for a single file), alone
+        --x:var    : Special mode to output an env var (as json output)
     """
             % __version__
         )
