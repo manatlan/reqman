@@ -1,3 +1,7 @@
+2.8.0 (26/02/21)
+- EVOL: ability to expose real python methods (func(x)), in reqman.exposes dict, when used as a lib/module
+- EVOL: usage's commandline is now in reqman.__usage__
+
 2.7.0 (20/02/21)
 - EVOL: new option "--x:var" to be able to use reqman, to output a computed/var from the env.
         (let you do more scripting for special cases)

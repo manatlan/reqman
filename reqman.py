@@ -26,6 +26,9 @@ import http.cookiejar
 import concurrent, ssl
 from xml.dom import minidom
 import encodings.idna
+import inspect
+
+
 
 
 # import httpcore # see "pip install httpcore"
@@ -37,9 +40,30 @@ import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 
 # 95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "2.7.0.0"  # only SemVer (the last ".0" is win only)
+__version__ = "2.8.0.0"  # only SemVer (the last ".0" is win only)
 # bug fixes
+__usage__="""USAGE TEST   : reqman [--option] [-switch] <folder|file>...
+USAGE CREATE : reqman new <url>
+Version %s
+Test a http service with pre-made scenarios, whose are simple yaml files
+(More info on https://github.com/manatlan/reqman)
 
+<folder|file> : yml scenario or folder of yml scenario
+                (as many as you want)
+
+[option]
+        --k        : Limit standard output to failed tests (ko only)
+        --p        : Paralleliz file tests (display only ko tests)
+        --o:name   : Set a name for the html output file
+        --o        : No html output file, but full console
+        --b        : Open html output in browser if generated
+        --s        : Save RMR file
+        --r        : Replay the given RMR file in dual mode
+        --i        : Use SHEBANG params (for a single file), alone
+        --x:var    : Special mode to output an env var (as json output)
+""" % __version__
+
+exposes={}  #to be able to expose real python code as {"functName": <callable>, ...}
 
 try:  # colorama is optionnal
     from colorama import init, Fore, Style
@@ -795,6 +819,13 @@ class Env(dict):
                     raise RMPyException(
                         "Error in execution of method " + methodName + " : " + str(e)
                     )
+            elif methodName in exposes:
+                code=exposes[methodName]
+                try:
+                    r=code(content)
+                except Exception as e:
+                    raise RMPyException("Exposed method '%s' error : %s" % (methodName,e))
+                return r
             else:
                 raise RMPyException("Can't find method '%s'" % methodName)
 
@@ -2609,29 +2640,7 @@ def main(fakeServer=None, hookResults=None) -> int:
     except RMCommandException as e:
         print("\nERROR COMMAND: %s" % e)
 
-        print(
-            """USAGE TEST   : reqman [--option] [-switch] <folder|file>...
-USAGE CREATE : reqman new <url>
-Version %s
-Test a http service with pre-made scenarios, whose are simple yaml files
-(More info on https://github.com/manatlan/reqman)
-
-<folder|file> : yml scenario or folder of yml scenario
-                (as many as you want)
-
-[option]
-        --k        : Limit standard output to failed tests (ko only)
-        --p        : Paralleliz file tests (display only ko tests)
-        --o:name   : Set a name for the html output file
-        --o        : No html output file, but full console
-        --b        : Open html output in browser if generated
-        --s        : Save RMR file
-        --r        : Replay the given RMR file in dual mode
-        --i        : Use SHEBANG params (for a single file), alone
-        --x:var    : Special mode to output an env var (as json output)
-    """
-            % __version__
-        )
+        print( __usage__ )
         if r and r.switches:
             print("[switch]")
             for k, v in r.switches:
