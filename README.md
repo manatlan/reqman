@@ -50,6 +50,7 @@ All configurations is done via simple yaml files, editable with any text editors
        * better html output
        * fully compatible with reqman1 conf/ymls
        * xml/xpath support tests
+       * used as a lib/module, you can add easily your own features (see below)
 
 
 ## Getting started : installation
@@ -167,6 +168,38 @@ Now, you can edit your rml file, and try the things available in this [tuto](htt
 Organize your tests as you want : you can make many requests in a rml file, you can make many files with many requests, you can make folders which contain many rml files. _Reqman_ will not scan sub-folders starting with "_" or ".".
 
 _reqman_ will return an `exit code` which contains the number of KO tests : 0 if everything is OK, or -1 if there is a trouble (tests can't be runned) : so it's easily scriptable in your automated workflows !
+
+
+# Ability to override reqman's features for your propers needs (reqman>=2.8.1)
+Now, it's super easy to override reqman with your own features. Using 'reqman' as a lib/module for your python's code.
+You can declare your own methods, to fulfill your specials needs (hide special mechanism, use external libs, ...):
+(Thoses real python methods, just needs to respect the same signature as pyhon methods declared in confs.)
+
+```python
+import reqman
+
+reqman.__usage__ = "USAGE: reqmanBis ..."   # override usage or not ;-)
+
+@reqman.expose
+def SpecialMethod(x,ENV):
+    """
+    Do what you want ...
+
+    Args:
+        'x'   : the input var (any) or None.
+        'ENV' : the current env (dict)
+
+    Returns:
+        any
+    """
+    ...
+    return "What you need"
+
+if __name__ == "__main__":
+    sys.exit(reqman.main())
+```
+
+Now, you can use `SpecialMethod` in your scripts, ex: `<<value|SpecialMethod>>` or `<<SpecialMethod>>`!
 
 Use and abuse !
 
