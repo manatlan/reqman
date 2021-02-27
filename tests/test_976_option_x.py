@@ -201,3 +201,24 @@ def test_a_trans_from_input(exe):
     assert x.rc == 'DEFAULT'
     x=exe("reqman.conf","in:hello","--x:out",fakeServer=MOCK)
     assert x.rc == 'HELLO'
+
+
+def test_a_trans_from_input_with_exposed_one(exe):
+
+    def func(x,ENV):
+        return x.upper()
+
+    reqman.EXPOSEDS={
+        "UPPER": func
+    }
+
+    with open("reqman.conf","w+") as fid:
+        fid.write("""
+        in: default
+        out: <<in|UPPER>>
+        """)
+
+    x=exe("reqman.conf","--x:out",fakeServer=MOCK)
+    assert x.rc == 'DEFAULT'
+    x=exe("reqman.conf","in:hello","--x:out",fakeServer=MOCK)
+    assert x.rc == 'HELLO'
