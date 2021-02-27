@@ -40,7 +40,7 @@ import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 
 # 95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "2.8.0.0"  # only SemVer (the last ".0" is win only)
+__version__ = "2.8.1.0"  # only SemVer (the last ".0" is win only)
 # bug fixes
 __usage__="""USAGE TEST   : reqman [--option] [-switch] <folder|file>...
 USAGE CREATE : reqman new <url>
@@ -822,7 +822,7 @@ class Env(dict):
             elif methodName in exposes:
                 code=exposes[methodName]
                 try:
-                    r=code(content)
+                    r=code(content,self)
                 except Exception as e:
                     raise RMPyException("Exposed method '%s' error : %s" % (methodName,e))
                 return r

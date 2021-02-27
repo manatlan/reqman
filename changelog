@@ -1,3 +1,6 @@
+##2.8.1 (27/02/21)
+- FIX(better): exposed real python methods need to respect the same signature (func(x,ENV)), as pymethod declared in conf
+
 2.8.0 (26/02/21)
 - EVOL: ability to expose real python methods (func(x)), in reqman.exposes dict, when used as a lib/module
 - EVOL: usage's commandline is now in reqman.__usage__

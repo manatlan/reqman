@@ -8,7 +8,7 @@ MOCK={
 def test_simple_ok(exe):
 
     reqman.exposes={
-        "Authent": lambda x: "ok" if x["login"]==x["passwd"] else "ko"
+        "Authent": lambda x, ENV: "ok" if x["login"]==x["passwd"] else "ko"
     }
 
     with open("f.yml","w+") as fid:
@@ -45,7 +45,7 @@ User2:
 def test_simple_with_list(exe):
 
     reqman.exposes={
-        "Authent": lambda x: "ok" if len(x)==2 else "ko"
+        "Authent": lambda x, ENV: "ok" if len(x)==2 else "ko"
     }
 
     with open("f.yml","w+") as fid:
@@ -77,7 +77,7 @@ obj2: [1,2,3]
 def test_simple_with_str(exe):
 
     reqman.exposes={
-        "Authent": lambda x: x
+        "Authent": lambda x, ENV: x
     }
 
     with open("f.yml","w+") as fid:
@@ -109,7 +109,7 @@ obj2: ko
 def test_bad(exe):
 
     reqman.exposes={
-        "Authent": lambda x: "ok" if x["login"]==x["passwd"] else "ko"
+        "Authent": lambda x, ENV: "ok" if x["login"]==x["passwd"] else "ko"
     }
 
     with open("f.yml","w+") as fid:
@@ -133,7 +133,7 @@ obj:                                                # too less
 def test_bug_in_exposedMethod(exe):
 
     reqman.exposes={
-        "Authent": lambda x: 42/0
+        "Authent": lambda x, ENV: 42/0
     }
 
     with open("f.yml","w+") as fid:
@@ -155,7 +155,7 @@ obj: OSEF
 def test_ok_with_toomuch(exe):
 
     reqman.exposes={
-        "Authent": lambda x: "ok" if x["login"]==x["passwd"] else "ko"
+        "Authent": lambda x, ENV: "ok" if x["login"]==x["passwd"] else "ko"
     }
 
     with open("f.yml","w+") as fid:
@@ -180,7 +180,7 @@ obj:                                                 # too much
 def test_bad_with_not_awaited_ones(exe): # dict as kargs
 
     reqman.exposes={
-        "Authent": lambda x: "ok" if x["login"]==x["passwd"] else "ko"
+        "Authent": lambda x, ENV: "ok" if x["login"]==x["passwd"] else "ko"
     }
 
     with open("f.yml","w+") as fid:
@@ -206,7 +206,7 @@ obj:                                                 # not awaited ones
 def test_pymethod_over_exposedMethod(exe):
 
     reqman.exposes={
-        "Authent": lambda x: "ko"
+        "Authent": lambda x, ENV: "ko"
     }
 
     with open("f.yml","w+") as fid:
@@ -222,6 +222,45 @@ def test_pymethod_over_exposedMethod(exe):
 
 Authent:
     return "ok"
+
+obj: OSEF
+""")
+
+    x=exe(".",fakeServer=MOCK)
+    # x.view()
+    assert x.rc == 0 # the one in rc.conf is prefered over the exposed one
+
+def test_with_ENV(exe):
+
+    reqman.exposes={
+        "Authent": lambda x,ENV: ENV.get("global","ko")
+    }
+
+    with open("f.yml","w+") as fid:
+        fid.write("""
+- GET: /<<obj|Authent>>
+  tests:
+    - status: 200
+    - content: ok
+
+- GET: /<<obj|Authent>>
+  params:
+    global: ko              #override global
+  tests:
+    - status: 400
+    - content: ko
+
+- GET: /<<obj|Authent>>
+  tests:
+    - status: 200
+    - content: ok
+
+""")
+
+    with open("reqman.conf","w+") as fid:
+        fid.write("""
+
+global: ok
 
 obj: OSEF
 """)
