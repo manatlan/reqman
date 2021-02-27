@@ -7,7 +7,7 @@ MOCK={
 
 def test_simple_ok(exe):
 
-    reqman.exposes={
+    reqman.EXPOSEDS={
         "Authent": lambda x, ENV: "ok" if x["login"]==x["passwd"] else "ko"
     }
 
@@ -44,7 +44,7 @@ User2:
 
 def test_simple_with_list(exe):
 
-    reqman.exposes={
+    reqman.EXPOSEDS={
         "Authent": lambda x, ENV: "ok" if len(x)==2 else "ko"
     }
 
@@ -76,7 +76,7 @@ obj2: [1,2,3]
 
 def test_simple_with_str(exe):
 
-    reqman.exposes={
+    reqman.EXPOSEDS={
         "Authent": lambda x, ENV: x
     }
 
@@ -108,7 +108,7 @@ obj2: ko
 
 def test_bad(exe):
 
-    reqman.exposes={
+    reqman.EXPOSEDS={
         "Authent": lambda x, ENV: "ok" if x["login"]==x["passwd"] else "ko"
     }
 
@@ -132,7 +132,7 @@ obj:                                                # too less
 
 def test_bug_in_exposedMethod(exe):
 
-    reqman.exposes={
+    reqman.EXPOSEDS={
         "Authent": lambda x, ENV: 42/0
     }
 
@@ -154,7 +154,7 @@ obj: OSEF
 
 def test_ok_with_toomuch(exe):
 
-    reqman.exposes={
+    reqman.EXPOSEDS={
         "Authent": lambda x, ENV: "ok" if x["login"]==x["passwd"] else "ko"
     }
 
@@ -179,7 +179,7 @@ obj:                                                 # too much
 
 def test_bad_with_not_awaited_ones(exe): # dict as kargs
 
-    reqman.exposes={
+    reqman.EXPOSEDS={
         "Authent": lambda x, ENV: "ok" if x["login"]==x["passwd"] else "ko"
     }
 
@@ -205,7 +205,7 @@ obj:                                                 # not awaited ones
 
 def test_pymethod_over_exposedMethod(exe):
 
-    reqman.exposes={
+    reqman.EXPOSEDS={
         "Authent": lambda x, ENV: "ko"
     }
 
@@ -232,7 +232,7 @@ obj: OSEF
 
 def test_with_ENV(exe):
 
-    reqman.exposes={
+    reqman.EXPOSEDS={
         "Authent": lambda x,ENV: ENV.get("global","ko")
     }
 
@@ -268,3 +268,119 @@ obj: OSEF
     x=exe(".",fakeServer=MOCK)
     # x.view()
     assert x.rc == 0 # the one in rc.conf is prefered over the exposed one
+
+def test_decorator(exe):
+
+    @reqman.expose
+    def AnotherAuthent( x, ENV):
+        return "ok" if x["login"]==x["passwd"] else "ko"
+
+    assert "AnotherAuthent" in reqman.EXPOSEDS
+
+    with open("f.yml","w+") as fid:
+        fid.write("""
+- GET: /<<User1|AnotherAuthent>>
+  tests:
+    - status: 200
+    - content: ok
+
+- GET: /<<User2|AnotherAuthent>>
+  tests:
+    - status: 400
+    - content: ko
+""")
+
+    with open("reqman.conf","w+") as fid:
+        fid.write("""
+User1:
+    login:  jo
+    passwd: jo
+
+User2:
+    login:  jo1
+    passwd: jo2
+""")
+
+
+    x=exe(".",fakeServer=MOCK)
+    assert x.rc == 0
+
+def test_bad_sign(exe):
+
+    reqman.EXPOSEDS={
+        "Authent": lambda x: "nothing here, the signature is not callable"
+    }
+
+    with open("f.yml","w+") as fid:
+        fid.write("""
+- GET: /<<obj|Authent>>
+  tests:
+    - status: 200
+    - content: ok
+""")
+
+    with open("reqman.conf","w+") as fid:
+        fid.write("""
+
+obj: OSEF
+""")
+
+    x=exe(".",fakeServer=MOCK)
+    # x.view()
+    assert x.rc == 2 # 2 tests ko
+
+
+def test_no_input(exe):
+
+    def func(x,ENV):
+        return "ok"
+
+    reqman.EXPOSEDS={
+        "Authent": func
+    }
+
+    with open("f.yml","w+") as fid:
+        fid.write("""
+- GET: /<<Authent>>
+  tests:
+    - status: 200
+    - content: ok
+""")
+
+    with open("reqman.conf","w+") as fid:
+        fid.write("""
+
+""")
+
+    x=exe(".",fakeServer=MOCK)
+    # x.view()
+    assert x.rc == 0 # all ok
+
+
+
+def test_input_is_json_str(exe):
+
+    def func(x,ENV):
+        return x==[1,2,3] and "ok"
+
+    reqman.EXPOSEDS={
+        "Authent": func
+    }
+
+    with open("f.yml","w+") as fid:
+        fid.write("""
+- GET: /<<obj|Authent>>
+  tests:
+    - status: 200
+    - content: ok
+""")
+
+    with open("reqman.conf","w+") as fid:
+        fid.write("""
+
+obj: "[1,2,3]"
+""")
+
+    x=exe(".",fakeServer=MOCK)
+    # x.view()
+    assert x.rc == 0 # all ok

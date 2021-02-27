@@ -63,7 +63,11 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         --x:var    : Special mode to output an env var (as json output)
 """ % __version__
 
-exposes={}  #to be able to expose real python code as {"functName": <callable>, ...}
+EXPOSEDS={}  #to be able to expose real python code as {"functName": <callable>, ...}
+
+def expose(fn): #decorator to expose a real python method in resolver
+    EXPOSEDS[fn.__name__]=fn
+    return fn
 
 try:  # colorama is optionnal
     from colorama import init, Fore, Style
@@ -750,6 +754,8 @@ class Env(dict):
                         return self.transform(None, var)
                     else:
                         return self[var]
+                elif var in EXPOSEDS:
+                    return self.transform(None, var)
                 else:
                     return NotFound
 
@@ -793,6 +799,17 @@ class Env(dict):
     def transform(
         self, content: T.Union[str, None], methodName: str
     ) -> T.Union[str, None]:
+        def prepareContent(content):
+            if content is None:
+                return None
+            elif type(content) == str:
+                try:
+                    return json.loads(content)
+                except (json.decoder.JSONDecodeError, TypeError):
+                    return content
+            else:
+                return content
+
         if methodName:
             if methodName in self:
                 code = self[methodName]
@@ -800,29 +817,23 @@ class Env(dict):
                     exec(declare(code), globals())
                 except Exception as e:
                     raise RMPyException(
-                        "Error in declaration of method " + methodName + " : " + str(e)
+                        "Error in declaration of method '" + methodName + "' : " + str(e)
                     )
 
-                if content is None:
-                    x = None
-                elif type(content) == str:
-                    try:
-                        x = json.loads(content)
-                    except (json.decoder.JSONDecodeError, TypeError):
-                        x = content
-                else:
-                    x = content
-
                 try:
+                    x = prepareContent(content) # seems not needed !!!
+                    x = content
                     content = DYNAMIC(x, self)
                 except Exception as e:
                     raise RMPyException(
-                        "Error in execution of method " + methodName + " : " + str(e)
+                        "Error in execution of method '" + methodName + "' : " + str(e)
                     )
-            elif methodName in exposes:
-                code=exposes[methodName]
+            elif methodName in EXPOSEDS:
+                code=EXPOSEDS[methodName]
                 try:
-                    r=code(content,self)
+                    x = prepareContent(content) # seems not needed !!!
+                    x = content
+                    r=code(x,self)
                 except Exception as e:
                     raise RMPyException("Exposed method '%s' error : %s" % (methodName,e))
                 return r
