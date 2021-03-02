@@ -98,7 +98,7 @@ KNOWNVERBS = [
     "PATCH",
     "CONNECT",
 ]
-KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body", "if"]
+KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body", "if", "query"]
 REQMAN_CONF = "reqman.conf"
 
 
@@ -440,6 +440,27 @@ def dict_merge(dst: dict, src: dict) -> None:
                 dst[k] += src[k]
             else:
                 dst[k] = src[k]
+
+
+def updateUrlQuery(url,d: dict):
+    if d=={}:
+        return url
+    else:
+        o=urllib.parse.urlparse(url)
+
+        q=urllib.parse.parse_qs(o.query)
+        for k,v in d.items():
+            if v is None:
+                if k in q:
+                    del q[k]
+            else:
+                if type(v)==list:
+                    q.setdefault(k,[]).extend(v)
+                else:
+                    q.setdefault(k,[]).append(v)
+
+        o=o._replace(query=urllib.parse.urlencode( q , doseq=True))
+        return o.geturl()
 
 
 class NotFound:
@@ -959,6 +980,7 @@ class Reqs(list):
                                     r.updateBody(i)
                                     r.updateDoc(i)
                                     r.updateHeaders(i)
+                                    r.updateQuery(i)
                                     r.updateSave(i)
                                     r.updateTests(i)
 
@@ -997,6 +1019,7 @@ class Reqs(list):
                             r.updateHeaders(i)
                             r.updateSave(i)
                             r.updateTests(i)
+                            r.updateQuery(i)
 
                             if foreach is None:  # no foreach
                                 r.updateParams(i)
@@ -1198,6 +1221,10 @@ class ReqGroup(ReqItem):
         for r in self.reqs:
             r.updateHeaders(o)
 
+    def updateQuery(self, o: dict):
+        for r in self.reqs:
+            r.updateQuery(o)
+
     def updateTests(self, o: dict):
         for r in self.reqs:
             r.updateTests(o)
@@ -1241,6 +1268,7 @@ class Req(ReqItem):
         self.doc = None  # or str
         self.saves = []
         self.ifs = []
+        self.querys={}
 
     def clone(self):
         r = Req(self.method, self.path, self.parent)
@@ -1252,6 +1280,7 @@ class Req(ReqItem):
         r.saves = clone(self.saves)
         r.nolimit = clone(self.nolimit)
         r.ifs = clone(self.ifs)
+        r.querys = clone(self.querys)
         return r
 
     def updateIf(self, o: dict):  # merge headers
@@ -1306,6 +1335,23 @@ class Req(ReqItem):
         if save is not None:
             self.saves += [save]
 
+
+    def updateQuery(self, o: dict):  # merge query
+        query = o.get("query", {})
+        self.parent._assertType("query", query, [dict])
+        if query is not None:
+            # dict_merge(self.querys, query)
+            for k,v in query.items():
+                if v is None:
+                    self.querys[k]=None
+                else:
+                    if type(v)==list:
+                        self.querys.setdefault(k,[]).extend(v)
+                    else:
+                        self.querys.setdefault(k,[]).append(v)
+
+
+
     def __repr__(self):
         l = []
         l.append("<Req %s: %s>" % (self.method, self.path))
@@ -1313,6 +1359,8 @@ class Req(ReqItem):
             l.append("\tif: %s" % (self.ifs))
         if self.headers:
             l.append("\theaders: %s" % (self.headers))
+        if self.querys:
+            l.append("\tquery: %s" % (self.querys))
         if self.params:
             l.append("\tparams: %s" % (self.params))
         if self.tests:
@@ -1339,7 +1387,7 @@ class Req(ReqItem):
         except ValueError:
             timeout = None
 
-        method, path, body, headers = self.method, self.path, self.body, self.headers
+        method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
         doc, tests, saves = self.doc, self.tests, self.saves
 
         #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' compute an unique id based on reqs's attributes
@@ -1370,6 +1418,26 @@ class Req(ReqItem):
                 url = scope.replaceTxt(root) + path
             else:
                 url = path
+
+            pquerys={}
+            for k,v in querys.items():
+                if v is None:
+                    pquerys[k]=None
+                elif type(v)==list:
+                    ll=[]
+                    for i in v:
+                        if i is not None:
+                            i=scope.replaceObj(i)
+                            if type(i)==list:
+                                ll.extend(i)
+                            else:
+                                ll.append(i)
+
+                    pquerys[k]=ll
+                else:
+                    pquerys[k]=scope.replaceObj(v)
+
+            url=updateUrlQuery(url,pquerys)
 
             if body:
                 body = scope.replaceObj(body)
@@ -2382,17 +2450,12 @@ headers:
 
     path = hp.path + ("?" + hp.query if hp.query else "")
 
-    yml = (
-        u"""# test created for "%(root)s%(path)s" !
+    yml = GenRML("GET",path)
+    yml.doc = "-Test created for '%(root)s%(path)s'" % locals()
+    yml.comment = "- GET: %(root)s%(path)s" % locals()
+    yml.tests=[("status",200)]
 
-- GET: %(path)s
-#- GET: %(root)s%(path)s
-  tests:
-    - status: 200
-"""
-        % locals()
-    )
-    return (rc, yml)
+    return (rc, str(yml)) #generate rml without "query:"
 
 
 def extractParams(params):
@@ -2665,6 +2728,103 @@ def main(fakeServer=None, hookResults=None) -> int:
         )
         print(traceback.format_exc(), "\nBUG: %s" % e)
         return -1
+###############################################################################################
+
+def toYaml(x,idt=2):
+    return yaml.safe_dump( x ,default_flow_style=False,encoding='utf-8', allow_unicode=True,indent=idt,sort_keys=False).decode()
+
+def pad(txt,prefix):
+    return "\n".join([prefix+line for line in txt.splitlines()])
+
+class GenRML:
+    """ class Helper to generate a request to RML string """
+
+    def __init__(self,verb: str,path: str,body=None,headers={}):
+        if verb is None: verb="GET"
+        verb=verb.upper().strip()
+        assert verb in KNOWNVERBS
+        assert type(headers) in [list,dict]
+
+        self.verb=verb
+        self.path=path
+        self.body=body
+
+        self.headers=dict(headers) if type(headers)==dict else {k:v for k,v in headers}
+
+        self.doc=""         # str
+        self.comment=""     # str|list
+        self.returns=""     # any
+
+        self.tests=[]       # generate special "tests" keyword
+        self.params=[]      # generate special "params" keyword
+
+        self.__autoParams=False
+        self.__genQuerys=False
+
+    def setGenerateParams(self,v:bool):
+        """ generate "params:" statement according presences of <<x>>|{{x}} in path,body,headers & doc"""
+        self.__autoParams=v
+
+    def setGenerateQuery(self,v:bool):
+        """ generate "query:" statement (new)"""
+        self.__genQuerys=v
+
+    def __repr__(self):
+        extract=lambda txt: [(key[2:-2],"VALUE") for key in Env().getNonResolvedVars(txt) ]
+
+        if self.__autoParams:
+          self.params.extend(extract(self.path))
+          self.params.extend(extract(self.doc))
+          self.params.extend(extract(self.body))
+          for k,v in self.headers.items():
+              self.params.extend(extract(v))
+
+        d={}
+        if self.__genQuerys:
+            o=urllib.parse.urlparse(self.path)
+            qs=urllib.parse.parse_qs(o.query)
+            o=o._replace(query="")
+            d[self.verb] = o.geturl()
+            qs = {k: v[0] if len(v)==1 else v for k,v in qs.items()}
+        else:
+            d[self.verb] = self.path
+            qs=None
+
+        d["XXX"]="X-X-X"
+        if self.doc: d["doc"]="Re-pl-ac-eT-he-Do-cs"
+        if qs: d["query"]=qs
+        if self.headers: d["headers"]={k:v for k,v in self.headers.items()}
+        if self.body:
+          try:
+            body=json.loads(self.body)
+          except:
+            body=self.body
+
+          d["body"]=body
+        if self.params: d["params"]={k:v for k,v in self.params}
+        if self.tests: d["tests"]=[{k:v} for k,v in self.tests]
+
+        y=toYaml( [d] )
+        if self.returns:
+          l=[]
+          l.append( "# RETURNS:" )
+          l.append( pad(toYaml(self.returns),"#   ") )
+          y+="\n".join(l)
+
+        if self.comment:
+            coms=self.comment.splitlines() if type(self.comment)==str else self.comment
+            l=["# "+i for i in coms]
+            l.append("#"*80)
+            c="\n".join(l)
+        else:
+            c="#"*80
+
+        y=y.replace("  doc: Re-pl-ac-eT-he-Do-cs", "  doc: |\n%s" % pad( str(self.doc),"    "))
+        y=y.replace("  XXX: X-X-X",c)
+
+        yml= "\n%s\n%s\n" % ( "#"*80,y)
+
+        return re.sub(r"\{\{([\w_\-\d]+)\}\}", r"<<\1>>", yml)
 
 
 if __name__ == "__main__":
