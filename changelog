@@ -1,3 +1,4 @@
+2.9.0 (02/03/21)
 - EVOL: in rml: add "query" (dict) to build path with queryparams in an easy way
 - EVOL: add GenRML() to generate rml's language string from a "request"
 - FIX: exe'filename is now guessed from the os, in usage doc.
