@@ -2453,7 +2453,7 @@ headers:
         root = ""
         rc = None
 
-    path = hp.path + ("?" + hp.query if hp.query else "")
+    path = hp.path + ("?" + hp.query if hp.query else "") + ('#' + hp.fragment if hp.fragment else "")
 
     yml = GenRML("GET",path)
     yml.doc = "-Test created for '%(root)s%(path)s'" % locals()

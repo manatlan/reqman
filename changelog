@@ -1,3 +1,6 @@
+2.9.1 (02/03/21)
+- FIX: keep fragment of url in "reqman new" command
+
 2.9.0 (02/03/21)
 - EVOL: in rml: add "query" (dict) to build path with queryparams in an easy way
 - EVOL: add GenRML() to generate rml's language string from a "request"
