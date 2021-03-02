@@ -1,5 +1,6 @@
 - EVOL: in rml: add "query" (dict) to build path with queryparams in an easy way
 - EVOL: add GenRML() to generate rml's language string from a "request"
+- FIX: exe'filename is now guessed from the os, in usage doc.
 
 2.8.1 (27/02/21)
 - FIX(better): exposed real python methods need to respect the same signature (func(x,ENV)), as pymethod declared in conf

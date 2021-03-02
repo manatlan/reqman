@@ -40,10 +40,16 @@ import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 
 # 95%: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "2.8.1.0"  # only SemVer (the last ".0" is win only)
+__version__ = "2.x.x.0"  # only SemVer (the last ".0" is win only)
 # bug fixes
-__usage__="""USAGE TEST   : reqman [--option] [-switch] <folder|file>...
-USAGE CREATE : reqman new <url>
+
+if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
+    REQMANEXE = sys.executable
+else :
+    REQMANEXE = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+
+__usage__="""USAGE TEST   : %s [--option] [-switch] <folder|file>...
+USAGE CREATE : %s new <url>
 Version %s
 Test a http service with pre-made scenarios, whose are simple yaml files
 (More info on https://github.com/manatlan/reqman)
@@ -61,7 +67,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         --r        : Replay the given RMR file in dual mode
         --i        : Use SHEBANG params (for a single file), alone
         --x:var    : Special mode to output an env var (as json output)
-""" % __version__
+""" % (REQMANEXE,REQMANEXE,__version__)
 
 EXPOSEDS={}  #to be able to expose real python code as {"functName": <callable>, ...}
 
@@ -1524,18 +1530,18 @@ class Req(ReqItem):
             response=envResponse["response"], request=envResponse["request"]
         )
 
-        # shorhands (historik)
+        # shorthands (historik)
         envResponse["content"] = envResponse["response"]["content"]
         envResponse["status"] = envResponse["response"]["status"]
         envResponse["headers"] = envResponse["response"]["headers"]
 
         if contentAsJson:
             envResponse["response"]["json"] = contentAsJson
-            envResponse["json"] = contentAsJson  # shothands (historik)
+            envResponse["json"] = contentAsJson  # shorthands (historik)
 
         if contentAsXml:
             envResponse["response"]["xml"] = contentAsXml
-            envResponse["xml"] = contentAsXml  # shothands (historik)
+            envResponse["xml"] = contentAsXml  # shorthands (historik)
 
         # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
