@@ -10,19 +10,19 @@
   - GET: /cookie?value=create
     tests:
       - status: 200
-      - set-cookie: cpt=0; Path=/
+      - headers.set-cookie: cpt=0; Path=/
       - content: create
 
   - GET: /cookie?value=inc
     tests:
       - status: 200
-      - set-cookie: cpt=1; Path=/
+      - headers.set-cookie: cpt=1; Path=/
       - content: inc
 
   - GET: /cookie?value=inc
     tests:
       - status: 200
-      - set-cookie: cpt=2; Path=/
+      - headers.set-cookie: cpt=2; Path=/
       - content: inc
 
   - GET: /cookie?value=view
@@ -33,7 +33,7 @@
   - GET: /cookie?value=inc
     tests:
       - status: 200
-      - set-cookie: cpt=3; Path=/
+      - headers.set-cookie: cpt=3; Path=/
       - content: inc
 
   - GET: /cookie?value=del

@@ -3,7 +3,7 @@
 
 import re
 import json
-
+import logging
 
 class HeadersMixedCase(dict):
     def __init__(self, **kargs):
@@ -137,7 +137,12 @@ def testCompare(var: str, val, opeval) -> Test:
         value,fct,tok,tko=getValOpe(opeval)
         value=guessValue(value)
 
-        test=fct(value,guessValue(val))
+        try:
+            test=fct(value,guessValue(val))
+        except Exception as e:
+            logging.warn(f"testCompare('{var}','{val}','{opeval}') : {e} -> assuming test is negative !")
+            test=False
+
 
     nameOK = var + " " + tok + " " + strjs(value)  # test name OK
     nameKO = var + " " + tko + " " + strjs(value)  # test name KO

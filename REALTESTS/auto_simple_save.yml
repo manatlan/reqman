@@ -6,24 +6,18 @@
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 
-###
-### THIS should WORK (so simple)
-### THIS should WORK (so simple)
-### THIS should WORK (so simple)
-### THIS should WORK (so simple)
-### THIS should WORK (so simple)
-### THIS should WORK (so simple)
-###
-
 
 - GET: http://localhost:11111/get_json
+  doc: Yo  <<request.url>> -> <<response.time>>ms
   tests:
     - status: 200
   save:
-    next: get_json
+    next: "get_json"
     nextStatus: <<response.status>>
 
 - GET: http://localhost:11111/<<next>>
-  doc: Calling /<<next>> should be status=<<nextStatus>>, in <<response.time>>ms
+  doc: |
+   Calling /<<next>> should be status=<<nextStatus>>
+   (Yo  <<request.url>> -> <<response.time>>ms)
   tests:
     - response.status: <<nextStatus>>

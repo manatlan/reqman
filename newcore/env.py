@@ -5,7 +5,7 @@ import json
 import datetime
 import urllib.parse
 import hashlib
-
+import logging
 try:
     from . import com
     from . import utils
@@ -150,7 +150,11 @@ class Exchange:
         # saves
         new_vars={}
         for save_as,content in self._saves_to_do:
-            new_vars[save_as] = repEnv.resolve_or_not(content)
+            try:
+                new_vars[save_as] = repEnv.resolve_or_not(content)
+            except Exception as e:
+                logging.warn(f"Exchange.treatment {r}")
+                new_vars[save_as]= content
 
         # Save all in this env, to be visible in tests later (vv)
         repEnv.update( new_vars)
@@ -175,19 +179,22 @@ class Env(dict):
     def __init__(self,d):
         dict.__init__(self,d)
 
-    def resolve(self, txt:str, nb_rec=0) -> str:
+    def resolve(self, txt:str, nb_rec=0, notFoundException=True) -> str:
         """ replace all vars in the str
-        raise ResolveError if can't
+        raise ResolveException if can't
         """
         find_vars=lambda txt: re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt)
 
         for pattern, content in [(i,i[2:-2]) for i in find_vars(txt) ]:
             value=self.resolve_var(content)
             if value is NotFound:
-                raise ResolveException()
+                if notFoundException:
+                    raise ResolveException()
+                else:
+                    value=pattern
             txt=txt.replace( pattern, str(value) )
 
-        if find_vars(txt):
+        if notFoundException and find_vars(txt):
             if nb_rec>10:
                 raise ResolveException() # avoid recursion !
             else:
@@ -198,10 +205,7 @@ class Env(dict):
     def resolve_or_not(self,txt: object) -> object:
         """ like resolve() but any type in/out, without exception """
         if type(txt)==str:
-            try:
-                txt=self.resolve( str(txt) )
-            except ResolveException:
-                txt=txt
+            txt = self.resolve( str(txt) ,notFoundException=False)
 
         return txt
 

@@ -1445,10 +1445,12 @@ class Req(ReqItem):
         newenv=newcore.env.Env( newscope )
 
         from pprint import pprint
+
         newsaves=[]
         for d in saves:
-            k,v=list(d.items())[0]
-            newsaves.append( (k,v) )
+            for k,v in d.items():
+                newsaves.append( (k,v) )
+
         newtests=[]
         for d in tests:
             k,v=list(d.items())[0]

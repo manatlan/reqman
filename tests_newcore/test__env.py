@@ -88,6 +88,8 @@ def test_resolver_or_not():
     assert ENV.resolve_or_not(b"a txt <<unknown>>")==b"a txt <<unknown>>"
     assert ENV.resolve_or_not(42)==42
 
+    assert ENV.resolve_or_not("1a <<txt2>> txt <<unknown>>")=="1a world txt <<unknown>>"
+    assert ENV.resolve_or_not("2a <<unknown>> txt <<txt2>>")=="2a <<unknown>> txt world"
 
 
 def test_dict():

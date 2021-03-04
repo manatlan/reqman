@@ -57,9 +57,6 @@ class ResponseInvalid(ResponseError):
 
 async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -> Response:
     assert type(body)==bytes
-
-    print("=================",timeout)
-
     try:
         r = await AHTTP.request(
             method,
