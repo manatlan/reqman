@@ -1410,7 +1410,7 @@ class Req(ReqItem):
             headers = newHeaders
         #=========
 
-
+        #TODO: remmetre les QUERY:
         # pquerys={}
         # for k,v in querys.items():
         #     if v is None:
@@ -1444,7 +1444,11 @@ class Req(ReqItem):
 
         newenv=newcore.env.Env( newscope )
 
-        newsaves=[] #TODO: convert saves
+        from pprint import pprint
+        newsaves=[]
+        for d in saves:
+            k,v=list(d.items())[0]
+            newsaves.append( (k,v) )
         newtests=[]
         for d in tests:
             k,v=list(d.items())[0]
