@@ -84,3 +84,38 @@ def test_simul_plaintext():
     import pprint
     pprint.pprint(ex.tests)
     pprint.pprint(ex.saves)
+
+
+def test_save_and_test():
+    env=newcore.env.Env(dict(
+        v200=200,
+        upper= lambda x,ENV: x.upper(),
+        justTrue=lambda x,Env: True,
+    ))
+
+    tests=[
+        ("status","<<v200>>"),
+        ("var","ok"),
+        ("var","<<var>>"),
+        ("var|upper","OK"),
+        ("justTrue","True"),
+    ]
+    saves=[
+        ("var","ok"),
+    ]
+
+    ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
+
+    obj= dict(items=list("abc"),value="hello")
+    r=newcore.com.Response(200,{"x-test":"hello"},json.dumps(obj).encode(),"http1/1 200 ok")
+    ex.treatment(env,r)
+
+    assert ex.time==0
+    assert ex.id
+
+    assert ex.saves == {'var': 'ok'}
+    assert all(ex.tests),ex.tests
+
+    import pprint
+    pprint.pprint(ex.tests)
+    pprint.pprint(ex.saves)

@@ -59,7 +59,7 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
 
 
 class Exchange:
-    def __init__(self,method: str,url: str,body: bytes=b"",headers: dict={}, tests:list=[],saves:list=[]):
+    def __init__(self,method: str,url: str,body: bytes=b"",headers: dict={}, tests:list=[], saves:list=[], doc:str = ""):
         assert type(body)==bytes
 
 
@@ -80,10 +80,10 @@ class Exchange:
         self.tests=[]
         self.saves={}
         self.id=None
+        self.doc=doc
 
         #TODO:
         self.nolimit=True
-        self.doc=""
 
         # internals
         self._tests_to_do=tests
@@ -103,10 +103,12 @@ class Exchange:
         t1 = datetime.datetime.now()
 
         r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout)
-        self.treatment(env,r)
 
         diff = datetime.datetime.now() - t1
         self.time = (diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
+
+        self.treatment(env,r)
+
 
     def treatment(self,env:dict, r:com.Response):
         assert isinstance(r,com.Response)
@@ -125,12 +127,6 @@ class Exchange:
         self.content=r.content
         self.info=r.info
 
-        # if isinstance(r,com.ResponseError):
-        #     # can't get a correct response, don't do tests & saves
-        #     #TODO: coninue here
-        #     pass
-        # else:
-
         # creating an Env for testing and saving
         resp=dict(
             status=self.status,
@@ -138,6 +134,7 @@ class Exchange:
             content=self.content, #bytes
             json=r.get_json(),
             xml=r.get_xml(),
+            time=self.time,
         )
 
         d={}
@@ -150,6 +147,17 @@ class Exchange:
         repEnv=Env(env) # clone
         repEnv.update(d)
 
+        # saves
+        new_vars={}
+        for save_as,content in self._saves_to_do:
+            new_vars[save_as] = repEnv.resolve_or_not(content)
+
+        # Save all in this env, to be visible in tests later (vv)
+        repEnv.update( new_vars)
+
+        # update the doc'string
+        self.doc = repEnv.resolve_or_not(self.doc)
+
         # tests
         new_tests=[]
         for var,expected in self._tests_to_do:
@@ -157,10 +165,6 @@ class Exchange:
             val=repEnv.resolve_var_or_empty(var)
             new_tests.append( utils.testCompare(var,val,expected) )
 
-        # saves
-        new_vars={}
-        for save_as,content in self._saves_to_do:
-            new_vars[save_as] = repEnv.resolve_or_not(content)
 
         del repEnv
 
@@ -242,7 +246,7 @@ class Env(dict):
             raise PyMethodException()
 
 
-    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], timeout=None) -> Exchange:
+    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None) -> Exchange:
         assert type(body)==str
         assert all( [type(i)==tuple and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
@@ -263,7 +267,7 @@ class Env(dict):
             r=com.ResponseError("Python Method in error")
 
 
-        ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves)
+        ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves, doc=doc)
         if r is None: # we can call it safely
             await ex.call(self,timeout)
         else:
