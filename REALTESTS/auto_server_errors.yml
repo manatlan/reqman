@@ -8,12 +8,12 @@
 
 
 - test:
-      - GET: http://localhost:17219 #unknown local socket
+      - GET: http://localhost:17219       #UNREACHABLE
         tests:
           - status: 200
           - content: nimp
 
-      - GET: htxxtp:/localhost.17219
+      - GET: htxxtp:/localhost.17219      #INVALID
         tests:
           - status: 200
           - content: nimp
