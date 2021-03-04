@@ -37,7 +37,7 @@ tests:
   - json.info.size: 3   # size of dict
   - json.infos.size: 3  # size of list
 
-  - fbytes: <<fbytes>>
+  - fbytes: "ABCD"
 
   - unknown|trans: null
   - known: 42

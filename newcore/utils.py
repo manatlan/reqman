@@ -133,7 +133,7 @@ def testCompare(var: str, val, opeval) -> Test:
         tok="in"
         tko="not in"
         value=values
-    else:
+    else: # or str
         value,fct,tok,tko=getValOpe(opeval)
         value=guessValue(value)
 

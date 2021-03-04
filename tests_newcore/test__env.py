@@ -8,6 +8,7 @@ ENV=newcore.env.Env(dict(
     txt2="world",
     kiki=3.4,
     a=dict(b=42,bb="BB"),
+    byt=b"Hello",
 
     py=lambda x,ENV: "xxx",
     py2=lambda x,ENV: {'a':'xxxx'},
@@ -36,6 +37,7 @@ def test_b_a_ba():
 
 def test_resolve_var_or_empty():
     assert ENV.resolve_var_or_empty("unknwon|upper") == ""
+    assert ENV.resolve_var_or_empty("byt") == "Hello"
 
 def test_methods():
     assert ENV.resolve_var("txt|upper") == "HELLO"

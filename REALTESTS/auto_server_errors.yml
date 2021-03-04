@@ -21,11 +21,11 @@
       - GET: http://localhost:11111/get_500
         tests:
           - status: 500
-          - content: Internal Server Error
+          - content: .? Internal Server Error
 
       - GET: http://localhost:11111/get_404
         tests:
           - status: 404
-          - content: not found
+          - content: .? not found
 
 - call: test

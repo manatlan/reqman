@@ -229,7 +229,10 @@ class Env(dict):
         if value is NotFound:
             return ""
         else:
-            return str(value)
+            if type(value)==bytes:
+                return value.decode()
+            else:
+                return str(value)
 
 
     def run(self,method: T.Callable , value):
