@@ -78,8 +78,12 @@ class Exchange:
 
         # more outputs
         self.tests=[]
-        self.saves=[]
+        self.saves={}
         self.id=None
+
+        #TODO:
+        self.nolimit=True
+        self.doc=""
 
         # internals
         self._tests_to_do=tests
@@ -89,6 +93,11 @@ class Exchange:
     @property
     def path(self):
         return urllib.parse.urlparse(self.url).path
+
+
+    @property #TODO
+    def bodyContent(self):
+        return self.content
 
     async def call(self, env:dict):
         t1 = datetime.datetime.now()
@@ -287,6 +296,7 @@ if __name__=="__main__":
         ("rm.request.method|upper","GET"),
         ("response.headers.x-test","hello"),
         ("rm.response.headers.X-TeSt|upper","HELLO"),
+        ("unknwon|upper",None),
     ]
     saves=[
         ("hello","<<status>>"),

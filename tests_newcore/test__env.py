@@ -34,6 +34,9 @@ def test_b_a_ba():
     assert ENV.resolve_var("a.x")==NotFound
     assert ENV.resolve_var("XXX")==NotFound
 
+def test_resolve_var_or_empty():
+    assert ENV.resolve_var_or_empty("unknwon|upper") == ""
+
 def test_methods():
     assert ENV.resolve_var("txt|upper") == "HELLO"
     assert ENV.resolve_var("txt|add1|add2") == "hello12"

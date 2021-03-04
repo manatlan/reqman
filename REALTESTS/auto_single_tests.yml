@@ -1,5 +1,5 @@
-#!python3 fakereqman.py 
-#:valid:1111111111111111111111111 THIS --b 
+#!python3 fakereqman.py
+#:valid:1111111111111111111111111 THIS --b
 #:valid:1111111111111111111111111 THIS --o     # a test for output in console only ;-)
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
@@ -22,7 +22,7 @@ params:
   trans:
     return x and "-%s-" %x
   known: 42
-tests: 
+tests:
   - status: 200
   - status: . = 200
   - status: . == 200
@@ -31,7 +31,7 @@ tests:
   - status: . < 201
   - status: . > 199
   - status: . != 999
-  - status: 
+  - status:
         - 200
         - 201
   - json.info.size: 3   # size of dict

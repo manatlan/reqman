@@ -18,3 +18,8 @@ def test_comp():
 
     assert compare("ABC",".? A")
     assert compare("ABC",".!? Z")
+
+def test_comp_list():
+    compare=lambda x,opeval: newcore.utils.testCompare("my",x,opeval)
+
+    assert compare(200,[200,201])

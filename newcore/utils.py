@@ -55,7 +55,13 @@ class Test(int):
 
 
 def guessValue(txt):
+    """ return a value that is comparable """
+    if type(txt) == bytes:
+        txt=txt.decode() # to string
+
     if type(txt) == str:
+        if txt=="":
+            return None
         try:
             return json.loads(txt)
         except:
@@ -63,6 +69,7 @@ def guessValue(txt):
                 return json.loads('"%s"' % txt.replace('"', '\\"'))
             except:
                 return txt
+
     return txt
 
 
@@ -120,10 +127,17 @@ def getValOpe(v):
     return v, lambda a, b: a == b, "=", "!="
 
 def testCompare(var: str, val, opeval) -> Test:
-    value,fct,tok,tko=getValOpe(opeval)
-    value=guessValue(value)
+    if type(opeval)==list:
+        values=[guessValue(i) for i in opeval]
+        test=guessValue(val) in values
+        tok="in"
+        tko="not in"
+        value=values
+    else:
+        value,fct,tok,tko=getValOpe(opeval)
+        value=guessValue(value)
 
-    test=fct(value,guessValue(val))
+        test=fct(value,guessValue(val))
 
     nameOK = var + " " + tok + " " + strjs(value)  # test name OK
     nameKO = var + " " + tko + " " + strjs(value)  # test name KO

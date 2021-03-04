@@ -27,7 +27,7 @@ import concurrent, ssl
 from xml.dom import minidom
 import encodings.idna
 import inspect
-
+import newcore
 
 
 
@@ -1395,180 +1395,68 @@ class Req(ReqItem):
         method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
         doc, tests, saves = self.doc, self.tests, self.saves
 
-        #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' compute an unique id based on reqs's attributes
-        uid = hashlib.md5()
-        uid.update(
-            json.dumps([method, path, body, headers, doc, tests, saves]).encode()
-        )
-        #''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-
-        gpath = path
         ex = None
-        try:
 
-            def resolvHeaders(headers):
-                if type(headers) == str:
-                    headers = scope.replaceObj(headers)
-                self.parent._assertType("headers", headers, [dict, list])
-                return headers
+        #========= old code
+        def resolvHeaders(headers):
+            if type(headers) == str:
+                headers = scope.replaceObj(headers)
+            self.parent._assertType("headers", headers, [dict, list])
+            return headers
 
-            if gheaders is not None:
-                newHeaders = resolvHeaders(clone(gheaders))
-                dict_merge(newHeaders, headers)
-                headers = newHeaders
+        if gheaders is not None:
+            newHeaders = resolvHeaders(clone(gheaders))
+            dict_merge(newHeaders, headers)
+            headers = newHeaders
+        #=========
 
-            path = scope.replaceTxt(path)
 
-            if root is not None and not urllib.parse.urlparse(path.lower()).scheme:
-                url = scope.replaceTxt(root) + path
-            else:
-                url = path
+        # pquerys={}
+        # for k,v in querys.items():
+        #     if v is None:
+        #         pquerys[k]=None
+        #     elif type(v)==list:
+        #         ll=[]
+        #         for i in v:
+        #             if i is not None:
+        #                 i=scope.replaceObj(i)
+        #                 if type(i)==list:
+        #                     ll.extend(i)
+        #                 else:
+        #                     ll.append(i)
 
-            pquerys={}
-            for k,v in querys.items():
-                if v is None:
-                    pquerys[k]=None
-                elif type(v)==list:
-                    ll=[]
-                    for i in v:
-                        if i is not None:
-                            i=scope.replaceObj(i)
-                            if type(i)==list:
-                                ll.extend(i)
-                            else:
-                                ll.append(i)
+        #         pquerys[k]=ll
+        #     else:
+        #         pquerys[k]=scope.replaceObj(v)
 
-                    pquerys[k]=ll
-                else:
-                    pquerys[k]=scope.replaceObj(v)
+        # url=updateUrlQuery(url,pquerys)
 
-            url=updateUrlQuery(url,pquerys)
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        newscope = dict(scope)
 
-            if body:
-                body = scope.replaceObj(body)
+        #transform pymethod's string into real func
+        for k,v in newscope.items():
+            if v and isPython(v):
+                exec(declare(v), globals())
+                newscope[k]=DYNAMIC
 
-            headers = resolvHeaders(headers)
-            headers = {
-                k: scope.replaceTxt(str(v)) for k, v in headers.items() if v
-            }  # headers'value should be string
+        newenv=newcore.env.Env( newscope )
 
-            # #=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ test if all vars are resolved
-            if scope.getNonResolvedVars(path):
-                raise RMNonResolvedVars("`Path` non resolved")
-            if scope.getNonResolvedVars(body):
-                raise RMNonResolvedVars("`Body` non resolved")
-            for k, v in headers.items():
-                if scope.getNonResolvedVars(v):
-                    raise RMNonResolvedVars("Header `%s` non resolved" % k)
-            # =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+        newsaves=[] #TODO: convert saves
+        newtests=[]
+        for d in tests:
+            k,v=list(d.items())[0]
+            newtests.append( (k,v) )
 
-            tests = [
-                {list(d.keys())[0]: scope.replaceObj(list(d.values())[0])}
-                for d in tests
-            ]  # cast value as str
+        ex = await newenv.call(method,path,headers,body or "",newsaves,newtests)
 
-            # set cookies in request according env
-            self.parent.env.cookiejar.update(url, headers)
-
-            ex = await asyncExecute(
-                method, gpath, url, body, headers, http=http, timeout=timeout
-            )
-        except (
-            RMPyException,
-            RMFormatException,
-            RMNonResolvedVars,
-        ) as e:  # RMFormatException for headers resolver !
-            ex = Exchange(
-                method,
-                gpath,
-                gpath,
-                body or "",
-                headers,
-                None,
-                {},
-                str(e),
-                "TEST EXCEPTION",
-                0,
-            )
-        except Exception as e:  # RMFormatException for headers resolver !
-            ex = Exchange(
-                method,
-                gpath,
-                gpath,
-                body or "",
-                headers,
-                500,
-                {},
-                str(e),
-                "TEST EXCEPTION (bug)",
-                0,
-            )
-        finally:
-            assert ex
-            self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
-
-        # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-        envResponse = scope.clone()
-        contentAsJson = ex.content.toJson() if type(ex.content) == Content else None
-        contentAsXml = ex.content.toXml() if type(ex.content) == Content else None
-
-        envResponse["request"] = RmDict(  # new
-            path=ex.url,
-            method=ex.method,
-            content=ex.bodyContent,  # Content type
-            headers=ex.inHeaders,  # HeadersMixedCase type
-        )
-        envResponse["response"] = RmDict(  # new
-            status=ex.status,
-            content=ex.content,  # Content type
-            headers=ex.outHeaders,  # HeadersMixedCase type
-            time=ex.time,
-        )
-
-        envResponse["rm"] = RmDict(
-            response=envResponse["response"], request=envResponse["request"]
-        )
-
-        # shorthands (historik)
-        envResponse["content"] = envResponse["response"]["content"]
-        envResponse["status"] = envResponse["response"]["status"]
-        envResponse["headers"] = envResponse["response"]["headers"]
-
-        if contentAsJson:
-            envResponse["response"]["json"] = contentAsJson
-            envResponse["json"] = contentAsJson  # shorthands (historik)
-
-        if contentAsXml:
-            envResponse["response"]["xml"] = contentAsXml
-            envResponse["xml"] = contentAsXml  # shorthands (historik)
-
-        # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-
-        try:  # postsave
-            for s in saves:
-                for saveKey, saveWhat in s.items():
-                    v = envResponse.replaceObj(saveWhat)
-                    self.parent.env.save(saveKey, v, self.parent.name in ["BEGIN","END"])
-                    envResponse[saveKey] = v
-        except RMPyException as e:
-            ex.status = None
-            ex.content = e
-            ex.info = "SAVE EXCEPTION"
-
-            # important ! (not top ;-( )
-            envResponse["content"] = ex.content
-            envResponse["status"] = ex.status
-            envResponse["response"]["content"] = ex.content
-            envResponse["response"]["status"] = ex.status
-            envResponse["rm"]["response"]["content"] = ex.content
-            envResponse["rm"]["response"]["status"] = ex.status
-
-        # upgrade 'ex' !
-        ex.id = uid.hexdigest()
-        ex.doc = envResponse.replaceTxt(doc) if doc else None
-        ex.scope = scope
-        ex.nolimit = self.nolimit
-        ex.tests = TestResult(tests, envResponse, ex.status)
+        for saveKey, saveWhat in ex.saves.items():
+            self.parent.env.save(saveKey, saveWhat, self.parent.name in ["BEGIN","END"])
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
 
         # =================================================== LIVE CONSOLE
         if outputConsole != OutputConsole.NO:
@@ -1588,7 +1476,7 @@ class Req(ReqItem):
                     if ex.inHeaders:
                         print(padLeft(display(ex.inHeaders)))
                     if ex.body:
-                        print(padLeft(ex.bodyContent))
+                        print(padLeft(ex.content.decode()))
                     print(padLeft("-" * 75))
                     if ex.outHeaders:
                         print(padLeft(display(ex.outHeaders)))
