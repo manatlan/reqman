@@ -254,19 +254,22 @@ class Env(dict):
             path=self.resolve(path)
             body=self.resolve(body)
             headers={k:self.resolve(str(v)) for k,v in headers.items()}
+            r=None
         except ResolveException:
             #can't resolve, so can't make http request, so all tests are ko
-            #TODO: coninue here
-            pass
+            r=com.ResponseError("Path/body/headers non resolved")
         except PyMethodException:
             #a conf trouble .... break the rule !
-            #TODO: coninue here
-            pass
+            r=com.ResponseError("Python Method in error")
+
 
         ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves)
-        await ex.call(self,timeout)
-        return ex
+        if r is None: # we can call it safely
+            await ex.call(self,timeout)
+        else:
+            ex.treatment( self, r)
 
+        return ex
 
 
 
