@@ -1450,7 +1450,7 @@ class Req(ReqItem):
             k,v=list(d.items())[0]
             newtests.append( (k,v) )
 
-        ex = await newenv.call(method,path,headers,body or "",newsaves,newtests)
+        ex = await newenv.call(method,path,headers,body or "",newsaves,newtests, timeout=timeout)
 
         for saveKey, saveWhat in ex.saves.items():
             self.parent.env.save(saveKey, saveWhat, self.parent.name in ["BEGIN","END"])

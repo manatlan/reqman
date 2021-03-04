@@ -34,8 +34,7 @@ class Response:
 
 class ResponseError(Response):
     def __init__(self,error):
-        Response.__init__(self,None,httpx.Headers(),b"","")
-        self.error=error
+        Response.__init__(self,None,httpx.Headers(),error.encode(),"")
     def get_json(self):
         return None
     def get_xml(self):
@@ -59,6 +58,8 @@ class ResponseInvalid(ResponseError):
 async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -> Response:
     assert type(body)==bytes
 
+    print("=================",timeout)
+
     try:
         r = await AHTTP.request(
             method,
@@ -66,7 +67,7 @@ async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -
             data=body,
             headers=headers,
             allow_redirects=False,
-            timeout=timeout,
+            timeout=timeout,   # sec to millisec
         )
         info = "%s %s %s" % (r.http_version, int(r.status_code), r.reason_phrase)
         return Response(r.status_code, r.headers, r.content, info)

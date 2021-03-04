@@ -99,10 +99,10 @@ class Exchange:
     def bodyContent(self):
         return self.content
 
-    async def call(self, env:dict):
+    async def call(self, env:dict, timeout=None):
         t1 = datetime.datetime.now()
 
-        r = await com.call(self.method,self.url,self.body,self.inHeaders)
+        r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout)
         self.treatment(env,r)
 
         diff = datetime.datetime.now() - t1
@@ -242,7 +242,7 @@ class Env(dict):
             raise PyMethodException()
 
 
-    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[]) -> Exchange:
+    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], timeout=None) -> Exchange:
         assert type(body)==str
         assert all( [type(i)==tuple and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
@@ -264,7 +264,7 @@ class Env(dict):
             pass
 
         ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves)
-        await ex.call(self)
+        await ex.call(self,timeout)
         return ex
 
 
