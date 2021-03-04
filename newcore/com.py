@@ -34,7 +34,7 @@ class Response:
 
 class ResponseError(Response):
     def __init__(self,error):
-        Response.__init__(self,0,httpx.Headers(),b"","")
+        Response.__init__(self,None,httpx.Headers(),b"","")
         self.error=error
     def get_json(self):
         return None
