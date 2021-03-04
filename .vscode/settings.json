@@ -1,12 +1,12 @@
 {
     "code-runner.clearPreviousOutput": true,
     "python.linting.pylintEnabled": false,
-        
+
     "python.testing.pytestArgs": [
-        ".","-s"
+        "tests","tests_newcore","-s"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.formatting.provider": "black",
-}       
+}
