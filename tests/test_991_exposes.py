@@ -353,7 +353,7 @@ def test_no_input(exe):
 """)
 
     x=exe(".",fakeServer=MOCK)
-    x.view()
+    # x.view()
     assert x.rc == 0 # all ok
 
 
@@ -382,5 +382,5 @@ obj: [1,2,3]
 """)
 
     x=exe(".",fakeServer=MOCK)
-    x.view()
+    # x.view()
     assert x.rc == 0 # all ok
