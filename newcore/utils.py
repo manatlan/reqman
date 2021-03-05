@@ -72,7 +72,7 @@ def guessValue(txt):
             try:
                 return json.loads(txt)
             except:
-                try:
+                try:    #TODO: it it used yet ?!
                     return json.loads('"%s"' % txt.replace('"', '\\"'))
                 except:
                     return txt
@@ -136,10 +136,16 @@ def getValOpe(v):
 
 def testCompare(var: str, val, opeval) -> Test:
     if type(opeval)==list:
-        values=[guessValue(i) for i in opeval]
-        test=guessValue(val) in values
-        tok="in"
-        tko="not in"
+        values=opeval # or [guessValue(i) for i in opeval], but baddest
+        val=guessValue(val)
+        if type(val)==list: # compare 2 list
+            test= val == values
+            tok="="
+            tko="!="
+        else:
+            test=val in values
+            tok="in"
+            tko="not in"
         value=values
     elif type(opeval)==dict:
         val=guessValue(val)

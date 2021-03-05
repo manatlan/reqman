@@ -136,5 +136,15 @@ async def test_call():
 
 
 def test_xml():
-    e=newcore.env.Env( dict(xml=newcore.xlib.Xml("<a><b>1</b><b>2</b></a>")) )
-    assert e.resolve_var("xml.//b.0") == "1"
+    e=newcore.env.Env( dict(
+        xml=newcore.xlib.Xml("<a><b>b1</b><b>b2</b><c>c3</c></a>"),
+        counter=lambda x,ENV: len(x),
+
+    ))
+    assert e.resolve_var("xml.//b.0") == "b1"
+    assert e.resolve_var_or_empty("xml.//b.0") == "b1"
+
+    assert e.resolve_var("xml.//b") == ['b1','b2']
+
+    assert e.resolve_var("xml.//b|//c|//d|//e") == ['b1','b2','c3']
+    assert e.resolve_var("xml.//b|//c|//d|//e|counter") == 3

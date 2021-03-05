@@ -138,7 +138,8 @@ def test_simul_xml():
     tests=[
         # ("status","200"),
         # ("content",xml),
-        ("xml.//b.0", "1"),
+        # ("xml.//b.0", "1"),
+        ("xml.//b", ["1","2"] ),
     ]
     saves=[
     ]

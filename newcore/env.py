@@ -270,6 +270,15 @@ class Env(dict):
         """
         if "|" in content:
             var, *methods = content.split("|")
+            # when xpath, there can be "|" in var ...
+            # so we try to let them in place ;-)
+            while len(methods)>0:
+                if methods[0].startswith("/"): #assuming xpath part starts with "/"
+                    m=methods.pop(0)
+                    var+="|"+m
+                else:
+                    break
+            logging.warn(f"======================= {var} {methods}")
         else:
             var, methods =content, []
 
