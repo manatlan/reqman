@@ -9,6 +9,8 @@ def test_simul_json():
         upper= lambda x,ENV: x.upper(),
     ))
 
+    obj= dict(items=list("abc"),value="hello")
+
     tests=[
         ("status","<<v200>>"),
         ("status",".>= <<v200>>"),
@@ -23,6 +25,8 @@ def test_simul_json():
         ("response.headers.x-test","hello"),
         ("rm.response.headers.X-TeSt|upper","HELLO"),
         ("unknwon|upper",None),
+        ("response.json", json.dumps(obj)),         # Prob sur "auto_check_values.yml" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ("response.json", obj),
     ]
     saves=[
         ("hello","<<status>>"),
@@ -35,14 +39,13 @@ def test_simul_json():
 
     ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
 
-    obj= dict(items=list("abc"),value="hello")
     r=newcore.com.Response(200,{"x-test":"hello"},json.dumps(obj).encode(),"http1/1 200 ok")
     ex.treatment(env,r)
 
     assert ex.time==0
     assert ex.id
 
-    assert all(ex.tests)
+    assert all(ex.tests),ex
 
     assert ex.saves == {'MAX': 'HELLO',
  'hello': '200',
@@ -98,7 +101,8 @@ def test_save_and_test():
         ("var","ok"),
         ("var","<<var>>"),
         ("var|upper","OK"),
-        ("justTrue","True"),
+        ("justTrue","true"),    # \__ same !
+        ("justTrue","True"),    # /
     ]
     saves=[
         ("var","ok"),

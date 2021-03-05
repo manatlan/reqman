@@ -1,7 +1,7 @@
 import pytest
 import newcore.env
 import newcore.com
-
+import json
 
 ENV=newcore.env.Env(dict(
     txt="hello",
@@ -9,6 +9,7 @@ ENV=newcore.env.Env(dict(
     kiki=3.4,
     a=dict(b=42,bb="BB"),
     byt=b"Hello",
+    l=list("abc"),
 
     py=lambda x,ENV: "xxx",
     py2=lambda x,ENV: {'a':'xxxx'},
@@ -38,6 +39,10 @@ def test_b_a_ba():
 def test_resolve_var_or_empty():
     assert ENV.resolve_var_or_empty("unknwon|upper") == ""
     assert ENV.resolve_var_or_empty("byt") == "Hello"
+    assert ENV.resolve_var_or_empty("l") == json.dumps(list("abc"))
+    assert ENV.resolve_var_or_empty("a") == json.dumps(dict(b=42,bb="BB"),)
+    assert ENV.resolve_var_or_empty("a.b") == "42"
+    assert ENV.resolve_var_or_empty("txt2") == "world"
 
 def test_methods():
     assert ENV.resolve_var("txt|upper") == "HELLO"
@@ -122,9 +127,9 @@ async def test_call():
 
     e=newcore.env.Env( dict(root="https://www.manatlan.com") )
     r=await e.call("GET","/")
-    assert r.status==200
+    assert r.status==200,"ko1"
 
     e=newcore.env.Env( dict(root="<<scheme>><<host>>",scheme="https",host="://www.manatlan.<<tld>>",tld="com") )
     r=await e.call("GET","/")
-    assert r.status==200
+    assert r.status==200,"ko2"
 

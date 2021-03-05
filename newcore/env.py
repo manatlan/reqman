@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+from newcore.utils import jdumps
 import re
 import json
 import datetime
@@ -240,7 +241,10 @@ class Env(dict):
             if type(value)==bytes:
                 return value.decode()
             else:
-                return str(value)
+                if type(value) in [list,dict]:
+                    return utils.jdumps(value)
+                else:
+                    return str(value)
 
 
     def run(self,method: T.Callable , value):

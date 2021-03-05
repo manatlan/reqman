@@ -1,5 +1,5 @@
 #!python3 fakereqman.py
-#:valid:11,11,11,11 THIS --b
+#:valid:11,11,00,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -30,7 +30,7 @@
       params:
         defa: return x or "a"
 
-- call: proc2 # call a
+- call: proc2 # call a ---> will fail, coz "p" is non resolvable !!!
   tests:
     - status: 200
     - content: a

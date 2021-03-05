@@ -62,68 +62,74 @@ def guessValue(txt):
     if type(txt) == str:
         if txt=="":
             return None
-        try:
-            return json.loads(txt)
-        except:
+        elif txt.lower()=="true":
+            return True
+        elif txt.lower()=="false":
+            return False
+        else:
             try:
-                return json.loads('"%s"' % txt.replace('"', '\\"'))
+                return json.loads(txt)
             except:
-                return txt
+                try:
+                    return json.loads('"%s"' % txt.replace('"', '\\"'))
+                except:
+                    return txt
 
     return txt
 
 
 def getValOpe(v):
-    if type(v) == str and v.startswith("."):
-        g = re.match(r"^\. *([\?!=<>]{1,2}) *(.+)$", v)
-        if g:
-            op, v = g.groups()
-            if op in ["==", "="]:  # not needed really, but just for compatibility
-                return v, lambda a, b: b == a, "=", "!="
-            elif op == "!=":
-                return v, lambda a, b: b != a, "!=", "="
-            elif op == ">=":
-                return (
-                    v,
-                    lambda a, b: b != None and a != None and b >= a or False,
-                    ">=",
-                    "<",
-                )
-            elif op == "<=":
-                return (
-                    v,
-                    lambda a, b: b != None and a != None and b <= a or False,
-                    "<=",
-                    ">",
-                )
-            elif op == ">":
-                return (
-                    v,
-                    lambda a, b: b != None and a != None and b > a or False,
-                    ">",
-                    "<=",
-                )
-            elif op == "<":
-                return (
-                    v,
-                    lambda a, b: b != None and a != None and b < a or False,
-                    "<",
-                    ">=",
-                )
-            elif op == "?":
-                return (
-                    v,
-                    lambda a, b: str(a) in str(b),
-                    "contains",
-                    "doesn't contain",
-                )
-            elif op in ["!?",]:
-                return (
-                    v,
-                    lambda a, b: str(a) not in str(b),
-                    "doesn't contain",
-                    "contains",
-                )
+    if type(v) == str:
+        if v.startswith("."):
+            g = re.match(r"^\. *([\?!=<>]{1,2}) *(.+)$", v)
+            if g:
+                op, v = g.groups()
+                if op in ["==", "="]:  # not needed really, but just for compatibility
+                    return v, lambda a, b: b == a, "=", "!="
+                elif op == "!=":
+                    return v, lambda a, b: b != a, "!=", "="
+                elif op == ">=":
+                    return (
+                        v,
+                        lambda a, b: b != None and a != None and b >= a or False,
+                        ">=",
+                        "<",
+                    )
+                elif op == "<=":
+                    return (
+                        v,
+                        lambda a, b: b != None and a != None and b <= a or False,
+                        "<=",
+                        ">",
+                    )
+                elif op == ">":
+                    return (
+                        v,
+                        lambda a, b: b != None and a != None and b > a or False,
+                        ">",
+                        "<=",
+                    )
+                elif op == "<":
+                    return (
+                        v,
+                        lambda a, b: b != None and a != None and b < a or False,
+                        "<",
+                        ">=",
+                    )
+                elif op == "?":
+                    return (
+                        v,
+                        lambda a, b: str(a) in str(b),
+                        "contains",
+                        "doesn't contain",
+                    )
+                elif op in ["!?",]:
+                    return (
+                        v,
+                        lambda a, b: str(a) not in str(b),
+                        "doesn't contain",
+                        "contains",
+                    )
     return v, lambda a, b: a == b, "=", "!="
 
 def testCompare(var: str, val, opeval) -> Test:
@@ -133,12 +139,19 @@ def testCompare(var: str, val, opeval) -> Test:
         tok="in"
         tko="not in"
         value=values
+    elif type(opeval)==dict:
+        val=guessValue(val)
+        test = (val == opeval)
+        tok="="
+        tko="!="
+        value=opeval
     else: # or str
         value,fct,tok,tko=getValOpe(opeval)
         value=guessValue(value)
 
         try:
-            test=fct(value,guessValue(val))
+            val=guessValue(val)
+            test=fct(value,val)
         except Exception as e:
             logging.warn(f"testCompare('{var}','{val}','{opeval}') : {e} -> assuming test is negative !")
             test=False
