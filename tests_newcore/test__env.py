@@ -75,7 +75,7 @@ def test_methods_bad():
 
 def test_resolver():
     x=ENV.resolve("fdsgfd <<kiki>> {{a.bb.size}} fdsfds {{py2}}")
-    assert x=="fdsgfd 3.4 2 fdsfds {'a': 'xxxx'}"
+    assert x=='fdsgfd 3.4 2 fdsfds {"a": "xxxx"}'
 
     with pytest.raises(newcore.env.PyMethodException):
         ENV.resolve("a txt <<upper>>")    # this method use the param !
@@ -136,6 +136,23 @@ def test_order2():
         fichier= "www<<now>>www",
     ))
     assert e.resolve("<<fichier|upper>>") == "WWWXXXWWW"
+
+def test_copy_dico():
+    e=newcore.env.Env( dict(
+        user=dict(id=42,name="jo"),
+        user1="<<user>>",
+    ))
+    # assert type(e.resolve_var("user"))==dict
+    # assert e.resolve_var("user") == dict(id=42,name="jo")
+    # assert e.resolve_var("user.id") == 42
+    # assert e.resolve_var("user.name") == "jo"
+
+    # assert type(e.resolve_var("user1"))==dict
+    # assert e.resolve_var("user1") == dict(id=42,name="jo")
+    assert e.resolve_var("user1.id") == 42
+    # assert e.resolve_var("user1.name") == "jo"
+
+
 
 
 

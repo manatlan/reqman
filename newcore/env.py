@@ -259,7 +259,14 @@ class Env(dict):
                     raise ResolveException()
                 else:
                     value=pattern
-            txt=txt.replace( pattern, str(value) )
+            if type(value) in [ str,bytes]:
+                txt=txt.replace( pattern, str(value) )
+            else:
+                try:
+                    v=json.dumps(value)
+                except:
+                    v=str(v)
+                txt=txt.replace( pattern, v )
 
         if notFoundException and find_vars(txt):
             txt=self._resolve(txt)
@@ -296,9 +303,9 @@ class Env(dict):
         else:
             value = jpath(self,var)
 
-            # resolve value content, before applying methods
-            value = self.resolve_or_not( value )
-
+            if type(value)==str:
+                # resolve value content, before applying methods
+                value = self.resolve_or_not( value )
 
         # and apply methods on the value
         if methods and value is not NotFound:
@@ -309,7 +316,11 @@ class Env(dict):
                 else:
                     return NotFound
 
-        return value
+        # try to remake an object (if value was json serialized one)
+        try:
+            return json.loads(value)
+        except:
+            return value
 
 
     def resolve_var_or_empty(self,content: str) -> str:
