@@ -27,7 +27,7 @@ headers:
         fid.write(
             """
 - GET: /a
-  headers: 
+  headers:
     auth: null #override
     x-autre: hello
   tests:
@@ -56,7 +56,7 @@ def test_bad_headers_in_rc(exe):
         fid.write(
             """
 user1: 412
-  
+
 headers:
   <<user1>>
 """
@@ -73,7 +73,7 @@ headers:
 
     x = exe(".", "--o", fakeServer=MOCK)
     # x.view()
-    assert x.rc == 1  # 1 error
+    assert x.rc == -1  # 1 error
 
 
 def test_bad_headers2_in_rc(exe):
@@ -81,7 +81,7 @@ def test_bad_headers2_in_rc(exe):
     with open("reqman.conf", "w+") as fid:
         fid.write(
             """
- 
+
 headers:
   <<user1>>
 """
@@ -97,7 +97,7 @@ headers:
         )
 
     x = exe(".", "--o", fakeServer=MOCK)
-    assert x.rc == 1  # 1 error
+    assert x.rc == -1  # 1 error
 
 
 def test_replace_headers2_in_rc(exe):
@@ -126,7 +126,7 @@ switchs:
         fid.write(
             """
 - GET: /a
-  headers: 
+  headers:
     auth: null #override
     x-autre: hello
   tests:

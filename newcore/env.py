@@ -135,23 +135,25 @@ class Exchange:
 
             if self.url in http:
                 rep = http[self.url]
-                if callable(rep):
-                    rep = rep(self.method, self.url, self.body, self.inHeaders)
+                try:
+                    if callable(rep):
+                        rep = rep(self.method, self.url, self.body, self.inHeaders)
 
-                if len(rep) == 2:
-                    status, content = rep
-                elif len(rep) == 3:
-                    status, content, oHeaders = rep
-                    outHeaders.update( oHeaders )
-                else:
-                    status, content = 500, "mock server error"
+                    if len(rep) == 2:
+                        status, content = rep
+                    elif len(rep) == 3:
+                        status, content, oHeaders = rep
+                        outHeaders.update( oHeaders )
+                    else:
+                        raise Exception("Bad mock response")
+                except Exception as e:
+                    status, content = 500, f"mock server error: {e}"
                 assert type(content) in [str, bytes]
                 assert type(status) is int
                 assert type(outHeaders) is dict
 
             # ensure content is bytes
             content = content.encode() if type(content)==str else content
-
             logging.debug(f"Simulate {self.method} {self.url} --> {status}")
             r=com.Response(status,outHeaders,content,info)
             #####################################################################"
