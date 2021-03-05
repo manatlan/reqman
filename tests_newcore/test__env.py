@@ -111,8 +111,9 @@ def test_dict():
 
 
 def test_rec():
-    e=newcore.env.Env( dict(scheme="https",host="://www.manatlan.<<tld>>",tld="com") )
+    e=newcore.env.Env( dict(scheme="https",host="://www.manatlan.<<tld>>",tld="com",root="<<scheme>><<host>>") )
     assert e.resolve("<<scheme>><<host>>") =="https://www.manatlan.com"
+    assert e.resolve("<<root>>") =="https://www.manatlan.com"
 
     with pytest.raises(newcore.env.ResolveException):
         e=newcore.env.Env( dict(a="<<b>>",b="<<a>>") )
@@ -142,15 +143,15 @@ def test_copy_dico():
         user=dict(id=42,name="jo"),
         user1="<<user>>",
     ))
-    # assert type(e.resolve_var("user"))==dict
-    # assert e.resolve_var("user") == dict(id=42,name="jo")
-    # assert e.resolve_var("user.id") == 42
-    # assert e.resolve_var("user.name") == "jo"
+    assert type(e.resolve_var("user"))==dict
+    assert e.resolve_var("user") == dict(id=42,name="jo")
+    assert e.resolve_var("user.id") == 42
+    assert e.resolve_var("user.name") == "jo"
 
-    # assert type(e.resolve_var("user1"))==dict
-    # assert e.resolve_var("user1") == dict(id=42,name="jo")
+    assert type(e.resolve_var("user1"))==dict
+    assert e.resolve_var("user1") == dict(id=42,name="jo")
     assert e.resolve_var("user1.id") == 42
-    # assert e.resolve_var("user1.name") == "jo"
+    assert e.resolve_var("user1.name") == "jo"
 
 
 
@@ -170,7 +171,7 @@ async def test_call():
 
     e=newcore.env.Env( dict(root="<<scheme>><<host>>",scheme="https",host="://www.manatlan.<<tld>>",tld="com") )
     r=await e.call("GET","/")
-    assert r.status==200,"ko2"
+    assert r.status==200,f"ko2 {r.content}"
 
 
 def test_xml():

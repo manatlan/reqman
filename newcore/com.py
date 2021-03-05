@@ -37,8 +37,8 @@ class ResponseUnreachable(ResponseError):
         ResponseError.__init__(self,"Unreachable")
 
 class ResponseInvalid(ResponseError):
-    def __init__(self):
-        ResponseError.__init__(self,"Invalid")
+    def __init__(self,url):
+        ResponseError.__init__(self,f"Invalid {url}")
 
 
 async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -> Response:
@@ -59,7 +59,7 @@ async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -
     except (httpx.ConnectError):
         return ResponseUnreachable()
     except (httpx.InvalidURL,httpx.UnsupportedProtocol,ValueError):
-        return ResponseInvalid()
+        return ResponseInvalid(url)
 
 
 if __name__=="__main__":

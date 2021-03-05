@@ -28,6 +28,7 @@ class ResolveException(Exception): pass
 
 def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
     runner=elem.run
+    resolver=elem.resolve_var
     for i in path.strip(".").split("."):
         try:
             if elem is None:
@@ -43,6 +44,9 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
                     return len(list(elem.keys()))
                 else:
                     elem = elem.get(i, NotFound)
+
+                    if type(elem)==str and elem.startswith("<<") and elem.endswith(">>"):
+                        elem=resolver(elem[2:-2])
 
                     if elem is not NotFound and callable(elem):
                         elem=runner(elem,None)
