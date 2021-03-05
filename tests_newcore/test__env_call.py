@@ -46,13 +46,12 @@ def test_simul_json():
     assert ex.id
 
     assert all(ex.tests),ex
-
-#     assert ex.saves == {'MAX': 'HELLO',
-#  'hello': '200',
-#  'js': "{'items': ['a', 'b', 'c'], 'value': 'hello'}",
-#  'll': "['a', 'b', 'c']",
-#  'nimp': '<<nimp>>',
-#  'val': 'b'}
+    assert ex.saves["hello"]==200
+    assert ex.saves["js"]=={"items": ["a", "b", "c"], "value": "hello"}
+    assert ex.saves["ll"]==["a", "b", "c"]
+    assert ex.saves["val"]=="b"
+    assert ex.saves["MAX"]=="HELLO"
+    assert ex.saves["nimp"]=="<<nimp>>"
 
     import pprint
     pprint.pprint(ex.tests)
@@ -136,12 +135,13 @@ def test_simul_xml():
     xml= "<a><b>1</b><b>2</b></a>"
 
     tests=[
-        # ("status","200"),
-        # ("content",xml),
-        # ("xml.//b.0", "1"),
+        ("status","200"),
+        ("content",xml),
+        ("xml.//b.0", "1"),
         ("xml.//b", ["1","2"] ),
     ]
     saves=[
+        ("toto","<<xml.//b>>")
     ]
 
     ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
@@ -154,6 +154,7 @@ def test_simul_xml():
 
     assert all(ex.tests),ex
 
+    assert ex.saves["toto"]== ["1", "2"]
 
     import pprint
     pprint.pprint(ex.tests)

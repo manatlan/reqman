@@ -42,7 +42,7 @@ def test_xpath_ok(exe):
     - xml.//*:nooooo: null
     - xml.//ns2:typeDocument.0: hello
     - xml.//c: .>1                       # bad
-    
+
 """)
 
     x=exe(".","--o",fakeServer=MOCK)
@@ -86,7 +86,7 @@ def test_xpath_compute(exe):
 """)
 
     x=exe(".","--o",fakeServer=MOCK)
-    # print(x.console) 
+    # print(x.console)
     # x.view()
     assert x.rc == 0
 
@@ -107,7 +107,7 @@ def test_xpath_compute2(exe):
 """)
 
     x=exe(".","--o",fakeServer=MOCK)
-    # print(x.console) 
+    # print(x.console)
     # x.view()
     assert x.rc == 0
 

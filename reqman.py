@@ -1490,12 +1490,12 @@ class Req(ReqItem):
                     if ex.inHeaders:
                         print(padLeft(display(ex.inHeaders)))
                     if ex.body:
-                        print(padLeft(ex.content.decode()))
+                        print(padLeft(ex.content.decode())) #TODO: prettify
                     print(padLeft("-" * 75))
                     if ex.outHeaders:
                         print(padLeft(display(ex.outHeaders)))
                     if ex.content:
-                        print(padLeft(ex.content))
+                        print(padLeft(ex.content))          #TODO: prettify
                     print(padLeft("-" * 75))
 
                 for t in ex.tests:

@@ -28,7 +28,7 @@ class ResolveException(Exception): pass
 
 def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
     runner=elem.run
-    resolver=elem.resolve_var
+    resolver=elem.resolve_or_not
     for i in path.strip(".").split("."):
         try:
             if elem is None:
@@ -45,11 +45,19 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
                 else:
                     elem = elem.get(i, NotFound)
 
-                    if type(elem)==str and elem.startswith("<<") and elem.endswith(">>"):
-                        elem=resolver(elem[2:-2])
+                    if elem is not NotFound:
+                        # NOT TOP /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+                        if type(elem)==str and "<<" in elem:
+                            elem=resolver(elem)
 
-                    if elem is not NotFound and callable(elem):
-                        elem=runner(elem,None)
+                            try:
+                                elem= json.loads(elem)
+                            except:
+                                pass
+
+                        elif callable(elem):
+                            elem=runner(elem,None)
+                        # NOT TOP /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
             elif type(elem) == str:
                 if i == "size":
@@ -209,7 +217,12 @@ class Exchange:
         new_vars={}
         for save_as,content in self._saves_to_do:
             try:
-                new_vars[save_as] = repEnv.resolve_or_not(content)
+                v=repEnv.resolve_or_not(content)
+                try:
+                    v= json.loads(v)
+                except:
+                    pass
+                new_vars[save_as] = v
             except Exception as e:
                 logging.warn(f"Can't resolve saved var '{save_as}', because {e}")
                 new_vars[save_as]= content
