@@ -100,10 +100,44 @@ class Exchange:
     def bodyContent(self):
         return self.content
 
-    async def call(self, env:dict, timeout=None):
+    async def call(self, env:dict, timeout=None,http=None):
         t1 = datetime.datetime.now()
 
-        r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout)
+        if http is None:
+            #real call on the web
+            r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout)
+        else:
+            #simulate with http hook
+            #####################################################################"
+            status, content, outHeaders, info = ( # default response 404
+                404,
+                "mock not found",
+                {"server": "reqman mock"},
+                "MOCK RESPONSE",
+            )
+
+            if self.url in http:
+                rep = http[self.url]
+                if callable(rep):
+                    rep = rep(self.method, self.url, self.body, self.inHeaders)
+
+                if len(rep) == 2:
+                    status, content = rep
+                elif len(rep) == 3:
+                    status, content, oHeaders = rep
+                    outHeaders.update( oHeaders )
+                else:
+                    status, content = 500, "mock server error"
+                assert type(content) in [str, bytes]
+                assert type(status) is int
+                assert type(outHeaders) is dict
+
+            # ensure content is bytes
+            content = content.encode() if type(content)==str else content
+
+            logging.debug(f"Simulate {self.method} {self.url} --> {status}")
+            r=com.Response(status,outHeaders,content,info)
+            #####################################################################"
 
         diff = datetime.datetime.now() - t1
         self.time = (diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
@@ -254,7 +288,7 @@ class Env(dict):
             raise PyMethodException()
 
 
-    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None) -> Exchange:
+    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None,http=None) -> Exchange:
         assert type(body)==str
         assert all( [type(i)==tuple and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
@@ -277,7 +311,7 @@ class Env(dict):
 
         ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves, doc=doc)
         if r is None: # we can call it safely
-            await ex.call(self,timeout)
+            await ex.call(self,timeout,http=http)
         else:
             ex.treatment( self, r)
 
