@@ -236,7 +236,17 @@ class Env(dict):
             if k not in self:
                 self[k]=v
 
-    def resolve(self, txt:str, nb_rec=0, notFoundException=True) -> str:
+
+    def resolve(self, txt:str, notFoundException=True) -> str:
+        """ replace all vars in the str
+        raise ResolveException if can't
+        """
+        try:
+            return self._resolve(txt,notFoundException)
+        except RecursionError:
+            raise ResolveException()
+
+    def _resolve(self, txt:str, notFoundException=True) -> str:
         """ replace all vars in the str
         raise ResolveException if can't
         """
@@ -252,10 +262,7 @@ class Env(dict):
             txt=txt.replace( pattern, str(value) )
 
         if notFoundException and find_vars(txt):
-            if nb_rec>10:
-                raise ResolveException() # avoid recursion !
-            else:
-                txt=self.resolve(txt,nb_rec+1)
+            txt=self._resolve(txt)
 
         return txt
 
@@ -281,12 +288,19 @@ class Env(dict):
                     var+="|"+m
                 else:
                     break
-            logging.warn(f"======================= {var} {methods}")
         else:
             var, methods =content, []
 
-        value = jpath(self,var)
+        if var=="": # case of <<|fct>>
+            value=None
+        else:
+            value = jpath(self,var)
 
+            # resolve value content, before applying methods
+            value = self.resolve_or_not( value )
+
+
+        # and apply methods on the value
         if methods and value is not NotFound:
             for method in methods:
                 if method in self:

@@ -89,7 +89,7 @@ def test_resolver_or_not():
 
     assert ENV.resolve_or_not("a txt <<txt2>>")=="a txt world"
 
-    assert ENV.resolve_or_not("a txt <<unknown>>")=="a txt <<unknown>>"
+    # assert ENV.resolve_or_not("a txt <<unknown>>")=="a txt <<unknown>>"
 
     assert ENV.resolve_or_not(b"a txt <<unknown>>")==b"a txt <<unknown>>"
     assert ENV.resolve_or_not(42)==42
@@ -117,6 +117,27 @@ def test_rec():
     with pytest.raises(newcore.env.ResolveException):
         e=newcore.env.Env( dict(a="<<b>>",b="<<a>>") )
         e.resolve("<<a>>")
+
+def test_order():
+    e=newcore.env.Env( dict(
+        a="a",
+        b="<<a>>",
+        f1=lambda x,Env: x+"1",
+        f2=lambda x,Env: x+"2",
+    ))
+    assert e.resolve("<<a|f1>>") == "a1"
+    assert e.resolve("<<b|f1>>") == "a1"
+
+
+def test_order2():
+    e=newcore.env.Env( dict(
+        upper= lambda x,ENV: x.upper(),
+        now = lambda x,ENV: "xxx",
+        fichier= "www<<now>>www",
+    ))
+    assert e.resolve("<<fichier|upper>>") == "WWWXXXWWW"
+
+
 
 
 
@@ -148,3 +169,13 @@ def test_xml():
 
     assert e.resolve_var("xml.//b|//c|//d|//e") == ['b1','b2','c3']
     assert e.resolve_var("xml.//b|//c|//d|//e|counter") == 3
+
+def test_emptycall():
+    e=newcore.env.Env( dict(
+        v="osef",
+        now=lambda x,ENV: "xxx",
+
+    ))
+    assert e.resolve_var("v|now") == "xxx"
+    assert e.resolve_var("|now") == "xxx"
+    assert e.resolve_var("vv|now") == NotFound

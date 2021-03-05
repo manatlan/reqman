@@ -64,5 +64,5 @@ user1: <<user>>
 
     x = exe(".", "--o", fakeServer=MOCK)
     # print(x.console)
-    # x.view()
+    x.view()
     assert x.rc == 0
