@@ -133,3 +133,6 @@ async def test_call():
     r=await e.call("GET","/")
     assert r.status==200,"ko2"
 
+
+def test_xml():
+    e=newcore.env.Env( dict(scheme="https",host="://www.manatlan.<<tld>>",tld="com") )

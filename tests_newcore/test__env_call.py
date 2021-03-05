@@ -123,3 +123,37 @@ def test_save_and_test():
     import pprint
     pprint.pprint(ex.tests)
     pprint.pprint(ex.saves)
+
+
+
+
+def test_simul_xml():
+    env=newcore.env.Env(dict(
+        v200=200,
+        upper= lambda x,ENV: x.upper(),
+    ))
+
+    xml= "<a><b>1</b><b>2</b></a>"
+
+    tests=[
+        # ("status","200"),
+        # ("content",xml),
+        ("xml.//b.0", "1"),
+    ]
+    saves=[
+    ]
+
+    ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
+
+    r=newcore.com.Response(200,{"x-test":"hello"},xml.encode(),"http1/1 200 ok")
+    ex.treatment(env,r)
+
+    assert ex.time==0
+    assert ex.id
+
+    assert all(ex.tests),ex
+
+
+    import pprint
+    pprint.pprint(ex.tests)
+    pprint.pprint(ex.saves)

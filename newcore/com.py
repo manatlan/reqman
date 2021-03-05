@@ -15,20 +15,6 @@ class Response:
         self.info=info
         self.error=""
 
-    def get_json(self):# -> any
-        try:
-            return json.loads(self.content.decode())
-        except:
-            return None
-
-    def get_xml(self):
-        #     try:
-        #         return Xml(self.content.decode())
-        #     except:
-        #         return None
-        return None
-
-
     def __repr__(self):
         return f"<{self.__class__.__name__} {self.status}>"
 

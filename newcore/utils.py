@@ -5,6 +5,12 @@ import re
 import json
 import logging
 
+try:
+    from newcore.common import NotFound,jdumps
+except ModuleNotFoundError:
+    from common import NotFound,jdumps
+
+
 class HeadersMixedCase(dict):
     def __init__(self, **kargs):
         dict.__init__(self, **kargs)
@@ -18,10 +24,6 @@ class HeadersMixedCase(dict):
         return d.get(key.lower(), default)
 
 
-def jdumps(o, *a, **k):
-    k["ensure_ascii"] = False
-    # ~ k["default"]=serialize
-    return json.dumps(o, *a, **k)
 
 def strjs(x) -> str:
     if type(x) is bytes:
@@ -162,4 +164,4 @@ def testCompare(var: str, val, opeval) -> Test:
     return Test( test ,nameOK, nameKO,val )
 
 if __name__=="__main__":
-    pass
+    print( guessValue("41")==41 )

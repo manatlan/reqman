@@ -1,22 +1,25 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from newcore.utils import jdumps
 import re
 import json
 import datetime
 import urllib.parse
 import hashlib
 import logging
+
 try:
-    from . import com
-    from . import utils
-except:
+    from newcore.common import NotFound,jdumps
+    import newcore.com as com
+    import newcore.utils as utils
+    import newcore.xlib as xlib
+except ModuleNotFoundError:
+    from common import NotFound,jdumps
     import com
     import utils
+    import xlib
 
 import typing as T
 
-class NotFound: pass
 class PyMethodException(Exception): pass
 class ResolveException(Exception): pass
 
@@ -162,13 +165,27 @@ class Exchange:
         self.content=r.content
         self.info=r.info
 
+
+        def get_json():# -> any
+            try:
+                return json.loads(self.content.decode())
+            except:
+                return None
+
+        def get_xml():
+            try:
+                return xlib.Xml(self.content.decode())
+            except:
+                return None
+
+
         # creating an Env for testing and saving
         resp=dict(
             status=self.status,
             headers=utils.HeadersMixedCase(**self.outHeaders),
             content=self.content, #bytes
-            json=r.get_json(),
-            xml=r.get_xml(),
+            json=get_json(),
+            xml=get_xml(),
             time=self.time,
         )
 
