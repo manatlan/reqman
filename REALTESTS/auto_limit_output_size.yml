@@ -9,7 +9,7 @@
 - GET: http://localhost:11111/bigtxt
   tests:
     - status: 200
-    - content: 1234
+    - content: .? 1234
   save: xxx
 
 - GET: http://localhost:11111/bigtxt
@@ -20,4 +20,4 @@
     limit: return x[:8000]
   tests:
     - status: 200
-    - content: <<xxx>>
+    - content: .? <<xxx>>

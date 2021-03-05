@@ -304,7 +304,13 @@ class Env(dict):
             return ""
         else:
             if type(value)==bytes:
-                return value.decode()
+                try:
+                    return value.decode()
+                except:
+                    try:
+                        return value.decode("cp1252")
+                    except:
+                        return str(value)
             else:
                 if type(value) in [list,dict]:
                     return utils.jdumps(value)
