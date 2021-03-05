@@ -155,7 +155,7 @@ def testCompare(var: str, val, opeval) -> Test:
             val=guessValue(val)
             test=fct(value,val)
         except Exception as e:
-            logging.warn(f"testCompare('{var}','{val}','{opeval}') : {e} -> assuming test is negative !")
+            logging.debug(f"testCompare('{var}','{val}','{opeval}') : {e} -> assuming test is negative !")
             test=False
 
 

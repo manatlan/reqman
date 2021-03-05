@@ -55,6 +55,8 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
                 else:
                     return NotFound
 
+            elif type(elem)==xlib.Xml:
+                elem=elem.xpath(i)
 
         except (ValueError, IndexError) as e:
             return NotFound
@@ -205,7 +207,7 @@ class Exchange:
             try:
                 new_vars[save_as] = repEnv.resolve_or_not(content)
             except Exception as e:
-                logging.warn(f"Exchange.treatment {r}")
+                logging.warn(f"Can't resolve saved var '{save_as}', because {e}")
                 new_vars[save_as]= content
 
         # Save all in this env, to be visible in tests later (vv)

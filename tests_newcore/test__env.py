@@ -1,6 +1,7 @@
 import pytest
 import newcore.env
 import newcore.com
+import newcore.xlib
 import json
 
 ENV=newcore.env.Env(dict(
@@ -135,4 +136,5 @@ async def test_call():
 
 
 def test_xml():
-    e=newcore.env.Env( dict(scheme="https",host="://www.manatlan.<<tld>>",tld="com") )
+    e=newcore.env.Env( dict(xml=newcore.xlib.Xml("<a><b>1</b><b>2</b></a>")) )
+    assert e.resolve_var("xml.//b.0") == "1"
