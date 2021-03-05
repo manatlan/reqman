@@ -2117,7 +2117,10 @@ def prettify(txt: str, indentation: int = 4) -> str:
     if txt == None:
         return ""
     else:
-        txt = str(txt)
+        if type(txt)==bytes:
+            txt=newcore.common.decodeBytes(txt)
+        else:
+            txt = str(txt)
     try:
         return repr(Xml(txt))
     except:
