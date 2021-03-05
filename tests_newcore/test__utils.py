@@ -44,8 +44,14 @@ def test_gv():
     assert newcore.utils.guessValue("True")==True
     assert newcore.utils.guessValue("False")==False
     assert newcore.utils.guessValue("null")==None
-    assert newcore.utils.guessValue("None")=="None"
+    assert newcore.utils.guessValue("None")==None
     assert newcore.utils.guessValue("[1,2]")==[1,2]
 
     assert newcore.utils.guessValue(json.dumps(o))==o
+
+    assert newcore.utils.guessValue(b"[1234]")=="[1234]"
+    assert newcore.utils.guessValue("b'[1234]'")=="[1234]"  #special base (conv byte'string to string)
+
+    assert newcore.utils.guessValue("float")=="float"
+
     # assert newcore.utils.guessValue("{'items': ['a', 'b', 'c'], 'value': 'hello'}")==o

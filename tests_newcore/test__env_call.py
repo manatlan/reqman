@@ -158,3 +158,34 @@ def test_simul_xml():
     import pprint
     pprint.pprint(ex.tests)
     pprint.pprint(ex.saves)
+
+
+def test_simul_bytes():
+    env=newcore.env.Env(dict(
+        v200=200,
+        upper= lambda x,ENV: x.upper(),
+        mkbytes=lambda x,ENV: b"[1234]",
+    ))
+
+    tests=[
+        # ("status","200"),
+        # ("content",".? [1234]"),
+        ("content",".? <<mkbytes>>"),
+    ]
+    saves=[]
+
+    ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
+
+    content="".join([f"[{i}]" for i in range(10000)])
+    r=newcore.com.Response(200,{"x-test":"hello"},content.encode(),"http1/1 200 ok")
+    ex.treatment(env,r)
+
+    assert ex.time==0
+    assert ex.id
+
+    assert all(ex.tests),ex.tests
+
+
+    import pprint
+    pprint.pprint(ex.tests)
+    pprint.pprint(ex.saves)

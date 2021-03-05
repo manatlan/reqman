@@ -8,7 +8,7 @@ import hashlib
 import logging
 
 try:
-    from newcore.common import NotFound,jdumps
+    from newcore.common import NotFound,decodeBytes
     import newcore.com as com
     import newcore.utils as utils
     import newcore.xlib as xlib
@@ -304,13 +304,7 @@ class Env(dict):
             return ""
         else:
             if type(value)==bytes:
-                try:
-                    return value.decode()
-                except:
-                    try:
-                        return value.decode("cp1252")
-                    except:
-                        return str(value)
+                return decodeBytes(value)
             else:
                 if type(value) in [list,dict]:
                     return utils.jdumps(value)

@@ -6,9 +6,9 @@ import json
 import logging
 
 try:
-    from newcore.common import NotFound,jdumps
+    from newcore.common import decodeBytes,jdumps
 except ModuleNotFoundError:
-    from common import NotFound,jdumps
+    from common import decodeBytes,jdumps
 
 
 class HeadersMixedCase(dict):
@@ -57,25 +57,30 @@ class Test(int):
 
 
 def guessValue(txt):
-    """ return a value that is comparable """
+    """ return a value that is comparable (everything but not bytes)"""
     if type(txt) == bytes:
-        txt=txt.decode() # to string
+        return decodeBytes(txt) # to string
 
     if type(txt) == str:
         if txt=="":
             return None
-        elif txt.lower()=="true":
-            return True
-        elif txt.lower()=="false":
-            return False
         else:
             try:
-                return json.loads(txt)
+                obj=eval(txt)
+                if type(obj)==bytes:
+                    return decodeBytes(obj)
+                elif obj is None or type(obj) in [bool,int,float,str]:
+                    return obj
+                else:
+                    raise Exception("!!!")
             except:
-                try:    #TODO: it it used yet ?!
-                    return json.loads('"%s"' % txt.replace('"', '\\"'))
+                try:
+                    return json.loads(txt)
                 except:
-                    return txt
+                    try:    #TODO: it it used yet ?!
+                        return json.loads('"%s"' % txt.replace('"', '\\"'))
+                    except:
+                        return txt
 
     return txt
 
@@ -164,10 +169,16 @@ def testCompare(var: str, val, opeval) -> Test:
             logging.debug(f"testCompare('{var}','{val}','{opeval}') : {e} -> assuming test is negative !")
             test=False
 
-
     nameOK = var + " " + tok + " " + strjs(value)  # test name OK
     nameKO = var + " " + tko + " " + strjs(value)  # test name KO
     return Test( test ,nameOK, nameKO,val )
 
 if __name__=="__main__":
     print( guessValue("41")==41 )
+    print( guessValue(b"[1234]")=="[1234]")
+    print( guessValue("float")=="float")
+    print( guessValue("None")==None)
+    print( guessValue("null")==None)
+    print( guessValue("True")==True)
+    print( guessValue("true")==True)
+    print( strjs(3.14) )
