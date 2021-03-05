@@ -230,8 +230,11 @@ class Exchange:
         self.saves=new_vars
 
 class Env(dict):
-    def __init__(self,d):
+    def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
+        for k,v in exposedsMethods.items():
+            if k not in self:
+                self[k]=v
 
     def resolve(self, txt:str, nb_rec=0, notFoundException=True) -> str:
         """ replace all vars in the str

@@ -353,7 +353,7 @@ def test_no_input(exe):
 """)
 
     x=exe(".",fakeServer=MOCK)
-    # x.view()
+    x.view()
     assert x.rc == 0 # all ok
 
 
@@ -378,9 +378,9 @@ def test_input_is_json_str(exe):
     with open("reqman.conf","w+") as fid:
         fid.write("""
 
-obj: "[1,2,3]"
+obj: [1,2,3]
 """)
 
     x=exe(".",fakeServer=MOCK)
-    # x.view()
+    x.view()
     assert x.rc == 0 # all ok

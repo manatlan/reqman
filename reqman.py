@@ -28,7 +28,7 @@ from xml.dom import minidom
 import encodings.idna
 import inspect
 import newcore
-
+import logging
 
 
 # import httpcore # see "pip install httpcore"
@@ -1410,6 +1410,7 @@ class Req(ReqItem):
             headers = newHeaders
         #=========
 
+
         # update path, with potentials "query" defs
         pquerys={}
         for k,v in querys.items():
@@ -1434,6 +1435,10 @@ class Req(ReqItem):
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
+
+        # remove headers valuated as None
+        headers={k:v for k,v in headers.items() if v is not None}
+
         newscope = dict(scope)
 
         #transform pymethod's string into real func
@@ -1442,22 +1447,24 @@ class Req(ReqItem):
                 exec(declare(v), globals())
                 newscope[k]=DYNAMIC
 
-        newenv=newcore.env.Env( newscope )
+        newenv=newcore.env.Env( newscope , EXPOSEDS)
 
-        from pprint import pprint
-
+        # transform saves to newsaves
         newsaves=[]
         for d in saves:
             for k,v in d.items():
                 newsaves.append( (k,v) )
 
+        # transform tests to newtests
         newtests=[]
         for d in tests:
             k,v=list(d.items())[0]
             newtests.append( (k,v) )
 
+        # execute the request (newcore)
         ex = await newenv.call(method,path,headers,body or "",newsaves,newtests, timeout=timeout, doc=doc,http=http)
 
+        # get the saved ones
         for saveKey, saveWhat in ex.saves.items():
             self.parent.env.save(saveKey, saveWhat, self.parent.name in ["BEGIN","END"])
         ###################################################################################### NEWCORE

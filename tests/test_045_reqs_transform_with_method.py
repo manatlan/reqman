@@ -19,7 +19,7 @@ def test_complexe(Reqs): # ensure now is executed before upper
     assert len(l) == 1
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
-    assert ll[0].body == b"WWWXXXWWW" 
+    assert ll[0].body == b"WWWXXXWWW"
 
 def test_complexe1(Reqs): # ensure now is executed before upper
     y="""
@@ -36,7 +36,7 @@ def test_complexe1(Reqs): # ensure now is executed before upper
     assert len(l) == 1
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
-    assert ll[0].body == b"WWWXXXWWW" 
+    assert ll[0].body == b"WWWXXXWWW"
 
 def test_complexe2(Reqs): # ensure now is executed before upper
     y="""
@@ -54,7 +54,7 @@ def test_complexe2(Reqs): # ensure now is executed before upper
     assert len(l) == 1
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
-    assert ll[0].body == b"WWWXXXWWW" 
+    assert ll[0].body == b"WWWXXXWWW"
 
 def test_complexe3(Reqs): # ensure now is executed before upper
     y="""
@@ -72,7 +72,7 @@ def test_complexe3(Reqs): # ensure now is executed before upper
     assert len(l) == 1
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
-    assert ll[0].body == b"WWWXXXWWW" 
+    assert ll[0].body == b"WWWXXXWWW"
 
 def test_complexe4(Reqs): # ensure now is executed before upper
     y="""
@@ -90,7 +90,7 @@ def test_complexe4(Reqs): # ensure now is executed before upper
     assert len(l) == 1
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
-    assert ll[0].body == b"WWWXXXWWW" 
+    assert ll[0].body == b"WWWXXXWWW"
 
 def test_complexe5(Reqs): # ensure now is executed before upper
     y="""
@@ -108,7 +108,7 @@ def test_complexe5(Reqs): # ensure now is executed before upper
     assert len(l) == 1
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
-    assert ll[0].body == b"WWWXXXWWW" 
+    assert ll[0].body == b"WWWXXXWWW"
 
 def test_complexe6(Reqs): # ensure now is executed before upper
     y="""
@@ -125,6 +125,6 @@ def test_complexe6(Reqs): # ensure now is executed before upper
     assert len(l) == 1
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
-    assert ll[0].body == b"WWWXXXWWW" 
+    assert ll[0].body == b"WWWXXXWWW"
 
 
