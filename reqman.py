@@ -1410,26 +1410,26 @@ class Req(ReqItem):
             headers = newHeaders
         #=========
 
-        #TODO: remmetre les QUERY:
-        # pquerys={}
-        # for k,v in querys.items():
-        #     if v is None:
-        #         pquerys[k]=None
-        #     elif type(v)==list:
-        #         ll=[]
-        #         for i in v:
-        #             if i is not None:
-        #                 i=scope.replaceObj(i)
-        #                 if type(i)==list:
-        #                     ll.extend(i)
-        #                 else:
-        #                     ll.append(i)
+        # update path, with potentials "query" defs
+        pquerys={}
+        for k,v in querys.items():
+            if v is None:
+                pquerys[k]=None
+            elif type(v)==list:
+                ll=[]
+                for i in v:
+                    if i is not None:
+                        i=scope.replaceObj(i)
+                        if type(i)==list:
+                            ll.extend(i)
+                        else:
+                            ll.append(i)
 
-        #         pquerys[k]=ll
-        #     else:
-        #         pquerys[k]=scope.replaceObj(v)
+                pquerys[k]=ll
+            else:
+                pquerys[k]=scope.replaceObj(v)
 
-        # url=updateUrlQuery(url,pquerys)
+        path=updateUrlQuery(path,pquerys)
 
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
