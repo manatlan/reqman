@@ -151,7 +151,7 @@ class Exchange:
                 assert type(status) is int
                 assert type(outHeaders) is dict
 
-                info=f"MOCK/1.0 {status} RESPONSE"
+            info=f"MOCK/1.0 {status} RESPONSE"
 
 
             # ensure content is bytes
@@ -229,7 +229,7 @@ class Exchange:
                 new_vars[save_as] = v
             except Exception as e:
                 logging.warn(f"Can't resolve saved var '{save_as}', because {e}")
-                new_vars[save_as]= content
+                new_vars[save_as]= content # create a non-resolved var'string (<<example>>)
 
         # Save all in this env, to be visible in tests later (vv)
         repEnv.update( new_vars)
@@ -263,7 +263,9 @@ class Env(dict):
         raise ResolveException if can't
         """
         try:
-            return self._resolve_string(txt,notFoundException)
+            b=self._resolve_string(txt,notFoundException)
+            assert type(b)==str,"?!WTF"
+            return b
         except RecursionError:
             raise ResolveException()
 
@@ -280,8 +282,10 @@ class Env(dict):
                     raise ResolveException()
                 else:
                     value=pattern
-            if type(value) in [ str,bytes]:
-                txt=txt.replace( pattern, str(value) )
+            if type(value) == bytes:
+                txt=txt.replace( pattern, value.decode() )
+            elif type(value) ==str:
+                txt=txt.replace( pattern, value )
             else:
                 try:
                     v=json.dumps(value)
@@ -290,7 +294,7 @@ class Env(dict):
                 txt=txt.replace( pattern, v )
 
         if notFoundException and find_vars(txt):
-            txt=self._resolve(txt)
+            txt=self._resolve_string(txt)
 
         return txt
 

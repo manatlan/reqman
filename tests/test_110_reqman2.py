@@ -23,7 +23,7 @@ headers:
 
 @pytest.mark.asyncio
 async def test_hermetic_env_paralleliz():
-    
+
     r=reqman.Reqman(CONF)
     r.outputConsole = reqman.OutputConsole.FULL
 
@@ -42,7 +42,7 @@ async def test_hermetic_env_paralleliz():
           tests:
             - status: 200
           save: suite
-        
+
         - GET: /<<suite>>
           tests:
             - status: 200
@@ -61,7 +61,7 @@ async def test_hermetic_env_paralleliz():
 
 @pytest.mark.asyncio
 async def test_hermetic_env():
-    
+
     r=reqman.Reqman(CONF)
     r.outputConsole = reqman.OutputConsole.FULL
 
@@ -80,7 +80,7 @@ async def test_hermetic_env():
           tests:
             - status: 200
           save: suite
-        
+
         - GET: /<<suite>>
           tests:
             - status: 200
