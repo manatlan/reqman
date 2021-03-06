@@ -4,7 +4,7 @@ import newcore.com
 
 
 def test_simul_json():
-    env=newcore.env.Env(dict(
+    env=newcore.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
     ))
@@ -60,7 +60,7 @@ def test_simul_json():
 
 
 def test_simul_plaintext():
-    env=newcore.env.Env(dict(
+    env=newcore.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
     ))
@@ -89,7 +89,7 @@ def test_simul_plaintext():
 
 
 def test_save_and_test():
-    env=newcore.env.Env(dict(
+    env=newcore.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
         justTrue=lambda x,Env: True,
@@ -127,7 +127,7 @@ def test_save_and_test():
 
 
 def test_simul_xml():
-    env=newcore.env.Env(dict(
+    env=newcore.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
     ))
@@ -162,7 +162,7 @@ def test_simul_xml():
 
 
 def test_simul_bytes():
-    env=newcore.env.Env(dict(
+    env=newcore.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
         mkbytes=lambda x,ENV: b"[1234]",

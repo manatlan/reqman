@@ -244,13 +244,6 @@ class HeadersMixedCase(dict):
         return d.get(key.lower(), default)
 
 
-#TODO: wtf ?
-textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
-isBytes = lambda bytes: bool(bytes.translate(None, textchars))
-                # if not isBytes(content):
-                #     txt = await r.text()
-                #     content = txt.encode("utf-8")  # force bytes to be in utf8
-
 
 
 class FString(str):
@@ -1275,7 +1268,7 @@ class Req(ReqItem):
                 exec(declare(v), globals())
                 newscope[k]=DYNAMIC
 
-        newenv=newcore.env.Env( newscope , EXPOSEDS)
+        newenv=newcore.env.Scope( newscope , EXPOSEDS)
 
         # transform saves to newsaves
         newsaves=[]

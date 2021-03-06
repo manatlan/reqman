@@ -58,7 +58,7 @@ def test_save(Reqs):
     assert ll[0].url == "/a"
     assert ll[1].url == "/b"
 
-    assert l.env["r"]==b"b"
+    assert l.env["r"]=="b"
 
 def test_tests(Reqs):
     y="""

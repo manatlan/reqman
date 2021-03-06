@@ -11,7 +11,7 @@ def jdumps(o, *a, **k):
 def decodeBytes(b:bytes) -> str:
     assert type(b)==bytes
     try:
-        x=b.decode()
+        x=b.decode("utf8")
     except:
         try:
             x= b.decode("cp1252")

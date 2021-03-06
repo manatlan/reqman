@@ -4,7 +4,7 @@ import newcore.com
 import newcore.xlib
 import json
 
-ENV=newcore.env.Env(dict(
+ENV=newcore.env.Scope(dict(
     txt="hello",
     txt2="world",
     kiki=3.4,
@@ -99,7 +99,7 @@ def test_resolve_stringr_or_not():
 
 
 def test_dict():
-    e=newcore.env.Env( dict(response=dict(content="",json=None)) )
+    e=newcore.env.Scope( dict(response=dict(content="",json=None)) )
 
     assert e.get_var("response.content") == ""
     assert e.get_var("response.status") == NotFound
@@ -111,16 +111,16 @@ def test_dict():
 
 
 def test_rec():
-    e=newcore.env.Env( dict(scheme="https",host="://www.manatlan.<<tld>>",tld="com",root="<<scheme>><<host>>") )
+    e=newcore.env.Scope( dict(scheme="https",host="://www.manatlan.<<tld>>",tld="com",root="<<scheme>><<host>>") )
     # assert e.resolve_string("<<scheme>><<host>>") =="https://www.manatlan.com"
     assert e.resolve_string("<<root>>") =="https://www.manatlan.com"
 
     with pytest.raises(newcore.env.ResolveException):
-        e=newcore.env.Env( dict(a="<<b>>",b="<<a>>") )
+        e=newcore.env.Scope( dict(a="<<b>>",b="<<a>>") )
         e.resolve_string("<<a>>")
 
 def test_order():
-    e=newcore.env.Env( dict(
+    e=newcore.env.Scope( dict(
         a="a",
         b="<<a>>",
         f1=lambda x,Env: x+"1",
@@ -131,7 +131,7 @@ def test_order():
 
 
 def test_order2():
-    e=newcore.env.Env( dict(
+    e=newcore.env.Scope( dict(
         upper= lambda x,ENV: x.upper(),
         now = lambda x,ENV: "xxx",
         fichier= "www<<now>>www",
@@ -139,7 +139,7 @@ def test_order2():
     assert e.resolve_string("<<fichier|upper>>") == "WWWXXXWWW"
 
 def test_copy_dico():
-    e=newcore.env.Env( dict(
+    e=newcore.env.Scope( dict(
         user=dict(id=42,name="jo"),
         user1="<<user>>",
     ))
@@ -165,17 +165,17 @@ async def test_call():
     # r=await e.call("GET","/")
     # assert type(r) == reqman.com.ResponseInvalid
 
-    e=newcore.env.Env( dict(root="https://www.manatlan.com") )
+    e=newcore.env.Scope( dict(root="https://www.manatlan.com") )
     r=await e.call("GET","/")
     assert r.status==200,"ko1"
 
-    e=newcore.env.Env( dict(root="<<scheme>><<host>>",scheme="https",host="://www.manatlan.<<tld>>",tld="com") )
+    e=newcore.env.Scope( dict(root="<<scheme>><<host>>",scheme="https",host="://www.manatlan.<<tld>>",tld="com") )
     r=await e.call("GET","/")
     assert r.status==200,f"ko2 {r.content}"
 
 
 def test_xml():
-    e=newcore.env.Env( dict(
+    e=newcore.env.Scope( dict(
         xml=newcore.xlib.Xml("<a><b>b1</b><b>b2</b><c>c3</c></a>"),
         counter=lambda x,ENV: len(x),
 
@@ -189,7 +189,7 @@ def test_xml():
     assert e.get_var("xml.//b|//c|//d|//e|counter") == 3
 
 def test_emptycall():
-    e=newcore.env.Env( dict(
+    e=newcore.env.Scope( dict(
         v="osef",
         now=lambda x,ENV: "xxx",
 

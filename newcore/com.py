@@ -41,6 +41,10 @@ class ResponseInvalid(ResponseError):
         ResponseError.__init__(self,f"Invalid {url}")
 
 
+#TODO: wtf ?
+textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
+isBytes = lambda bytes: bool(bytes.translate(None, textchars))
+
 async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -> Response:
     assert type(body)==bytes
     try:
@@ -53,7 +57,13 @@ async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -
             timeout=timeout,   # sec to millisec
         )
         info = "%s %s %s" % (r.http_version, int(r.status_code), r.reason_phrase)
-        return Response(r.status_code, r.headers, r.content, info)
+
+        content=r.content
+        if not isBytes(content):
+            txt = r.text
+            content = txt.encode("utf-8")  # force bytes to be in utf8
+
+        return Response(r.status_code, r.headers, content, info)
     except (httpx.TimeoutException):
         return ResponseTimeout()
     except (httpx.ConnectError):

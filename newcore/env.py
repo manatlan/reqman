@@ -206,7 +206,7 @@ class Exchange:
 
         d["rm"]=dict(response=d["response"],request=d["request"])
 
-        repEnv=Env(env) # clone
+        repEnv=Scope(env) # clone
         repEnv.update(d)
 
         # saves
@@ -254,7 +254,7 @@ class Exchange:
         )
 
 
-class Env(dict):
+class Scope(dict):
     def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
         for k,v in exposedsMethods.items():
@@ -409,7 +409,7 @@ class Env(dict):
 if __name__=="__main__":
     import pytest
 
-    env=Env(dict(
+    env=Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
     ))
