@@ -87,7 +87,7 @@ def test_xpath_compute(exe):
 
     x=exe(".","--o",fakeServer=MOCK)
     # print(x.console)
-    # x.view()
+    x.view()
     assert x.rc == 0
 
 def test_xpath_compute2(exe):

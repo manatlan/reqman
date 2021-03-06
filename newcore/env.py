@@ -126,11 +126,10 @@ class Exchange:
         else:
             #simulate with http hook
             #####################################################################"
-            status, content, outHeaders, info = ( # default response 404
+            status, content, outHeaders = ( # default response 404
                 404,
                 "mock not found",
                 {"server": "reqman mock"},
-                "MOCK RESPONSE",
             )
 
             if self.url in http:
@@ -151,6 +150,9 @@ class Exchange:
                 assert type(content) in [str, bytes]
                 assert type(status) is int
                 assert type(outHeaders) is dict
+
+                info=f"MOCK/1.0 {status} RESPONSE"
+
 
             # ensure content is bytes
             content = content.encode() if type(content)==str else content
