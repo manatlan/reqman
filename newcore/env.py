@@ -80,7 +80,6 @@ class Exchange:
     def __init__(self,method: str,url: str,body: bytes=b"",headers: dict={}, tests:list=[], saves:list=[], doc:str = ""):
         assert type(body)==bytes
 
-
         # inputs
         self.method=method
         self.url=url
@@ -106,6 +105,13 @@ class Exchange:
         # internals
         self._tests_to_do=tests
         self._saves_to_do=saves
+
+        # create a Unique ID for this request
+        uid = hashlib.md5()
+        uid.update(
+            json.dumps([self.method, self.path, self.body.decode(), self.inHeaders, self._tests_to_do, self._saves_to_do]).encode()
+        )
+        self.id = uid.hexdigest()
 
 
     @property
@@ -163,15 +169,6 @@ class Exchange:
 
     def treatment(self,env:dict, r:com.Response):
         assert isinstance(r,com.Response)
-
-        # create a Unique ID for this request
-        uid = hashlib.md5()
-        uid.update(
-            json.dumps([self.method, self.path, self.body.decode(), self.inHeaders, self._tests_to_do, self._saves_to_do]).encode()
-        )
-
-        self.id = uid.hexdigest()
-
 
         self.status=r.status
         self.outHeaders=dict(r.headers)

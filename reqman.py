@@ -225,7 +225,6 @@ def genKV(headers):
             yield (k, v)
 
 
-
 class RmDict(dict):
     def __init__(self, **kargs):
         self.__dict__.update(kargs)
@@ -1336,7 +1335,9 @@ class Req(ReqItem):
 
         # execute the request (newcore)
         ex = await newenv.call(method,path,headers,body or "",newsaves,newtests, timeout=timeout, doc=doc,http=http)
+        
         ex.nolimit = self.nolimit   #TODO: not beautiful !!!
+        ex.scope = dict(newenv)     #for tests only !!!! TODO: remove
 
         # get the saved ones
         for saveKey, saveWhat in ex.saves.items():
