@@ -181,10 +181,6 @@ class Exchange:
         for save_as,content in self._saves_to_do:
             try:
                 v=repEnv.resolve_string_or_not(content)
-                try:
-                    v= json.loads(v)
-                except:
-                    pass
                 new_vars[save_as] = v
             except Exception as e:
                 logging.warn(f"Can't resolve saved var '{save_as}', because {e}")
@@ -264,7 +260,7 @@ class Scope(dict):
                 try:
                     v=json.dumps(value)
                 except:
-                    v=str(v)
+                    v=str(value)
                 txt=txt.replace( pattern, v )
 
         if notFoundException and find_vars(txt):
@@ -272,18 +268,24 @@ class Scope(dict):
 
         return txt
 
-    def resolve_string_or_not(self,txt: object) -> object:
+    def resolve_string_or_not(self,obj: object) -> object:
         """ like resolve() but any type in/out, without exception """
-        if type(txt)==str:
-            txt = self.resolve_string( str(txt) ,notFoundException=False)
+        if type(obj)==str:
+            obj = self.resolve_string( obj ,notFoundException=False)
+            try:
+                obj = json.loads(obj)
+            except:
+                pass
 
-        return txt
+        return obj
 
     def get_var(self,content: str): # -> any or NotFound
         """ resolve content of the var (can be "var.var.size", or "var|fct|fct")
             return value or NotFound
             can raise PyMethodException
         """
+        assert type(content)==str
+
         if "|" in content:
             var, *methods = content.split("|")
             # when xpath, there can be "|" in var ...
@@ -306,8 +308,8 @@ class Scope(dict):
                 # resolve value content, before applying methods
                 value = self.resolve_string_or_not( value )
 
-        # and apply methods on the value
-        if methods and value is not NotFound:
+        if value is not NotFound:
+            # and apply methods on the value
             for method in methods:
                 if method in self:
                     callabl=self[method]
@@ -315,11 +317,13 @@ class Scope(dict):
                 else:
                     return NotFound
 
-        # try to remake an object (if value was json serialized one)
-        try:
-            return json.loads(value)
-        except:
-            return value
+            # try to remake an object (if value was a json serialized one)
+            try:
+                value=json.loads(value)
+            except:
+                pass
+
+        return value
 
 
     def get_var_or_empty(self,content: str) -> str:
