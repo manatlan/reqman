@@ -15,6 +15,6 @@ new reqman core
 from . import common
 from . import com
 from . import env
-from . import utils
+from . import testing
 from . import xlib  #xml/xpath
 

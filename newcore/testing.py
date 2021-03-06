@@ -174,11 +174,12 @@ def testCompare(var: str, val, opeval) -> Test:
     return Test( test ,nameOK, nameKO,val )
 
 if __name__=="__main__":
-    print( guessValue("41")==41 )
-    print( guessValue(b"[1234]")=="[1234]")
-    print( guessValue("float")=="float")
-    print( guessValue("None")==None)
-    print( guessValue("null")==None)
-    print( guessValue("True")==True)
-    print( guessValue("true")==True)
+    assert( guessValue("41")==41 )
+    assert( guessValue(b"[1234]")=="[1234]")
+    assert( guessValue("float")=="float")
+    assert( guessValue("None")==None)
+    assert( guessValue("null")==None)
+    assert( guessValue("True")==True)
+    assert( guessValue("true")==True)
+    
     print( strjs(3.14) )

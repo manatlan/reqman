@@ -8,14 +8,14 @@ import hashlib
 import logging
 
 try:
-    from newcore.common import NotFound,decodeBytes
+    from newcore.common import NotFound,decodeBytes,jdumps
     import newcore.com as com
-    import newcore.utils as utils
+    import newcore.testing as testing
     import newcore.xlib as xlib
 except ModuleNotFoundError:
-    from common import NotFound,jdumps
+    from common import NotFound,jdumps,decodeBytes
     import com
-    import utils
+    import testing
     import xlib
 
 import typing as T
@@ -28,7 +28,7 @@ class ResolveException(Exception): pass
 
 def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
     runner=elem.run
-    resolver=elem.resolve_or_not
+    resolver=elem.resolve_string_or_not
     for i in path.strip(".").split("."):
         try:
             if elem is None:
@@ -198,7 +198,7 @@ class Exchange:
         # creating an Env for testing and saving
         resp=dict(
             status=self.status,
-            headers=utils.HeadersMixedCase(**self.outHeaders),
+            headers=testing.HeadersMixedCase(**self.outHeaders),
             content=self.content, #bytes
             json=get_json(),
             xml=get_xml(),
@@ -207,7 +207,7 @@ class Exchange:
 
         d={}
         d.update( resp)
-        d["request"] = dict( method=self.method, url=self.url, headers=utils.HeadersMixedCase(**self.inHeaders), body=self.body)
+        d["request"] = dict( method=self.method, url=self.url, headers=testing.HeadersMixedCase(**self.inHeaders), body=self.body)
         d["response"] = resp
 
         d["rm"]=dict(response=d["response"],request=d["request"])
@@ -219,7 +219,7 @@ class Exchange:
         new_vars={}
         for save_as,content in self._saves_to_do:
             try:
-                v=repEnv.resolve_or_not(content)
+                v=repEnv.resolve_string_or_not(content)
                 try:
                     v= json.loads(v)
                 except:
@@ -233,14 +233,14 @@ class Exchange:
         repEnv.update( new_vars)
 
         # update the doc'string
-        self.doc = repEnv.resolve_or_not(self.doc)
+        self.doc = repEnv.resolve_string_or_not(self.doc)
 
         # tests
         new_tests=[]
         for var,expected in self._tests_to_do:
-            expected=repEnv.resolve_or_not(expected)
-            val=repEnv.resolve_var_or_empty(var)
-            new_tests.append( utils.testCompare(var,val,expected) )
+            expected=repEnv.resolve_string_or_not(expected)
+            val=repEnv.get_var_or_empty(var)
+            new_tests.append( testing.testCompare(var,val,expected) )
 
 
         del repEnv
@@ -256,23 +256,23 @@ class Env(dict):
                 self[k]=v
 
 
-    def resolve(self, txt:str, notFoundException=True) -> str:
+    def resolve_string(self, txt:str, notFoundException=True) -> str:
         """ replace all vars in the str
         raise ResolveException if can't
         """
         try:
-            return self._resolve(txt,notFoundException)
+            return self._resolve_string(txt,notFoundException)
         except RecursionError:
             raise ResolveException()
 
-    def _resolve(self, txt:str, notFoundException=True) -> str:
+    def _resolve_string(self, txt:str, notFoundException=True) -> str:
         """ replace all vars in the str
         raise ResolveException if can't
         """
         find_vars=lambda txt: re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt)
 
         for pattern, content in [(i,i[2:-2]) for i in find_vars(txt) ]:
-            value=self.resolve_var(content)
+            value=self.get_var(content)
             if value is NotFound:
                 if notFoundException:
                     raise ResolveException()
@@ -292,14 +292,14 @@ class Env(dict):
 
         return txt
 
-    def resolve_or_not(self,txt: object) -> object:
+    def resolve_string_or_not(self,txt: object) -> object:
         """ like resolve() but any type in/out, without exception """
         if type(txt)==str:
-            txt = self.resolve( str(txt) ,notFoundException=False)
+            txt = self.resolve_string( str(txt) ,notFoundException=False)
 
         return txt
 
-    def resolve_var(self,content: str): # -> any or NotFound
+    def get_var(self,content: str): # -> any or NotFound
         """ resolve content of the var (can be "var.var.size", or "var|fct|fct")
             return value or NotFound
             can raise PyMethodException
@@ -324,7 +324,7 @@ class Env(dict):
 
             if type(value)==str:
                 # resolve value content, before applying methods
-                value = self.resolve_or_not( value )
+                value = self.resolve_string_or_not( value )
 
         # and apply methods on the value
         if methods and value is not NotFound:
@@ -342,8 +342,8 @@ class Env(dict):
             return value
 
 
-    def resolve_var_or_empty(self,content: str) -> str:
-        value = self.resolve_var(content)
+    def get_var_or_empty(self,content: str) -> str:
+        value = self.get_var(content)
         if value is NotFound:
             return ""
         else:
@@ -351,7 +351,7 @@ class Env(dict):
                 return decodeBytes(value)
             else:
                 if type(value) in [list,dict]:
-                    return utils.jdumps(value)
+                    return jdumps(value)
                 else:
                     return str(value)
 
@@ -369,12 +369,12 @@ class Env(dict):
         assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
 
         if not urllib.parse.urlparse(path.lower()).scheme:
-            path=self.resolve_var_or_empty("root")+path
+            path=self.get_var_or_empty("root")+path
 
         try:
-            path=self.resolve(path)
-            body=self.resolve(body)
-            headers={k:self.resolve(str(v)) for k,v in headers.items()}
+            path=self.resolve_string(path)
+            body=self.resolve_string(body)
+            headers={k:self.resolve_string(str(v)) for k,v in headers.items()}
             r=None
         except ResolveException:
             #can't resolve, so can't make http request, so all tests are ko
