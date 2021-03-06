@@ -111,7 +111,7 @@ class Exchange:
     def path(self):
         return urllib.parse.urlparse(self.url).path
 
-    async def call(self, env:dict, timeout=None,http=None):
+    async def call(self, timeout=None,http=None) -> com.Response:
         t1 = datetime.datetime.now()
 
         if http is None:
@@ -124,7 +124,7 @@ class Exchange:
         diff = datetime.datetime.now() - t1
         self.time = (diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
 
-        self.treatment(env,r)
+        return r
 
 
     def treatment(self,env:dict, r:com.Response):
@@ -371,9 +371,9 @@ class Scope(dict): # like 'Env'
 
         ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves, doc=doc)
         if r is None: # we can call it safely
-            await ex.call(self,timeout,http=http)
-        else:
-            ex.treatment( self, r)
+            r=await ex.call(timeout,http=http)
+            
+        ex.treatment( self, r)
 
         return ex
 
