@@ -47,15 +47,8 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
 
                     if elem is not NotFound:
                         # NOT TOP /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
-                        if type(elem)==str and "<<" in elem:
-                            elem=resolver(elem)
-
-                            try:
-                                elem= json.loads(elem)
-                            except:
-                                pass
-
-                        elif callable(elem):
+                        elem=resolver(elem)
+                        if callable(elem):
                             elem=runner(elem,None)
                         # NOT TOP /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
@@ -225,18 +218,19 @@ class Scope(dict):
                 self[k]=v
 
 
-    def resolve_string(self, txt:str, notFoundException=True) -> str:
+    def resolve_string(self, txt:str, forceResolveOrException=True) -> str:
         """ replace all vars in the str
         raise ResolveException if can't
         """
         try:
-            string=self._resolve_string(txt,notFoundException)
+            assert type(txt)==str,"?!WTF"
+            string=self._resolve_string(txt,forceResolveOrException)
             assert type(string)==str,"?!WTF"
             return string
         except RecursionError:
             raise ResolveException()
 
-    def _resolve_string(self, txt:str, notFoundException=True) -> str:
+    def _resolve_string(self, txt:str, forceResolveOrException=True) -> str:
         """ replace all vars in the str
         raise ResolveException if can't
         """
@@ -244,26 +238,30 @@ class Scope(dict):
 
         for pattern, content in [(i,i[2:-2]) for i in find_vars(txt) ]:
             value=self.get_var(content)
+
+            # find a way to repr value as str -> v
             if value is NotFound:
-                if notFoundException:
+                if forceResolveOrException:
                     raise ResolveException()
                 else:
-                    value=pattern
-            if type(value) == bytes:
+                    v=pattern
+            elif type(value) == bytes:
                 try:
-                    txt=txt.replace( pattern, value.decode() )
+                    v = value.decode()
                 except:
-                    txt=txt.replace( pattern, "".join(map(chr, value)) )    #TODO: (test 120)
+                    v = "".join(map(chr, value))    #TODO: (test 120)
             elif type(value) ==str:
-                txt=txt.replace( pattern, value )
+                v = value
             else:
                 try:
                     v=json.dumps(value)
                 except:
                     v=str(value)
-                txt=txt.replace( pattern, v )
 
-        if notFoundException and find_vars(txt):
+            # and replace
+            txt=txt.replace( pattern, v )
+
+        if forceResolveOrException and find_vars(txt):
             txt=self._resolve_string(txt)
 
         return txt
@@ -271,7 +269,7 @@ class Scope(dict):
     def resolve_string_or_not(self,obj: object) -> object:
         """ like resolve() but any type in/out, without exception """
         if type(obj)==str:
-            obj = self.resolve_string( obj ,notFoundException=False)
+            obj = self.resolve_string( obj , forceResolveOrException=False)
             try:
                 obj = json.loads(obj)
             except:
@@ -279,15 +277,15 @@ class Scope(dict):
 
         return obj
 
-    def get_var(self,content: str): # -> any or NotFound
+    def get_var(self,vardef: str): # -> any or NotFound
         """ resolve content of the var (can be "var.var.size", or "var|fct|fct")
             return value or NotFound
             can raise PyMethodException
         """
-        assert type(content)==str
+        assert type(vardef)==str
 
-        if "|" in content:
-            var, *methods = content.split("|")
+        if "|" in vardef:
+            var, *methods = vardef.split("|")
             # when xpath, there can be "|" in var ...
             # so we try to let them in place ;-)
             while len(methods)>0:
@@ -297,7 +295,7 @@ class Scope(dict):
                 else:
                     break
         else:
-            var, methods =content, []
+            var, methods =vardef, []
 
         if var=="": # case of <<|fct>>
             value=None
@@ -326,8 +324,10 @@ class Scope(dict):
         return value
 
 
-    def get_var_or_empty(self,content: str) -> str:
-        value = self.get_var(content)
+    def get_var_or_empty(self,vardef: str) -> str:
+        assert type(vardef)==str
+        
+        value = self.get_var(vardef)
         if value is NotFound:
             return ""
         else:
