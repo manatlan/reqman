@@ -29,7 +29,7 @@ tests:
         fid.write(y)
 
     x=exe(".",fakeServer=MOCK)
-    # x.view()
+    x.view()
     assert x.rc == 0
 
 def test_diff_encoding(exe):
