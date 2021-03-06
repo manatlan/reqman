@@ -226,37 +226,6 @@ def genKV(headers):
 
 
 
-
-def toStr(x):
-    try:
-        return x.decode()
-    except:
-        return str(x)
-
-
-class Content:
-    def __init__(self, content):
-        self.__b = content if type(content) is bytes else ustr(content).encode()
-
-    def __repr__(self) -> str:
-        return toStr(self.__b)
-
-    def toJson(self):
-        try:
-            return json.loads(self.__b.decode())
-        except:
-            return None
-
-    def toXml(self):
-        try:
-            return Xml(repr(self))
-        except:
-            return None
-
-    def __bytes__(self):
-        return self.__b
-
-
 class RmDict(dict):
     def __init__(self, **kargs):
         self.__dict__.update(kargs)
@@ -575,8 +544,8 @@ class Env(dict):
     ) -> T.Any:  # same as txtReplace() but for "object" (json'able)
         if type(v) is bytes:
             return v
-        elif type(v) is Content:  # (when save to var)
-            return bytes(v)
+        # elif type(v) is Content:  # (when save to var)
+        #     return bytes(v)
         elif type(v) is not str:
             v = jdumps(v)
 
