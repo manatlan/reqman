@@ -289,12 +289,9 @@ class Scope(dict): # like 'Env'
             var, *methods = vardef.split("|")
             # when xpath, there can be "|" in var ...
             # so we try to let them in place ;-)
-            while len(methods)>0:
-                if methods[0].startswith("/"): #assuming xpath part starts with "/"
-                    m=methods.pop(0)
-                    var+="|"+m
-                else:
-                    break
+            while len(methods)>0 and methods[0].startswith("/"): #assuming xpath part starts with "/"
+                m=methods.pop(0)
+                var+="|"+m
         else:
             var, methods =vardef, []
 
@@ -372,7 +369,7 @@ class Scope(dict): # like 'Env'
         ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves, doc=doc)
         if r is None: # we can call it safely
             r=await ex.call(timeout,http=http)
-            
+
         ex.treatment( self, r)
 
         return ex
