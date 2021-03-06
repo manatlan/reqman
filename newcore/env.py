@@ -112,11 +112,6 @@ class Exchange:
     def path(self):
         return urllib.parse.urlparse(self.url).path
 
-
-    @property #TODO
-    def bodyContent(self):
-        return self.content
-
     async def call(self, env:dict, timeout=None,http=None):
         t1 = datetime.datetime.now()
 
@@ -263,9 +258,9 @@ class Env(dict):
         raise ResolveException if can't
         """
         try:
-            b=self._resolve_string(txt,notFoundException)
-            assert type(b)==str,"?!WTF"
-            return b
+            string=self._resolve_string(txt,notFoundException)
+            assert type(string)==str,"?!WTF"
+            return string
         except RecursionError:
             raise ResolveException()
 

@@ -185,7 +185,7 @@ def test_without_yml_but_rmconf_begin_bytes(exe):
         """)
 
     x=exe("reqman.conf","--x:toto",fakeServer=MOCK)
-    assert x.rc == b"OK"    # keep bytes
+    assert x.rc == "OK"  
 
 
 def test_a_trans_from_input(exe):

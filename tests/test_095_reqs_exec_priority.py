@@ -10,7 +10,7 @@ def test_priority_dont_override_local_value(Reqs):
     - proc:
         - GET: /<<p>>
           params:
-            p: a     
+            p: a
 
     - call: proc # call a
       tests:
@@ -26,7 +26,7 @@ def test_priority_dont_override_local_value(Reqs):
     ll=Reqs(y,trace=True).execute(MOCK)
     # "b" is NOT priority over "a"
     for i in ll:
-      assert all(i.tests)    
+      assert all(i.tests)
 
 def test_create_default_value_for_proc(Reqs): # hey pato, look here
     MOCK={
@@ -53,7 +53,7 @@ def test_create_default_value_for_proc(Reqs): # hey pato, look here
     ll=Reqs(y).execute(MOCK)
     # "b" is priority over "a"
     for i in ll:
-      assert all(i.tests)    
+      assert all(i.tests)
 
 
 def test_priority_over_env(Reqs):
@@ -80,7 +80,7 @@ def test_priority_over_env(Reqs):
     ll=Reqs(y,{"var":"first"},trace=True).execute(MOCK)
     for i in ll:
       assert all(i.tests)
-    
+
 
 
 def test_priority_over_saved(Reqs):
@@ -115,5 +115,4 @@ def test_priority_over_saved(Reqs):
     ll=Reqs(y).execute(MOCK)
     for i in ll:
       assert all(i.tests)
-    
-    
+
