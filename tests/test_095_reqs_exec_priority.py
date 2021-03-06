@@ -28,7 +28,7 @@ def test_priority_dont_override_local_value(Reqs):
     for i in ll:
       assert all(i.tests)
 
-def test_create_default_value_for_proc(Reqs): # hey pato, look here
+def test_create_default_value_for_proc(exe): # hey pato, look here
     MOCK={
         "/a":(200,"ok"),
         "/b":(201,"ok"),
@@ -50,10 +50,13 @@ def test_create_default_value_for_proc(Reqs): # hey pato, look here
         status: 201
     """
 
-    ll=Reqs(y).execute(MOCK)
-    # "b" is priority over "a"
-    for i in ll:
-      assert all(i.tests)
+    with open("f.yml", "w+") as fid:
+        fid.write(y)
+
+    x = exe(".", "--o", fakeServer=MOCK)
+    # print(x.console)
+    x.view()
+    assert x.rc == 0
 
 
 def test_priority_over_env(Reqs):

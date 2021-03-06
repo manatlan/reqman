@@ -1332,7 +1332,7 @@ class Req(ReqItem):
                     cy(ex.method),
                     ex.url,
                     "-->",
-                    cw(ex.content if ex.status is None else ex.status),
+                    cw(ex.content.decode() if ex.status is None else ex.status),
                 )
 
                 if outputConsole == OutputConsole.FULL:

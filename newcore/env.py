@@ -126,40 +126,7 @@ class Exchange:
             r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout)
         else:
             #simulate with http hook
-            #####################################################################"
-            status, content, outHeaders = ( # default response 404
-                404,
-                "mock not found",
-                {"server": "reqman mock"},
-            )
-
-            if self.url in http:
-                rep = http[self.url]
-                try:
-                    if callable(rep):
-                        rep = rep(self.method, self.url, self.body, self.inHeaders)
-
-                    if len(rep) == 2:
-                        status, content = rep
-                    elif len(rep) == 3:
-                        status, content, oHeaders = rep
-                        outHeaders.update( oHeaders )
-                    else:
-                        raise Exception("Bad mock response")
-                except Exception as e:
-                    status, content = 500, f"mock server error: {e}"
-                assert type(content) in [str, bytes]
-                assert type(status) is int
-                assert type(outHeaders) is dict
-
-            info=f"MOCK/1.0 {status} RESPONSE"
-
-
-            # ensure content is bytes
-            content = content.encode() if type(content)==str else content
-            logging.debug(f"Simulate {self.method} {self.url} --> {status}")
-            r=com.Response(status,outHeaders,content,info)
-            #####################################################################"
+            r = com.call_simulation(http,self.method,self.url,self.body,self.inHeaders)
 
         diff = datetime.datetime.now() - t1
         self.time = (diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
@@ -287,7 +254,10 @@ class Scope(dict):
                 else:
                     value=pattern
             if type(value) == bytes:
-                txt=txt.replace( pattern, value.decode() )
+                try:
+                    txt=txt.replace( pattern, value.decode() )
+                except:
+                    txt=txt.replace( pattern, "".join(map(chr, value)) )    #TODO: (test 120)
             elif type(value) ==str:
                 txt=txt.replace( pattern, value )
             else:

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import httpx
 import json
-
+import logging
 
 AHTTP = httpx.AsyncClient(verify=False)
 
@@ -72,6 +72,55 @@ async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -
         return ResponseInvalid(url)
 
 
+def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
+    #simulate with http hook
+    #####################################################################"
+    status, content, outHeaders = ( # default response 404
+        404,
+        "mock not found",
+        {"server": "reqman mock"},
+    )
+
+    if url in http:
+        rep = http[url]
+        try:
+            if callable(rep):
+                rep = rep(method, url, body, headers)
+
+            if len(rep) == 2:
+                status, content = rep
+            elif len(rep) == 3:
+                status, content, oHeaders = rep
+                outHeaders.update( oHeaders )
+            else:
+                raise Exception("Bad mock response")
+        except Exception as e:
+            status, content = 500, f"mock server error: {e}"
+    assert type(content) in [str, bytes]
+    assert type(status) is int
+    assert type(outHeaders) is dict
+
+    # ensure content is bytes
+    if type(content)==str:
+        #convert to bytes
+        try:
+            content=content.encode("cp1252").decode().encode()
+        except:
+            try:
+                content=bytes(content,"utf8")
+            except:
+                raise Exception("Mock decoding str trouble")
+
+    assert type(content)==bytes
+
+    info=f"MOCK/1.0 {status} RESPONSE"
+
+
+    logging.debug(f"Simulate {method} {url} --> {status}")
+    return Response(status,outHeaders,content,info)
+    #####################################################################"
+
+
 if __name__=="__main__":
     import asyncio
     async def t():
@@ -79,3 +128,6 @@ if __name__=="__main__":
         print(e)
 
     asyncio.run(t())
+
+    r=call_simulation( {"/":(200,"ok")},"GET","/" )
+    print(r)
