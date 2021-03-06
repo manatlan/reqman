@@ -242,6 +242,18 @@ class Exchange:
         self.tests=new_tests
         self.saves=new_vars
 
+    def __eq__(self, o):
+        return o and self.id == o.id
+
+    def __repr__(self):
+        return "<Exchange: %s %s -> %s tests:%s>" % (
+            self.method,
+            self.url,
+            self.status,
+            self.tests or "no",
+        )
+
+
 class Env(dict):
     def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
