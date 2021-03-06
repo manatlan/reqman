@@ -1181,6 +1181,9 @@ class Req(ReqItem):
     async def asyncReqExecute(
         self, gscope, http=None, outputConsole=OutputConsole.MINIMAL
     ) -> newcore.env.Exchange:
+
+        #TODO: create the newcore scope here, and remove old code vv
+
         scope = gscope.clone()  # important
         dict_merge(scope, self.params)
 

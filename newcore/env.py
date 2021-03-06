@@ -210,25 +210,26 @@ class Exchange:
         )
 
 
-class Scope(dict):
+class Scope(dict): # like 'Env'
+
     def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
         for k,v in exposedsMethods.items():
             if k not in self:
                 self[k]=v
 
-
     def resolve_string(self, txt:str, forceResolveOrException=True) -> str:
         """ replace all vars in the str
         raise ResolveException if can't
         """
+        assert type(txt)==str,"?!WTF"
+
         try:
-            assert type(txt)==str,"?!WTF"
             string=self._resolve_string(txt,forceResolveOrException)
             assert type(string)==str,"?!WTF"
             return string
         except RecursionError:
-            raise ResolveException()
+            raise ResolveException() # raise in all cases
 
     def _resolve_string(self, txt:str, forceResolveOrException=True) -> str:
         """ replace all vars in the str
@@ -297,7 +298,7 @@ class Scope(dict):
         else:
             var, methods =vardef, []
 
-        if var=="": # case of <<|fct>>
+        if var=="": # case of <<|fct>> (historic way)
             value=None
         else:
             value = jpath(self,var)
@@ -326,7 +327,7 @@ class Scope(dict):
 
     def get_var_or_empty(self,vardef: str) -> str:
         assert type(vardef)==str
-        
+
         value = self.get_var(vardef)
         if value is NotFound:
             return ""
