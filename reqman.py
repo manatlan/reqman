@@ -244,39 +244,6 @@ class HeadersMixedCase(dict):
         return d.get(key.lower(), default)
 
 
-"""
-AHTTP = httpcore.AsyncClient(verify=False)
-
-async def _request(method,url,body:bytes,headers, timeout=None):
-    try:
-        if (not body) and headers: headers["Content-Length"]="0"
-        r = await AHTTP.request(
-            method,
-            url,
-            data=body,
-            headers=headers,
-            allow_redirects=False,
-            timeout=httpcore.TimeoutConfig( timeout ),
-        )
-        info = "%s %s %s" % (r.protocol, int(r.status_code), r.reason_phrase)
-        return r.status_code, dict(r.headers), Content(r.content), info
-    except (httpcore.exceptions.ReadTimeout, httpcore.exceptions.ConnectTimeout, httpcore.exceptions.Timeout, httpcore.exceptions.WriteTimeout):
-        return None, {}, "Timeout", ""
-    except OSError as e:
-        return None, {}, "Unreachable", ""
-    except httpcore.exceptions.InvalidURL:
-        return None, {}, "Invalid", ""
-
-async def request(method,url,body:bytes,headers, timeout=None):
-    ''' mimic "_request()" to try 3 times, when Unreachable (to be really sure ;-) '''
-    t = await _request(method,url,body,headers,timeout)
-    if t[2]=="Unreachable": # conncetion lost, retry to see ;-)
-        t = await _request(method,url,body,headers,timeout)
-        if t[2]=="Unreachable": # conncetion lost, retry to see ;-)
-            t = await _request(method,url,body,headers,timeout)
-    return t
-"""
-
 #TODO: wtf ?
 textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
 isBytes = lambda bytes: bool(bytes.translate(None, textchars))
@@ -1335,7 +1302,7 @@ class Req(ReqItem):
 
         # execute the request (newcore)
         ex = await newenv.call(method,path,headers,body or "",newsaves,newtests, timeout=timeout, doc=doc,http=http)
-        
+
         ex.nolimit = self.nolimit   #TODO: not beautiful !!!
         ex.scope = dict(newenv)     #for tests only !!!! TODO: remove
 
@@ -1443,7 +1410,7 @@ class ReqmanResult(Result):
             name = name + ".rmr"
         with open(name, "rb") as fid:
             buf = fid.read()
-            assert buf[:4] == b"RMR2"  # TODO
+            assert buf[:4] == b"RMR3"  # TODO
             x = zlib.decompress(buf[4:])
             return pickle.loads(x)
 
@@ -1487,7 +1454,7 @@ class ReqmanResult(Result):
             )
         with open(name, "wb") as fid:
             x = pickle.dumps(self)
-            fid.write(b"RMR2" + zlib.compress(x))
+            fid.write(b"RMR3" + zlib.compress(x))
         return name
 
 
