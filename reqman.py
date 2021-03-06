@@ -16,13 +16,13 @@
 # #############################################################################
 
 import os, sys, re, asyncio, io, datetime, itertools, glob, enum, codecs
-import http, urllib, email  # for cookies management
+import urllib
 import urllib.parse
 import collections, json
 import typing as T
 import sys, traceback
 import pickle, zlib, hashlib
-import http.cookiejar
+
 import concurrent, ssl
 from xml.dom import minidom
 import encodings.idna
@@ -225,53 +225,6 @@ def genKV(headers):
             yield (k, v)
 
 
-class CookieStore(http.cookiejar.CookieJar):  # TODO: can do a lot better with httpcore
-    """ Manage cookiejar for httplib-like """
-
-    def __init__(self, ll: T.List[dict] = []) -> None:
-        http.cookiejar.CookieJar.__init__(self)
-        for c in ll:
-            self.set_cookie(http.cookiejar.Cookie(**c))
-
-    def update(self, url: str, inHeaders: dict) -> dict:
-        """return appended headers"""
-        if url and url.lower().startswith("http"):
-            r = urllib.request.Request(url)
-            self.add_cookie_header(r)
-            inHeaders.update(dict(r.header_items()))
-            return dict(r.header_items())
-
-    def extract(self, url: str, outHeaders: dict) -> None:
-        if url and url.lower().startswith("http"):
-
-            class FakeResponse(http.client.HTTPResponse):
-                def __init__(self, headers=[], url=None) -> None:
-                    """
-                    headers: list of RFC822-style 'Key: value' strings
-                    """
-                    m = email.message_from_string("\n".join(headers))
-                    self._headers = m
-                    self._url = url
-
-                def info(self):
-                    return self._headers
-
-            ll = ["%s: %s" % (k, v) for k, v in genKV(outHeaders)]
-
-            self.extract_cookies(FakeResponse(ll, url), urllib.request.Request(url))
-
-    def export(self) -> T.List[dict]:
-        ll = []
-        for i in self:
-            ll.append(
-                {
-                    n if n != "_rest" else "rest": getattr(i, n)
-                    for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest".split(
-                        ","
-                    )
-                }
-            )
-        return ll
 
 
 def toStr(x):
@@ -356,52 +309,13 @@ async def request(method,url,body:bytes,headers, timeout=None):
     return t
 """
 
+#TODO: wtf ?
 textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
 isBytes = lambda bytes: bool(bytes.translate(None, textchars))
+                # if not isBytes(content):
+                #     txt = await r.text()
+                #     content = txt.encode("utf-8")  # force bytes to be in utf8
 
-
-async def request(method, url, body: bytes, headers, timeout=None):
-    try:
-        async with aiohttp.ClientSession(trust_env=True) as session:
-
-            r = await session.request(
-                method,
-                url,
-                data=body,
-                headers=headers,
-                ssl=False,
-                timeout=timeout,
-                allow_redirects=False,
-            )
-            try:
-                obj = await r.json()
-                content = jdumps(obj).encode(
-                    "utf-8"
-                )  # ensure json chars are not escaped, and are in utf8
-            except:
-                content = await r.read()
-                if not isBytes(content):
-                    txt = await r.text()
-                    content = txt.encode("utf-8")  # force bytes to be in utf8
-
-            info = "HTTP/%s.%s %s %s" % (
-                r.version.major,
-                r.version.minor,
-                int(r.status),
-                r.reason,
-            )
-            outHeaders = dict(r.headers)
-            if "Set-Cookie" in r.headers:
-                outHeaders["Set-Cookie"] = list(r.headers.getall("Set-Cookie"))
-            return r.status, outHeaders, Content(content), info
-    except aiohttp.client_exceptions.ClientConnectorError as e:
-        return None, {}, "Unreachable", ""
-    except concurrent.futures._base.TimeoutError as e:
-        return None, {}, "Timeout", ""
-    except aiohttp.client_exceptions.InvalidURL as e:
-        return None, {}, "Invalid", ""
-    except ssl.SSLError:
-        pass
 
 
 class FString(str):
@@ -551,48 +465,6 @@ class Xml:
         return x
 
 
-class Exchange:
-    def __init__(
-        self,
-        method,
-        path,
-        url,
-        body,
-        inHeaders,
-        status,
-        outHeaders,
-        content,
-        info,
-        time,
-    ):
-        self.id = None
-        self.doc = None
-        self.scope = None
-        self.tests = []
-        self.nolimit = False
-
-        self.method = method
-        self.path = path
-        self.url = url
-        self.body = body
-        self.bodyContent = Content(body)
-        self.inHeaders = HeadersMixedCase(**inHeaders)
-        self.status = status
-        self.outHeaders = HeadersMixedCase(**outHeaders)
-        self.content = content
-        self.info = info
-        self.time = time
-
-    def __eq__(self, o):
-        return o and self.id == o.id
-
-    def __repr__(self):
-        return "<Exchange: %s %s -> %s tests:%s>" % (
-            self.method,
-            self.url,
-            self.status,
-            self.tests or "no",
-        )
 
 
 class Env(dict):
@@ -620,7 +492,7 @@ class Env(dict):
         )  # shared global saved scope between all cloned Env (from BEGIN only)
 
         dict.__init__(self, dict(d))
-        self.cookiejar = CookieStore()
+
 
     def _getProc(self, name):
         return Reqs(yaml.dump(self[name]) if name in self else "", self, name=name)
@@ -650,7 +522,7 @@ class Env(dict):
     def clone(self, cloneSharedScope=True):
         newOne = Env({})
         dict_merge(newOne, self)
-        newOne.cookiejar = CookieStore(self.cookiejar.export())
+
 
         dict_merge(
             newOne, self.__global
@@ -878,7 +750,7 @@ class Env(dict):
         self.__dict__ = state
         self.__shared = {}
         self.__global = {}
-        self.cookiejar = CookieStore()
+
 
 
 class Reqs(list):
@@ -1380,7 +1252,7 @@ class Req(ReqItem):
 
     async def asyncReqExecute(
         self, gscope, http=None, outputConsole=OutputConsole.MINIMAL
-    ) -> Exchange:
+    ) -> newcore.env.Exchange:
         scope = gscope.clone()  # important
         dict_merge(scope, self.params)
 
@@ -1558,88 +1430,11 @@ class Req(ReqItem):
         return ex
 
 
-async def asyncExecute(
-    method, path, url, body, headers, http=None, timeout=None
-) -> Exchange:
-    t1 = datetime.datetime.now()
-
-    if type(body) is not bytes:
-        if body is None:
-            body = "".encode()
-        elif type(body) is str:
-            body = body.encode()
-        else:
-            body = jdumps(body).encode()
-
-    if type(http) == dict:
-        status, content, outHeaders, info = (
-            404,
-            "mock not found",
-            {"server": "reqman mock"},
-            "MOCK RESPONSE",
-        )
-        if url in http:
-            rep = http[url]
-            if callable(rep):
-                rep = rep(method, url, body, headers)
-
-            if len(rep) == 2:
-                status, content = rep
-            elif len(rep) == 3:
-                status, content, oHeaders = rep
-                dict_merge(outHeaders, oHeaders)
-            else:
-                status, content = 500, "mock server error"
-            assert type(content) in [str, bytes]
-            assert type(status) is int
-            assert type(outHeaders) is dict
-        content = Content(content)
-    else:
-        http = request  # use the real one !!
-        status, outHeaders, content, info = await http(
-            method, url, body, headers, timeout=timeout
-        )
-
-    diff = datetime.datetime.now() - t1
-    time = (diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
-    return Exchange(
-        method, path, url, body, headers, status, outHeaders, content, info, time
-    )
 
 
 ######################################################################################"
 ## test part (old code)
 ######################################################################################"
-class Test(int):
-    """ a boolean with a name """
-
-    name = ""
-
-    def __init__(self, v, n1, n2, realValue):
-        pass  # just for mypy
-
-    def __new__(
-        cls, value: int, nameOK: str = None, nameKO: str = None, realValue=None
-    ):
-        s = super().__new__(cls, value)
-        if value:
-            s.name = nameOK
-        else:
-            s.name = nameKO
-        s.value = realValue
-        return s
-
-    def __repr__(self):
-        return "%s: %s" % ("OK" if self else "KO", self.name)
-
-
-def strjs(x) -> str:
-    if type(x) is bytes:
-        return str(x)
-    elif type(x) is str:
-        return x
-    else:
-        return jdumps(x)
 
 
 def guessValue(txt):
@@ -1654,165 +1449,7 @@ def guessValue(txt):
     return txt
 
 
-def getValOpe(v):
-    try:
-        if type(v) == str and v.startswith("."):
-            g = re.match(r"^\. *([\?!=<>]{1,2}) *(.+)$", v)
-            if g:
-                op, v = g.groups()
-                if op in ["==", "="]:  # not needed really, but just for compatibility
-                    return v, lambda a, b: b == a, "=", "!="
-                elif op == "!=":
-                    return v, lambda a, b: b != a, "!=", "="
-                elif op == ">=":
-                    return (
-                        v,
-                        lambda a, b: b != None and a != None and b >= a or False,
-                        ">=",
-                        "<",
-                    )
-                elif op == "<=":
-                    return (
-                        v,
-                        lambda a, b: b != None and a != None and b <= a or False,
-                        "<=",
-                        ">",
-                    )
-                elif op == ">":
-                    return (
-                        v,
-                        lambda a, b: b != None and a != None and b > a or False,
-                        ">",
-                        "<=",
-                    )
-                elif op == "<":
-                    return (
-                        v,
-                        lambda a, b: b != None and a != None and b < a or False,
-                        "<",
-                        ">=",
-                    )
-                elif op == "?":
-                    return (
-                        v,
-                        lambda a, b: str(a) in str(b),
-                        "contains",
-                        "doesn't contain",
-                    )
-                elif op in ["!?", "?!"]:
-                    return (
-                        v,
-                        lambda a, b: str(a) not in str(b),
-                        "doesn't contain",
-                        "contains",
-                    )
-    except (
-        yaml.scanner.ScannerError,
-        yaml.constructor.ConstructorError,
-        yaml.parser.ParserError,
-    ):
-        pass
-    return v, lambda a, b: a == b, "=", "!="
 
-
-# def lowerIfHeader(t:str):
-#     if t.startswith("headers."):
-#         tt=t.split("|",1)
-#         t="|".join( [tt[0]] + tt[1:] )
-#     return t
-
-
-class TestResult(list):
-    def __init__(self, tests, env, status) -> None:
-
-        results = []
-        for test in tests:
-            what, value = list(test.keys())[0], list(test.values())[0]
-            # tvalue=env.replaceObjOrNone("<<%s>>" % lowerIfHeader(what))
-            tvalue = env.replaceObjOrNone("<<%s>>" % what)
-
-            firstWord = re.split(r"[\.|]", what)[0]
-            testContains = False  # true pour content & "old headers" !!!!!
-            # to ensure compatibility with < 2.3.8
-            if firstWord == "content":
-                testContains = True
-            elif firstWord == "status":
-                testContains = False
-            elif firstWord == "json":
-                testContains = False
-            elif firstWord == "xml":
-                testContains = False
-            elif firstWord == "headers":
-                testContains = False
-            else:  # header
-                if "headers" in env:
-                    v = env["headers"][what]
-                    if v:
-                        print(
-                            cy("**DEPRECATED**"),
-                            "use new header syntax in tests (- headers.%s: ...)" % what,
-                        )
-                        tvalue = v
-                        testContains = True
-
-            # test if all match as json (list, dict, str ...)
-            try:
-
-                def makeComparable(x):
-                    if type(x) is bytes:
-                        return x
-                    else:
-                        return jdumps(
-                            json.loads(x) if type(x) in [str, bytes] else x,
-                            sort_keys=True,
-                        )
-
-                matchAll = makeComparable(value) == makeComparable(tvalue)
-            except json.decoder.JSONDecodeError as e:
-                matchAll = False
-
-            if matchAll:
-                test, opOK, opKO, val = True, "=", "!=", value
-            else:
-                # ensure that we've got a list
-                values = [value] if type(value) != list else value
-                opOK, opKO = None, None
-                bool = False
-
-                for value in values:  # match any
-                    if testContains:
-                        value, ope, opOK, opKO = (
-                            value,
-                            lambda x, c: toStr(x) in toStr(c),
-                            "contains",
-                            "doesn't contain",
-                        )
-                    else:
-                        value, ope, opOK, opKO = getValOpe(value)
-
-                    try:
-                        bool = ope(guessValue(value), guessValue(tvalue))
-                    except TypeError:
-                        bool = False
-                    if bool:
-                        break
-
-                bool = bool and status != None  # make test KO if status is invalid
-
-                if len(values) == 1:
-                    test, opOK, opKO, val = bool, opOK, opKO, value
-                else:
-                    test, opOK, opKO, val = (bool, "in", "not in", values)
-
-            nameOK = what + " " + opOK + " " + strjs(val)  # test name OK
-            nameKO = what + " " + opKO + " " + strjs(val)  # test name KO
-
-            results.append(Test(test, nameOK, nameKO, strjs(tvalue)))
-
-        list.__init__(self, results)
-
-    def __repr__(self) -> str:
-        return "".join(["[%s]" % repr(t) for t in self])
 
 
 class Result:
