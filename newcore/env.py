@@ -25,6 +25,26 @@ class ResolveException(Exception): pass
 
 
 
+def updateUrlQuery(url,d: dict):
+    if d=={}:
+        return url
+    else:
+        o=urllib.parse.urlparse(url)
+
+        q=urllib.parse.parse_qs(o.query)
+        for k,v in d.items():
+            if v is None:
+                if k in q:
+                    del q[k]
+            else:
+                if type(v)==list:
+                    q.setdefault(k,[]).extend(v)
+                else:
+                    q.setdefault(k,[]).append(v)
+
+        o=o._replace(query=urllib.parse.urlencode( q , doseq=True))
+        return o.geturl()
+
 
 def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
     runner=elem.run
@@ -222,7 +242,7 @@ class Scope(dict): # like 'Env'
         """ replace all vars in the str
         raise ResolveException if can't
         """
-        assert type(txt)==str,"?!WTF"
+        assert type(txt)==str, "wtf?"
 
         try:
             string=self._resolve_string(txt,forceResolveOrException)
@@ -357,7 +377,7 @@ class Scope(dict): # like 'Env'
             raise PyMethodException(f"Can't call '{method.__name__}' : {e}")
 
 
-    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None,http=None) -> Exchange:
+    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None, querys={}, http=None) -> Exchange:
         assert type(body)==str
         assert all( [type(i)==tuple and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
@@ -365,7 +385,46 @@ class Scope(dict): # like 'Env'
         if not urllib.parse.urlparse(path.lower()).scheme:
             path=self.get_var_or_empty("root")+path
 
-        try:
+        def res(v):
+            if type(v)==str:
+                return self.resolve_string(v)
+            else:
+                return v
+
+        try:        #TODO: here it's catastrofic, should be better !!!!!!!
+
+            # update path, with potentials "query" defs
+            pquerys={}
+            for k,v in querys.items():
+                if v is None:
+                    pquerys[k]=None
+                elif type(v)==list:
+                    ll=[]
+                    for i in v:
+                        if i is not None:
+                            ii=res(i)
+                            try:
+                                ii=json.loads(ii)
+                            except:
+                                pass
+                            if type(ii)==list:
+                                ll.extend(ii)
+                            else:
+                                ll.append(ii)
+
+                    pquerys[k]=ll
+                else:
+                    vv=res(v)
+                    try:
+                        vv=json.loads(vv)
+                    except:
+                        pass
+                    pquerys[k]=vv
+
+            # logging.warn(f"----{pquerys}")
+            path=updateUrlQuery(path,pquerys)
+
+
             path=self.resolve_string(path)
             body=self.resolve_string(body)
             headers={k:self.resolve_string(str(v)) for k,v in headers.items()}

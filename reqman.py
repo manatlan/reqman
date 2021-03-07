@@ -289,26 +289,6 @@ def dict_merge(dst: dict, src: dict) -> None:
                 dst[k] = src[k]
 
 
-def updateUrlQuery(url,d: dict):
-    if d=={}:
-        return url
-    else:
-        o=urllib.parse.urlparse(url)
-
-        q=urllib.parse.parse_qs(o.query)
-        for k,v in d.items():
-            if v is None:
-                if k in q:
-                    del q[k]
-            else:
-                if type(v)==list:
-                    q.setdefault(k,[]).extend(v)
-                else:
-                    q.setdefault(k,[]).append(v)
-
-        o=o._replace(query=urllib.parse.urlencode( q , doseq=True))
-        return o.geturl()
-
 
 class NotFound:
     pass
@@ -1214,27 +1194,6 @@ class Req(ReqItem):
         #=========
 
 
-        # update path, with potentials "query" defs
-        pquerys={}
-        for k,v in querys.items():
-            if v is None:
-                pquerys[k]=None
-            elif type(v)==list:
-                ll=[]
-                for i in v:
-                    if i is not None:
-                        i=scope.replaceObj(i)
-                        if type(i)==list:
-                            ll.extend(i)
-                        else:
-                            ll.append(i)
-
-                pquerys[k]=ll
-            else:
-                pquerys[k]=scope.replaceObj(v)
-
-        path=updateUrlQuery(path,pquerys)
-
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
@@ -1297,7 +1256,7 @@ class Req(ReqItem):
 
 
         # execute the request (newcore)
-        ex = await newenv.call(method,path,headers,body or "",newsaves,newtests, timeout=timeout, doc=doc,http=http)
+        ex = await newenv.call(method,path,headers,body or "",newsaves,newtests, timeout=timeout, doc=doc, querys=querys, http=http)
 
         ex.nolimit = self.nolimit   #TODO: not beautiful !!!
         ex.scope = dict(newenv)     #for tests only !!!! TODO: remove

@@ -140,6 +140,7 @@ def test_override(exe):
 
     x = exe(".", "--o", fakeServer=MOCK)
     # print(x.console)
+    x.view()
     assert x.rc == 0
 
 

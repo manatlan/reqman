@@ -160,6 +160,12 @@ def test_order2():
     ))
     assert e.resolve_string("<<fichier|upper>>") == "WWWXXXWWW"
 
+def test_spe():
+    e=newcore.env.Scope( dict(
+    ))
+    with pytest.raises(Exception):
+        e.resolve_string(42)
+
 def test_copy_dico():
     e=newcore.env.Scope( dict(
         user=dict(id=42,name="jo"),
