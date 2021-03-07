@@ -37,6 +37,28 @@ def test_b_a_ba():
     assert ENV.get_var("a.x")==NotFound
     assert ENV.get_var("XXX")==NotFound
 
+def test_ignorable_vars(): # endings with "?"
+    ENV["decor"]=lambda x,ENV: f"-{x}-"
+    assert "unknown" not in ENV
+    assert ENV.get_var_or_empty("unknown")==""
+
+    assert ENV.get_var("unknown")==NotFound
+    assert ENV.get_var("unknown|isEmpty")==NotFound
+
+    assert ENV.get_var("unknown?")==""
+    assert ENV.get_var("unknown?|decor")=="--"
+
+    assert ENV.get_var_or_empty("unknown?") == ENV.get_var_or_empty("unknown")  # same behaviour
+
+    with pytest.raises(newcore.env.ResolveException):
+        ENV.resolve_string("a txt <<unknown>>")
+
+    assert ENV.resolve_string("a txt <<unknown?>>")==ENV.resolve_string_or_not("a txt <<unknown?>>") # same behaviour
+
+    assert ENV.resolve_string_or_not("a txt <<unknown>>")=="a txt <<unknown>>"
+
+
+
 def test_get_var_or_empty():
     assert ENV.get_var_or_empty("unknwon|upper") == ""
     assert ENV.get_var_or_empty("byt") == "Hello"

@@ -229,7 +229,7 @@ class Scope(dict): # like 'Env'
             assert type(string)==str,"?!WTF"
             return string
         except RecursionError:
-            raise ResolveException() # raise in all cases
+            raise ResolveException("Recursion trouble") # raise in all cases
 
     def _resolve_string(self, txt:str, forceResolveOrException=True) -> str:
         """ replace all vars in the str
@@ -243,7 +243,7 @@ class Scope(dict): # like 'Env'
             # find a way to repr value as str -> v
             if value is NotFound:
                 if forceResolveOrException:
-                    raise ResolveException()
+                    raise ResolveException(f"can't resolve {pattern}")
                 else:
                     v=pattern
             elif type(value) == bytes:
@@ -295,14 +295,24 @@ class Scope(dict): # like 'Env'
         else:
             var, methods =vardef, []
 
+
         if var=="": # case of <<|fct>> (historic way)
             value=None
         else:
+            isIgnorable=False
+
+            if var.endswith("?"):
+                var=var[:-1]
+                isIgnorable=True
+
             value = jpath(self,var)
 
             if type(value)==str:
                 # resolve value content, before applying methods
                 value = self.resolve_string_or_not( value )
+
+            if (value is NotFound) and isIgnorable:
+                value=""
 
         if value is not NotFound:
             # and apply methods on the value
@@ -313,11 +323,11 @@ class Scope(dict): # like 'Env'
                 else:
                     return NotFound
 
-            # try to remake an object (if value was a json serialized one)
-            try:
-                value=json.loads(value)
-            except:
-                pass
+        # try to remake an object (if value was a json serialized one)
+        try:
+            value=json.loads(value)
+        except:
+            pass
 
         return value
 
@@ -339,10 +349,12 @@ class Scope(dict): # like 'Env'
 
 
     def run(self,method: T.Callable , value):
+        if not callable(method):
+            raise PyMethodException(f"Can't call '{method}' : unknown one ?")
         try:
             return method(value,self)
-        except:
-            raise PyMethodException()
+        except Exception as e:
+            raise PyMethodException(f"Can't call '{method.__name__}' : {e}")
 
 
     async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None,http=None) -> Exchange:
@@ -358,12 +370,12 @@ class Scope(dict): # like 'Env'
             body=self.resolve_string(body)
             headers={k:self.resolve_string(str(v)) for k,v in headers.items()}
             r=None
-        except ResolveException:
+        except ResolveException as e:
             #can't resolve, so can't make http request, so all tests are ko
-            r=com.ResponseError("Path/body/headers non resolved")
-        except PyMethodException:
+            r=com.ResponseError(f"Request can't be resolved: {e}")
+        except PyMethodException as e:
             #a conf trouble .... break the rule !
-            r=com.ResponseError("Python Method in error")
+            r=com.ResponseError(f"Python Method in error: {e}")
 
 
         ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves, doc=doc)

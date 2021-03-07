@@ -1,4 +1,9 @@
 Working on 3.0.0 (new core)
+- EVOL: the "resolving" mechanism is now completly new (more robust, more maintanable)
+- EVOL: some little behaviour has changed :
+    - headers can't be tested directly, only in "headers."
+    - "content" should be now tested with full content (or use ".?" to be able to test like before (contains))
+- EVOL: vars can be "ignorable" (<<var?>> will be empty if not defined), avoid ResolvingException !
 
 2.9.1 (02/03/21)
 - FIX: keep fragment of url in "reqman new" command

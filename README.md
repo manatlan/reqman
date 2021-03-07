@@ -1,4 +1,4 @@
-# reqman (2.X)
+# reqman (3.X)
 Reqman is a postman killer ;-)
 
 **Reqman** is a [postman](https://www.getpostman.com/) killer. It shares the same goal, but without GUI ... the GUI is simply your favorite text editor, because requests/tests are only simple yaml files. **Reqman** is a command line tool, available on any platforms.
@@ -15,8 +15,9 @@ All configurations is done via simple yaml files, editable with any text editors
 
 [DEMO](https://test-reqman.glitch.me)
 
+
 **Features**
-   * Light (simple py3 file, 3000 lines of code, and x3 lines for unittests, in TDD mind ... cov:95%)
+   * Light (simple py3 file, 3000 lines of code, and x3 lines for unittests, in TDD mind ... cov:97%)
    * Powerful (at least as postman free version)
    * tests are simple (no code !)
    * Variable pool
@@ -51,6 +52,9 @@ All configurations is done via simple yaml files, editable with any text editors
        * fully compatible with reqman1 conf/ymls
        * xml/xpath support tests
        * used as a lib/module, you can add easily your own features (see below)
+   * NEW 3.0 :
+        * full rewrite of resolving mechanism (more robust, more maintanable)
+        * "ignorable vars" (avoid ResolveException, with `<<var?>>`)
 
 
 ## Getting started : installation
