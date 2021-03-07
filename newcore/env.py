@@ -238,6 +238,16 @@ class Scope(dict): # like 'Env'
             if k not in self:
                 self[k]=v
 
+    #TODO: test that (could replace "get_var")
+    def resolve_all(self,obj,forceResolveOrException=True):
+        if type(obj)==str:
+            obj= self.resolve_string(obj,forceResolveOrException)
+            try:
+                obj=json.loads(obj)
+            except:
+                pass
+        return obj
+
     def resolve_string(self, txt:str, forceResolveOrException=True) -> str:
         """ replace all vars in the str
         raise ResolveException if can't
@@ -290,11 +300,7 @@ class Scope(dict): # like 'Env'
     def resolve_string_or_not(self,obj: object) -> object:
         """ like resolve() but any type in/out, without exception """
         if type(obj)==str:
-            obj = self.resolve_string( obj , forceResolveOrException=False)
-            try:
-                obj = json.loads(obj)
-            except:
-                pass
+            obj = self.resolve_all( obj , forceResolveOrException=False)
 
         return obj
 
@@ -343,12 +349,6 @@ class Scope(dict): # like 'Env'
                 else:
                     return NotFound
 
-        # try to remake an object (if value was a json serialized one)
-        try:
-            value=json.loads(value)
-        except:
-            pass
-
         return value
 
 
@@ -385,13 +385,7 @@ class Scope(dict): # like 'Env'
         if not urllib.parse.urlparse(path.lower()).scheme:
             path=self.get_var_or_empty("root")+path
 
-        def res(v):
-            if type(v)==str:
-                return self.resolve_string(v)
-            else:
-                return v
-
-        try:        #TODO: here it's catastrofic, should be better !!!!!!!
+        try:
 
             # update path, with potentials "query" defs
             pquerys={}
@@ -402,26 +396,16 @@ class Scope(dict): # like 'Env'
                     ll=[]
                     for i in v:
                         if i is not None:
-                            ii=res(i)
-                            try:
-                                ii=json.loads(ii)
-                            except:
-                                pass
-                            if type(ii)==list:
-                                ll.extend(ii)
+                            i=self.resolve_all(i)
+                            if type(i)==list:
+                                ll.extend(i)
                             else:
-                                ll.append(ii)
+                                ll.append(i)
 
                     pquerys[k]=ll
                 else:
-                    vv=res(v)
-                    try:
-                        vv=json.loads(vv)
-                    except:
-                        pass
-                    pquerys[k]=vv
+                    pquerys[k]=self.resolve_all(v)
 
-            # logging.warn(f"----{pquerys}")
             path=updateUrlQuery(path,pquerys)
 
 
