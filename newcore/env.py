@@ -238,7 +238,7 @@ class Scope(dict): # like 'Env'
             if k not in self:
                 self[k]=v
 
-    #TODO: test that (could replace "get_var")
+    #TODO: that (could replace "get_var")
     def resolve_all(self,obj,forceResolveOrException=True):
         if type(obj)==str:
             obj= self.resolve_string(obj,forceResolveOrException)

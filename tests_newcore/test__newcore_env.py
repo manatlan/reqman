@@ -57,6 +57,27 @@ def test_ignorable_vars(): # endings with "?"
 
     assert ENV.resolve_string_or_not("a txt <<unknown>>")=="a txt <<unknown>>"
 
+def test_resolve_all():
+    ENV["pytest"]=lambda x,ENV: "ttt"
+    assert "unknown" not in ENV
+    assert ENV.resolve_all("<<kiki>>")==3.4
+    assert ENV.resolve_all("<<kiki>><<kiki>>")=="3.43.4"
+    assert ENV.resolve_all("   <<kiki>>  ")==3.4
+    assert ENV.resolve_all("-<<kiki>>")==-3.4
+    assert ENV.resolve_all("nimp <<kiki>>")=="nimp 3.4"
+
+    assert ENV.resolve_all(3.4)==3.4
+    assert ENV.resolve_all(None)==None
+    assert ENV.resolve_all("kiki")=="kiki"
+
+    with pytest.raises(newcore.env.ResolveException):
+        ENV.resolve_all("a txt <<unknown>>")
+
+    assert ENV.resolve_all("<<unknown?>>")==""
+
+    assert ENV.resolve_all("<<pytest>>")=="ttt"
+    assert ENV.resolve_all("<<pytest?>>")=="ttt"
+
 
 
 def test_get_var_or_empty():
