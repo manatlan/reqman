@@ -1167,7 +1167,6 @@ class Req(ReqItem):
         scope = gscope.clone()  # important
         dict_merge(scope, self.params)
 
-        root = scope.get("root", None)  # global root
         gheaders = scope.get("headers", None)  # global header
         try:
             timeout = scope.get("timeout", None)  # global timeout
@@ -1230,7 +1229,6 @@ class Req(ReqItem):
                 exec(declare(v), globals())
                 newscope[k]=DYNAMIC
 
-        newenv=newcore.env.Scope( newscope , EXPOSEDS)
 
         # transform saves to newsaves
         newsaves=[]
@@ -1250,13 +1248,16 @@ class Req(ReqItem):
         elif type(body) == bytes:
             body=utils.decodeBytes()
         elif body is None:
-            body=b""
+            body=""
         else:
             body=str(body)
 
 
+        # CREATE the NEW SCOPE !!!!!!
+        newenv=newcore.env.Scope( newscope , EXPOSEDS)
+
         # execute the request (newcore)
-        ex = await newenv.call(method,path,headers,body or "",newsaves,newtests, timeout=timeout, doc=doc, querys=querys, http=http)
+        ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, http=http)
 
         ex.nolimit = self.nolimit   #TODO: not beautiful !!!
         ex.scope = dict(newenv)     #for tests only !!!! TODO: remove
