@@ -40,7 +40,9 @@ import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "2.9.1.0"  # only SemVer (the last ".0" is win only)
+__version__ = "2.10.0.0"  # only SemVer (the last ".0" is win only)
+
+proxy=None # no proxy by default, in reqman
 
 if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
     REQMANEXE = sys.executable
@@ -372,6 +374,7 @@ async def request(method, url, body: bytes, headers, timeout=None):
                 ssl=False,
                 timeout=timeout,
                 allow_redirects=False,
+                proxy=proxy
             )
             try:
                 obj = await r.json()
