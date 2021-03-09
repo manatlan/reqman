@@ -42,6 +42,8 @@ import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to bui
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
 __version__ = "3.0.0.0"  # only SemVer (the last ".0" is win only)
 
+proxy = None # no proxy by default
+
 if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
     REQMANEXE = sys.executable
 else :

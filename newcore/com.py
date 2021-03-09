@@ -4,7 +4,9 @@ import httpx
 import json
 import logging
 
-AHTTP = httpx.AsyncClient(verify=False)
+
+#TODO: use proxies=reqman.proxy (a simple string)!
+AHTTP = httpx.AsyncClient(verify=False,proxies=None)
 
 class Response:
     def __init__(self, status:int, headers: httpx.Headers, content: bytes, info: str):
