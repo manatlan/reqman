@@ -1,4 +1,5 @@
 Working on 3.0.0 (new core)
+- "proxy" support too
 - EVOL: the "resolving" mechanism is now completly new (more robust, more maintanable)
 - EVOL: some little behaviour has changed :
     - headers can't be tested directly, only in "headers."

@@ -42,8 +42,6 @@ import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to bui
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
 __version__ = "3.0.0.0"  # only SemVer (the last ".0" is win only)
 
-proxy = None # no proxy by default
-
 if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
     REQMANEXE = sys.executable
 else :
@@ -1176,6 +1174,12 @@ class Req(ReqItem):
         except ValueError:
             timeout = None
 
+        try:
+            proxy = scope.get("proxy", None)  # global proxy
+            assert type(proxy)==str
+        except :
+            proxy = None
+
         method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
         doc, tests, saves = self.doc, self.tests, self.saves
 
@@ -1259,7 +1263,7 @@ class Req(ReqItem):
         newenv=newcore.env.Scope( newscope , EXPOSEDS)
 
         # execute the request (newcore)
-        ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, http=http)
+        ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, proxy=proxy, http=http)
 
         ex.nolimit = self.nolimit   #TODO: not beautiful !!!
         ex.scope = dict(newenv)     #for tests only !!!! TODO: remove

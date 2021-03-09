@@ -131,12 +131,12 @@ class Exchange:
     def path(self):
         return urllib.parse.urlparse(self.url).path
 
-    async def call(self, timeout=None,http=None) -> com.Response:
+    async def call(self, timeout=None, proxy=None, http=None) -> com.Response:
         t1 = datetime.datetime.now()
 
         if http is None:
             #real call on the web
-            r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout)
+            r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout, proxy=proxy)
         else:
             #simulate with http hook
             r = com.call_simulation(http,self.method,self.url,self.body,self.inHeaders)
@@ -377,7 +377,7 @@ class Scope(dict): # like 'Env'
             raise PyMethodException(f"Can't call '{method.__name__}' : {e}")
 
 
-    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None, querys={}, http=None) -> Exchange:
+    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None, querys={}, proxy=None, http=None) -> Exchange:
         assert type(body)==str
         assert all( [type(i)==tuple and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
@@ -423,7 +423,7 @@ class Scope(dict): # like 'Env'
 
         ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves, doc=doc)
         if r is None: # we can call it safely
-            r=await ex.call(timeout,http=http)
+            r=await ex.call(timeout,proxy=proxy,http=http)
 
         ex.treatment( self, r)
 

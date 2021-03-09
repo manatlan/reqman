@@ -47,7 +47,7 @@ class ResponseInvalid(ResponseError):
 textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
 isBytes = lambda bytes: bool(bytes.translate(None, textchars))
 
-async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -> Response:
+async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None, proxy=proxy) -> Response:
     assert type(body)==bytes
     try:
         r = await AHTTP.request(
@@ -57,6 +57,7 @@ async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None) -
             headers=headers,
             allow_redirects=False,
             timeout=timeout,   # sec to millisec
+            proxy=proxy
         )
         info = "%s %s %s" % (r.http_version, int(r.status_code), r.reason_phrase)
 
