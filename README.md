@@ -25,7 +25,7 @@ All configurations is done via simple yaml files, editable with any text editors
    * Environment aware (switch easily)
    * https/ssl ok (bypass)
    * http 1.0, 1.1, 2.0
-   * support HTTP(S)_PROXY environment variables
+   * proxy support (thru a reqman.conf var "proxy")
    * headers inherits
    * ~~tests inherits~~
    * ~~timed requests + average times~~

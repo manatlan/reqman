@@ -42,8 +42,6 @@ import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to bui
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
 __version__ = "2.10.0.0"  # only SemVer (the last ".0" is win only)
 
-proxy=None # no proxy by default, in reqman
-
 if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
     REQMANEXE = sys.executable
 else :
@@ -362,7 +360,7 @@ textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7
 isBytes = lambda bytes: bool(bytes.translate(None, textchars))
 
 
-async def request(method, url, body: bytes, headers, timeout=None):
+async def request(method, url, body: bytes, headers, timeout=None,proxy=None):
     try:
         async with aiohttp.ClientSession(trust_env=True) as session:
 
@@ -1395,6 +1393,13 @@ class Req(ReqItem):
         except ValueError:
             timeout = None
 
+        try:
+            proxy = scope.get("proxy", None)  # global proxy
+            assert type(proxy)==str
+        except:
+            proxy = None
+
+
         method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
         doc, tests, saves = self.doc, self.tests, self.saves
 
@@ -1474,7 +1479,7 @@ class Req(ReqItem):
             self.parent.env.cookiejar.update(url, headers)
 
             ex = await asyncExecute(
-                method, gpath, url, body, headers, http=http, timeout=timeout
+                method, gpath, url, body, headers, http=http, timeout=timeout, proxy=proxy
             )
         except (
             RMPyException,
@@ -1611,7 +1616,7 @@ class Req(ReqItem):
 
 
 async def asyncExecute(
-    method, path, url, body, headers, http=None, timeout=None
+    method, path, url, body, headers, http=None, timeout=None, proxy=None
 ) -> Exchange:
     t1 = datetime.datetime.now()
 
@@ -1649,7 +1654,7 @@ async def asyncExecute(
     else:
         http = request  # use the real one !!
         status, outHeaders, content, info = await http(
-            method, url, body, headers, timeout=timeout
+            method, url, body, headers, timeout=timeout, proxy=proxy
         )
 
     diff = datetime.datetime.now() - t1

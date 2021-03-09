@@ -1,3 +1,6 @@
+2.11.0 (09/03/21) - the proxy support verion
+- EVOL: can use a "proxy" (str) var in reqman.conf (as "timeout" var)
+
 2.10.0 (09/03/21)
 - EVOL: Used as a module: ability to configure a proxy in "reqman.proxy" (an url)
 
