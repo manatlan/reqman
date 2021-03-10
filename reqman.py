@@ -1164,37 +1164,44 @@ class Req(ReqItem):
 
         #TODO: create the newcore scope here, and remove old code vv
 
-        scope = gscope.clone()  # important
-        dict_merge(scope, self.params)
+        oldscope = gscope.clone()  # important
+        dict_merge(oldscope, self.params)
 
-        gheaders = scope.get("headers", None)  # global header
+        # get properties of the request
+        method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
+        doc, tests, saves = self.doc, self.tests, self.saves
+
+
+        # get global timeout
         try:
-            timeout = scope.get("timeout", None)  # global timeout
+            timeout = oldscope.get("timeout", None)  # global timeout
             timeout = timeout and float(timeout) / 1000.0 or None
         except ValueError:
             timeout = None
 
+        # get global proxy
         try:
-            proxy = scope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
+            proxy = oldscope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
         except :
             proxy = None
 
-        method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
-        doc, tests, saves = self.doc, self.tests, self.saves
 
-        ex = None
 
         #========= old code
         def resolvHeaders(headers):
             if type(headers) == str:
-                headers = scope.replaceObj(headers)
+                headers = oldscope.replaceObj(headers)
             self.parent._assertType("headers", headers, [dict, list])
             return headers
 
+        gheaders = oldscope.get("headers", None)  # global header
         if gheaders is not None:
             newHeaders = resolvHeaders(clone(gheaders))
             dict_merge(newHeaders, headers)
             headers = newHeaders
+
+        # remove headers valuated as None
+        headers={k:v for k,v in headers.items() if v is not None}
         #=========
 
 
@@ -1223,10 +1230,8 @@ class Req(ReqItem):
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
 
-        # remove headers valuated as None
-        headers={k:v for k,v in headers.items() if v is not None}
 
-        newscope = dict(scope)
+        newscope = dict(oldscope)
 
         #transform pymethod's string into real func
         for k,v in newscope.items():
@@ -1248,12 +1253,12 @@ class Req(ReqItem):
             newtests.append( (k,v) )
 
         # ensure content is str
-        if type(body) in [list,dict]: # TEST 972_500 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if body is None:
+            body=""
+        elif type(body) in [list,dict]: # TEST 972_500 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             body=json.dumps(body)
         elif type(body) == bytes:
-            body=utils.decodeBytes()
-        elif body is None:
-            body=""
+            body=newcore.common.decodeBytes(body)
         else:
             body=str(body)
 
