@@ -1,0 +1,28 @@
+#!python3 fakereqman.py
+#:valid:1,1,0 THIS --b
+
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- GET: http://localhost:11111/get_txt
+  doc: no proxy
+  tests:
+    - status: 200
+
+- GET: http://localhost:11111/get_txt
+  doc: use a proxy
+  tests:
+    - status: 200
+  params:
+    proxy: http://143.198.30.253:8080
+
+- GET: http://localhost:11111/get_txt
+  doc: bad proxy
+  tests:
+    - status: 200
+  params:
+    proxy: nimpnawak
+

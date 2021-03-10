@@ -1175,8 +1175,7 @@ class Req(ReqItem):
             timeout = None
 
         try:
-            proxy = scope.get("proxy", None)  # global proxy
-            assert type(proxy)==str
+            proxy = scope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
         except :
             proxy = None
 
@@ -1263,7 +1262,7 @@ class Req(ReqItem):
         newenv=newcore.env.Scope( newscope , EXPOSEDS)
 
         # execute the request (newcore)
-        ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, proxy=proxy, http=http)
+        ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, proxies=proxy, http=http)
 
         ex.nolimit = self.nolimit   #TODO: not beautiful !!!
         ex.scope = dict(newenv)     #for tests only !!!! TODO: remove

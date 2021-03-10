@@ -5,8 +5,7 @@ import json
 import logging
 
 
-#TODO: use proxies=reqman.proxy (a simple string)!
-AHTTP = httpx.AsyncClient(verify=False,proxies=None)
+AHTTP = httpx.AsyncClient(verify=False)
 
 class Response:
     def __init__(self, status:int, headers: httpx.Headers, content: bytes, info: str):
@@ -47,9 +46,12 @@ class ResponseInvalid(ResponseError):
 textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
 isBytes = lambda bytes: bool(bytes.translate(None, textchars))
 
-async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None, proxy=proxy) -> Response:
+async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None, proxies=None) -> Response:
     assert type(body)==bytes
     try:
+
+        AHTTP._get_proxy_map(proxies, False)
+
         r = await AHTTP.request(
             method,
             url,
@@ -57,8 +59,8 @@ async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None, p
             headers=headers,
             allow_redirects=False,
             timeout=timeout,   # sec to millisec
-            proxy=proxy
         )
+
         info = "%s %s %s" % (r.http_version, int(r.status_code), r.reason_phrase)
 
         content=r.content
@@ -128,6 +130,8 @@ if __name__=="__main__":
     import asyncio
     async def t():
         e=await call("GET","https://www.manatlan.com")
+        print(e)
+        e=await call("GET","https://www.manatlan.com",proxies="http://77.232.100.132") # with a valid proxy
         print(e)
 
     asyncio.run(t())
