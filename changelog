@@ -1,8 +1,9 @@
 Working on 3.0.0 (new core)
-- "proxy" support too
+- "proxy" support too (can be really configurable, see proxies/httpx)
 - EVOL: the "resolving" mechanism is now completly new (more robust, more maintanable)
 - EVOL: some little behaviour has changed :
-    - headers can't be tested directly, only in "headers."
+    - some complex things (not covered in UT) should just work as expected
+    - headers can't be tested directly, only thru "headers."
     - "headers contains" no more, should be explicit (use ".?" to simulate historic way)
     - tests are always resolved to false, when requests non playable
 - "content contains" always here (to keep the same as historic way)
