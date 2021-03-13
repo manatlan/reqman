@@ -55,29 +55,32 @@ def test_createEnvBad():
 
 
 def test_jpath():
-    assert reqman.jpath({"v": 42}, "v") == 42
-    assert reqman.jpath({"v": 42}, "v2") is reqman.NotFound
+    reqman_jpath = lambda d,p: reqman.newcore.env.jpath( reqman.newcore.env.Scope(d), p)
+    assert reqman_jpath({"v": 42}, "v") == 42
+    assert reqman_jpath({"v": 42}, "v2") is reqman.newcore.env.NotFound
 
     env = reqman.Env(dict(toto=dict(v1=100, v2=None), tata=dict(l=["a", "b", "c"])))
-    assert reqman.jpath(env, "titi") is reqman.NotFound
-    assert reqman.jpath(env, "titi.size") is reqman.NotFound
-    assert reqman.jpath(env, "titi.0") is reqman.NotFound
+    assert reqman_jpath(env, "titi") is reqman.newcore.env.NotFound
+    assert reqman_jpath(env, "titi.size") is reqman.newcore.env.NotFound
+    assert reqman_jpath(env, "titi.0") is reqman.newcore.env.NotFound
 
-    assert reqman.jpath(env, "toto.v1") == 100
-    assert reqman.jpath(env, "toto.v2") == None
-    assert reqman.jpath(env, "toto.v3") is reqman.NotFound
-    assert reqman.jpath(env, "toto.size") == 2
+    assert reqman_jpath(env, "toto.v1") == 100
+    assert reqman_jpath(env, "toto.v2") == None
+    assert reqman_jpath(env, "toto.v3") is reqman.newcore.env.NotFound
+    assert reqman_jpath(env, "toto.size") == 2
 
-    assert reqman.jpath(env, "tata.l") == ["a", "b", "c"]
-    assert reqman.jpath(env, "tata.l.1") == "b"
-    assert reqman.jpath(env, "tata.l.1.size") == 1
-    assert reqman.jpath(env, "tata.l.size") == 3
+    assert reqman_jpath(env, "tata.l") == ["a", "b", "c"]
+    assert reqman_jpath(env, "tata.l.1") == "b"
+    assert reqman_jpath(env, "tata.l.1.size") == 1
+    assert reqman_jpath(env, "tata.l.size") == 3
 
 
 def test_jpath_python():
+    reqman_jpath = lambda d,p: reqman.newcore.env.jpath( reqman.newcore.env.Scope(d), p)
+
     env = dict(fct="return dict(a=dict(b=42))")
-    assert reqman.jpath(env, "fct.size") == 1
-    assert reqman.jpath(env, "fct.a.b") == 42
+    assert reqman_jpath(env, "fct.size") == 1
+    assert reqman_jpath(env, "fct.a.b") == 42
 
 
 def test_simple():
@@ -217,7 +220,7 @@ def test_renameKeys():
 
 
 def test_HeadersMixed():
-    dd = reqman.HeadersMixedCase(KeY="kiki")
+    dd = reqman.newcore.testing.HeadersMixedCase(KeY="kiki")
     assert dd["KeY"] == "kiki"
     assert dd["key"] == "kiki"
     assert dd["key2"] == None

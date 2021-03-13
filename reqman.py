@@ -362,7 +362,12 @@ class Env(dict):
 
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
         d=dict(self.clone())
-        return newcore.env.Scope(d,EXPOSEDS).resolve_string(txt,forceResolveOrException=False)
+        try:
+            return newcore.env.Scope(d,EXPOSEDS).resolve_string(txt)
+        except newcore.env.ResolveException:
+            return txt
+        except newcore.env.PyMethodException as e:
+            raise RMPyException(e)
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
 
@@ -373,6 +378,7 @@ class Env(dict):
         return v if self.getNonResolvedVars(v) == [] else None
 
     def getNonResolvedVars(self, txt):
+        """ DEPRECATED """
         if type(txt) == str:
             return re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt)
         else:
