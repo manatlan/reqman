@@ -1159,13 +1159,14 @@ class Req(ReqItem):
         return "\n".join(l)
 
     async def asyncReqExecute(
-        self, gscope, http=None, outputConsole=OutputConsole.MINIMAL
+        self, gscope: Env, http=None, outputConsole=OutputConsole.MINIMAL
     ) -> newcore.env.Exchange:
 
-        #TODO: create the newcore scope here, and remove old code vv
+        # create a dict (newscope) from the cloned old env (gscope)
+        newscope = dict(gscope.clone())
 
-        oldscope = gscope.clone()  # important
-        dict_merge(oldscope, self.params)
+        # merge the local params in
+        dict_merge(newscope, self.params)
 
         # get properties of the request
         method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
@@ -1174,14 +1175,14 @@ class Req(ReqItem):
 
         # get global timeout
         try:
-            timeout = oldscope.get("timeout", None)  # global timeout
+            timeout = newscope.get("timeout", None)  # global timeout
             timeout = timeout and float(timeout) / 1000.0 or None
         except ValueError:
             timeout = None
 
         # get global proxy
         try:
-            proxy = oldscope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
+            proxy = newscope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
         except :
             proxy = None
 
@@ -1213,9 +1214,8 @@ class Req(ReqItem):
         ###################################################################################### NEWCORE
 
 
-        newscope = dict(oldscope)
 
-        #transform pymethod's string into real func
+        #transform pymethod's string into real func, in the newscope !
         for k,v in newscope.items():
             if v and isPython(v):
                 exec(declare(v), globals())
@@ -1244,7 +1244,7 @@ class Req(ReqItem):
             body=str(body)
 
 
-        # CREATE the NEW SCOPE !!!!!!
+        # CREATE the REAL NEW SCOPE !!!!!!
         newenv=newcore.env.Scope( newscope , EXPOSEDS)
 
         # use global headers and merge them in headers
