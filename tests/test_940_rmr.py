@@ -27,7 +27,6 @@ def _continue(exe):
     assert len(lrmr)==1
     os.unlink("reqman.conf")
     os.unlink("f.yml")
-    # x.view()
 
     x=exe(lrmr[0],"--o:r1.html",fakeServer=mock) # rebuild HTML from a rmr -> single result
     assert "http://a/hello" not in x.console # because nothing is replayed
@@ -43,6 +42,7 @@ def _continue(exe):
     assert x.console.count("content contains")==2
 
     x=exe(lrmr[0],"+other","--o:r3.html",fakeServer=mock) # compare RMR with another switch  -> dual result
+    # x.view()
     assert "http://b/hello" in x.console
     assert "http://a/hello" not in x.console #because A is not replayed
     assert x.rc==0
@@ -55,9 +55,8 @@ def _continue(exe):
     assert x.rc==0
     assert os.path.isfile("r4.html")
     assert x.console.count("content contains")==1
-    # x.view()
 
-def test_COMMAND_rmr_tests_old_switches(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
+def test_COMMAND_rmr_tests_old_switches(exe):
 
     with open("reqman.conf","w+") as fid:
         fid.write("""
@@ -78,7 +77,7 @@ def test_COMMAND_rmr_tests_old_switches(exe):   #<- it's not a real test ... jus
         """)
     _continue(exe)
 
-def test_COMMAND_rmr_tests_new_switches(exe):   #<- it's not a real test ... just COPY/PASTE this one for next tests
+def test_COMMAND_rmr_tests_new_switches(exe):
 
     with open("reqman.conf","w+") as fid:
         fid.write("""

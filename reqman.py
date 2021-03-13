@@ -1558,7 +1558,12 @@ function copyToClipboard( obj ) {
     <div class="r hide">
         <h4 class="click" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details">
             <b>{{first(ex).method}}</b>
-            {{first_path(ex)}} <b style="float:right">{{first(ex).content if first(ex).status is None else first(ex).status}}</b>
+            {{first_path(ex)}}
+            <b style="float:right">
+                %for x in discover(ex):
+                    {{x and (x.content if x.status is None else x.status) or "X"}}
+                %end
+            </b>
             <br/>
             <i>{{limit(first(ex).doc,isLimit and LIMIT.DOC)}}</i>
 
