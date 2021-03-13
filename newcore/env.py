@@ -210,7 +210,10 @@ class Exchange:
         for var,expected in self._tests_to_do:
             expected=repEnv.resolve_string_or_not(expected)
             val=repEnv.get_var_or_empty(var)
-            new_tests.append( testing.testCompare(var,val,expected) )
+            test=testing.testCompare(var,val,expected)
+            if self.status is None:
+                test=test.toFalse()
+            new_tests.append( test )
 
 
         del repEnv

@@ -1238,6 +1238,7 @@ class Req(ReqItem):
             if v and isPython(v):
                 exec(declare(v), globals())
                 newscope[k]=DYNAMIC
+                # newscope[k]=lambda x,ENV: compile(declare(v), "unknown", "exec")(x,ENV)
 
 
         # transform saves to newsaves

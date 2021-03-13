@@ -3,7 +3,9 @@ Working on 3.0.0 (new core)
 - EVOL: the "resolving" mechanism is now completly new (more robust, more maintanable)
 - EVOL: some little behaviour has changed :
     - headers can't be tested directly, only in "headers."
-    - "content" should be now tested with full content (or use ".?" to be able to test like before (contains))
+    - "headers contains" no more, should be explicit (use ".?" to simulate historic way)
+    - tests are always resolved to false, when requests non playable
+- "content contains" always here (to keep the same as historic way)
 - EVOL: vars can be "ignorable" (<<var?>> will be empty if not defined), avoid ResolvingException !
 
 2.9.1 (02/03/21)

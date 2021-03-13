@@ -37,14 +37,16 @@ class Test(int):
     """ a boolean with a name """
 
     name = ""
-
-    def __init__(self, v, n1, n2, realValue):
-        pass  # just for mypy
+    nameOK = ""
+    nameKO = ""
+    value = ""
 
     def __new__(
         cls, value: int, nameOK: str = None, nameKO: str = None, realValue=None
     ):
         s = super().__new__(cls, value)
+        s.nameOK=nameOK
+        s.nameKO=nameKO
         if value:
             s.name = nameOK
         else:
@@ -54,6 +56,9 @@ class Test(int):
 
     def __repr__(self):
         return "%s: %s" % ("OK" if self else "KO", self.name)
+
+    def toFalse(self):
+        return Test(0,self.nameOK,self.nameKO,self.value)
 
 
 def guessValue(txt):
@@ -159,7 +164,13 @@ def testCompare(var: str, val, opeval) -> Test:
         tko="!="
         value=opeval
     else: # or str
-        value,fct,tok,tko=getValOpe(opeval)
+        if var=="content": # "content" test works like the historic way
+            value,fct,tok,tko=getValOpe(opeval)
+            fct = lambda a, b: str(a) in str(b) #\
+            tok="contains"                      # |-  override ^^
+            tko="doesn't contain"               #/
+        else:
+            value,fct,tok,tko=getValOpe(opeval)
         value=guessValue(value)
 
         try:
@@ -181,5 +192,12 @@ if __name__=="__main__":
     assert( guessValue("null")==None)
     assert( guessValue("True")==True)
     assert( guessValue("true")==True)
-    
+
     print( strjs(3.14) )
+
+    assert testCompare("jo","42","42")
+    assert testCompare("content","axa","x")
+
+    t=testCompare("content","axa","x")
+    print(t)
+    print(t.toFalse())
