@@ -1,4 +1,6 @@
 #!python3 fakereqman.py
+#:valid:11,11 THIS --bf
+#:valid:11,11 THIS --b --f
 #:valid:11,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------

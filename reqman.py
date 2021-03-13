@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # #############################################################################
-#    Copyright (C) 2018-2020 manatlan manatlan[at]gmail(dot)com
+#    Copyright (C) 2018-2021 manatlan manatlan[at]gmail(dot)com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -21,21 +21,17 @@ import urllib.parse
 import collections, json
 import typing as T
 import sys, traceback
-import pickle, zlib, hashlib
-
-from xml.dom import minidom
+import pickle, zlib
 import encodings.idna
-import inspect
-import newcore
-import logging
-
 
 # import httpcore # see "pip install httpcore"
 import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 import xpath  # see "pip install py-dom-xpath-six"
-
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
+
+import newcore # NEW CORE SYSTEM
+
 
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
 __version__ = "3.0.0.0"  # only SemVer (the last ".0" is win only)
@@ -63,6 +59,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         --s        : Save RMR file
         --r        : Replay the given RMR file in dual mode
         --i        : Use SHEBANG params (for a single file), alone
+        --f        : Force full output in html rendering
         --x:var    : Special mode to output an env var (as json output)
 """ % (REQMANEXE,REQMANEXE,__version__)
 
@@ -78,9 +75,7 @@ try:  # colorama is optionnal
     init()
 
     def colorize(color: int, t: str) -> T.Union[str, None]:
-        return (
-            color + Style.BRIGHT + str(t) + Fore.RESET + Style.RESET_ALL if t else None
-        )
+        return (color + Style.BRIGHT + str(t) + Fore.RESET + Style.RESET_ALL if t else None)
 
     cy = lambda t: colorize(Fore.YELLOW, t)
     cr = lambda t: colorize(Fore.RED, t)
@@ -124,11 +119,6 @@ class RMPyException(Exception):
     pass
 
 
-
-def jdumps(o, *a, **k):
-    k["ensure_ascii"] = False
-    # ~ k["default"]=serialize
-    return json.dumps(o, *a, **k)
 
 
 def izip(ex1, ex2):
@@ -386,7 +376,7 @@ class Env(dict):
 
 
     def __str__(self):
-        return jdumps(self, indent=4, sort_keys=True)
+        return newcore.common.jdumps(self, indent=4, sort_keys=True)
 
     def __getstate__(self):
         return dict(self)
@@ -900,10 +890,10 @@ class Req(ReqItem):
     ) -> newcore.env.Exchange:
 
         # create a dict (newscope) from the cloned old env (gscope)
-        newscope = dict(gscope.clone())
+        scope = dict(gscope.clone())
 
         # merge the local params in
-        dict_merge(newscope, self.params)
+        dict_merge(scope, self.params)
 
         # get properties of the request
         method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
@@ -912,14 +902,14 @@ class Req(ReqItem):
 
         # get global timeout
         try:
-            timeout = newscope.get("timeout", None)  # global timeout
+            timeout = scope.get("timeout", None)  # global timeout
             timeout = timeout and float(timeout) / 1000.0 or None
         except ValueError:
             timeout = None
 
         # get global proxy
         try:
-            proxy = newscope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
+            proxy = scope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
         except :
             proxy = None
 
@@ -974,7 +964,7 @@ class Req(ReqItem):
 
 
         # CREATE the REAL NEW SCOPE !!!!!!
-        newenv=newcore.env.Scope( newscope , EXPOSEDS)
+        newenv=newcore.env.Scope( scope , EXPOSEDS)
 
         # use global headers and merge them in headers
         gheaders = newenv.get("headers", None)  # global headers
@@ -994,7 +984,15 @@ class Req(ReqItem):
         ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, proxies=proxy, http=http)
 
         ex.nolimit = self.nolimit   #TODO: not beautiful !!!
-        ex.scope = dict(newenv)     #for tests only !!!! TODO: remove
+
+        ##/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+        ##/\ See "test_070" : need to put a ".scope" in an Exchange
+        ##/\ to let the tests works, like in the past ...
+        ##/\ (because it's a pertinent test !!!)
+        ##/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+        if outputConsole=="*OLD*TESTS*":
+            ex.scope = dict(newenv)
+        ##/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         # get the saved ones
         for saveKey, saveWhat in ex.saves.items():
@@ -1080,6 +1078,8 @@ def guessValue(txt):
 
 
 class Result:
+    forceNoLimit=False
+
     total = 0
     ok = 0
     infos = []
@@ -1094,6 +1094,7 @@ class Result:
 
 
 class ReqmanResult(Result):
+
     @classmethod
     def fromRMR(cls, name):
         if not name.endswith(".rmr"):
@@ -1149,6 +1150,7 @@ class ReqmanResult(Result):
 
 
 class ReqmanDualResult(Result):
+
     def __init__(self, r1: ReqmanResult, r2: ReqmanResult):
         assert len(r1.results) == len(r2.results)  # TODO: better here
 
@@ -1439,7 +1441,7 @@ def prettify(txt: bytes, indentation: int = 4) -> str:
         return repr(newcore.xlib.Xml(txt))
     except:
         try:
-            return jdumps(json.loads(txt), indent=indentation, sort_keys=True)
+            return newcore.common.jdumps(json.loads(txt), indent=indentation, sort_keys=True)
         except:
             return txt
 
@@ -1453,12 +1455,15 @@ def render(rr: Result) -> str:
         BODY = 8192
 
     def limit(txt: str, size=None) -> str:
-        if size and txt and type(txt) in [str,bytes] and len(txt) > int(size):
-            info = "...***TRUNCATED***..."
-            size = size - len(info)
-            return txt[: size // 2] + info + txt[-size // 2 :]
-        else:
+        if rr.forceNoLimit:
             return txt
+        else:
+            if size and txt and type(txt) in [str,bytes] and len(txt) > int(size):
+                info = "...***TRUNCATED***..."
+                size = size - len(info)
+                return txt[: size // 2] + info + txt[-size // 2 :]
+            else:
+                return txt
 
     template = """<!DOCTYPE html>
 <html>
@@ -1769,9 +1774,12 @@ def main(fakeServer=None, hookResults=None) -> int:
         saveRMR = False
         replayRMR = False
         outputContent=None
+        forceNoLimit=False
         for p in rparams:
             if p == "k":
                 outputConsole = OutputConsole.MINIMAL_ONLYKO
+            elif p == "f":
+                forceNoLimit=True
             elif p == "i":
                 pass  # already managed (see below ^)
             elif p == "s":
@@ -1893,6 +1901,7 @@ def main(fakeServer=None, hookResults=None) -> int:
                 print("Save RMR:", rr.saveRMR("reqman.rmr" if saveRMR == 2 else None))
 
         if outputHtmlFile:
+            rr.forceNoLimit=forceNoLimit
             with codecs.open(outputHtmlFile, "w+", "utf-8-sig") as fid:
                 fid.write(rr.html)
             if openBrowser:

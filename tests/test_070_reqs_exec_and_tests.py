@@ -205,7 +205,7 @@ def test_check_hermetic_scope(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 2
-    ll=l.execute( {"/a":(200,"ok")} )
+    ll=l.execute( {"/a":(200,"ok")}, outputConsole="*OLD*TESTS*" )
     assert len(ll) == 2
     assert ll[0].scope=={'v': '/a'}
     assert ll[1].scope=={'vv': '/a'}
@@ -228,7 +228,7 @@ def test_check_hermetic_scope2(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 2
-    ll=l.execute( {"/a":(200,"ok")} )
+    ll=l.execute( {"/a":(200,"ok")} , outputConsole="*OLD*TESTS*" )
     assert len(ll) == 2
     assert ll[0].scope=={'v': '/a', 'p': 1}
     assert ll[1].scope=={'vv': '/a',  'p': 1}
@@ -250,7 +250,7 @@ def test_check_hermetic_scope3(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 2
-    ll=l.execute( {"/a":(200,"ok")} )
+    ll=l.execute( {"/a":(200,"ok")} , outputConsole="*OLD*TESTS*" )
     assert len(ll) == 2
     assert ll[0].scope=={'v': '/a', 'p': 1}
     assert ll[1].scope=={'vv': '/a',  'p': 1}
@@ -277,7 +277,7 @@ def test_check_hermetic_scope4(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 2
-    ll=l.execute( {"/a":(200,"ok"),"/b":(200,"ok")} )
+    ll=l.execute( {"/a":(200,"ok"),"/b":(200,"ok")} , outputConsole="*OLD*TESTS*" )
     assert len(ll) == 6
     assert ll[0].scope=={'p': 1, 'v': '/a'}
     assert ll[1].scope=={'p': 2, 'v': '/a', 'i': 1}
@@ -288,4 +288,4 @@ def test_check_hermetic_scope4(Reqs):
 
     l=Reqs(y,trace=1)
     assert len(l) == 2
-    ll=l.execute( {"/a":(200,"ok"),"/b":(200,"ok")} )
+    ll=l.execute( {"/a":(200,"ok"),"/b":(200,"ok")} , outputConsole="*OLD*TESTS*" )

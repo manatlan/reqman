@@ -1,6 +1,7 @@
 Working on 3.0.0 (new core)
 - use HTTPX again and forever ;-) (bye aiohttp)
 - "proxy" support too (can be really configurable, see proxies/httpx)
+- EVOL: new option "--f" to force full output in html rendering
 - EVOL: the "resolving" mechanism is now completly new (more robust, more maintanable)
 - EVOL: some little behaviour has changed :
     - some complex things (not covered in UT) should just work as expected
