@@ -55,3 +55,16 @@ def test_gv():
     assert newcore.testing.guessValue("float")=="float"
 
     # assert newcore.utils.guessValue("{'items': ['a', 'b', 'c'], 'value': 'hello'}")==o
+
+def test_test():
+    assert newcore.testing.testCompare("jo","42","42")
+    assert newcore.testing.testCompare("content","axa","x")     # test "content contains"!
+
+    t=newcore.testing.testCompare("content","axa","x")
+    assert t
+    assert "contains" in t.name
+
+    t2=t.toFalse()  # test negativity the test
+    assert not t2
+    assert "doesn't contain" in t2.name
+    assert t.value == t2.value
