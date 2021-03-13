@@ -414,7 +414,7 @@ class Scope(dict): # like 'Env'
 
             path=self.resolve_string(path)
             body=self.resolve_string(body)
-            headers={k:self.resolve_string(str(v)) for k,v in headers.items()}
+            headers={k:self.resolve_string(str(v)) for k,v in headers.items() if v is not None} # remove headers valuated as None
             r=None
         except ResolveException as e:
             #can't resolve, so can't make http request, so all tests are ko

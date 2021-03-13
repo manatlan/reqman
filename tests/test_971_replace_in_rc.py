@@ -47,6 +47,7 @@ headers:
         )
 
     x = exe(".", "--o", fakeServer=MOCK)
+    # x.view()
     assert x.rc == 0
 
 

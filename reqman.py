@@ -1187,24 +1187,6 @@ class Req(ReqItem):
 
 
 
-        #========= old code
-        def resolvHeaders(headers):
-            if type(headers) == str:
-                headers = oldscope.replaceObj(headers)
-            self.parent._assertType("headers", headers, [dict, list])
-            return headers
-
-        gheaders = oldscope.get("headers", None)  # global header
-        if gheaders is not None:
-            newHeaders = resolvHeaders(clone(gheaders))
-            dict_merge(newHeaders, headers)
-            headers = newHeaders
-
-        # remove headers valuated as None
-        headers={k:v for k,v in headers.items() if v is not None}
-        #=========
-
-
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
@@ -1264,6 +1246,20 @@ class Req(ReqItem):
 
         # CREATE the NEW SCOPE !!!!!!
         newenv=newcore.env.Scope( newscope , EXPOSEDS)
+
+        # use global headers and merge them in headers
+        gheaders = newenv.get("headers", None)  # global headers
+        if gheaders is not None:
+            if type(gheaders) == str:
+                gheaders = newenv.resolve_all(gheaders)
+            else:
+                gheaders=dict(gheaders) # clone
+
+            self.parent._assertType("headers", gheaders, [dict])
+
+            # merge current headers in gheaders
+            gheaders.update( {k:v for k,v in headers.items()} )
+            headers=gheaders
 
         # execute the request (newcore)
         ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, proxies=proxy, http=http)
