@@ -233,10 +233,30 @@ class Exchange:
         )
 
 
+
+def declare(code):
+    return "def DYNAMIC(x,ENV):\n" + ("\n".join(["  " + i for i in code.splitlines()]))
+
+
+def isPython(x):
+    if type(x) == str and "return" in x:
+        try:
+            return compile(declare(x), "unknown", "exec") and True
+        except:
+            return False
+
+
 class Scope(dict): # like 'Env'
 
     def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
+
+        # transform on pymethod's string in REAL pymethod's code
+        for k,v in self.items():
+            if v and isPython(v):
+                exec(declare(v), globals())
+                self[k]=DYNAMIC
+
         for k,v in exposedsMethods.items():
             if k not in self:
                 self[k]=v

@@ -23,7 +23,7 @@ def test_soapresponse():
         <result2 xmlns="myns">hello2</result2>
     </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>"""
-    x=reqman.Xml(xx)
+    x=reqman.newcore.xlib.Xml(xx)
     assert x.xpath("//result")==["hello"]
     assert x.xpath("//result/text()")==["hello"]
     assert x.xpath("//SOAP-ENV:Header")==["header"]
@@ -32,8 +32,8 @@ def test_soapresponse():
     assert x.xpath("//*:result2")==["hello2"]
 
 def test_xpath():
-    x=reqman.Xml(xml)
-    assert x.xpath("//unknown")==reqman.NotFound
+    x=reqman.newcore.xlib.Xml(xml)
+    assert x.xpath("//unknown")==reqman.newcore.common.NotFound
     assert x.xpath("//c")==["yolo xxx"]
     assert x.xpath("//b[@v>10]")==["b11"]
     assert x.xpath("//b[@v<10]")==["b9"]
@@ -51,7 +51,7 @@ def test_xpath():
 def test_simple():
     env = reqman.Env(
         dict(
-            xml=reqman.Xml(xml),
+            xml=reqman.newcore.xlib.Xml(xml),
             s="world",
             upper= "return x.upper()",
         )

@@ -82,6 +82,7 @@ def test_py(exe):
 """)
 
     x=exe(".","--x:toto",fakeServer=MOCK)
+    # x.view()
     assert x.rc == 44
 
 
@@ -185,7 +186,7 @@ def test_without_yml_but_rmconf_begin_bytes(exe):
         """)
 
     x=exe("reqman.conf","--x:toto",fakeServer=MOCK)
-    assert x.rc == "OK"  
+    assert x.rc == "OK"
 
 
 def test_a_trans_from_input(exe):
@@ -198,6 +199,7 @@ def test_a_trans_from_input(exe):
         """)
 
     x=exe("reqman.conf","--x:out",fakeServer=MOCK)
+    # x.view()
     assert x.rc == 'DEFAULT'
     x=exe("reqman.conf","in:hello","--x:out",fakeServer=MOCK)
     assert x.rc == 'HELLO'

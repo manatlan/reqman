@@ -23,7 +23,6 @@ import typing as T
 import sys, traceback
 import pickle, zlib, hashlib
 
-import concurrent, ssl
 from xml.dom import minidom
 import encodings.idna
 import inspect
@@ -32,7 +31,6 @@ import logging
 
 
 # import httpcore # see "pip install httpcore"
-import aiohttp  # see "pip install aiohttp"
 import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 import xpath  # see "pip install py-dom-xpath-six"
@@ -126,21 +124,6 @@ class RMPyException(Exception):
     pass
 
 
-class RMNonResolvedVars(Exception):
-    pass
-
-
-def declare(code):
-    return "def DYNAMIC(x,ENV):\n" + ("\n".join(["  " + i for i in code.splitlines()]))
-
-
-def isPython(x):
-    if type(x) == str and "return" in x:
-        try:
-            return compile(declare(x), "unknown", "exec") and True
-        except:
-            return False
-
 
 def jdumps(o, *a, **k):
     k["ensure_ascii"] = False
@@ -216,35 +199,6 @@ def ustr(x):  # ensure str are utf8 inside
         else:
             return str(x)
 
-def genKV(headers):
-    for k, v in headers.items():
-        if type(v) == list:  # cookies values (Set-Cookie) is possibly a list
-            for i in v:
-                yield (k, i)
-        else:
-            yield (k, v)
-
-
-class RmDict(dict):
-    def __init__(self, **kargs):
-        self.__dict__.update(kargs)
-        dict.__init__(self, **kargs)
-
-
-class HeadersMixedCase(dict):
-    def __init__(self, **kargs):
-        dict.__init__(self, **kargs)
-
-    def __getitem__(self, key):
-        d = {k.lower(): v for k, v in self.items()}
-        return d.get(key.lower(), None)
-
-    def get(self, key, default=None):
-        d = {k.lower(): v for k, v in self.items()}
-        return d.get(key.lower(), default)
-
-
-
 
 class FString(str):
     filename = None
@@ -287,90 +241,6 @@ def dict_merge(dst: dict, src: dict) -> None:
                 dst[k] += src[k]
             else:
                 dst[k] = src[k]
-
-
-
-class NotFound:
-    pass
-
-
-def DYNAMIC(x, env: dict) -> T.Union[str, None]:
-    pass  # will be overriden (see below vv)
-
-
-def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
-    orig = Env(elem)
-    for i in path.strip(".").split("."):
-        try:
-            if type(elem) == list:
-                if i == "size":
-                    return len(elem)
-                else:
-                    elem = elem[int(i)]
-            elif isinstance(elem, dict):
-                if i == "size":
-                    return len(list(elem.keys()))
-                else:
-                    elem = elem.get(i, NotFound)
-
-                    if isPython(elem):
-                        elem = orig.transform(None, i)
-
-            elif type(elem) == str:
-                if i == "size":
-                    return len(elem)
-        except (ValueError, IndexError) as e:
-            return NotFound
-    return elem
-
-
-def xj(xp):
-    """
-  Split xpath/jpath expr in -> xpath,jpath
-  ex:   "//b[@v='.'].-1.size" ---> ( "//b[@v='.']" , '-1.size' )
-  """
-    ll = xp.split(".")
-    if len(ll) > 1:
-        ends = []
-        while 1:
-            if "size" in ll[-1]:
-                ends.append(ll.pop())
-            elif ll[-1].lstrip("-+").isdigit():
-                ends.append(ll.pop())
-            else:
-                break
-        return ".".join(ll), ".".join(reversed(ends))
-    else:
-        return xp, ""
-
-
-class Xml:
-    def __init__(self, x):
-        self.doc = minidom.parseString(x)
-
-    def xpath(self, p):
-        ll = []
-        for ii in xpath.find(p, self.doc):
-            if ii.nodeType in [self.doc.ELEMENT_NODE, self.doc.DOCUMENT_NODE]:
-                ll.append(xpath.expr.string_value(ii))
-            elif ii.nodeType == self.doc.TEXT_NODE:
-                ll.append(ii.wholeText)
-            elif ii.nodeType == self.doc.ATTRIBUTE_NODE:
-                ll.append(ii.value)
-            else:  # 'CDATA_SECTION_NODE', 'COMMENT_NODE', 'DOCUMENT_FRAGMENT_NODE', 'DOCUMENT_TYPE_NODE', 'ENTITY_NODE', 'ENTITY_REFERENCE_NODE', 'NOTATION_NODE', 'PROCESSING_INSTRUCTION_NODE'
-                raise Exception("Not implemented")
-
-        if ll:
-            return ll
-        else:
-            return NotFound
-
-    def __repr__(self):
-        xml = self.doc.toprettyxml(indent=" " * 4)
-        x = "\n".join(
-            [s for s in xml.splitlines() if s.strip()]
-        )  # http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
-        return x
 
 
 
@@ -478,29 +348,27 @@ class Env(dict):
             if switch in switches:
                 dict_merge(self, switches[switch])
 
-    def replaceObj(
-        self, v: T.Any
-    ) -> T.Any:  # same as txtReplace() but for "object" (json'able)
-        if type(v) is bytes:
-            return v
-        # elif type(v) is Content:  # (when save to var)
-        #     return bytes(v)
-        elif type(v) is not str:
-            v = jdumps(v)
+    def replaceObj(self, o: T.Any) -> T.Any:  # same as txtReplace() but for "object" (json'able)
+        """ DEPRECATED """
 
-        obj = self.replaceTxt(v)
-        if type(obj) is bytes:
-            return obj
-        else:
-            try:
-                obj = json.loads(obj)
-            except (json.decoder.JSONDecodeError, TypeError):
-                pass
-            return obj
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+        d=dict(self.clone())
+        return newcore.env.Scope(d,EXPOSEDS).resolve_all(o)
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
-    def replaceObjOrNone(
-        self, v: T.Any
-    ) -> T.Any:  # same as txtReplace() but for "object" (json'able)
+    def replaceTxt(self, txt: str) -> T.Union[str, bytes]:
+        """ DEPRECATED """
+        assert type(txt) is str
+
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+        d=dict(self.clone())
+        return newcore.env.Scope(d,EXPOSEDS).resolve_string(txt,forceResolveOrException=False)
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+
+
+    def replaceObjOrNone(self, v: T.Any) -> T.Any:  # same as txtReplace() but for "object" (json'able)
+        """ DEPRECATED """
+
         v = self.replaceObj(v)
         return v if self.getNonResolvedVars(v) == [] else None
 
@@ -510,143 +378,6 @@ class Env(dict):
         else:
             return []
 
-    def replaceTxt(self, txt: str) -> T.Union[str, bytes]:
-        assert type(txt) is str
-
-        def _replace(txt: str) -> T.Union[str, bytes]:
-            def getVar(var: str):
-                methods = re.findall(r"\|[\d\w\|]+$", var)
-                if methods:
-                    p = var.index(methods[0])
-                    key = var[:p]
-                    method = var[p + 1 :]
-
-                    content = getVar(key)
-                    if content is NotFound:
-                        content = None
-
-                    for m in method.split("|"):
-                        if (
-                            type(content) != RmDict
-                        ):  # No try to replace things on a RmDict
-                            content = self.replaceObj(
-                                content
-                            )  ## important, resolv inner method first .... see tests 044, 045, 046
-
-                        content = self.transform(content, m)
-                    return content
-                elif "." in var:
-                    # -(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
-                    vx, xp = var.split(".", 1)
-                    if vx in self and type(self[vx]) is Xml:
-
-                        xp, ends = xj(xp)
-
-                        ll = self[vx].xpath(xp)
-                        if type(ll) == list and ends:
-                            return jpath(ll, ends)
-                        else:
-                            return ll
-                    elif vx in self and type(self[vx]) == str:
-                        s = self[vx]
-                        if s.startswith("<<") and s.endswith(">>"):
-                            content = self.replaceObj(s)
-                            return jpath(content, xp)
-                    # -(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
-                    return jpath(self, var)
-
-                elif var in self:
-                    if isPython(self[var]):
-                        return self.transform(None, var)
-                    else:
-                        return self[var]
-                elif var in EXPOSEDS:
-                    return self.transform(None, var)
-                else:
-                    return NotFound
-
-            for vvar in self.getNonResolvedVars(txt):
-                var = vvar[2:-2]
-
-                val = getVar(var)
-
-                if val is not NotFound:
-                    if type(val) != str:
-                        if val is None:
-                            val = "null"
-                        elif val is True:
-                            val = "true"
-                        elif val is False:
-                            val = "false"
-                        elif type(val) == bytes:
-                            return val  # keep BYTES !!!!!!!!!!!!!!
-                        else:  # int, float, list, dict...
-                            try:
-                                val = jdumps(val)
-                            except TypeError:
-                                val = str(val)
-
-                        txt = txt.replace('"%s"' % vvar, val)
-                    else:
-                        txt = txt.replace('"%s"' % vvar, '"%s"' % val)
-
-                    txt = txt.replace(vvar, val)
-
-            return txt
-
-        while type(txt) is str:
-            _txt = _replace(txt)
-            if _txt == txt:  # no change ... it's time to return ;-)
-                return txt
-            else:
-                txt = _txt
-        return txt  # bytes
-
-    def transform(
-        self, content: T.Union[str, None], methodName: str
-    ) -> T.Union[str, None]:
-        def prepareContent(content):
-            if content is None:
-                return None
-            elif type(content) == str:
-                try:
-                    return json.loads(content)
-                except (json.decoder.JSONDecodeError, TypeError):
-                    return content
-            else:
-                return content
-
-        if methodName:
-            if methodName in self:
-                code = self[methodName]
-                try:
-                    exec(declare(code), globals())
-                except Exception as e:
-                    raise RMPyException(
-                        "Error in declaration of method '" + methodName + "' : " + str(e)
-                    )
-
-                try:
-                    x = prepareContent(content) # seems not needed !!!
-                    x = content
-                    content = DYNAMIC(x, self)
-                except Exception as e:
-                    raise RMPyException(
-                        "Error in execution of method '" + methodName + "' : " + str(e)
-                    )
-            elif methodName in EXPOSEDS:
-                code=EXPOSEDS[methodName]
-                try:
-                    x = prepareContent(content) # seems not needed !!!
-                    x = content
-                    r=code(x,self)
-                except Exception as e:
-                    raise RMPyException("Exposed method '%s' error : %s" % (methodName,e))
-                return r
-            else:
-                raise RMPyException("Can't find method '%s'" % methodName)
-
-        return content
 
     def __str__(self):
         return jdumps(self, indent=4, sort_keys=True)
@@ -1213,14 +944,6 @@ class Req(ReqItem):
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
 
-
-
-        #transform pymethod's string into real func, in the newscope !
-        for k,v in newscope.items():
-            if v and isPython(v):
-                exec(declare(v), globals())
-                newscope[k]=DYNAMIC
-
         # transform saves to newsaves
         newsaves=[]
         for d in saves:
@@ -1304,7 +1027,7 @@ class Req(ReqItem):
                 )
 
                 if outputConsole == OutputConsole.FULL:
-                    display = lambda h: "\n".join(["%s: %s" % (k,v) for k,v in genKV(h)])
+                    display = lambda h: "\n".join(["%s: %s" % (k,v) for k,v in h.items()])
 
                     if ex.inHeaders:
                         print(padLeft(display(ex.inHeaders)))
@@ -1707,7 +1430,7 @@ def prettify(txt: bytes, indentation: int = 4) -> str:
         else:
             txt = str(txt)
     try:
-        return repr(Xml(txt))
+        return repr(newcore.xlib.Xml(txt))
     except:
         try:
             return jdumps(json.loads(txt), indent=indentation, sort_keys=True)
@@ -1843,7 +1566,7 @@ function copyToClipboard( obj ) {
 --> {{x.info}}
 
 <pre>
-%for k,v in genKV(x.outHeaders):
+%for k,v in x.outHeaders.items():
 <b>{{k}}</b>: {{limit(v,isLimit and LIMIT.HEADERVALUE)}}
 %end
 {{limit(prettify(x.content),isLimit and LIMIT.BODY)}}</pre>
@@ -1916,7 +1639,6 @@ function copyToClipboard( obj ) {
         version=__version__,
         limit=limit,
         LIMIT=LIMIT,
-        genKV=genKV,
     )
 
 
@@ -2179,15 +1901,13 @@ def main(fakeServer=None, hookResults=None) -> int:
             hookResults.rr = rr
 
         if outputContent!=None:
-            x=r._r.env.get(outputContent,None)
-            if x is None:
-                x=r._r.env.globals.get(outputContent,None)
-
-            if x :
-                if isPython(x):
-                    x= r._r.env.transform(None, outputContent)
-                else:
-                    x=r._r.env.replaceObjOrNone(x)
+            ns=newcore.env.Scope( r._r.env.clone() ,EXPOSEDS)
+            try:
+                x=ns.get_var(outputContent)
+                if x is newcore.env.NotFound:
+                    x=None
+            except newcore.env.ResolveException:
+                x=None
 
             if type(x) in [list,dict]:
                 return json.dumps( x )

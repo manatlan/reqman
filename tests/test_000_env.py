@@ -1,6 +1,13 @@
 import pytest, reqman, json
 import datetime, pickle
-
+"""
+THIS IS THE OLD TESTS, BEFORE NEWCORE
+THE SHOULD BE ADAPTED TO NEWCORE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+THE SHOULD BE ADAPTED TO NEWCORE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+THE SHOULD BE ADAPTED TO NEWCORE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+THE SHOULD BE ADAPTED TO NEWCORE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+THE SHOULD BE ADAPTED TO NEWCORE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+"""
 
 def test_Env_pickable():
     e = reqman.Env({"a": 42})
