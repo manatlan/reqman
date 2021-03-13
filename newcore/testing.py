@@ -37,9 +37,9 @@ class Test(int):
     """ a boolean with a name """
 
     name = ""
+    value = ""
     _nameOK = ""
     _nameKO = ""
-    value = ""
 
     def __new__(
         cls, value: int, nameOK: str = None, nameKO: str = None, realValue=None
