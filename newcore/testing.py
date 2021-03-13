@@ -37,16 +37,16 @@ class Test(int):
     """ a boolean with a name """
 
     name = ""
-    nameOK = ""
-    nameKO = ""
+    _nameOK = ""
+    _nameKO = ""
     value = ""
 
     def __new__(
         cls, value: int, nameOK: str = None, nameKO: str = None, realValue=None
     ):
         s = super().__new__(cls, value)
-        s.nameOK=nameOK
-        s.nameKO=nameKO
+        s._nameOK=nameOK
+        s._nameKO=nameKO
         if value:
             s.name = nameOK
         else:
@@ -58,7 +58,7 @@ class Test(int):
         return "%s: %s" % ("OK" if self else "KO", self.name)
 
     def toFalse(self):
-        return Test(0,self.nameOK,self.nameKO,self.value)
+        return Test(0,self._nameOK,self._nameKO,self.value)
 
 
 def guessValue(txt):
