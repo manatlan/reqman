@@ -200,7 +200,7 @@ def toList(d) -> T.List:
     return d if type(d) == list else [d]
 
 
-padLeft = lambda b: ("\n".join(["  " + i for i in str(b).splitlines()]))
+padLeft = lambda b,pre="  ": ("\n".join([pre + i for i in str(b).splitlines()]))
 
 
 def dict_merge(dst: dict, src: dict) -> None:
@@ -340,8 +340,8 @@ class Env(dict):
         d=dict(self.clone())
         try:
             return newcore.env.Scope(d,EXPOSEDS).resolve_string(txt)
-        except newcore.env.ResolveException:
-            return txt
+        except newcore.env.ResolveException as e:
+            raise RMPyException(e)
         except newcore.env.PyMethodException as e:
             raise RMPyException(e)
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
@@ -1868,8 +1868,6 @@ def main(fakeServer=None, hookResults=None) -> int:
 def toYaml(x,idt=2):
     return yaml.safe_dump( x ,default_flow_style=False,encoding='utf-8', allow_unicode=True,indent=idt,sort_keys=False).decode()
 
-def pad(txt,prefix):
-    return "\n".join([prefix+line for line in txt.splitlines()])
 
 class GenRML:
     """ class Helper to generate a request to RML string """
@@ -1943,18 +1941,13 @@ class GenRML:
         if self.returns:
           l=[]
           l.append( "# RETURNS:" )
-          l.append( pad(toYaml(self.returns),"#   ") )
+          l.append( padLeft(toYaml(self.returns),"#   ") )
           y+="\n".join(l)
 
-        if self.comment:
-            coms=self.comment.splitlines() if type(self.comment)==str else self.comment
-            l=["# "+i for i in coms]
-            l.append("#"*80)
-            c="\n".join(l)
-        else:
-            c="#"*80
 
-        y=y.replace("  doc: Re-pl-ac-eT-he-Do-cs", "  doc: |\n%s" % pad( str(self.doc),"    "))
+        c = padLeft(self.comment,"# ")+"\n"+"#"*80 if self.comment else "#"*80
+
+        y=y.replace("  doc: Re-pl-ac-eT-he-Do-cs", "  doc: |\n%s" % padLeft( str(self.doc),"    "))
         y=y.replace("  XXX: X-X-X",c)
 
         yml= "\n%s\n%s\n" % ( "#"*80,y)
