@@ -432,20 +432,6 @@ class Reqs(list):
                         and (type(i[keys[0]]) in [dict, list])
                     ):
 
-                        # # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-                        # if "conf" in keys:
-                        #     s = i["conf"]
-                        #     self._assertType("conf", s, [dict])
-
-                        #     if any([type(i) is ReqConf for i in liste]):
-                        #         raise self._errorFormat(
-                        #             "Reqs: multiple 'conf' (only one is possible)"
-                        #         )
-
-                        #     liste.insert(0, ReqConf(s))
-                        #     continue
-                        # # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-
                         # it's a definition of a proc's named 'key', content = value
                         key = keys[0]
                         value = i[key]
@@ -655,25 +641,6 @@ class Reqs(list):
         gscope = self.env.clone()
 
         ll = []
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-        # for i in self:
-        #     if isinstance(i, ReqConf):
-        #         print(cy("**WARNING**"), "%s use self conf" % self.name)
-
-        #         localEnv = Env(i.conf)
-        #         for switch in switches:
-        #             localEnv.mergeSwitch(switch)
-
-        #         gscope.update(dict(localEnv))
-
-        # reqsBegin = gscope.getBEGIN(local=True)
-        # reqsEnd = gscope.getEND(local=True)
-        # if reqsBegin is not None:
-        #     for r in reqsBegin:
-        #         ll.append(
-        #             await r.asyncReqExecute(gscope, http, outputConsole=outputConsole)
-        #         )
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         for l, s, r in _test(self, gscope):
             doIf = True
@@ -686,14 +653,6 @@ class Reqs(list):
                 ex = await r.asyncReqExecute(s, http, outputConsole=outputConsole)
                 ll.append(ex)
                 log(l, "  >>> EXECUTE:", ex)
-
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-        # if reqsEnd is not None:
-        #     for r in reqsEnd:
-        #         ll.append(
-        #             await r.asyncReqExecute(gscope, http, outputConsole=outputConsole)
-        #         )
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         self.exchanges = ll
         return ll
@@ -1344,16 +1303,6 @@ class ReqmanCommand:
         if rqc:
             self._r.env = Env(FString(rqc),rqc)
 
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-        # self.fileSwitches = []
-        # for i in files:
-        #     try:
-        #         for s in yaml.load(FString(i), Loader=yaml.SafeLoader):
-        #             if "conf" in s:
-        #                 self.fileSwitches.extend(list(Env(s["conf"]).switches))
-        #     except:
-        #         pass
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         for k, v in penv.items():  # add param's input env into env
             self._r.env[k] = guessValue(v)
@@ -1372,7 +1321,6 @@ class ReqmanCommand:
     @property
     def switches(self):
         return self._r.switches
-        # return self._r.switches + self.fileSwitches   #SELFCONF
 
     def execute(
         self,

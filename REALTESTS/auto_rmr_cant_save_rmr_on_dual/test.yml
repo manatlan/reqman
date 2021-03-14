@@ -10,22 +10,7 @@
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 
-- TEST:
-  - GET: /get_txt
-    tests:
-      - status: 200
+- GET: /get_txt
+  tests:
+    - status: 200
 
-- call: TEST
-  params:
-    root: http://localhost:11111
-
-    switches:
-      yolo:
-        BEGIN:
-          GET: http://localhost:11111/get_txt
-          tests:
-            status: 200
-        END:
-          GET: http://localhost:11111/get_txt
-          tests:
-            status: 200
