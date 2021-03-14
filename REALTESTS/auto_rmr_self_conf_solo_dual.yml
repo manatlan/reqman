@@ -18,7 +18,14 @@
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 
-- conf:
+- TEST:
+  - GET: /get_txt
+    tests:
+      - status: 200
+
+
+- call: TEST
+  params:
     root: http://localhost:11111
 
     switches:
@@ -31,8 +38,3 @@
           GET: http://localhost:11111/get_txt
           tests:
             status: 200
-
-- GET: /get_txt
-  tests:
-    - status: 200
-
