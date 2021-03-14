@@ -114,6 +114,7 @@ class OutputConsole(enum.Enum):
 class RMFormatException(Exception): pass
 class RMException(Exception): pass
 class RMPyException(Exception): pass #old one
+class RMCommandException(Exception): pass
 
 
 def izip(ex1, ex2):
@@ -1591,13 +1592,20 @@ def extractParams(params):
     files, rparams, switches, dswitches = [], [], [], []
     for param in params:
         if param.startswith("--"):
-            # reqman param
-            p = param[2:]
-            if p.startswith("o") or p.startswith("x"):
-                rparams.append(p)
-            else:  # ability to group param (ex: --kspb)
-                for i in p:
-                    rparams.append(i)
+            if param.startswith("--log:"):
+                level=param.split("--log:")[-1]
+                numeric_level = getattr(logging, level.upper(), None)
+                if not isinstance(numeric_level, int):
+                    raise RMCommandException('bad log level')
+                logging.basicConfig(level=numeric_level)
+            else:
+                # reqman param
+                p = param[2:]
+                if p.startswith("o") or p.startswith("x"):
+                    rparams.append(p)
+                else:  # ability to group param (ex: --kspb)
+                    for i in p:
+                        rparams.append(i)
         elif param.startswith("-"):
             # switch param
             switches.append(param[1:])
@@ -1612,9 +1620,6 @@ def extractParams(params):
 def main(fakeServer=None, hookResults=None) -> int:
     params = sys.argv[1:]
     r = None
-
-    class RMCommandException(Exception):
-        pass
 
     # extract sys.argv in --> files,rparams,switch
     files, rparams, switches, dswitches = extractParams(params)

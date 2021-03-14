@@ -128,6 +128,10 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
 
 if __name__=="__main__":
     import asyncio
+
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+
     async def t():
         e=await call("GET","https://www.manatlan.com")
         print(e)

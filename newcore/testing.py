@@ -185,6 +185,10 @@ def testCompare(var: str, val, opeval) -> Test:
     return Test( test ,nameOK, nameKO,val )
 
 if __name__=="__main__":
+
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    
     assert( guessValue("41")==41 )
     assert( guessValue(b"[1234]")=="[1234]")
     assert( guessValue("float")=="float")
