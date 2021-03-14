@@ -16,9 +16,11 @@
 # #############################################################################
 
 import os, sys, re, asyncio, io, datetime, itertools, glob, enum, codecs
+import json
 import urllib
 import urllib.parse
-import collections, json
+import collections
+import collections.abc
 import typing as T
 import sys, traceback
 import pickle, zlib
@@ -56,7 +58,8 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         --o:name   : Set a name for the html output file
         --o        : No html output file, but full console
         --b        : Open html output in browser if generated
-        --s        : Save RMR file
+        --s        : Save RMR file (timestamped)
+        --S        : Save RMR file (reqman.rmr)
         --r        : Replay the given RMR file in dual mode
         --i        : Use SHEBANG params (for a single file), alone
         --f        : Force full output in html rendering
@@ -107,18 +110,9 @@ class OutputConsole(enum.Enum):
     FULL = 3
 
 
-class RMFormatException(Exception):
-    pass
-
-
-class RMException(Exception):
-    pass
-
-
-class RMPyException(Exception):
-    pass
-
-
+class RMFormatException(Exception): pass
+class RMException(Exception): pass
+class RMPyException(Exception): pass #old one
 
 
 def izip(ex1, ex2):
@@ -169,14 +163,6 @@ def izip(ex1, ex2):
 def comparable(l):
     for x1, x2 in l:
         return x1 == x2
-
-
-def renameKeyInDict(d, oname, nname):
-    for k, v in list(d.items()):
-        if k == oname:
-            d[nname] = d.pop(k)
-        if isinstance(v, dict):
-            renameKeyInDict(v, oname, nname)
 
 
 def ustr(x):  # ensure str are utf8 inside
@@ -633,8 +619,6 @@ class Reqs(list):
                         for l, s, r in _test(i.reqs, scope, level + 1):
                             r.updateParams({"params": fparam})
                             yield l, s, r
-                elif isinstance(i, ReqConf):
-                    pass  # already treated !
                 else:
                     raise RMException("Reqs: unwaited object %s" % i)
 
@@ -663,20 +647,6 @@ class Reqs(list):
 
 class ReqItem:
     pass
-
-
-class ReqConf(ReqItem):
-    def __init__(self, conf: dict):
-
-        conf = clone(conf)
-        renameKeyInDict(conf, "BEGIN", ".BEGIN")
-        renameKeyInDict(conf, "END", ".END")
-
-        self.conf = conf
-
-    def __repr__(self):
-        return "<ReqConf %s>" % self.conf
-
 
 class ReqGroup(ReqItem):
     def __init__(self, reqs: list, foreach, params):
@@ -874,18 +844,7 @@ class Req(ReqItem):
 
 
 
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
+
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
@@ -956,14 +915,6 @@ class Req(ReqItem):
         # get the saved ones
         for saveKey, saveWhat in ex.saves.items():
             self.parent.env.save(saveKey, saveWhat, self.parent.name in ["BEGIN","END"])
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
-        ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
