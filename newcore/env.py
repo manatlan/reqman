@@ -196,7 +196,7 @@ class Exchange:
                 v=repEnv.resolve_string_or_not(content)
                 new_vars[save_as] = v
             except Exception as e:
-                logging.warn(f"Can't resolve saved var '{save_as}', because {e}")
+                logging.debug(f"Can't resolve saved var '{save_as}', because {e}")
                 new_vars[save_as]= content # create a non-resolved var'string (<<example>>)
 
         # Save all in this env, to be visible in tests later (vv)
@@ -323,7 +323,7 @@ class Scope(dict): # like 'Env'
                     v=str(value)
 
             # and replace
-            logging.warning(f"replace in `{txt}` : `{pattern}` <- `{v}`")
+            logging.debug(f"replace in `{txt}` : `{pattern}` <- `{v}`")
             if f'"{pattern}"' in txt:
                 if isJson(v):
                     txt=txt.replace( f'"{pattern}"', v )
@@ -331,6 +331,7 @@ class Scope(dict): # like 'Env'
                     txt=txt.replace( pattern, v )
             else:
                 txt=txt.replace( pattern, v )
+            logging.debug(f"replaced -> `{txt}`")
 
         if forceResolveOrException and find_vars(txt):
             txt=self._resolve_string(txt)
@@ -476,7 +477,8 @@ class Scope(dict): # like 'Env'
 if __name__=="__main__":
     import pytest
 
-
+    logging.basicConfig(level=logging.DEBUG)
+    
     env=Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),

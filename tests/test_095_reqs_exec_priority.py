@@ -87,7 +87,7 @@ def test_priority_over_env(Reqs):
         "/first":(200,'ok'),
         "/second":(201,'ok'),
     }
-    ll=Reqs(y,{"var":"first"},trace=True).execute(MOCK)
+    ll=Reqs(y,{"var":"first"}).execute(MOCK)
     for i in ll:
       assert all(i.tests)
 

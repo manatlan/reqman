@@ -16,6 +16,7 @@
 # #############################################################################
 
 import os, sys, re, asyncio, io, datetime, itertools, glob, enum, codecs
+import logging
 import json
 import urllib
 import urllib.parse
@@ -375,11 +376,8 @@ class Env(dict):
 
 
 class Reqs(list):
-    def __init__(
-        self, obj: T.Union[str, FString], env=None, trace=False, name="<YamlString>"
-    ):
+    def __init__(self, obj: T.Union[str, FString], env=None, name="<YamlString>"):
         self.__proc = {}
-        self._trace = trace
         self.exchanges = None  # list of Exchange
         self.name = obj.filename if type(obj) is FString else name
 
@@ -532,13 +530,12 @@ class Reqs(list):
 
         # here 'obj' is a list of ReqBase, and valid one
         list.__init__(self, lreqs)
-        if self._trace:
-            print("~" * 80)
-            print("~~ Reqs")
-            print("~" * 80)
-            print("env:", self.env)
-            print(self)
-            print("~" * 80)
+        logging.debug("~" * 80)
+        logging.debug("~~ Reqs")
+        logging.debug("~" * 80)
+        logging.debug(f"env: {self.env}")
+        logging.debug(self)
+        logging.debug("~" * 80)
 
     def _errorFormat(self, msg):
         return RMFormatException(msg + " in %s" % self.name)
@@ -568,8 +565,7 @@ class Reqs(list):
         ############################################# live console
 
         def log(level, *l):
-            if self._trace:
-                print(level * "    ", " ".join([str(x) for x in l]))
+            logging.debug( (level * "    ") + " ".join([str(x) for x in l]) )
 
         log(0, "~" * 80)
         log(0, "~~ Reqs.Execute")

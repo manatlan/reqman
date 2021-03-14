@@ -50,7 +50,7 @@ def test_complexe2(Reqs): # ensure now is executed before upper
   params:
     now: return "xxx"
 """
-    l=Reqs(y,trace=True)
+    l=Reqs(y)
     assert len(l) == 1
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
@@ -121,7 +121,7 @@ def test_complexe6(Reqs): # ensure now is executed before upper
     now: return "xxx"
     upper: return x.upper()
 """
-    l=Reqs(y,trace=True)
+    l=Reqs(y)
     assert len(l) == 1
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'

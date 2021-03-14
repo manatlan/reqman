@@ -286,6 +286,6 @@ def test_check_hermetic_scope4(Reqs):
     assert ll[4].scope=={'p': 2, 'v': '/b', 'i': 1}
     assert ll[5].scope=={'p': 2, 'v': '/b', 'i': 2}
 
-    l=Reqs(y,trace=1)
+    l=Reqs(y)
     assert len(l) == 2
     ll=l.execute( {"/a":(200,"ok"),"/b":(200,"ok")} , outputConsole="*OLD*TESTS*" )
