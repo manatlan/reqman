@@ -57,6 +57,16 @@ def test_ignorable_vars(): # endings with "?"
 
     assert ENV.resolve_string_or_not("a txt <<unknown>>")=="a txt <<unknown>>"
 
+def test_resolve_all1():
+    env = newcore.env.Scope(dict(obj1=dict(a=42, b="<<obj2>>"), obj2=dict(i=42, j="hello")))
+    o = env.resolve_all("<<obj1>>")
+    assert o == {"a": 42, "b": {"i": 42, "j": "hello"}}
+
+def test_resolve_all2():
+    env = newcore.env.Scope(dict(v=42))
+    assert env.resolve_all({"a": "<<v>>"}) == {"a": 42}
+
+
 def test_resolve_all():
     ENV["pytest"]=lambda x,ENV: "ttt"
     assert "unknown" not in ENV

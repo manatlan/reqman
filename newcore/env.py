@@ -245,6 +245,13 @@ def isPython(x):
         except:
             return False
 
+def isJson(s:str):
+    try:
+        json.loads(s)
+        return True
+    except:
+        pass
+
 
 class Scope(dict): # like 'Env'
 
@@ -263,12 +270,15 @@ class Scope(dict): # like 'Env'
 
     #TODO: that (could replace "get_var")
     def resolve_all(self,obj,forceResolveOrException=True):
-        if type(obj)==str:
-            obj= self.resolve_string(obj,forceResolveOrException)
-            try:
-                obj=json.loads(obj)
-            except:
-                pass
+        if type(obj)!=str:
+            obj=json.dumps(obj)
+
+        obj= self.resolve_string(obj,forceResolveOrException)
+        try:
+            obj=json.loads(obj)
+        except:
+            pass
+
         return obj
 
     def resolve_string(self, txt:str, forceResolveOrException=True) -> str:
@@ -313,7 +323,14 @@ class Scope(dict): # like 'Env'
                     v=str(value)
 
             # and replace
-            txt=txt.replace( pattern, v )
+            logging.warning(f"replace in `{txt}` : `{pattern}` <- `{v}`")
+            if f'"{pattern}"' in txt:
+                if isJson(v):
+                    txt=txt.replace( f'"{pattern}"', v )
+                else:
+                    txt=txt.replace( pattern, v )
+            else:
+                txt=txt.replace( pattern, v )
 
         if forceResolveOrException and find_vars(txt):
             txt=self._resolve_string(txt)
@@ -458,6 +475,7 @@ class Scope(dict): # like 'Env'
 
 if __name__=="__main__":
     import pytest
+
 
     env=Scope(dict(
         v200=200,

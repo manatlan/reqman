@@ -189,12 +189,13 @@ def test_replaceObj():
     assert env.replaceObj({"a": "42"}) == {"a": "42"}
     assert env.replaceObj([{"a": "42"}]) == [{"a": "42"}]
 
-    assert env.replaceObj("<<unknown>>") == "<<unknown>>"
     assert env.replaceObj("<<v>>") == 42
     assert env.replaceObj({"a": "<<v>>"}) == {"a": 42}
 
-    assert env.replaceObj("<<b>>") == b"bytes"
+    assert env.replaceObj("<<b>>") == "bytes"
 
+    with pytest.raises(reqman.newcore.env.ResolveException):
+        env.replaceObj("<<unknown>>")
 
 def test_replaceObj2():
     env = reqman.Env(dict(obj1=dict(a=42, b="<<obj2>>"), obj2=dict(i=42, j="hello")))
