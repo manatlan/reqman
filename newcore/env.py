@@ -478,7 +478,7 @@ if __name__=="__main__":
     import pytest
 
     logging.basicConfig(level=logging.DEBUG)
-    
+
     env=Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
@@ -492,7 +492,7 @@ if __name__=="__main__":
 
     tests=[
         ("status","<<v200>>"),
-        ("status",".>= <<v200>>"),
+        ("status",".>= {{v200}}"),
         ("status",".> 100"),
         ("response.status",200),
         ("json.items.size",".> 2"),
