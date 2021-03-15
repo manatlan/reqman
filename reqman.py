@@ -1949,5 +1949,4 @@ class GenRML:
 
 
 if __name__ == "__main__":
-    # sys.argv=["","-moa","--b",r"D:\otoolbox-local\sources\MyAPI_PSENTRE_remiseedi\PSENTRE_remiseedi\tests\30_Autres_ROA\50_personne[!].yml"]
     sys.exit(main())
