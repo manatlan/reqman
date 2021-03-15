@@ -74,7 +74,7 @@ headers:
 
     x = exe(".", "--o", fakeServer=MOCK)
     # x.view()
-    assert x.rc == -1  # 1 error
+    assert x.rc == 1  # can't be resolved
 
 
 def test_bad_headers2_in_rc(exe):
@@ -98,7 +98,7 @@ headers:
         )
 
     x = exe(".", "--o", fakeServer=MOCK)
-    assert x.rc == -1  # 1 error
+    assert x.rc == 1  # can't be resolved
 
 
 def test_replace_headers2_in_rc(exe):

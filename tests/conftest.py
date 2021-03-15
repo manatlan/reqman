@@ -37,6 +37,7 @@ def exe(request):
     def tester(*a,fakeServer=None):
         sys.argv=["reqman.exe"]+list(a)
 
+        reqman.newcore.com.AHTTP = reqman.newcore.com.httpx.AsyncClient(verify=False)
 
         f=FakeExeReturn()
 

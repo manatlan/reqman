@@ -114,7 +114,8 @@ class OutputConsole(enum.Enum):
 class RMFormatException(Exception): pass
 class RMException(Exception): pass
 class RMPyException(Exception): pass #old one
-class RMCommandException(Exception): pass
+class RMCommandException(Exception):     newcore.com.AHTTP = newcore.com.httpx.AsyncClient(verify=False)
+pass
 
 
 def izip(ex1, ex2):
@@ -881,20 +882,6 @@ class Req(ReqItem):
         # CREATE the REAL NEW SCOPE !!!!!!
         newenv=newcore.env.Scope( scope , EXPOSEDS)
 
-        # use global headers and merge them in headers
-        gheaders = newenv.get("headers", None)  # global headers
-        if gheaders is not None:
-            if type(gheaders) == str:
-                gheaders = newenv.resolve_all(gheaders)
-            else:
-                gheaders=dict(gheaders) # clone
-
-            self.parent._assertType("headers", gheaders, [dict])
-
-            # merge current headers in gheaders
-            gheaders.update( {k:v for k,v in headers.items()} )
-            headers=gheaders
-
         # execute the request (newcore)
         ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, proxies=proxy, http=http)
 
@@ -1122,62 +1109,67 @@ class Reqman:
     async def asyncExecute(
         self, switches: list = [], paralleliz=False, http=None
     ) -> ReqmanResult:
-        scope = self.env.clone()
 
-        for switch in switches:
-            scope.mergeSwitch(switch)
+        async with newcore.com.httpx.AsyncClient(verify=False) as xxx:
+            newcore.com.AHTTP = xxx
 
-        reqsBegin = scope.getBEGIN()
-        reqsEnd = scope.getEND()
+            scope = self.env.clone()
 
-        lreqs = []
-        for yml in self.ymls:
-            if isinstance(yml, Reqs):
-                reqs = yml
-                reqs.env = scope
-                lreqs.append(reqs)
+
+            for switch in switches:
+                scope.mergeSwitch(switch)
+
+            reqsBegin = scope.getBEGIN()
+            reqsEnd = scope.getEND()
+
+            lreqs = []
+            for yml in self.ymls:
+                if isinstance(yml, Reqs):
+                    reqs = yml
+                    reqs.env = scope
+                    lreqs.append(reqs)
+                else:
+                    lreqs.append(
+                        Reqs(yml, scope)
+                    )  # (no need to clone) scope is cloned at execution time!
+
+            results = []
+
+            if reqsBegin is not None:
+                await reqsBegin.asyncReqsExecute(switches, http)
+                results.append(reqsBegin)
+
+            if paralleliz:
+                ll = [
+                    reqs.asyncReqsExecute(switches, http, outputConsole=self.outputConsole)
+                    for reqs in lreqs
+                ]
+
+                sem = asyncio.Semaphore(10)  # ten concurrent coroutine max
+                async with sem:
+                    await asyncio.gather(*ll)
+                results += lreqs
             else:
-                lreqs.append(
-                    Reqs(yml, scope)
-                )  # (no need to clone) scope is cloned at execution time!
+                for reqs in lreqs:
+                    await reqs.asyncReqsExecute(
+                        switches, http, outputConsole=self.outputConsole
+                    )
+                    results.append(reqs)
 
-        results = []
-
-        if reqsBegin is not None:
-            await reqsBegin.asyncReqsExecute(switches, http)
-            results.append(reqsBegin)
-
-        if paralleliz:
-            ll = [
-                reqs.asyncReqsExecute(switches, http, outputConsole=self.outputConsole)
-                for reqs in lreqs
-            ]
-
-            sem = asyncio.Semaphore(10)  # ten concurrent coroutine max
-            async with sem:
-                await asyncio.gather(*ll)
-            results += lreqs
-        else:
-            for reqs in lreqs:
-                await reqs.asyncReqsExecute(
+            if reqsEnd is not None:
+                await reqsEnd.asyncReqsExecute(
                     switches, http, outputConsole=self.outputConsole
                 )
-                results.append(reqs)
+                results.append(reqsEnd)
 
-        if reqsEnd is not None:
-            await reqsEnd.asyncReqsExecute(
-                switches, http, outputConsole=self.outputConsole
-            )
-            results.append(reqsEnd)
-
-        r = ReqmanResult(results, switches, self.env)
-        # ============================= LIVE CONSOLE
-        if self.outputConsole != OutputConsole.NO:
-            callback = cg if r.ok == r.total else cr
-            print(
-                "RESULT:", callback("%s/%s" % (r.ok, r.total)), "(%sreq(s))" % r.nbReqs
-            )
-        # ============================= LIVE CONSOLE
+            r = ReqmanResult(results, switches, self.env)
+            # ============================= LIVE CONSOLE
+            if self.outputConsole != OutputConsole.NO:
+                callback = cg if r.ok == r.total else cr
+                print(
+                    "RESULT:", callback("%s/%s" % (r.ok, r.total)), "(%sreq(s))" % r.nbReqs
+                )
+            # ============================= LIVE CONSOLE
 
         return r
 
@@ -1957,4 +1949,5 @@ class GenRML:
 
 
 if __name__ == "__main__":
+    # sys.argv=["","-moa","--b",r"D:\otoolbox-local\sources\MyAPI_PSENTRE_remiseedi\PSENTRE_remiseedi\tests\30_Autres_ROA\50_personne[!].yml"]
     sys.exit(main())

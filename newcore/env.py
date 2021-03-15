@@ -423,10 +423,22 @@ class Scope(dict): # like 'Env'
         assert all( [type(i)==tuple and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
 
-        if not urllib.parse.urlparse(path.lower()).scheme:
-            path=self.get_var_or_empty("root")+path
-
         try:
+            # use global headers and merge them in headers
+            gheaders = self.get("headers", None)  # global headers
+            if gheaders is not None:
+                if type(gheaders) == str:
+                    gheaders = self.resolve_all(gheaders)
+
+                    if type(gheaders)!=dict:
+                        raise ResolveException("global headers are not resolved as a dict")
+                else:
+                    gheaders=dict(gheaders) # clone
+
+                # merge current headers in gheaders
+                gheaders.update( {k:v for k,v in headers.items()} )
+                headers=gheaders
+
 
             # update path, with potentials "query" defs
             pquerys={}
@@ -451,6 +463,8 @@ class Scope(dict): # like 'Env'
 
 
             path=self.resolve_string(path)
+            if not urllib.parse.urlparse(path).scheme:
+                path=self.get_var_or_empty("root")+path
             body=self.resolve_string(body)
             headers={k:self.resolve_string(str(v)) for k,v in headers.items() if v is not None} # remove headers valuated as None
             r=None

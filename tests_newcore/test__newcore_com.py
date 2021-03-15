@@ -3,6 +3,9 @@ import newcore.com
 
 @pytest.mark.asyncio
 async def test_real_http_call():
+    newcore.com.AHTTP = newcore.com.httpx.AsyncClient(verify=False)
+
+
     r=await newcore.com.call("GET","https://httpstat.us/200")
     assert r.status==200
     assert type(r)==newcore.com.Response

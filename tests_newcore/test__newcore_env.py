@@ -219,10 +219,12 @@ def test_copy_dico():
 
 
 @pytest.mark.asyncio
-async def test_call():
+async def test_real_call():
     # e=reqman.env.Env( {} )
     # r=await e.call("GET","/")
     # assert type(r) == reqman.com.ResponseInvalid
+
+    newcore.com.AHTTP = newcore.com.httpx.AsyncClient(verify=False)
 
     e=newcore.env.Scope( dict(root="https://www.manatlan.com") )
     r=await e.call("GET","/")

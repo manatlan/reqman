@@ -58,13 +58,48 @@ def test_gv():
 
 def test_test():
     assert newcore.testing.testCompare("jo","42","42")
-    assert newcore.testing.testCompare("content","axa","x")     # test "content contains"!
 
-    t=newcore.testing.testCompare("content","axa","x")
+def test_compare_content_normal():
+    t=newcore.testing.testCompare("content","axa","x")  # test "content contains"!
     assert t
     assert "contains" in t.name
 
     t2=t.toFalse()  # test negativity the test
     assert not t2
     assert "doesn't contain" in t2.name
+    assert t.value == t2.value
+
+    #---------------------
+
+    obj=dict(albert="x")
+    t=newcore.testing.testCompare("content",obj,"x")  # test "content contains"!
+    assert t
+    assert "contains" in t.name
+
+    t2=t.toFalse()  # test negativity the test
+    assert not t2
+    assert "doesn't contain" in t2.name
+    assert t.value == t2.value
+
+
+def test_compare_content_with_list():
+    t=newcore.testing.testCompare("content","axa",["x","z"])
+    assert t
+    assert "contains one of" in t.name
+
+    t2=t.toFalse()  # test negativity the test
+    assert not t2
+    assert "doesn't contain one of" in t2.name
+    assert t.value == t2.value
+
+    #---------------------
+
+    obj=dict(albert="x")
+    t=newcore.testing.testCompare("content",obj,["x","z"])
+    assert t
+    assert "contains one of" in t.name
+
+    t2=t.toFalse()  # test negativity the test
+    assert not t2
+    assert "doesn't contain one of" in t2.name
     assert t.value == t2.value

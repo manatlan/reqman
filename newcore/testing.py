@@ -153,9 +153,14 @@ def testCompare(var: str, val, opeval) -> Test:
             tok="="
             tko="!="
         else:
-            test=val in values
-            tok="in"
-            tko="not in"
+            if var=="content": # "content" test works like the historic way
+                test=any([str(v) in str(val) for v in values])
+                tok="contains one of"
+                tko="doesn't contain one of"
+            else:
+                test=val in values
+                tok="in"
+                tko="not in"
         value=values
     elif type(opeval)==dict:
         val=guessValue(val)
@@ -205,3 +210,7 @@ if __name__=="__main__":
     t=testCompare("content","axa","x")
     print(t)
     print(t.toFalse())
+
+    t=testCompare("content","axa",["x","z"]) # DO MORE HERE !!!!
+    print( repr(t) )
+    print( repr(t.toFalse()) )

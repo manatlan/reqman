@@ -1,7 +1,7 @@
 ##/usr/bin/python
 # -*- coding: utf-8 -*-
 
-    
+
 from aiohttp import web
 import json,asyncio
 import os, tempfile, shutil
@@ -21,7 +21,7 @@ async def hello(request):
 @routes.get('/cookie')
 async def cookie(request):
     resp=web.Response(status=200,text="?")
-    
+
     argv=request.query.get("value","?")
     if argv=="create":
         resp.set_cookie("cpt",0)
@@ -128,7 +128,7 @@ class FakeWebServer(threading.Thread): # the webserver is ran on a separated thr
             await runner.setup()
             self.site=web.TCPSite(runner, 'localhost', self.port)
             await self.site.start()
-        
+
             while self._exit==False:
                 await asyncio.sleep(0.333333)
 
@@ -143,9 +143,9 @@ class FakeWebServer(threading.Thread): # the webserver is ran on a separated thr
             while not isFree("127.0.0.1",self.port):
                 await asyncio.sleep(0.5)
 
-        loop.run_until_complete(wait()) 
-        loop.run_until_complete(start())       
-        loop.run_until_complete(wait()) 
+        loop.run_until_complete(wait())
+        loop.run_until_complete(start())
+        loop.run_until_complete(wait())
 
         # gracefull death
         tasks = asyncio.all_tasks(loop) #py37
@@ -154,7 +154,7 @@ class FakeWebServer(threading.Thread): # the webserver is ran on a separated thr
             loop.run_until_complete(asyncio.gather(*tasks))
         except:
             pass
-        loop.close() 
+        loop.close()
 
 
     def stop(self):
@@ -188,7 +188,8 @@ def main( file, avoidBrowser=True ):
     yield "error" : si valid est ko
     yield None : si pas validation
     """
-    class RR: 
+
+    class RR:
         rr=None
     o=RR()
 
@@ -207,7 +208,7 @@ def main( file, avoidBrowser=True ):
             args=[file if i=="THIS" else i for i in args]
             if avoidBrowser==True and "--b" in args: args.remove("--b") # remove --b when pytest ;-)
             sys.argv = ["reqman"] + args
-            
+
             rc=reqman.main(hookResults=o)
             if rc>=0:
                 if hasattr(o,"rr"):
@@ -223,7 +224,7 @@ def main( file, avoidBrowser=True ):
                                     details.append("".join([str(int(t)) for t in j.tests]))
                         toValid=",".join(details)
                         if details2: toValid+=":"+",".join(details2)
-                        
+
                         if valid:
                             err=checkSign(valid,toValid,args)
                             print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
@@ -241,17 +242,17 @@ def main( file, avoidBrowser=True ):
                     print("> Check valid:",valid,"?==",toValid,"-->","!!! ERROR: %s !!!"%err if err else "OK")
                 else:
                     print("> No validation check! (valid:%s)" % toValid)
-                    err=None    
+                    err=None
 
             yield err
-    
+
     finally:
         os.chdir( precdir )
-        shutil.rmtree(testdir)   
+        shutil.rmtree(testdir)
 
 
 if __name__=="__main__":
-    
+
     # sys.argv=["","REALTESTS/auto_new_response_request.yml"] # *** FOR running in DEDUG MODE ***
 
     try:
