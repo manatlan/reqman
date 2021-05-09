@@ -100,7 +100,7 @@ KNOWNVERBS = [
     "PATCH",
     "CONNECT",
 ]
-KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body", "if", "query"]
+KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body", "if", "query", "wait"]
 REQMAN_CONF = "reqman.conf"
 
 
@@ -412,7 +412,23 @@ class Reqs(list):
                         raise self._errorFormat("Reqs: Unknown action '%s'" % i)
                 elif isinstance(i, dict):
                     keys = list(i.keys())
-                    if (
+                    if len(keys)==1 and keys[0]=="wait":
+                        value = i["wait"]
+                        if type(value) in [int,float]:
+                            pass
+                        elif type(value) == str:
+                            if (value.startswith( ("<<","{{") ) and value.endswith( (">>","}}") )): #TODO: not great
+                                pass
+                            else:
+                                try:
+                                    float(value)
+                                except:
+                                    raise self._errorFormat("wait value is not a int/float or a var")
+                        else:
+                            raise self._errorFormat("wait value is not a int/float or a var")
+
+                        liste.append( ReqWait( value ) )
+                    elif (
                         len(keys) == 1
                         and (keys[0] not in KNOWNVERBS + ["call"])
                         and (type(i[keys[0]]) in [dict, list])
@@ -580,7 +596,11 @@ class Reqs(list):
             log(level, "Test Global Scope :", gscope)
 
             for idx, i in enumerate(liste):
-                if isinstance(i, Req):
+                if isinstance(i, ReqWait):
+                    log(level, "* wait:", i.time )
+                    yield level, gscope, i.time # !!!!!!!!!!!!!!!!!!!
+
+                elif isinstance(i, Req):
                     log(level, "* Req:", oneline(i))
                     yield level, gscope, i.clone()  # this clone has no effect ;-)
 
@@ -625,16 +645,27 @@ class Reqs(list):
         ll = []
 
         for l, s, r in _test(self, gscope):
-            doIf = True
-            if r.ifs:
-                envIf = s.clone()
-                dict_merge(envIf, r.params)
-                doIf = all([envIf.replaceObjOrNone(i) for i in r.ifs])
+            if isinstance(r,ReqItem):
+                doIf = True
+                if r.ifs:
+                    envIf = s.clone()
+                    dict_merge(envIf, r.params)
+                    doIf = all([envIf.replaceObjOrNone(i) for i in r.ifs])
 
-            if doIf:
-                ex = await r.asyncReqExecute(s, http, outputConsole=outputConsole)
-                ll.append(ex)
-                log(l, "  >>> EXECUTE:", ex)
+                if doIf:
+                    ex = await r.asyncReqExecute(s, http, outputConsole=outputConsole)
+                    ll.append(ex)
+                    log(l, "  >>> EXECUTE:", ex)
+            else:
+                time=r # ms
+                try:
+                    envWait = s.clone()
+                    time=envWait.replaceObjOrNone(time) # ms
+                    wait = float(time) / 1000 # convert to secondes
+                    await asyncio.sleep( wait ) # secs
+                except:
+                    raise RMException("Wait time is not a float (%s)" % time)
+
 
         self.exchanges = ll
         return ll
@@ -686,6 +717,10 @@ class ReqGroup(ReqItem):
         for i in self.reqs:
             l.append(padLeft(str(i)))
         return "\n".join(l)
+
+class ReqWait(ReqItem):
+    def __init__(self, time):
+        self.time=time
 
 
 class Req(ReqItem):
@@ -1950,3 +1985,4 @@ class GenRML:
 
 if __name__ == "__main__":
     sys.exit(main())
+
