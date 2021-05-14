@@ -664,7 +664,7 @@ class Reqs(list):
                     wait = float(time) / 1000 # convert to secondes
                     await asyncio.sleep( wait ) # secs
                 except:
-                    raise RMException("Wait time is not a float (%s)" % time)
+                    print(cy("**WARNING**"), "can't %s on '%s'" % (cr("wait"),time), "in", self.name)
 
 
         self.exchanges = ll

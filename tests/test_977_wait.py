@@ -57,5 +57,8 @@ def test_wait_ko(exe):
 """)
 
     x=exe(".",fakeServer=MOCK)
-    assert x.rc == -1
+    assert "WARNING" in x.console
+    assert "can't" in x.console
+    assert "wait" in x.console
+    assert x.rc == 0
 
