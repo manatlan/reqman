@@ -1,7 +1,7 @@
 import pytest, reqman, json
 import datetime,pickle
 
-updateUrlQuery = reqman.newcore.env.updateUrlQuery
+updateUrlQuery = reqman.env.updateUrlQuery
 
 def test_updateUrlQuery():
     u="https://jo.com/me?a=1&a=2&b=hello#anchor"

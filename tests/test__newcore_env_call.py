@@ -1,10 +1,10 @@
 import pytest,json
-import newcore.env
-import newcore.com
+import reqman.env
+import reqman.com
 
 
 def test_simul_json():
-    env=newcore.env.Scope(dict(
+    env=reqman.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
     ))
@@ -37,9 +37,9 @@ def test_simul_json():
         ("nimp","<<nimp>>"),
     ]
 
-    ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
+    ex=reqman.env.Exchange("GET","/", tests=tests, saves=saves)
 
-    r=newcore.com.Response(200,{"x-test":"hello"},json.dumps(obj).encode(),"http1/1 200 ok")
+    r=reqman.com.Response(200,{"x-test":"hello"},json.dumps(obj).encode(),"http1/1 200 ok")
     ex.treatment(env,r)
 
     assert ex.time==0
@@ -60,7 +60,7 @@ def test_simul_json():
 
 
 def test_simul_plaintext():
-    env=newcore.env.Scope(dict(
+    env=reqman.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
     ))
@@ -72,9 +72,9 @@ def test_simul_plaintext():
     ]
     saves=[]
 
-    ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
+    ex=reqman.env.Exchange("GET","/", tests=tests, saves=saves)
 
-    r=newcore.com.Response(200,{"x-test":"hello"},"OK".encode(),"http1/1 200 ok")
+    r=reqman.com.Response(200,{"x-test":"hello"},"OK".encode(),"http1/1 200 ok")
     ex.treatment(env,r)
 
     assert ex.time==0
@@ -89,7 +89,7 @@ def test_simul_plaintext():
 
 
 def test_save_and_test():
-    env=newcore.env.Scope(dict(
+    env=reqman.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
         justTrue=lambda x,Env: True,
@@ -107,10 +107,10 @@ def test_save_and_test():
         ("var","ok"),
     ]
 
-    ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
+    ex=reqman.env.Exchange("GET","/", tests=tests, saves=saves)
 
     obj= dict(items=list("abc"),value="hello")
-    r=newcore.com.Response(200,{"x-test":"hello"},json.dumps(obj).encode(),"http1/1 200 ok")
+    r=reqman.com.Response(200,{"x-test":"hello"},json.dumps(obj).encode(),"http1/1 200 ok")
     ex.treatment(env,r)
 
     assert ex.time==0
@@ -127,7 +127,7 @@ def test_save_and_test():
 
 
 def test_simul_xml():
-    env=newcore.env.Scope(dict(
+    env=reqman.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
     ))
@@ -144,9 +144,9 @@ def test_simul_xml():
         ("toto","<<xml.//b>>")
     ]
 
-    ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
+    ex=reqman.env.Exchange("GET","/", tests=tests, saves=saves)
 
-    r=newcore.com.Response(200,{"x-test":"hello"},xml.encode(),"http1/1 200 ok")
+    r=reqman.com.Response(200,{"x-test":"hello"},xml.encode(),"http1/1 200 ok")
     ex.treatment(env,r)
 
     assert ex.time==0
@@ -162,7 +162,7 @@ def test_simul_xml():
 
 
 def test_simul_bytes():
-    env=newcore.env.Scope(dict(
+    env=reqman.env.Scope(dict(
         v200=200,
         upper= lambda x,ENV: x.upper(),
         mkbytes=lambda x,ENV: b"[1234]",
@@ -175,10 +175,10 @@ def test_simul_bytes():
     ]
     saves=[]
 
-    ex=newcore.env.Exchange("GET","/", tests=tests, saves=saves)
+    ex=reqman.env.Exchange("GET","/", tests=tests, saves=saves)
 
     content="".join([f"[{i}]" for i in range(10000)])
-    r=newcore.com.Response(200,{"x-test":"hello"},content.encode(),"http1/1 200 ok")
+    r=reqman.com.Response(200,{"x-test":"hello"},content.encode(),"http1/1 200 ok")
     ex.treatment(env,r)
 
     assert ex.time==0

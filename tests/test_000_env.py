@@ -50,18 +50,18 @@ def test_createEnvBad():
 
 
 def test_jpath():
-    reqman_jpath = lambda d,p: reqman.newcore.env.jpath( reqman.newcore.env.Scope(d), p)
+    reqman_jpath = lambda d,p: reqman.env.jpath( reqman.env.Scope(d), p)
     assert reqman_jpath({"v": 42}, "v") == 42
-    assert reqman_jpath({"v": 42}, "v2") is reqman.newcore.env.NotFound
+    assert reqman_jpath({"v": 42}, "v2") is reqman.env.NotFound
 
     env = reqman.Env(dict(toto=dict(v1=100, v2=None), tata=dict(l=["a", "b", "c"])))
-    assert reqman_jpath(env, "titi") is reqman.newcore.env.NotFound
-    assert reqman_jpath(env, "titi.size") is reqman.newcore.env.NotFound
-    assert reqman_jpath(env, "titi.0") is reqman.newcore.env.NotFound
+    assert reqman_jpath(env, "titi") is reqman.env.NotFound
+    assert reqman_jpath(env, "titi.size") is reqman.env.NotFound
+    assert reqman_jpath(env, "titi.0") is reqman.env.NotFound
 
     assert reqman_jpath(env, "toto.v1") == 100
     assert reqman_jpath(env, "toto.v2") == None
-    assert reqman_jpath(env, "toto.v3") is reqman.newcore.env.NotFound
+    assert reqman_jpath(env, "toto.v3") is reqman.env.NotFound
     assert reqman_jpath(env, "toto.size") == 2
 
     assert reqman_jpath(env, "tata.l") == ["a", "b", "c"]
@@ -71,7 +71,7 @@ def test_jpath():
 
 
 def test_jpath_python():
-    reqman_jpath = lambda d,p: reqman.newcore.env.jpath( reqman.newcore.env.Scope(d), p)
+    reqman_jpath = lambda d,p: reqman.env.jpath( reqman.env.Scope(d), p)
 
     env = dict(fct="return dict(a=dict(b=42))")
     assert reqman_jpath(env, "fct.size") == 1
@@ -189,7 +189,7 @@ def test_replaceObj():
 
     assert env.replaceObj("<<b>>") == "bytes"
 
-    with pytest.raises(reqman.newcore.env.ResolveException):
+    with pytest.raises(reqman.env.ResolveException):
         env.replaceObj("<<unknown>>")
 
 def test_replaceObj2():
@@ -212,7 +212,7 @@ def test_switches():
 
 
 def test_HeadersMixed():
-    dd = reqman.newcore.testing.HeadersMixedCase(KeY="kiki")
+    dd = reqman.testing.HeadersMixedCase(KeY="kiki")
     assert dd["KeY"] == "kiki"
     assert dd["key"] == "kiki"
     assert dd["key2"] == None

@@ -1,5 +1,6 @@
 import pytest
 import reqman
+import reqman.com
 import asyncio,sys,html
 import contextlib,io,re,json,html
 import tempfile,os,shutil
@@ -37,7 +38,7 @@ def exe(request):
     def tester(*a,fakeServer=None):
         sys.argv=["reqman.exe"]+list(a)
 
-        reqman.newcore.com.AHTTP = reqman.newcore.com.httpx.AsyncClient(verify=False)
+        reqman.com.AHTTP = reqman.com.httpx.AsyncClient(verify=False)
 
         f=FakeExeReturn()
 

@@ -1,10 +1,10 @@
 import pytest
-import newcore.env
-import newcore.com
-import newcore.xlib
+import reqman.env
+import reqman.com
+import reqman.xlib
 import json
 
-ENV=newcore.env.Scope(dict(
+ENV=reqman.env.Scope(dict(
     txt="hello",
     txt2="world",
     kiki=3.4,
@@ -19,7 +19,7 @@ ENV=newcore.env.Scope(dict(
     add2= lambda x,ENV: x+"2",
 ))
 
-NotFound = newcore.env.NotFound
+NotFound = reqman.env.NotFound
 
 def test_b_a_ba():
     assert ENV.get_var("kiki")==3.4
@@ -50,7 +50,7 @@ def test_ignorable_vars(): # endings with "?"
 
     assert ENV.get_var_or_empty("unknown?") == ENV.get_var_or_empty("unknown")  # same behaviour
 
-    with pytest.raises(newcore.env.ResolveException):
+    with pytest.raises(reqman.env.ResolveException):
         ENV.resolve_string("a txt <<unknown>>")
 
     assert ENV.resolve_string("a txt <<unknown?>>")==ENV.resolve_string_or_not("a txt <<unknown?>>") # same behaviour
@@ -58,12 +58,12 @@ def test_ignorable_vars(): # endings with "?"
     assert ENV.resolve_string_or_not("a txt <<unknown>>")=="a txt <<unknown>>"
 
 def test_resolve_all1():
-    env = newcore.env.Scope(dict(obj1=dict(a=42, b="<<obj2>>"), obj2=dict(i=42, j="hello")))
+    env = reqman.env.Scope(dict(obj1=dict(a=42, b="<<obj2>>"), obj2=dict(i=42, j="hello")))
     o = env.resolve_all("<<obj1>>")
     assert o == {"a": 42, "b": {"i": 42, "j": "hello"}}
 
 def test_resolve_all2():
-    env = newcore.env.Scope(dict(v=42))
+    env = reqman.env.Scope(dict(v=42))
     assert env.resolve_all({"a": "<<v>>"}) == {"a": 42}
 
 
@@ -80,7 +80,7 @@ def test_resolve_all():
     assert ENV.resolve_all(None)==None
     assert ENV.resolve_all("kiki")=="kiki"
 
-    with pytest.raises(newcore.env.ResolveException):
+    with pytest.raises(reqman.env.ResolveException):
         ENV.resolve_all("a txt <<unknown>>")
 
     assert ENV.resolve_all("<<unknown?>>")==""
@@ -116,13 +116,13 @@ def test_methods():
     assert ENV.get_var("txt|unknownMethod") == NotFound
 
 def test_methods_bad():
-    with pytest.raises(newcore.env.PyMethodException):
+    with pytest.raises(reqman.env.PyMethodException):
         ENV.get_var("txt|txt2")   #call a non callable
-    with pytest.raises(newcore.env.PyMethodException):
+    with pytest.raises(reqman.env.PyMethodException):
         ENV.get_var("upper")      # this method use the param !
-    with pytest.raises(newcore.env.PyMethodException):
+    with pytest.raises(reqman.env.PyMethodException):
         ENV.get_var("upper.b")    # non sense
-    with pytest.raises(newcore.env.PyMethodException):
+    with pytest.raises(reqman.env.PyMethodException):
         ENV.get_var("upper.0")    # non sense
 
 
@@ -130,14 +130,14 @@ def test_resolve_stringr():
     x=ENV.resolve_string("fdsgfd <<kiki>> {{a.bb.size}} fdsfds {{py2}}")
     assert x=='fdsgfd 3.4 2 fdsfds {"a": "xxxx"}'
 
-    with pytest.raises(newcore.env.PyMethodException):
+    with pytest.raises(reqman.env.PyMethodException):
         ENV.resolve_string("a txt <<upper>>")    # this method use the param !
 
-    with pytest.raises(newcore.env.ResolveException):
+    with pytest.raises(reqman.env.ResolveException):
         ENV.resolve_string("a txt <<unknwon>>")  # unknown method
 
 def test_resolve_stringr_or_not():
-    with pytest.raises(newcore.env.PyMethodException):
+    with pytest.raises(reqman.env.PyMethodException):
         ENV.resolve_string_or_not("a txt <<upper>>")    # this method use the param !
 
     assert ENV.resolve_string_or_not("a txt <<txt2>>")=="a txt world"
@@ -152,28 +152,28 @@ def test_resolve_stringr_or_not():
 
 
 def test_dict():
-    e=newcore.env.Scope( dict(response=dict(content="",json=None)) )
+    e=reqman.env.Scope( dict(response=dict(content="",json=None)) )
 
     assert e.get_var("response.content") == ""
     assert e.get_var("response.status") == NotFound
     assert e.get_var("response.json") == None
     assert e.get_var("response.json.ll") == NotFound
 
-    with pytest.raises(newcore.env.ResolveException):
+    with pytest.raises(reqman.env.ResolveException):
         e.resolve_string("<<reponse.status>>")
 
 
 def test_rec():
-    e=newcore.env.Scope( dict(scheme="https",host="://www.manatlan.<<tld>>",tld="com",root="<<scheme>><<host>>") )
+    e=reqman.env.Scope( dict(scheme="https",host="://www.manatlan.<<tld>>",tld="com",root="<<scheme>><<host>>") )
     # assert e.resolve_string("<<scheme>><<host>>") =="https://www.manatlan.com"
     assert e.resolve_string("<<root>>") =="https://www.manatlan.com"
 
-    with pytest.raises(newcore.env.ResolveException):
-        e=newcore.env.Scope( dict(a="<<b>>",b="<<a>>") )
+    with pytest.raises(reqman.env.ResolveException):
+        e=reqman.env.Scope( dict(a="<<b>>",b="<<a>>") )
         e.resolve_string("<<a>>")
 
 def test_order():
-    e=newcore.env.Scope( dict(
+    e=reqman.env.Scope( dict(
         a="a",
         b="<<a>>",
         f1=lambda x,Env: x+"1",
@@ -184,7 +184,7 @@ def test_order():
 
 
 def test_order2():
-    e=newcore.env.Scope( dict(
+    e=reqman.env.Scope( dict(
         upper= lambda x,ENV: x.upper(),
         now = lambda x,ENV: "xxx",
         fichier= "www<<now>>www",
@@ -192,13 +192,13 @@ def test_order2():
     assert e.resolve_string("<<fichier|upper>>") == "WWWXXXWWW"
 
 def test_spe():
-    e=newcore.env.Scope( dict(
+    e=reqman.env.Scope( dict(
     ))
     with pytest.raises(Exception):
         e.resolve_string(42)
 
 def test_copy_dico():
-    e=newcore.env.Scope( dict(
+    e=reqman.env.Scope( dict(
         user=dict(id=42,name="jo"),
         user1="<<user>>",
     ))
@@ -224,20 +224,20 @@ async def test_real_call():
     # r=await e.call("GET","/")
     # assert type(r) == reqman.com.ResponseInvalid
 
-    newcore.com.AHTTP = newcore.com.httpx.AsyncClient(verify=False)
+    reqman.com.AHTTP = reqman.com.httpx.AsyncClient(verify=False)
 
-    e=newcore.env.Scope( dict(root="https://www.manatlan.com") )
+    e=reqman.env.Scope( dict(root="https://www.manatlan.com") )
     r=await e.call("GET","/")
     assert r.status==200,"ko1"
 
-    e=newcore.env.Scope( dict(root="<<scheme>><<host>>",scheme="https",host="://www.manatlan.<<tld>>",tld="com") )
+    e=reqman.env.Scope( dict(root="<<scheme>><<host>>",scheme="https",host="://www.manatlan.<<tld>>",tld="com") )
     r=await e.call("GET","/")
     assert r.status==200,f"ko2 {r.content}"
 
 
 def test_xml():
-    e=newcore.env.Scope( dict(
-        xml=newcore.xlib.Xml("<a><b>b1</b><b>b2</b><c>c3</c></a>"),
+    e=reqman.env.Scope( dict(
+        xml=reqman.xlib.Xml("<a><b>b1</b><b>b2</b><c>c3</c></a>"),
         counter=lambda x,ENV: len(x),
 
     ))
@@ -250,7 +250,7 @@ def test_xml():
     assert e.get_var("xml.//b|//c|//d|//e|counter") == 3
 
 def test_emptycall():
-    e=newcore.env.Scope( dict(
+    e=reqman.env.Scope( dict(
         v="osef",
         now=lambda x,ENV: "xxx",
 

@@ -1,5 +1,7 @@
 import pytest, reqman, json
 import datetime,pickle
+import reqman.xlib
+import reqman.common
 
 
 xml="""<?xml version="1.0" encoding="UTF-8"?>
@@ -23,7 +25,7 @@ def test_soapresponse():
         <result2 xmlns="myns">hello2</result2>
     </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>"""
-    x=reqman.newcore.xlib.Xml(xx)
+    x=reqman.xlib.Xml(xx)
     assert x.xpath("//result")==["hello"]
     assert x.xpath("//result/text()")==["hello"]
     assert x.xpath("//SOAP-ENV:Header")==["header"]
@@ -32,8 +34,8 @@ def test_soapresponse():
     assert x.xpath("//*:result2")==["hello2"]
 
 def test_xpath():
-    x=reqman.newcore.xlib.Xml(xml)
-    assert x.xpath("//unknown")==reqman.newcore.common.NotFound
+    x=reqman.xlib.Xml(xml)
+    assert x.xpath("//unknown")==reqman.common.NotFound
     assert x.xpath("//c")==["yolo xxx"]
     assert x.xpath("//b[@v>10]")==["b11"]
     assert x.xpath("//b[@v<10]")==["b9"]
@@ -51,7 +53,7 @@ def test_xpath():
 def test_simple():
     env = reqman.Env(
         dict(
-            xml=reqman.newcore.xlib.Xml(xml),
+            xml=reqman.xlib.Xml(xml),
             s="world",
             upper= "return x.upper()",
         )

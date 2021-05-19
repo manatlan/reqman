@@ -3,7 +3,7 @@
     "python.linting.pylintEnabled": false,
 
     "python.testing.pytestArgs": [
-        "tests","tests_newcore","-s"
+        "tests","-s"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,

@@ -1,9 +1,9 @@
 import pytest,json
-import newcore.testing
+import reqman.testing
 
 
 def test_comp():
-    compare=lambda x,opeval: newcore.testing.testCompare("my",x,opeval)
+    compare=lambda x,opeval: reqman.testing.testCompare("my",x,opeval)
 
     assert compare(201,"201")
     assert compare(201,".= 201")
@@ -20,12 +20,12 @@ def test_comp():
     assert compare("ABC",".!? Z")
 
 def test_comp_list():
-    compare=lambda x,opeval: newcore.testing.testCompare("my",x,opeval)
+    compare=lambda x,opeval: reqman.testing.testCompare("my",x,opeval)
 
     assert compare(200,[200,201])
 
 def test_comp_complex():
-    compare=lambda x,opeval: newcore.testing.testCompare("my",x,opeval)
+    compare=lambda x,opeval: reqman.testing.testCompare("my",x,opeval)
 
     assert compare(3.14,3.14)
 
@@ -36,31 +36,31 @@ def test_comp_complex():
 def test_gv():
     o=dict(items=list("abc"),value="hello")
 
-    assert newcore.testing.guessValue("12")==12
-    assert newcore.testing.guessValue("3.1")==3.1
-    assert newcore.testing.guessValue("hi")=="hi"
-    assert newcore.testing.guessValue("true")==True
-    assert newcore.testing.guessValue("false")==False
-    assert newcore.testing.guessValue("True")==True
-    assert newcore.testing.guessValue("False")==False
-    assert newcore.testing.guessValue("null")==None
-    assert newcore.testing.guessValue("None")==None
-    assert newcore.testing.guessValue("[1,2]")==[1,2]
+    assert reqman.testing.guessValue("12")==12
+    assert reqman.testing.guessValue("3.1")==3.1
+    assert reqman.testing.guessValue("hi")=="hi"
+    assert reqman.testing.guessValue("true")==True
+    assert reqman.testing.guessValue("false")==False
+    assert reqman.testing.guessValue("True")==True
+    assert reqman.testing.guessValue("False")==False
+    assert reqman.testing.guessValue("null")==None
+    assert reqman.testing.guessValue("None")==None
+    assert reqman.testing.guessValue("[1,2]")==[1,2]
 
-    assert newcore.testing.guessValue(json.dumps(o))==o
+    assert reqman.testing.guessValue(json.dumps(o))==o
 
-    assert newcore.testing.guessValue(b"[1234]")=="[1234]"
-    assert newcore.testing.guessValue("b'[1234]'")=="[1234]"  #special base (conv byte'string to string)
+    assert reqman.testing.guessValue(b"[1234]")=="[1234]"
+    assert reqman.testing.guessValue("b'[1234]'")=="[1234]"  #special base (conv byte'string to string)
 
-    assert newcore.testing.guessValue("float")=="float"
+    assert reqman.testing.guessValue("float")=="float"
 
-    # assert newcore.utils.guessValue("{'items': ['a', 'b', 'c'], 'value': 'hello'}")==o
+    # assert reqman.utils.guessValue("{'items': ['a', 'b', 'c'], 'value': 'hello'}")==o
 
 def test_test():
-    assert newcore.testing.testCompare("jo","42","42")
+    assert reqman.testing.testCompare("jo","42","42")
 
 def test_compare_content_normal():
-    t=newcore.testing.testCompare("content","axa","x")  # test "content contains"!
+    t=reqman.testing.testCompare("content","axa","x")  # test "content contains"!
     assert t
     assert "contains" in t.name
 
@@ -72,7 +72,7 @@ def test_compare_content_normal():
     #---------------------
 
     obj=dict(albert="x")
-    t=newcore.testing.testCompare("content",obj,"x")  # test "content contains"!
+    t=reqman.testing.testCompare("content",obj,"x")  # test "content contains"!
     assert t
     assert "contains" in t.name
 
@@ -83,7 +83,7 @@ def test_compare_content_normal():
 
 
 def test_compare_content_with_list():
-    t=newcore.testing.testCompare("content","axa",["x","z"])
+    t=reqman.testing.testCompare("content","axa",["x","z"])
     assert t
     assert "contains one of" in t.name
 
@@ -95,7 +95,7 @@ def test_compare_content_with_list():
     #---------------------
 
     obj=dict(albert="x")
-    t=newcore.testing.testCompare("content",obj,["x","z"])
+    t=reqman.testing.testCompare("content",obj,["x","z"])
     assert t
     assert "contains one of" in t.name
 

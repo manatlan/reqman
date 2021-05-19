@@ -1,4 +1,5 @@
 Working on 3.0.0 (new core)
+- now, it's a real module (a folder in site-packages)
 - new command (wait: <<time_in_ms>>)
 - remove SELFCONF (too overbloated and not useful)
 - use HTTPX again and forever ;-) (bye aiohttp)

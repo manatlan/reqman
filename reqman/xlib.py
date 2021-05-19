@@ -1,10 +1,24 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+# #############################################################################
+#    Copyright (C) 2018-2021 manatlan manatlan[at]gmail(dot)com
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published
+# by the Free Software Foundation; version 2 only.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# https://github.com/manatlan/reqman
+# #############################################################################
 
 from xml.dom import minidom
 import xpath  # see "pip install py-dom-xpath-six"
-try:
-    from newcore.common import NotFound
-except ModuleNotFoundError:
-    from common import NotFound
+
+from reqman.common import NotFound
 
 class Xml:
     def __init__(self, x):

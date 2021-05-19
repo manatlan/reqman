@@ -33,8 +33,11 @@ import stpl  # see "pip install stpl"
 import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 
-import newcore # NEW CORE SYSTEM
-
+import reqman.com
+import reqman.common
+import reqman.env
+import reqman.xlib
+import reqman.testing
 
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
 __version__ = "3.0.0.0"  # only SemVer (the last ".0" is win only)
@@ -114,7 +117,7 @@ class OutputConsole(enum.Enum):
 class RMFormatException(Exception): pass
 class RMException(Exception): pass
 class RMPyException(Exception): pass #old one
-class RMCommandException(Exception):     newcore.com.AHTTP = newcore.com.httpx.AsyncClient(verify=False)
+class RMCommandException(Exception):     reqman.com.AHTTP = reqman.com.httpx.AsyncClient(verify=False)
 pass
 
 
@@ -332,7 +335,7 @@ class Env(dict):
 
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
         d=dict(self.clone())
-        return newcore.env.Scope(d,EXPOSEDS).resolve_all(o)
+        return reqman.env.Scope(d,EXPOSEDS).resolve_all(o)
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
     def replaceTxt(self, txt: str) -> T.Union[str, bytes]:
@@ -342,10 +345,10 @@ class Env(dict):
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
         d=dict(self.clone())
         try:
-            return newcore.env.Scope(d,EXPOSEDS).resolve_string(txt)
-        except newcore.env.ResolveException as e:
+            return reqman.env.Scope(d,EXPOSEDS).resolve_string(txt)
+        except reqman.env.ResolveException as e:
             raise RMPyException(e)
-        except newcore.env.PyMethodException as e:
+        except reqman.env.PyMethodException as e:
             raise RMPyException(e)
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
@@ -365,7 +368,7 @@ class Env(dict):
 
 
     def __str__(self):
-        return newcore.common.jdumps(self, indent=4, sort_keys=True)
+        return reqman.common.jdumps(self, indent=4, sort_keys=True)
 
     def __getstate__(self):
         return dict(self)
@@ -849,7 +852,7 @@ class Req(ReqItem):
 
     async def asyncReqExecute(
         self, gscope: Env, http=None, outputConsole=OutputConsole.MINIMAL
-    ) -> newcore.env.Exchange:
+    ) -> reqman.env.Exchange:
 
         # create a dict (newscope) from the cloned old env (gscope)
         scope = dict(gscope.clone())
@@ -909,13 +912,13 @@ class Req(ReqItem):
         elif type(body) in [list,dict]: # TEST 972_500 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             body=json.dumps(body)
         elif type(body) == bytes:
-            body=newcore.common.decodeBytes(body)
+            body=reqman.common.decodeBytes(body)
         else:
             body=str(body)
 
 
         # CREATE the REAL NEW SCOPE !!!!!!
-        newenv=newcore.env.Scope( scope , EXPOSEDS)
+        newenv=reqman.env.Scope( scope , EXPOSEDS)
 
         # execute the request (newcore)
         ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, proxies=proxy, http=http)
@@ -1145,8 +1148,8 @@ class Reqman:
         self, switches: list = [], paralleliz=False, http=None
     ) -> ReqmanResult:
 
-        async with newcore.com.httpx.AsyncClient(verify=False) as xxx:
-            newcore.com.AHTTP = xxx
+        async with reqman.com.httpx.AsyncClient(verify=False) as xxx:
+            reqman.com.AHTTP = xxx
 
             scope = self.env.clone()
 
@@ -1358,14 +1361,14 @@ def prettify(txt: bytes, indentation: int = 4) -> str:
         return ""
     else:
         if type(txt)==bytes:
-            txt=newcore.common.decodeBytes(txt)
+            txt=reqman.common.decodeBytes(txt)
         else:
             txt = str(txt)
     try:
-        return repr(newcore.xlib.Xml(txt))
+        return repr(reqman.xlib.Xml(txt))
     except:
         try:
-            return newcore.common.jdumps(json.loads(txt), indent=indentation, sort_keys=True)
+            return reqman.common.jdumps(json.loads(txt), indent=indentation, sort_keys=True)
         except:
             return txt
 
@@ -1849,12 +1852,12 @@ def main(fakeServer=None, hookResults=None) -> int:
             hookResults.rr = rr
 
         if outputContent!=None:
-            ns=newcore.env.Scope( r._r.env.clone() ,EXPOSEDS)
+            ns=reqman.env.Scope( r._r.env.clone() ,EXPOSEDS)
             try:
                 x=ns.get_var(outputContent)
-                if x is newcore.env.NotFound:
+                if x is reqman.env.NotFound:
                     x=None
-            except newcore.env.ResolveException:
+            except reqman.env.ResolveException:
                 x=None
 
             if type(x) in [list,dict]:
@@ -1982,7 +1985,4 @@ class GenRML:
 
         return re.sub(r"\{\{([\w_\-\d]+)\}\}", r"<<\1>>", yml)
 
-
-if __name__ == "__main__":
-    sys.exit(main())
 
