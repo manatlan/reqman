@@ -1,5 +1,6 @@
-Working on 3.0.0 (new core)
+ALPHA 3.0.0a (new core system)
 - now, it's a real module (a folder in site-packages)
+- now, the version is real semver
 - new command (wait: <<time_in_ms>>)
 - remove SELFCONF (too overbloated and not useful)
 - use HTTPX again and forever ;-) (bye aiohttp)
@@ -13,7 +14,7 @@ Working on 3.0.0 (new core)
     - "headers contains" no more, should be explicit (use ".?" to simulate historic way)
     - tests are always resolved to false, when requests non playable
 - "content contains" always here (to keep the same as historic way)
-- EVOL: vars can be "ignorable" (<<var?>> will be empty if not defined), avoid ResolvingException !
+- EVOL: vars can be "ignorable" (<<var?>> will be empty if not defined), avoid ResolvingException/non playable !
 
 2.9.1 (02/03/21)
 - FIX: keep fragment of url in "reqman new" command

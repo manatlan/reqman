@@ -30,7 +30,7 @@
         {
             "label": "clean repo",
             "type": "shell",
-            "command": "rm -rf build reqman.egg-info reqman/__pycache__ .pytest_cache tests/__pycache__ .coverage reqman.html",
+            "command": "rm -rf build reqman.egg-info __pycache__ reqman/__pycache__ .pytest_cache tests/__pycache__ .coverage reqman.html",
             "problemMatcher": [],
             "presentation": {
                 "panel": "new",

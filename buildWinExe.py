@@ -12,6 +12,14 @@ if not "win" in sys.platform.lower():
     sys.exit(-1)
 ##################################################################
 
+def conv(v): # conv versionning to windows x.x.x.x
+    a,b,c=v.split(".")
+    clean=lambda x: x and x.isnumeric() and x or "0"
+    return ".".join([clean(a), clean(b), clean(c), "0"])
+
+assert conv("1.2.3") == "1.2.3.0"
+assert conv("1.2.3a") == "1.2.0.0"
+
 def rm(f):
     if os.path.isdir(f):
         shutil.rmtree(f)
@@ -30,6 +38,7 @@ try:
         '--icon="dist/reqman.ico"'
     ])
 
-    os.system("""dist\\verpatch.exe dist\\reqman.exe %s /high /va /pv %s /s description "Commandline tool to test a http service with yaml's scenarios (more info : https://github.com/manatlan/reqman)" /s product "ReqMan" /s copyright "GPLv2, 2021" /s company "manatlan" """ % reqman.__version__)
+    v=conv(reqman.__version__)
+    os.system(f"""dist\\verpatch.exe dist\\reqman.exe {v} /high /va /pv {v} /s description "Commandline tool to test a http service with yaml's scenarios (more info : https://github.com/manatlan/reqman)" /s product "Reqman" /s copyright "GPLv2, 2021" /s company "manatlan" """)
 finally:
     rm("reqman.spec")

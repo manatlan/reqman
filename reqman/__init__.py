@@ -40,7 +40,7 @@ import reqman.xlib
 import reqman.testing
 
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.0.0"  # only SemVer (the last ".0" is win only)
+__version__ = "3.0.0a1"  # now, real SemVer !
 
 if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
     REQMANEXE = sys.executable
