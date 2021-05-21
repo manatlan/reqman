@@ -15,34 +15,26 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-import aiohttp  # see "pip install aiohttp"
-import asyncio
+
+####################################################################### this file is never used, yet !
+# HERE, it's the future, thru HTTPX
+# but since httpx doens't support socks proxy
+# I give up, and come back to aiohttp ;-(
+#######################################################################
+import httpx
 import json
 import logging
-import concurrent
-import ssl
 
-def jdumps(o, *a, **k):
-    k["ensure_ascii"] = False
-    # ~ k["default"]=serialize
-    return json.dumps(o, *a, **k)
 
-JAR=None
 
-def init():
-    global JAR
-    JAR = aiohttp.CookieJar(unsafe=True)
-    class fake:
-        async def __aenter__(self,*a,**k):
-            pass
-        async def __aexit__(self,*a,**k):
-            pass
-    return fake()
+def init(): # here, it's horrible !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    AHTTP = httpx.AsyncClient(verify=False)
+    return AHTTP
 
-init()
+AHTTP = init()
 
 class Response:
-    def __init__(self, status:int, headers: dict, content: bytes, info: str):
+    def __init__(self, status:int, headers: httpx.Headers, content: bytes, info: str):
         assert type(content)==bytes
         self.status=status
         self.headers=headers
@@ -55,7 +47,7 @@ class Response:
 
 class ResponseError(Response):
     def __init__(self,error):
-        Response.__init__(self,None,{},error.encode(),"")
+        Response.__init__(self,None,httpx.Headers(),error.encode(),"")
     def get_json(self):
         return None
     def get_xml(self):
@@ -80,52 +72,35 @@ class ResponseInvalid(ResponseError):
 textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
 isBytes = lambda bytes: bool(bytes.translate(None, textchars))
 
-
-async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,proxies=None) -> Response:
+async def call(method, url:str,body: bytes=b"", headers:dict={}, timeout=None, proxies=None) -> Response:
     assert type(body)==bytes
     try:
-        async with aiohttp.ClientSession(trust_env=True,cookie_jar=JAR) as session:
 
-            r = await session.request(
-                method,
-                url,
-                data=body,
-                headers=headers,
-                ssl=False,
-                timeout=timeout,
-                allow_redirects=False,
-                proxy=proxies
-            )
-            try:
-                obj = await r.json()
-                content = jdumps(obj).encode("utf-8")  # ensure json chars are not escaped, and are in utf8
-            except:
-                content = await r.read()
-                if not isBytes(content):
-                    txt = await r.text()
-                    content = txt.encode("utf-8")  # force bytes to be in utf8
+        AHTTP._get_proxy_map(proxies, False)
 
-            info = "HTTP/%s.%s %s %s" % (
-                r.version.major,
-                r.version.minor,
-                int(r.status),
-                r.reason,
-            )
-            outHeaders = r.headers
+        r = await AHTTP.request(
+            method,
+            url,
+            data=body,
+            headers=headers,
+            allow_redirects=False,
+            timeout=timeout,   # sec to millisec
+        )
 
-            return Response(r.status, r.headers, content, info)
+        info = "%s %s %s" % (r.http_version, int(r.status_code), r.reason_phrase)
 
-    except aiohttp.client_exceptions.ClientConnectorError as e:
-        return ResponseUnreachable()
-    except (concurrent.futures._base.TimeoutError, asyncio.exceptions.TimeoutError) as e:
+        content=r.content
+        if not isBytes(content):
+            txt = r.text
+            content = txt.encode("utf-8")  # force bytes to be in utf8
+
+        return Response(r.status_code, r.headers, content, info)
+    except (httpx.TimeoutException):
         return ResponseTimeout()
-    except aiohttp.client_exceptions.InvalidURL as e:
-        return ResponseInvalid(url)
-    except ssl.SSLError:
-        pass
-    except:
+    except (httpx.ConnectError):
         return ResponseUnreachable()
-
+    except (httpx.InvalidURL,httpx.UnsupportedProtocol,ValueError):
+        return ResponseInvalid(url)
 
 
 def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
@@ -178,20 +153,18 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
 
 
 if __name__=="__main__":
+    import asyncio
 
     import logging
     logging.basicConfig(level=logging.DEBUG)
 
-    r=call_simulation( {"/":(200,"ok")},"GET","/" )
-    print("simul:",r)
-
     async def t():
-        e=await call("GET","https://httpstat.us/200?sleep=2000",timeout=1)
-        print(e)
         e=await call("GET","https://www.manatlan.com")
         print(e)
-        e=await call("GET","https://www.manatlan.com",proxies="http://77.232.100.132") # with a bad proxy ;-(
+        e=await call("GET","https://www.manatlan.com",proxies="http://77.232.100.132") # with a valid proxy
         print(e)
 
     asyncio.run(t())
 
+    r=call_simulation( {"/":(200,"ok")},"GET","/" )
+    print(r)

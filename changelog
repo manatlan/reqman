@@ -1,4 +1,8 @@
-ALPHA 3.0.0a (new core system)
+ALPHA 3.0.0a2 (new core system)
+- back to aiohttp (with aio cookies) (httpx doesn't support SOCKS PROXY (which is a nogo)) ;-(
+- bad if statements fails silently
+
+ALPHA 3.0.0a1 (new core system)
 - now, it's a real module (a folder in site-packages)
 - now, the version is real semver
 - new command (wait: <<time_in_ms>>)

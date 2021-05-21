@@ -1,5 +1,5 @@
 #!python3 fakereqman.py
-#:valid:1,1,0 THIS --b
+#:valid:1,0 THIS --b
 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
@@ -12,12 +12,12 @@
   tests:
     - status: 200
 
-- GET: http://localhost:11111/get_txt
-  doc: use a proxy
-  tests:
-    - status: 200
-  params:
-    proxy: http://143.198.30.253:8080
+# - GET: https://www.manatlan.com
+#   doc: use a proxy
+#   tests:
+#     - status: 200
+#   params:
+#     proxy: http://163.172.221.209:443
 
 - GET: http://localhost:11111/get_txt
   doc: bad proxy

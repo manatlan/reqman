@@ -40,7 +40,7 @@ import reqman.xlib
 import reqman.testing
 
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.0a1"  # now, real SemVer !
+__version__ = "3.0.0a2"  # now, real SemVer !
 
 if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
     REQMANEXE = sys.executable
@@ -117,8 +117,7 @@ class OutputConsole(enum.Enum):
 class RMFormatException(Exception): pass
 class RMException(Exception): pass
 class RMPyException(Exception): pass #old one
-class RMCommandException(Exception):     reqman.com.AHTTP = reqman.com.httpx.AsyncClient(verify=False)
-pass
+class RMCommandException(Exception): pass
 
 
 def izip(ex1, ex2):
@@ -651,9 +650,12 @@ class Reqs(list):
             if isinstance(r,ReqItem):
                 doIf = True
                 if r.ifs:
-                    envIf = s.clone()
-                    dict_merge(envIf, r.params)
-                    doIf = all([envIf.replaceObjOrNone(i) for i in r.ifs])
+                    try:
+                        envIf = s.clone()
+                        dict_merge(envIf, r.params)
+                        doIf = all([envIf.replaceObjOrNone(i) for i in r.ifs])
+                    except:
+                        print(cy("**WARNING**"), "can't evaluate %s (%s)" % (cr("if"),r.ifs))
 
                 if doIf:
                     ex = await r.asyncReqExecute(s, http, outputConsole=outputConsole)
@@ -1148,8 +1150,7 @@ class Reqman:
         self, switches: list = [], paralleliz=False, http=None
     ) -> ReqmanResult:
 
-        async with reqman.com.httpx.AsyncClient(verify=False) as xxx:
-            reqman.com.AHTTP = xxx
+        async with reqman.com.init():
 
             scope = self.env.clone()
 

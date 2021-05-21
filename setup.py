@@ -26,7 +26,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     install_requires=[
-          'aiohttp',
+          'aiohttp', # or 'httpx' (using com_httpx !!!)
           'py-dom-xpath-six',
           'pyyaml >= 4.2b1',
           'stpl >= 1.13.2',

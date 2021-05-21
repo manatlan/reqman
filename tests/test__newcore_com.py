@@ -3,21 +3,24 @@ import reqman.com
 
 @pytest.mark.asyncio
 async def test_real_http_call():
-    reqman.com.AHTTP = reqman.com.httpx.AsyncClient(verify=False)
-
+    reqman.com.init()
 
     r=await reqman.com.call("GET","https://httpstat.us/200")
     assert r.status==200
     assert type(r)==reqman.com.Response
-
-    r=await reqman.com.call("GET","https://httpstat.us/200?sleep=2000",timeout=1)
-    assert type(r)==reqman.com.ResponseTimeout
 
     r=await reqman.com.call("GET","fgsdjghfdsgfsdhhgfdjks.com")
     assert type(r)==reqman.com.ResponseInvalid
 
     r=await reqman.com.call("GET","http://fgsdjghfdsgfsdhhgfdjks.com")
     assert type(r)==reqman.com.ResponseUnreachable
+
+@pytest.mark.asyncio
+async def test_real_http_call_timeout():
+    reqman.com.init()
+
+    r=await reqman.com.call("GET","https://httpstat.us/200?sleep=2000",timeout=1)
+    assert type(r)==reqman.com.ResponseTimeout
 
 
 def test_simu_call():

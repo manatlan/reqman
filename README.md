@@ -17,7 +17,7 @@ All configurations is done via simple yaml files, editable with any text editors
 
 
 **Features**
-   * Light (simple py3 file, 3000 lines of code, and x3 lines for unittests, in TDD mind ... cov:97%)
+   * Light (simple py3 module, 3000 lines of code, and x3 lines for unittests, in TDD mind ... cov:97%)
    * Powerful (at least as postman free version)
    * tests are simple (no code !)
    * Variable pool

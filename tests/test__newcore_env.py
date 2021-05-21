@@ -224,7 +224,7 @@ async def test_real_call():
     # r=await e.call("GET","/")
     # assert type(r) == reqman.com.ResponseInvalid
 
-    reqman.com.AHTTP = reqman.com.httpx.AsyncClient(verify=False)
+    reqman.com.init()
 
     e=reqman.env.Scope( dict(root="https://www.manatlan.com") )
     r=await e.call("GET","/")
