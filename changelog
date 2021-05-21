@@ -1,3 +1,7 @@
+ALPHA 3.0.0a3 (new core system)
+- FIX: 'int'.size was wrong
+- FIX: match identical request in dual mode (was wrong)
+
 ALPHA 3.0.0a2 (new core system)
 - back to aiohttp (with aio cookies) (httpx doesn't support SOCKS PROXY (which is a nogo)) ;-(
 - bad if statements fails silently

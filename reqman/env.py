@@ -92,6 +92,11 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
             elif type(elem)==xlib.Xml:
                 elem=elem.xpath(i)
 
+            elif type(elem) in [int,float]:
+                if i == "size":
+                    return len(str(elem))
+
+
         except (ValueError, IndexError) as e:
             return NotFound
     return elem
@@ -99,6 +104,8 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
 
 
 class Exchange:
+    id:str="" #unique id to identify request structure (to be able to match in dual mode)
+
     def __init__(self,method: str,url: str,body: bytes=b"",headers: dict={}, tests:list=[], saves:list=[], doc:str = ""):
         assert type(body)==bytes
 
@@ -118,7 +125,6 @@ class Exchange:
         # more outputs
         self.tests=[]
         self.saves={}
-        self.id=None
         self.doc=doc
 
         #TODO:
@@ -127,13 +133,6 @@ class Exchange:
         # internals
         self._tests_to_do=tests
         self._saves_to_do=saves
-
-        # create a Unique ID for this request
-        uid = hashlib.md5()
-        uid.update(
-            json.dumps([self.method, self.path, self.body.decode(), self.inHeaders, self._tests_to_do, self._saves_to_do]).encode()
-        )
-        self.id = uid.hexdigest()
 
 
     @property
@@ -432,6 +431,13 @@ class Scope(dict): # like 'Env'
         assert all( [type(i)==tuple and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
 
+
+        # create a Unique ID for this request
+        uid = hashlib.md5()
+        uid.update(
+            json.dumps([method, path, body, headers, str(querys),str(saves), str(tests)]).encode()
+        )
+
         try:
             # use global headers and merge them in headers
             gheaders = self.get("headers", None)  # global headers
@@ -486,6 +492,7 @@ class Scope(dict): # like 'Env'
 
 
         ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves, doc=doc)
+        ex.id=uid.hexdigest() #<- save unique id for this kind of request (to be able to match them in dual mode)
         if r is None: # we can call it safely
             r=await ex.call(timeout,proxies=proxies,http=http)
 

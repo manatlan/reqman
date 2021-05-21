@@ -258,3 +258,13 @@ def test_emptycall():
     assert e.get_var("v|now") == "xxx"
     assert e.get_var("|now") == "xxx"
     assert e.get_var("vv|now") == NotFound
+
+
+def test_int_size():
+    e=reqman.env.Scope(dict(
+        a=dict(cc="12"),
+    ))
+
+    assert e.resolve_all("42") == int("42")
+    assert e.get_var("a.cc")==int("12")
+    assert e.get_var("a.cc.size")==2

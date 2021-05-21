@@ -27,7 +27,6 @@ import sys, traceback
 import pickle, zlib
 import encodings.idna
 
-# import httpcore # see "pip install httpcore"
 import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 import xpath  # see "pip install py-dom-xpath-six"
@@ -40,7 +39,7 @@ import reqman.xlib
 import reqman.testing
 
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.0a2"  # now, real SemVer !
+__version__ = "3.0.0a3"  # now, real SemVer !
 
 if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
     REQMANEXE = sys.executable

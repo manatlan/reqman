@@ -43,7 +43,6 @@ def test_simul_json():
     ex.treatment(env,r)
 
     assert ex.time==0
-    assert ex.id
 
     assert all(ex.tests),ex
     assert ex.saves["hello"]==200
@@ -78,7 +77,6 @@ def test_simul_plaintext():
     ex.treatment(env,r)
 
     assert ex.time==0
-    assert ex.id
 
     assert all(ex.tests),ex.tests
 
@@ -114,7 +112,6 @@ def test_save_and_test():
     ex.treatment(env,r)
 
     assert ex.time==0
-    assert ex.id
 
     assert ex.saves == {'var': 'ok'}
     assert all(ex.tests),ex.tests
@@ -150,7 +147,6 @@ def test_simul_xml():
     ex.treatment(env,r)
 
     assert ex.time==0
-    assert ex.id
 
     assert all(ex.tests),ex
 
@@ -182,7 +178,6 @@ def test_simul_bytes():
     ex.treatment(env,r)
 
     assert ex.time==0
-    assert ex.id
 
     assert all(ex.tests),ex.tests
 

@@ -1,8 +1,8 @@
 #!python3 fakereqman.py
 #:valid:1 THIS --b --o:AEFF_solo_default.html
-#:valid:1,1,1 THIS -yolo --b --o:AEFF_solo_yolo.html
-#:valid:1:1,1,1 THIS +yolo --b
-#:valid:ERROR THIS +yolo --s               # can't save RMR when DUAL MODE!
+#:valid:1,1,1 THIS -second --b --o:AEFF_solo_second.html
+#:valid:1:1,1,1 THIS +second --b
+#:valid:ERROR THIS +second --s               # can't save RMR when DUAL MODE!
 
 ## -*- coding: utf-8 -*-
 #--------------------------------------------------------------
@@ -10,7 +10,10 @@
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 
-- GET: /get_txt
+- POST: /ping?<<env>>
+  headers:
+    X-test: <<env>>
+  body: <<env>>
   tests:
-    - status: 200
+    - status: 201
 
