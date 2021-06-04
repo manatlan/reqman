@@ -39,7 +39,13 @@ import reqman.xlib
 import reqman.testing
 
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.0a3"  # now, real SemVer !
+__version__ = "3.0.0a4"  # now, real SemVer !
+
+try: # https://bugs.python.org/issue37373 FIX: event_loop/py3.8 on windows
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+except:
+    pass
 
 if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
     REQMANEXE = sys.executable

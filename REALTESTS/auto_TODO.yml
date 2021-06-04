@@ -1,0 +1,57 @@
+#!python3 fakereqman.py
+#:valid:11,111 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+
+# HERE NEEDS WORK TO FIX A REAL BUG IN REAL TNR
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+# SHOULD ADAPT THIS TO REPRODUCE IT
+
+- prox1:
+
+  - POST: http://localhost:11111/ping?<<entity.id>>-<<entity.code>>
+    body:
+      result:
+        id: <<entity.id|add1>>
+        code: <<entity.code|add1>>
+    tests:
+      - status: 201
+      - json.result:
+          id: 13
+          code: 43
+
+    save:
+      entity:   <<json.result>>
+
+
+  - POST: http://localhost:11111/ping?<<entity.id>>-<<entity.code>>
+    body:
+      result:
+        id: <<entity.id>>
+        code: <<entity.code>>
+    tests:
+      - status: 201
+      - json.result.id: 13
+      - json.result.code: 43
+
+- call: prox1
+  params:
+    entity:
+      id:   12
+      code: 42
+    add1: return x+1

@@ -1,3 +1,6 @@
+ALPHA 3.0.0a4 (new core system) **IN WORKS** (not released !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
+- FIX: event_loop/py38 on windows (Configuration of windows event loop for libraries)
+
 ALPHA 3.0.0a3 (new core system)
 - FIX: 'int'.size was wrong
 - FIX: match identical request in dual mode (was wrong)

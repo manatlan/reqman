@@ -1,0 +1,48 @@
+#!python3 fakereqman.py
+#:valid:111,111,111,111 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- prox1:
+
+  - POST: http://localhost:11111/ping
+    body: <<val>>2
+    tests:
+      - status: 201
+      - content: <<val>>    # test executed after the save, so val is already "hello2"
+      - content: hello2
+    save:
+      val: <<content>>
+
+  - POST: http://localhost:11111/ping
+    body: <<val>>
+    tests:
+      - status: 201
+      - content: hello2
+      - content: <<val>>
+
+- prox2:
+
+  - POST: http://localhost:11111/ping
+    body: <<val>>2
+    tests:
+      - status: 201
+      - content: <<val>>    # test executed after the save, so val is already "hello2"
+      - content: hello2
+    save: val
+
+  - POST: http://localhost:11111/ping
+    body: <<val>>
+    tests:
+      - status: 201
+      - content: hello2
+      - content: <<val>>
+
+- call:
+    - prox1
+    - prox2
+  params:
+    val: hello
