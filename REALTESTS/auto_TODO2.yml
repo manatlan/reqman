@@ -1,0 +1,31 @@
+#!fakereqman.py
+#:valid:11,11,11,11 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- prox1:
+
+  - POST: http://localhost:11111/ping
+    doc:  1) Should not be resolved --> <<newCreatedVar>>
+    tests:
+      newCreatedVar: null
+
+  - POST: http://localhost:11111/ping
+    doc: 2) Create "newCreatedVar" <- YO 
+    save:
+      newCreatedVar: YO 
+    tests:
+      newCreatedVar: YO
+
+- call: 
+    - prox1
+    - prox1
+
+- POST: http://localhost:11111/ping
+  doc: "END) we are in another context Should not be resolved --> <<newCreatedVar>>"
+  tests:
+    newCreatedVar: null               # shouldn't exists
+
