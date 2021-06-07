@@ -1,57 +1,41 @@
-#!python3 fakereqman.py
-#:valid:11,111 THIS --b
+#!fakereqman.py
+#:valid:11,11,11,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 
-
-# HERE NEEDS WORK TO FIX A REAL BUG IN REAL TNR
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-# SHOULD ADAPT THIS TO REPRODUCE IT
-
 - prox1:
 
-  - POST: http://localhost:11111/ping?<<entity.id>>-<<entity.code>>
+  - POST: http://localhost:11111/ping
+    doc:  Will create vars containing a modified content from <<entity.id>> -> <<reponse>>
     body:
       result:
         id: <<entity.id|add1>>
-        code: <<entity.code|add1>>
     tests:
       - status: 201
-      - json.result:
-          id: 13
-          code: 43
+      - json.result.id: <<entity.id|add1>>
 
     save:
-      entity:   <<json.result>>
+      reponse_copy: <<reponse>>    # <-- this can be problematic (bug in 3.0.0a4)
+      reponse: <<json.result.id>> 
 
-
-  - POST: http://localhost:11111/ping?<<entity.id>>-<<entity.code>>
+  - POST: http://localhost:11111/ping
+    doc: Send "<<request.body>>" .. is it "<<checkValue>>" ?, it should be !
     body:
-      result:
-        id: <<entity.id>>
-        code: <<entity.code>>
+      X<<reponse>>X<<reponse_copy>>X
     tests:
       - status: 201
-      - json.result.id: 13
-      - json.result.code: 43
+      - content: <<checkValue>>
 
 - call: prox1
   params:
-    entity:
-      id:   12
-      code: 42
     add1: return x+1
+  foreach:
+    - entity:
+        id:   10
+      checkValue: X11X11X
+    - entity:
+        id:   20
+      checkValue: X21X21X
