@@ -24,7 +24,7 @@ import sys, traceback
 import pickle, zlib, hashlib
 import http.cookiejar
 import concurrent, ssl
-from xml.dom import minidom
+from defusedxml.minidom import parseString
 import encodings.idna
 import inspect
 
@@ -525,7 +525,7 @@ def xj(xp):
 
 class Xml:
     def __init__(self, x):
-        self.doc = minidom.parseString(x)
+        self.doc = parseString(x)
 
     def xpath(self, p):
         ll = []
