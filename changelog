@@ -1,3 +1,6 @@
+ALPHA 3.0.0a5 (new core system) : near ;-)
+- EVOL: assuming that "save order is important" : so "save" statement can be a dict OR (newly) a list!
+
 ALPHA 3.0.0a4 (new core system) : should be the good one !
 - FIX: event_loop/py38 on windows (Configuration of windows event loop for libraries)
 - FIX: save order is important

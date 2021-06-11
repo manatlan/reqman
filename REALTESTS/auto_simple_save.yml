@@ -12,8 +12,8 @@
   tests:
     - status: 200
   save:
-    next: "get_json"
-    nextStatus: <<response.status>>
+    - next: "get_json"
+    - nextStatus: <<response.status>>
 
 - GET: http://localhost:11111/<<next>>
   doc: |

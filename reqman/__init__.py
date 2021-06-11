@@ -39,7 +39,7 @@ import reqman.xlib
 import reqman.testing
 
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.0a4"  # now, real SemVer !
+__version__ = "3.0.0a5"  # now, real SemVer !
 
 try: # https://bugs.python.org/issue37373 FIX: event_loop/py3.8 on windows
     if sys.platform == 'win32':
@@ -813,8 +813,11 @@ class Req(ReqItem):
 
     def updateSave(self, o: dict):  # append save
         save = o.get("save", None)
-        self.parent._assertType("save", save, [str, dict])  # new
-        if type(save) is str:
+        self.parent._assertType("save", save, [str, dict, list])  # new
+        if type(save) is list:  # list > dict
+            # TODO: "'save:' should be filled of key/value pairs (ex: 'saveKey: <<saveValue>>')"
+            save = {list(d.keys())[0]: list(d.values())[0] for d in save}
+        elif type(save) is str:
             save = {save: "<<content>>"}  # convert to new system save
         if save is not None:
             self.saves += [save]
