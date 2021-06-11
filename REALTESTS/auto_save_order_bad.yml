@@ -1,4 +1,4 @@
-#!fakereqman.py
+#!python3 fakereqman.py
 #:valid:11,11,11,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
@@ -18,11 +18,11 @@
       - json.result.id: <<entity.id|add1>>
 
     save:
-      reponse_copy: <<reponse>>    # <-- this can be problematic (bug in 3.0.0a4)
-      reponse: <<json.result.id>> 
+      reponse_copy: <<reponse>>     # \_ here resolve order is BAD !
+      reponse: <<json.result.id>>   # /  (at second stage, reponse will be resolved from global scope)
 
   - POST: http://localhost:11111/ping
-    doc: Send "<<request.body>>" .. is it "<<checkValue>>" ?, it should be !
+    doc: Send "<<request.body>>" !
     body:
       X<<reponse>>X<<reponse_copy>>X
     tests:
@@ -38,4 +38,4 @@
       checkValue: X11X11X
     - entity:
         id:   20
-      checkValue: X21X21X
+      checkValue: X21X11X

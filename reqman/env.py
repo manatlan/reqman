@@ -201,7 +201,11 @@ class Exchange:
         new_vars={}
         for save_as,content in self._saves_to_do:
             try:
-                v=repEnv.resolve_string_or_not(content)
+                # try to resolve locally (in new created one (saved))
+                v=Scope(new_vars).resolve_string_or_not(content)
+                if v==content: # not resolved before
+                    v=repEnv.resolve_string_or_not(content)
+
                 new_vars[save_as] = v
             except Exception as e:
                 logging.debug(f"Can't resolve saved var '{save_as}', because {e}")
