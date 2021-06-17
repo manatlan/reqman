@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # #############################################################################
-#    Copyright (C) 2018-2020 manatlan manatlan[at]gmail(dot)com
+#    Copyright (C) 2018-2021 manatlan manatlan[at]gmail(dot)com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -16,31 +16,38 @@
 # #############################################################################
 
 import os, sys, re, asyncio, io, datetime, itertools, glob, enum, codecs
-import http, urllib, email  # for cookies management
+import logging
+import json
+import urllib
 import urllib.parse
-import collections, json
+import collections
+import collections.abc
 import typing as T
 import sys, traceback
-import pickle, zlib, hashlib
-import http.cookiejar
-import concurrent, ssl
-from xml.dom import minidom
+import pickle, zlib
 import encodings.idna
-import inspect
 
-
-
-
-# import httpcore # see "pip install httpcore"
-import aiohttp  # see "pip install aiohttp"
 import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 import xpath  # see "pip install py-dom-xpath-six"
-
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
+import junit_xml # see "pip install junit-xml"
 
-# 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "2.11.0.0"  # only SemVer (the last ".0" is win only)
+
+import reqman.com
+import reqman.common
+import reqman.env
+import reqman.xlib
+import reqman.testing
+
+# 95% coverage: python3 -m pytest --cov-report html --cov=reqman .
+__version__ = "3.0.0"  # now, real SemVer !
+
+try: # https://bugs.python.org/issue37373 FIX: event_loop/py3.8 on windows
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+except:
+    pass
 
 if getattr( sys, 'frozen', False ) : # when frozen/pyinstaller
     REQMANEXE = sys.executable
@@ -62,9 +69,13 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         --o:name   : Set a name for the html output file
         --o        : No html output file, but full console
         --b        : Open html output in browser if generated
-        --s        : Save RMR file
+        --s        : Save RMR file (timestamped)
+        --S        : Save RMR file (reqman.rmr)
         --r        : Replay the given RMR file in dual mode
         --i        : Use SHEBANG params (for a single file), alone
+        --f        : Force full output in html rendering
+        --j:name   : Set a name for the junit-xml output file
+        --j        : Generate a junit-xml output file (reqman.xml)
         --x:var    : Special mode to output an env var (as json output)
 """ % (REQMANEXE,REQMANEXE,__version__)
 
@@ -80,9 +91,7 @@ try:  # colorama is optionnal
     init()
 
     def colorize(color: int, t: str) -> T.Union[str, None]:
-        return (
-            color + Style.BRIGHT + str(t) + Fore.RESET + Style.RESET_ALL if t else None
-        )
+        return (color + Style.BRIGHT + str(t) + Fore.RESET + Style.RESET_ALL if t else None)
 
     cy = lambda t: colorize(Fore.YELLOW, t)
     cr = lambda t: colorize(Fore.RED, t)
@@ -103,7 +112,7 @@ KNOWNVERBS = [
     "PATCH",
     "CONNECT",
 ]
-KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body", "if", "query"]
+KNOWNACTIONEXT = ["headers", "doc", "tests", "params", "foreach", "save", "body", "if", "query", "wait"]
 REQMAN_CONF = "reqman.conf"
 
 
@@ -114,38 +123,10 @@ class OutputConsole(enum.Enum):
     FULL = 3
 
 
-class RMFormatException(Exception):
-    pass
-
-
-class RMException(Exception):
-    pass
-
-
-class RMPyException(Exception):
-    pass
-
-
-class RMNonResolvedVars(Exception):
-    pass
-
-
-def declare(code):
-    return "def DYNAMIC(x,ENV):\n" + ("\n".join(["  " + i for i in code.splitlines()]))
-
-
-def isPython(x):
-    if type(x) == str and "return" in x:
-        try:
-            return compile(declare(x), "unknown", "exec") and True
-        except:
-            return False
-
-
-def jdumps(o, *a, **k):
-    k["ensure_ascii"] = False
-    # ~ k["default"]=serialize
-    return json.dumps(o, *a, **k)
+class RMFormatException(Exception): pass
+class RMException(Exception): pass
+class RMPyException(Exception): pass #old one
+class RMCommandException(Exception): pass
 
 
 def izip(ex1, ex2):
@@ -198,14 +179,6 @@ def comparable(l):
         return x1 == x2
 
 
-def renameKeyInDict(d, oname, nname):
-    for k, v in list(d.items()):
-        if k == oname:
-            d[nname] = d.pop(k)
-        if isinstance(v, dict):
-            renameKeyInDict(v, oname, nname)
-
-
 def ustr(x):  # ensure str are utf8 inside
     # assert type(x)==str
     try:
@@ -215,194 +188,6 @@ def ustr(x):  # ensure str are utf8 inside
             return x.encode("utf8").decode()
         else:
             return str(x)
-
-def genKV(headers):
-    for k, v in headers.items():
-        if type(v) == list:  # cookies values (Set-Cookie) is possibly a list
-            for i in v:
-                yield (k, i)
-        else:
-            yield (k, v)
-
-
-class CookieStore(http.cookiejar.CookieJar):  # TODO: can do a lot better with httpcore
-    """ Manage cookiejar for httplib-like """
-
-    def __init__(self, ll: T.List[dict] = []) -> None:
-        http.cookiejar.CookieJar.__init__(self)
-        for c in ll:
-            self.set_cookie(http.cookiejar.Cookie(**c))
-
-    def update(self, url: str, inHeaders: dict) -> dict:
-        """return appended headers"""
-        if url and url.lower().startswith("http"):
-            r = urllib.request.Request(url)
-            self.add_cookie_header(r)
-            inHeaders.update(dict(r.header_items()))
-            return dict(r.header_items())
-
-    def extract(self, url: str, outHeaders: dict) -> None:
-        if url and url.lower().startswith("http"):
-
-            class FakeResponse(http.client.HTTPResponse):
-                def __init__(self, headers=[], url=None) -> None:
-                    """
-                    headers: list of RFC822-style 'Key: value' strings
-                    """
-                    m = email.message_from_string("\n".join(headers))
-                    self._headers = m
-                    self._url = url
-
-                def info(self):
-                    return self._headers
-
-            ll = ["%s: %s" % (k, v) for k, v in genKV(outHeaders)]
-
-            self.extract_cookies(FakeResponse(ll, url), urllib.request.Request(url))
-
-    def export(self) -> T.List[dict]:
-        ll = []
-        for i in self:
-            ll.append(
-                {
-                    n if n != "_rest" else "rest": getattr(i, n)
-                    for n in "version,name,value,port,port_specified,domain,domain_specified,domain_initial_dot,path,path_specified,secure,expires,discard,comment,comment_url,_rest".split(
-                        ","
-                    )
-                }
-            )
-        return ll
-
-
-def toStr(x):
-    try:
-        return x.decode()
-    except:
-        return str(x)
-
-
-class Content:
-    def __init__(self, content):
-        self.__b = content if type(content) is bytes else ustr(content).encode()
-
-    def __repr__(self) -> str:
-        return toStr(self.__b)
-
-    def toJson(self):
-        try:
-            return json.loads(self.__b.decode())
-        except:
-            return None
-
-    def toXml(self):
-        try:
-            return Xml(repr(self))
-        except:
-            return None
-
-    def __bytes__(self):
-        return self.__b
-
-
-class RmDict(dict):
-    def __init__(self, **kargs):
-        self.__dict__.update(kargs)
-        dict.__init__(self, **kargs)
-
-
-class HeadersMixedCase(dict):
-    def __init__(self, **kargs):
-        dict.__init__(self, **kargs)
-
-    def __getitem__(self, key):
-        d = {k.lower(): v for k, v in self.items()}
-        return d.get(key.lower(), None)
-
-    def get(self, key, default=None):
-        d = {k.lower(): v for k, v in self.items()}
-        return d.get(key.lower(), default)
-
-
-"""
-AHTTP = httpcore.AsyncClient(verify=False)
-
-async def _request(method,url,body:bytes,headers, timeout=None):
-    try:
-        if (not body) and headers: headers["Content-Length"]="0"
-        r = await AHTTP.request(
-            method,
-            url,
-            data=body,
-            headers=headers,
-            allow_redirects=False,
-            timeout=httpcore.TimeoutConfig( timeout ),
-        )
-        info = "%s %s %s" % (r.protocol, int(r.status_code), r.reason_phrase)
-        return r.status_code, dict(r.headers), Content(r.content), info
-    except (httpcore.exceptions.ReadTimeout, httpcore.exceptions.ConnectTimeout, httpcore.exceptions.Timeout, httpcore.exceptions.WriteTimeout):
-        return None, {}, "Timeout", ""
-    except OSError as e:
-        return None, {}, "Unreachable", ""
-    except httpcore.exceptions.InvalidURL:
-        return None, {}, "Invalid", ""
-
-async def request(method,url,body:bytes,headers, timeout=None):
-    ''' mimic "_request()" to try 3 times, when Unreachable (to be really sure ;-) '''
-    t = await _request(method,url,body,headers,timeout)
-    if t[2]=="Unreachable": # conncetion lost, retry to see ;-)
-        t = await _request(method,url,body,headers,timeout)
-        if t[2]=="Unreachable": # conncetion lost, retry to see ;-)
-            t = await _request(method,url,body,headers,timeout)
-    return t
-"""
-
-textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
-isBytes = lambda bytes: bool(bytes.translate(None, textchars))
-
-
-async def request(method, url, body: bytes, headers, timeout=None,proxy=None):
-    try:
-        async with aiohttp.ClientSession(trust_env=True) as session:
-
-            r = await session.request(
-                method,
-                url,
-                data=body,
-                headers=headers,
-                ssl=False,
-                timeout=timeout,
-                allow_redirects=False,
-                proxy=proxy
-            )
-            try:
-                obj = await r.json()
-                content = jdumps(obj).encode(
-                    "utf-8"
-                )  # ensure json chars are not escaped, and are in utf8
-            except:
-                content = await r.read()
-                if not isBytes(content):
-                    txt = await r.text()
-                    content = txt.encode("utf-8")  # force bytes to be in utf8
-
-            info = "HTTP/%s.%s %s %s" % (
-                r.version.major,
-                r.version.minor,
-                int(r.status),
-                r.reason,
-            )
-            outHeaders = dict(r.headers)
-            if "Set-Cookie" in r.headers:
-                outHeaders["Set-Cookie"] = list(r.headers.getall("Set-Cookie"))
-            return r.status, outHeaders, Content(content), info
-    except aiohttp.client_exceptions.ClientConnectorError as e:
-        return None, {}, "Unreachable", ""
-    except concurrent.futures._base.TimeoutError as e:
-        return None, {}, "Timeout", ""
-    except aiohttp.client_exceptions.InvalidURL as e:
-        return None, {}, "Invalid", ""
-    except ssl.SSLError:
-        pass
 
 
 class FString(str):
@@ -429,7 +214,7 @@ def toList(d) -> T.List:
     return d if type(d) == list else [d]
 
 
-padLeft = lambda b: ("\n".join(["  " + i for i in str(b).splitlines()]))
+padLeft = lambda b,pre="  ": ("\n".join([pre + i for i in str(b).splitlines()]))
 
 
 def dict_merge(dst: dict, src: dict) -> None:
@@ -448,152 +233,6 @@ def dict_merge(dst: dict, src: dict) -> None:
                 dst[k] = src[k]
 
 
-def updateUrlQuery(url,d: dict):
-    if d=={}:
-        return url
-    else:
-        o=urllib.parse.urlparse(url)
-
-        q=urllib.parse.parse_qs(o.query)
-        for k,v in d.items():
-            if v is None:
-                if k in q:
-                    del q[k]
-            else:
-                if type(v)==list:
-                    q.setdefault(k,[]).extend(v)
-                else:
-                    q.setdefault(k,[]).append(v)
-
-        o=o._replace(query=urllib.parse.urlencode( q , doseq=True))
-        return o.geturl()
-
-
-class NotFound:
-    pass
-
-
-def DYNAMIC(x, env: dict) -> T.Union[str, None]:
-    pass  # will be overriden (see below vv)
-
-
-def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
-    orig = Env(elem)
-    for i in path.strip(".").split("."):
-        try:
-            if type(elem) == list:
-                if i == "size":
-                    return len(elem)
-                else:
-                    elem = elem[int(i)]
-            elif isinstance(elem, dict):
-                if i == "size":
-                    return len(list(elem.keys()))
-                else:
-                    elem = elem.get(i, NotFound)
-
-                    if isPython(elem):
-                        elem = orig.transform(None, i)
-
-            elif type(elem) == str:
-                if i == "size":
-                    return len(elem)
-        except (ValueError, IndexError) as e:
-            return NotFound
-    return elem
-
-
-def xj(xp):
-    """
-  Split xpath/jpath expr in -> xpath,jpath
-  ex:   "//b[@v='.'].-1.size" ---> ( "//b[@v='.']" , '-1.size' )
-  """
-    ll = xp.split(".")
-    if len(ll) > 1:
-        ends = []
-        while 1:
-            if "size" in ll[-1]:
-                ends.append(ll.pop())
-            elif ll[-1].lstrip("-+").isdigit():
-                ends.append(ll.pop())
-            else:
-                break
-        return ".".join(ll), ".".join(reversed(ends))
-    else:
-        return xp, ""
-
-
-class Xml:
-    def __init__(self, x):
-        self.doc = minidom.parseString(x)
-
-    def xpath(self, p):
-        ll = []
-        for ii in xpath.find(p, self.doc):
-            if ii.nodeType in [self.doc.ELEMENT_NODE, self.doc.DOCUMENT_NODE]:
-                ll.append(xpath.expr.string_value(ii))
-            elif ii.nodeType == self.doc.TEXT_NODE:
-                ll.append(ii.wholeText)
-            elif ii.nodeType == self.doc.ATTRIBUTE_NODE:
-                ll.append(ii.value)
-            else:  # 'CDATA_SECTION_NODE', 'COMMENT_NODE', 'DOCUMENT_FRAGMENT_NODE', 'DOCUMENT_TYPE_NODE', 'ENTITY_NODE', 'ENTITY_REFERENCE_NODE', 'NOTATION_NODE', 'PROCESSING_INSTRUCTION_NODE'
-                raise Exception("Not implemented")
-
-        if ll:
-            return ll
-        else:
-            return NotFound
-
-    def __repr__(self):
-        xml = self.doc.toprettyxml(indent=" " * 4)
-        x = "\n".join(
-            [s for s in xml.splitlines() if s.strip()]
-        )  # http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
-        return x
-
-
-class Exchange:
-    def __init__(
-        self,
-        method,
-        path,
-        url,
-        body,
-        inHeaders,
-        status,
-        outHeaders,
-        content,
-        info,
-        time,
-    ):
-        self.id = None
-        self.doc = None
-        self.scope = None
-        self.tests = []
-        self.nolimit = False
-
-        self.method = method
-        self.path = path
-        self.url = url
-        self.body = body
-        self.bodyContent = Content(body)
-        self.inHeaders = HeadersMixedCase(**inHeaders)
-        self.status = status
-        self.outHeaders = HeadersMixedCase(**outHeaders)
-        self.content = content
-        self.info = info
-        self.time = time
-
-    def __eq__(self, o):
-        return o and self.id == o.id
-
-    def __repr__(self):
-        return "<Exchange: %s %s -> %s tests:%s>" % (
-            self.method,
-            self.url,
-            self.status,
-            self.tests or "no",
-        )
 
 
 class Env(dict):
@@ -621,7 +260,7 @@ class Env(dict):
         )  # shared global saved scope between all cloned Env (from BEGIN only)
 
         dict.__init__(self, dict(d))
-        self.cookiejar = CookieStore()
+
 
     def _getProc(self, name):
         return Reqs(yaml.dump(self[name]) if name in self else "", self, name=name)
@@ -651,7 +290,7 @@ class Env(dict):
     def clone(self, cloneSharedScope=True):
         newOne = Env({})
         dict_merge(newOne, self)
-        newOne.cookiejar = CookieStore(self.cookiejar.export())
+
 
         dict_merge(
             newOne, self.__global
@@ -699,178 +338,45 @@ class Env(dict):
             if switch in switches:
                 dict_merge(self, switches[switch])
 
-    def replaceObj(
-        self, v: T.Any
-    ) -> T.Any:  # same as txtReplace() but for "object" (json'able)
-        if type(v) is bytes:
-            return v
-        elif type(v) is Content:  # (when save to var)
-            return bytes(v)
-        elif type(v) is not str:
-            v = jdumps(v)
+    def replaceObj(self, o: T.Any) -> T.Any:  # same as txtReplace() but for "object" (json'able)
+        """ DEPRECATED """
 
-        obj = self.replaceTxt(v)
-        if type(obj) is bytes:
-            return obj
-        else:
-            try:
-                obj = json.loads(obj)
-            except (json.decoder.JSONDecodeError, TypeError):
-                pass
-            return obj
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+        d=dict(self.clone())
+        return reqman.env.Scope(d,EXPOSEDS).resolve_all(o)
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
-    def replaceObjOrNone(
-        self, v: T.Any
-    ) -> T.Any:  # same as txtReplace() but for "object" (json'able)
+    def replaceTxt(self, txt: str) -> T.Union[str, bytes]:
+        """ DEPRECATED """
+        assert type(txt) is str
+
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+        d=dict(self.clone())
+        try:
+            return reqman.env.Scope(d,EXPOSEDS).resolve_string(txt)
+        except reqman.env.ResolveException as e:
+            raise RMPyException(e)
+        except reqman.env.PyMethodException as e:
+            raise RMPyException(e)
+        #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+
+
+    def replaceObjOrNone(self, v: T.Any) -> T.Any:  # same as txtReplace() but for "object" (json'able)
+        """ DEPRECATED """
+
         v = self.replaceObj(v)
         return v if self.getNonResolvedVars(v) == [] else None
 
     def getNonResolvedVars(self, txt):
+        """ DEPRECATED """
         if type(txt) == str:
             return re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt)
         else:
             return []
 
-    def replaceTxt(self, txt: str) -> T.Union[str, bytes]:
-        assert type(txt) is str
-
-        def _replace(txt: str) -> T.Union[str, bytes]:
-            def getVar(var: str):
-                methods = re.findall(r"\|[\d\w\|]+$", var)
-                if methods:
-                    p = var.index(methods[0])
-                    key = var[:p]
-                    method = var[p + 1 :]
-
-                    content = getVar(key)
-                    if content is NotFound:
-                        content = None
-
-                    for m in method.split("|"):
-                        if (
-                            type(content) != RmDict
-                        ):  # No try to replace things on a RmDict
-                            content = self.replaceObj(
-                                content
-                            )  ## important, resolv inner method first .... see tests 044, 045, 046
-
-                        content = self.transform(content, m)
-                    return content
-                elif "." in var:
-                    # -(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
-                    vx, xp = var.split(".", 1)
-                    if vx in self and type(self[vx]) is Xml:
-
-                        xp, ends = xj(xp)
-
-                        ll = self[vx].xpath(xp)
-                        if type(ll) == list and ends:
-                            return jpath(ll, ends)
-                        else:
-                            return ll
-                    elif vx in self and type(self[vx]) == str:
-                        s = self[vx]
-                        if s.startswith("<<") and s.endswith(">>"):
-                            content = self.replaceObj(s)
-                            return jpath(content, xp)
-                    # -(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(
-                    return jpath(self, var)
-
-                elif var in self:
-                    if isPython(self[var]):
-                        return self.transform(None, var)
-                    else:
-                        return self[var]
-                elif var in EXPOSEDS:
-                    return self.transform(None, var)
-                else:
-                    return NotFound
-
-            for vvar in self.getNonResolvedVars(txt):
-                var = vvar[2:-2]
-
-                val = getVar(var)
-
-                if val is not NotFound:
-                    if type(val) != str:
-                        if val is None:
-                            val = "null"
-                        elif val is True:
-                            val = "true"
-                        elif val is False:
-                            val = "false"
-                        elif type(val) == bytes:
-                            return val  # keep BYTES !!!!!!!!!!!!!!
-                        else:  # int, float, list, dict...
-                            try:
-                                val = jdumps(val)
-                            except TypeError:
-                                val = str(val)
-
-                        txt = txt.replace('"%s"' % vvar, val)
-                    else:
-                        txt = txt.replace('"%s"' % vvar, '"%s"' % val)
-
-                    txt = txt.replace(vvar, val)
-
-            return txt
-
-        while type(txt) is str:
-            _txt = _replace(txt)
-            if _txt == txt:  # no change ... it's time to return ;-)
-                return txt
-            else:
-                txt = _txt
-        return txt  # bytes
-
-    def transform(
-        self, content: T.Union[str, None], methodName: str
-    ) -> T.Union[str, None]:
-        def prepareContent(content):
-            if content is None:
-                return None
-            elif type(content) == str:
-                try:
-                    return json.loads(content)
-                except (json.decoder.JSONDecodeError, TypeError):
-                    return content
-            else:
-                return content
-
-        if methodName:
-            if methodName in self:
-                code = self[methodName]
-                try:
-                    exec(declare(code), globals())
-                except Exception as e:
-                    raise RMPyException(
-                        "Error in declaration of method '" + methodName + "' : " + str(e)
-                    )
-
-                try:
-                    x = prepareContent(content) # seems not needed !!!
-                    x = content
-                    content = DYNAMIC(x, self)
-                except Exception as e:
-                    raise RMPyException(
-                        "Error in execution of method '" + methodName + "' : " + str(e)
-                    )
-            elif methodName in EXPOSEDS:
-                code=EXPOSEDS[methodName]
-                try:
-                    x = prepareContent(content) # seems not needed !!!
-                    x = content
-                    r=code(x,self)
-                except Exception as e:
-                    raise RMPyException("Exposed method '%s' error : %s" % (methodName,e))
-                return r
-            else:
-                raise RMPyException("Can't find method '%s'" % methodName)
-
-        return content
 
     def __str__(self):
-        return jdumps(self, indent=4, sort_keys=True)
+        return reqman.common.jdumps(self, indent=4, sort_keys=True)
 
     def __getstate__(self):
         return dict(self)
@@ -879,15 +385,12 @@ class Env(dict):
         self.__dict__ = state
         self.__shared = {}
         self.__global = {}
-        self.cookiejar = CookieStore()
+
 
 
 class Reqs(list):
-    def __init__(
-        self, obj: T.Union[str, FString], env=None, trace=False, name="<YamlString>"
-    ):
+    def __init__(self, obj: T.Union[str, FString], env=None, name="<YamlString>"):
         self.__proc = {}
-        self._trace = trace
         self.exchanges = None  # list of Exchange
         self.name = obj.filename if type(obj) is FString else name
 
@@ -920,25 +423,27 @@ class Reqs(list):
                         raise self._errorFormat("Reqs: Unknown action '%s'" % i)
                 elif isinstance(i, dict):
                     keys = list(i.keys())
-                    if (
+                    if len(keys)==1 and keys[0]=="wait":
+                        value = i["wait"]
+                        if type(value) in [int,float]:
+                            pass
+                        elif type(value) == str:
+                            if (value.startswith( ("<<","{{") ) and value.endswith( (">>","}}") )): #TODO: not great
+                                pass
+                            else:
+                                try:
+                                    float(value)
+                                except:
+                                    raise self._errorFormat("wait value is not a int/float or a var")
+                        else:
+                            raise self._errorFormat("wait value is not a int/float or a var")
+
+                        liste.append( ReqWait( value ) )
+                    elif (
                         len(keys) == 1
                         and (keys[0] not in KNOWNVERBS + ["call"])
                         and (type(i[keys[0]]) in [dict, list])
                     ):
-
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-                        if "conf" in keys:
-                            s = i["conf"]
-                            self._assertType("conf", s, [dict])
-
-                            if any([type(i) is ReqConf for i in liste]):
-                                raise self._errorFormat(
-                                    "Reqs: multiple 'conf' (only one is possible)"
-                                )
-
-                            liste.insert(0, ReqConf(s))
-                            continue
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
 
                         # it's a definition of a proc's named 'key', content = value
                         key = keys[0]
@@ -1054,13 +559,12 @@ class Reqs(list):
 
         # here 'obj' is a list of ReqBase, and valid one
         list.__init__(self, lreqs)
-        if self._trace:
-            print("~" * 80)
-            print("~~ Reqs")
-            print("~" * 80)
-            print("env:", self.env)
-            print(self)
-            print("~" * 80)
+        logging.debug("~" * 80)
+        logging.debug("~~ Reqs")
+        logging.debug("~" * 80)
+        logging.debug(f"env: {self.env}")
+        logging.debug(self)
+        logging.debug("~" * 80)
 
     def _errorFormat(self, msg):
         return RMFormatException(msg + " in %s" % self.name)
@@ -1090,8 +594,7 @@ class Reqs(list):
         ############################################# live console
 
         def log(level, *l):
-            if self._trace:
-                print(level * "    ", " ".join([str(x) for x in l]))
+            logging.debug( (level * "    ") + " ".join([str(x) for x in l]) )
 
         log(0, "~" * 80)
         log(0, "~~ Reqs.Execute")
@@ -1104,7 +607,11 @@ class Reqs(list):
             log(level, "Test Global Scope :", gscope)
 
             for idx, i in enumerate(liste):
-                if isinstance(i, Req):
+                if isinstance(i, ReqWait):
+                    log(level, "* wait:", i.time )
+                    yield level, gscope, i.time # !!!!!!!!!!!!!!!!!!!
+
+                elif isinstance(i, Req):
                     log(level, "* Req:", oneline(i))
                     yield level, gscope, i.clone()  # this clone has no effect ;-)
 
@@ -1141,53 +648,38 @@ class Reqs(list):
                         for l, s, r in _test(i.reqs, scope, level + 1):
                             r.updateParams({"params": fparam})
                             yield l, s, r
-                elif isinstance(i, ReqConf):
-                    pass  # already treated !
                 else:
                     raise RMException("Reqs: unwaited object %s" % i)
 
         gscope = self.env.clone()
 
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
         ll = []
-        for i in self:
-            if isinstance(i, ReqConf):
-                print(cy("**WARNING**"), "%s use self conf" % self.name)
-
-                localEnv = Env(i.conf)
-                for switch in switches:
-                    localEnv.mergeSwitch(switch)
-
-                gscope.update(dict(localEnv))
-
-        reqsBegin = gscope.getBEGIN(local=True)
-        reqsEnd = gscope.getEND(local=True)
-        if reqsBegin is not None:
-            for r in reqsBegin:
-                ll.append(
-                    await r.asyncReqExecute(gscope, http, outputConsole=outputConsole)
-                )
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         for l, s, r in _test(self, gscope):
-            doIf = True
-            if r.ifs:
-                envIf = s.clone()
-                dict_merge(envIf, r.params)
-                doIf = all([envIf.replaceObjOrNone(i) for i in r.ifs])
+            if isinstance(r,ReqItem):
+                doIf = True
+                if r.ifs:
+                    try:
+                        envIf = s.clone()
+                        dict_merge(envIf, r.params)
+                        doIf = all([envIf.replaceObjOrNone(i) for i in r.ifs])
+                    except:
+                        print(cy("**WARNING**"), "can't evaluate %s (%s)" % (cr("if"),r.ifs))
 
-            if doIf:
-                ex = await r.asyncReqExecute(s, http, outputConsole=outputConsole)
-                ll.append(ex)
-                log(l, "  >>> EXECUTE:", ex)
+                if doIf:
+                    ex = await r.asyncReqExecute(s, http, outputConsole=outputConsole)
+                    ll.append(ex)
+                    log(l, "  >>> EXECUTE:", ex)
+            else:
+                time=r # ms
+                try:
+                    envWait = s.clone()
+                    time=envWait.replaceObjOrNone(time) # ms
+                    wait = float(time) / 1000 # convert to secondes
+                    await asyncio.sleep( wait ) # secs
+                except:
+                    print(cy("**WARNING**"), "can't %s on '%s'" % (cr("wait"),time), "in", self.name)
 
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-        if reqsEnd is not None:
-            for r in reqsEnd:
-                ll.append(
-                    await r.asyncReqExecute(gscope, http, outputConsole=outputConsole)
-                )
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         self.exchanges = ll
         return ll
@@ -1198,20 +690,6 @@ class Reqs(list):
 
 class ReqItem:
     pass
-
-
-class ReqConf(ReqItem):
-    def __init__(self, conf: dict):
-
-        conf = clone(conf)
-        renameKeyInDict(conf, "BEGIN", ".BEGIN")
-        renameKeyInDict(conf, "END", ".END")
-
-        self.conf = conf
-
-    def __repr__(self):
-        return "<ReqConf %s>" % self.conf
-
 
 class ReqGroup(ReqItem):
     def __init__(self, reqs: list, foreach, params):
@@ -1253,6 +731,10 @@ class ReqGroup(ReqItem):
         for i in self.reqs:
             l.append(padLeft(str(i)))
         return "\n".join(l)
+
+class ReqWait(ReqItem):
+    def __init__(self, time):
+        self.time=time
 
 
 class Req(ReqItem):
@@ -1335,8 +817,11 @@ class Req(ReqItem):
 
     def updateSave(self, o: dict):  # append save
         save = o.get("save", None)
-        self.parent._assertType("save", save, [str, dict])  # new
-        if type(save) is str:
+        self.parent._assertType("save", save, [str, dict, list])  # new
+        if type(save) is list:  # list > dict
+            # TODO: "'save:' should be filled of key/value pairs (ex: 'saveKey: <<saveValue>>')"
+            save = {list(d.keys())[0]: list(d.values())[0] for d in save}
+        elif type(save) is str:
             save = {save: "<<content>>"}  # convert to new system save
         if save is not None:
             self.saves += [save]
@@ -1380,203 +865,104 @@ class Req(ReqItem):
         return "\n".join(l)
 
     async def asyncReqExecute(
-        self, gscope, http=None, outputConsole=OutputConsole.MINIMAL
-    ) -> Exchange:
-        scope = gscope.clone()  # important
+        self, gscope: Env, http=None, outputConsole=OutputConsole.MINIMAL
+    ) -> reqman.env.Exchange:
+
+        # create a dict (newscope) from the cloned old env (gscope)
+        scope = dict(gscope.clone())
+
+        # merge the local params in
         dict_merge(scope, self.params)
 
-        root = scope.get("root", None)  # global root
-        gheaders = scope.get("headers", None)  # global header
+        # get properties of the request
+        method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
+        doc, tests, saves = self.doc, self.tests, self.saves
+
+
+        # get global timeout
         try:
             timeout = scope.get("timeout", None)  # global timeout
             timeout = timeout and float(timeout) / 1000.0 or None
         except ValueError:
             timeout = None
 
+        # get global proxy
         try:
-            proxy = scope.get("proxy", None)  # global proxy
-            assert type(proxy)==str
-        except:
+            proxy = scope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
+        except :
             proxy = None
 
 
-        method, path, body, headers, querys = self.method, self.path, self.body, self.headers, self.querys
-        doc, tests, saves = self.doc, self.tests, self.saves
 
-        #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' compute an unique id based on reqs's attributes
-        uid = hashlib.md5()
-        uid.update(
-            json.dumps([method, path, body, headers, doc, tests, saves]).encode()
-        )
-        #''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-        gpath = path
-        ex = None
-        try:
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
 
-            def resolvHeaders(headers):
-                if type(headers) == str:
-                    headers = scope.replaceObj(headers)
-                self.parent._assertType("headers", headers, [dict, list])
-                return headers
+        # transform saves to newsaves
+        newsaves=[]
+        for d in saves:
+            for k,v in d.items():
+                newsaves.append( (k,v) )
 
-            if gheaders is not None:
-                newHeaders = resolvHeaders(clone(gheaders))
-                dict_merge(newHeaders, headers)
-                headers = newHeaders
+        # transform tests to newtests
+        newtests=[]
+        for d in tests:
+            k,v=list(d.items())[0]
+            newtests.append( (k,v) )
 
-            path = scope.replaceTxt(path)
+        # ensure content is str
+        if body is None:
+            body=""
+        elif type(body) in [list,dict]: # TEST 972_500 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            body=json.dumps(body)
+        elif type(body) == bytes:
+            body=reqman.common.decodeBytes(body)
+        else:
+            body=str(body)
 
-            if root is not None and not urllib.parse.urlparse(path.lower()).scheme:
-                url = scope.replaceTxt(root) + path
-            else:
-                url = path
 
-            pquerys={}
-            for k,v in querys.items():
-                if v is None:
-                    pquerys[k]=None
-                elif type(v)==list:
-                    ll=[]
-                    for i in v:
-                        if i is not None:
-                            i=scope.replaceObj(i)
-                            if type(i)==list:
-                                ll.extend(i)
-                            else:
-                                ll.append(i)
+        # CREATE the REAL NEW SCOPE !!!!!!
+        newenv=reqman.env.Scope( scope , EXPOSEDS)
 
-                    pquerys[k]=ll
-                else:
-                    pquerys[k]=scope.replaceObj(v)
+        # execute the request (newcore)
+        ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, proxies=proxy, http=http)
 
-            url=updateUrlQuery(url,pquerys)
+        ex.nolimit = self.nolimit   #TODO: not beautiful !!!
 
-            if body:
-                body = scope.replaceObj(body)
+        ##/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+        ##/\ See "test_070" : need to put a ".scope" in an Exchange
+        ##/\ to let the tests works, like in the past ...
+        ##/\ (because it's a pertinent test !!!)
+        ##/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+        if outputConsole=="*OLD*TESTS*":
+            ex.scope = dict(newenv)
+        ##/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
-            headers = resolvHeaders(headers)
-            headers = {
-                k: scope.replaceTxt(str(v)) for k, v in headers.items() if v
-            }  # headers'value should be string
-
-            # #=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ test if all vars are resolved
-            if scope.getNonResolvedVars(path):
-                raise RMNonResolvedVars("`Path` non resolved")
-            if scope.getNonResolvedVars(body):
-                raise RMNonResolvedVars("`Body` non resolved")
-            for k, v in headers.items():
-                if scope.getNonResolvedVars(v):
-                    raise RMNonResolvedVars("Header `%s` non resolved" % k)
-            # =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-
-            tests = [
-                {list(d.keys())[0]: scope.replaceObj(list(d.values())[0])}
-                for d in tests
-            ]  # cast value as str
-
-            # set cookies in request according env
-            self.parent.env.cookiejar.update(url, headers)
-
-            ex = await asyncExecute(
-                method, gpath, url, body, headers, http=http, timeout=timeout, proxy=proxy
-            )
-        except (
-            RMPyException,
-            RMFormatException,
-            RMNonResolvedVars,
-        ) as e:  # RMFormatException for headers resolver !
-            ex = Exchange(
-                method,
-                gpath,
-                gpath,
-                body or "",
-                headers,
-                None,
-                {},
-                str(e),
-                "TEST EXCEPTION",
-                0,
-            )
-        except Exception as e:  # RMFormatException for headers resolver !
-            ex = Exchange(
-                method,
-                gpath,
-                gpath,
-                body or "",
-                headers,
-                500,
-                {},
-                str(e),
-                "TEST EXCEPTION (bug)",
-                0,
-            )
-        finally:
-            assert ex
-            self.parent.env.cookiejar.extract(ex.url, ex.outHeaders)
-
-        # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-        envResponse = scope.clone()
-        contentAsJson = ex.content.toJson() if type(ex.content) == Content else None
-        contentAsXml = ex.content.toXml() if type(ex.content) == Content else None
-
-        envResponse["request"] = RmDict(  # new
-            path=ex.url,
-            method=ex.method,
-            content=ex.bodyContent,  # Content type
-            headers=ex.inHeaders,  # HeadersMixedCase type
-        )
-        envResponse["response"] = RmDict(  # new
-            status=ex.status,
-            content=ex.content,  # Content type
-            headers=ex.outHeaders,  # HeadersMixedCase type
-            time=ex.time,
-        )
-
-        envResponse["rm"] = RmDict(
-            response=envResponse["response"], request=envResponse["request"]
-        )
-
-        # shorthands (historik)
-        envResponse["content"] = envResponse["response"]["content"]
-        envResponse["status"] = envResponse["response"]["status"]
-        envResponse["headers"] = envResponse["response"]["headers"]
-
-        if contentAsJson:
-            envResponse["response"]["json"] = contentAsJson
-            envResponse["json"] = contentAsJson  # shorthands (historik)
-
-        if contentAsXml:
-            envResponse["response"]["xml"] = contentAsXml
-            envResponse["xml"] = contentAsXml  # shorthands (historik)
-
-        # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-
-        try:  # postsave
-            for s in saves:
-                for saveKey, saveWhat in s.items():
-                    v = envResponse.replaceObj(saveWhat)
-                    self.parent.env.save(saveKey, v, self.parent.name in ["BEGIN","END"])
-                    envResponse[saveKey] = v
-        except RMPyException as e:
-            ex.status = None
-            ex.content = e
-            ex.info = "SAVE EXCEPTION"
-
-            # important ! (not top ;-( )
-            envResponse["content"] = ex.content
-            envResponse["status"] = ex.status
-            envResponse["response"]["content"] = ex.content
-            envResponse["response"]["status"] = ex.status
-            envResponse["rm"]["response"]["content"] = ex.content
-            envResponse["rm"]["response"]["status"] = ex.status
-
-        # upgrade 'ex' !
-        ex.id = uid.hexdigest()
-        ex.doc = envResponse.replaceTxt(doc) if doc else None
-        ex.scope = scope
-        ex.nolimit = self.nolimit
-        ex.tests = TestResult(tests, envResponse, ex.status)
+        # get the saved ones
+        for saveKey, saveWhat in ex.saves.items():
+            self.parent.env.save(saveKey, saveWhat, self.parent.name in ["BEGIN","END"])
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
+        ###################################################################################### NEWCORE
 
         # =================================================== LIVE CONSOLE
         if outputConsole != OutputConsole.NO:
@@ -1587,21 +973,21 @@ class Req(ReqItem):
                     cy(ex.method),
                     ex.url,
                     "-->",
-                    cw(ex.content if ex.status is None else ex.status),
+                    cw(ex.content.decode() if ex.status is None else ex.status),
                 )
 
                 if outputConsole == OutputConsole.FULL:
-                    display = lambda h: "\n".join(["%s: %s" % (k,v) for k,v in genKV(h)])
+                    display = lambda h: "\n".join(["%s: %s" % (k,v) for k,v in h.items()])
 
                     if ex.inHeaders:
                         print(padLeft(display(ex.inHeaders)))
                     if ex.body:
-                        print(padLeft(ex.bodyContent))
+                        print(padLeft(prettify(ex.body))) #TODO: prettify
                     print(padLeft("-" * 75))
                     if ex.outHeaders:
                         print(padLeft(display(ex.outHeaders)))
                     if ex.content:
-                        print(padLeft(ex.content))
+                        print(padLeft(prettify(ex.content)))          #TODO: prettify
                     print(padLeft("-" * 75))
 
                 for t in ex.tests:
@@ -1615,88 +1001,11 @@ class Req(ReqItem):
         return ex
 
 
-async def asyncExecute(
-    method, path, url, body, headers, http=None, timeout=None, proxy=None
-) -> Exchange:
-    t1 = datetime.datetime.now()
-
-    if type(body) is not bytes:
-        if body is None:
-            body = "".encode()
-        elif type(body) is str:
-            body = body.encode()
-        else:
-            body = jdumps(body).encode()
-
-    if type(http) == dict:
-        status, content, outHeaders, info = (
-            404,
-            "mock not found",
-            {"server": "reqman mock"},
-            "MOCK RESPONSE",
-        )
-        if url in http:
-            rep = http[url]
-            if callable(rep):
-                rep = rep(method, url, body, headers)
-
-            if len(rep) == 2:
-                status, content = rep
-            elif len(rep) == 3:
-                status, content, oHeaders = rep
-                dict_merge(outHeaders, oHeaders)
-            else:
-                status, content = 500, "mock server error"
-            assert type(content) in [str, bytes]
-            assert type(status) is int
-            assert type(outHeaders) is dict
-        content = Content(content)
-    else:
-        http = request  # use the real one !!
-        status, outHeaders, content, info = await http(
-            method, url, body, headers, timeout=timeout, proxy=proxy
-        )
-
-    diff = datetime.datetime.now() - t1
-    time = (diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
-    return Exchange(
-        method, path, url, body, headers, status, outHeaders, content, info, time
-    )
 
 
 ######################################################################################"
 ## test part (old code)
 ######################################################################################"
-class Test(int):
-    """ a boolean with a name """
-
-    name = ""
-
-    def __init__(self, v, n1, n2, realValue):
-        pass  # just for mypy
-
-    def __new__(
-        cls, value: int, nameOK: str = None, nameKO: str = None, realValue=None
-    ):
-        s = super().__new__(cls, value)
-        if value:
-            s.name = nameOK
-        else:
-            s.name = nameKO
-        s.value = realValue
-        return s
-
-    def __repr__(self):
-        return "%s: %s" % ("OK" if self else "KO", self.name)
-
-
-def strjs(x) -> str:
-    if type(x) is bytes:
-        return str(x)
-    elif type(x) is str:
-        return x
-    else:
-        return jdumps(x)
 
 
 def guessValue(txt):
@@ -1711,168 +1020,12 @@ def guessValue(txt):
     return txt
 
 
-def getValOpe(v):
-    try:
-        if type(v) == str and v.startswith("."):
-            g = re.match(r"^\. *([\?!=<>]{1,2}) *(.+)$", v)
-            if g:
-                op, v = g.groups()
-                if op in ["==", "="]:  # not needed really, but just for compatibility
-                    return v, lambda a, b: b == a, "=", "!="
-                elif op == "!=":
-                    return v, lambda a, b: b != a, "!=", "="
-                elif op == ">=":
-                    return (
-                        v,
-                        lambda a, b: b != None and a != None and b >= a or False,
-                        ">=",
-                        "<",
-                    )
-                elif op == "<=":
-                    return (
-                        v,
-                        lambda a, b: b != None and a != None and b <= a or False,
-                        "<=",
-                        ">",
-                    )
-                elif op == ">":
-                    return (
-                        v,
-                        lambda a, b: b != None and a != None and b > a or False,
-                        ">",
-                        "<=",
-                    )
-                elif op == "<":
-                    return (
-                        v,
-                        lambda a, b: b != None and a != None and b < a or False,
-                        "<",
-                        ">=",
-                    )
-                elif op == "?":
-                    return (
-                        v,
-                        lambda a, b: str(a) in str(b),
-                        "contains",
-                        "doesn't contain",
-                    )
-                elif op in ["!?", "?!"]:
-                    return (
-                        v,
-                        lambda a, b: str(a) not in str(b),
-                        "doesn't contain",
-                        "contains",
-                    )
-    except (
-        yaml.scanner.ScannerError,
-        yaml.constructor.ConstructorError,
-        yaml.parser.ParserError,
-    ):
-        pass
-    return v, lambda a, b: a == b, "=", "!="
 
-
-# def lowerIfHeader(t:str):
-#     if t.startswith("headers."):
-#         tt=t.split("|",1)
-#         t="|".join( [tt[0]] + tt[1:] )
-#     return t
-
-
-class TestResult(list):
-    def __init__(self, tests, env, status) -> None:
-
-        results = []
-        for test in tests:
-            what, value = list(test.keys())[0], list(test.values())[0]
-            # tvalue=env.replaceObjOrNone("<<%s>>" % lowerIfHeader(what))
-            tvalue = env.replaceObjOrNone("<<%s>>" % what)
-
-            firstWord = re.split(r"[\.|]", what)[0]
-            testContains = False  # true pour content & "old headers" !!!!!
-            # to ensure compatibility with < 2.3.8
-            if firstWord == "content":
-                testContains = True
-            elif firstWord == "status":
-                testContains = False
-            elif firstWord == "json":
-                testContains = False
-            elif firstWord == "xml":
-                testContains = False
-            elif firstWord == "headers":
-                testContains = False
-            else:  # header
-                if "headers" in env:
-                    v = env["headers"][what]
-                    if v:
-                        print(
-                            cy("**DEPRECATED**"),
-                            "use new header syntax in tests (- headers.%s: ...)" % what,
-                        )
-                        tvalue = v
-                        testContains = True
-
-            # test if all match as json (list, dict, str ...)
-            try:
-
-                def makeComparable(x):
-                    if type(x) is bytes:
-                        return x
-                    else:
-                        return jdumps(
-                            json.loads(x) if type(x) in [str, bytes] else x,
-                            sort_keys=True,
-                        )
-
-                matchAll = makeComparable(value) == makeComparable(tvalue)
-            except json.decoder.JSONDecodeError as e:
-                matchAll = False
-
-            if matchAll:
-                test, opOK, opKO, val = True, "=", "!=", value
-            else:
-                # ensure that we've got a list
-                values = [value] if type(value) != list else value
-                opOK, opKO = None, None
-                bool = False
-
-                for value in values:  # match any
-                    if testContains:
-                        value, ope, opOK, opKO = (
-                            value,
-                            lambda x, c: toStr(x) in toStr(c),
-                            "contains",
-                            "doesn't contain",
-                        )
-                    else:
-                        value, ope, opOK, opKO = getValOpe(value)
-
-                    try:
-                        bool = ope(guessValue(value), guessValue(tvalue))
-                    except TypeError:
-                        bool = False
-                    if bool:
-                        break
-
-                bool = bool and status != None  # make test KO if status is invalid
-
-                if len(values) == 1:
-                    test, opOK, opKO, val = bool, opOK, opKO, value
-                else:
-                    test, opOK, opKO, val = (bool, "in", "not in", values)
-
-            nameOK = what + " " + opOK + " " + strjs(val)  # test name OK
-            nameKO = what + " " + opKO + " " + strjs(val)  # test name KO
-
-            results.append(Test(test, nameOK, nameKO, strjs(tvalue)))
-
-        list.__init__(self, results)
-
-    def __repr__(self) -> str:
-        return "".join(["[%s]" % repr(t) for t in self])
 
 
 class Result:
+    forceNoLimit=False
+
     total = 0
     ok = 0
     infos = []
@@ -1887,13 +1040,14 @@ class Result:
 
 
 class ReqmanResult(Result):
+
     @classmethod
     def fromRMR(cls, name):
         if not name.endswith(".rmr"):
             name = name + ".rmr"
         with open(name, "rb") as fid:
             buf = fid.read()
-            assert buf[:4] == b"RMR2"  # TODO
+            assert buf[:4] == b"RMR3"  # TODO
             x = zlib.decompress(buf[4:])
             return pickle.loads(x)
 
@@ -1922,6 +1076,41 @@ class ReqmanResult(Result):
         self.results = ll
         self.title = "%s %s/%s" % (",".join(switches), ok, total)
 
+    def generateJunitXmlFile(self):
+        ll=[]
+        for r in self.results:
+
+            lc=[]
+            for idx,ex in enumerate(r.exchanges):
+
+                c=junit_xml.TestCase(f"{ex.method} {ex.path}",  # VERB + path
+                    classname=ex.doc,                           # "doc"
+                    elapsed_sec=ex.time,
+                    stdout="\n".join( [ str(i) for i in ex.tests ] ),
+                    # stderr="xxx",
+                    assertions=len(ex.tests),
+                    timestamp=ex.datetime,
+                    status=ex.status,
+                    category=self.title,                    # titre du test general
+                    file=r.name,                            # fichier yml contenant le test
+                    line=idx+1,                             # num de req le fichier yml
+                    # log=None,
+                    # url=None,
+                    allow_multiple_subelements=True
+                )
+                for i in ex.tests:
+                    if not i:
+                        c.add_error_info( str(i) )
+
+                if ex.status is None:
+                    c.add_failure_info(ex.content.decode() )
+
+                lc.append(c)
+            if lc:
+                ll.append( junit_xml.TestSuite(r.name, lc) )
+
+        return junit_xml.TestSuite.to_xml_string(ll)
+
     @property
     def switches(self):
         return self.infos[0]["switches"]  # TODO: not top (but needed for replaying)
@@ -1937,11 +1126,12 @@ class ReqmanResult(Result):
             )
         with open(name, "wb") as fid:
             x = pickle.dumps(self)
-            fid.write(b"RMR2" + zlib.compress(x))
+            fid.write(b"RMR3" + zlib.compress(x))
         return name
 
 
 class ReqmanDualResult(Result):
+
     def __init__(self, r1: ReqmanResult, r2: ReqmanResult):
         assert len(r1.results) == len(r2.results)  # TODO: better here
 
@@ -2006,62 +1196,66 @@ class Reqman:
     async def asyncExecute(
         self, switches: list = [], paralleliz=False, http=None
     ) -> ReqmanResult:
-        scope = self.env.clone()
 
-        for switch in switches:
-            scope.mergeSwitch(switch)
+        async with reqman.com.init():
 
-        reqsBegin = scope.getBEGIN()
-        reqsEnd = scope.getEND()
+            scope = self.env.clone()
 
-        lreqs = []
-        for yml in self.ymls:
-            if isinstance(yml, Reqs):
-                reqs = yml
-                reqs.env = scope
-                lreqs.append(reqs)
+
+            for switch in switches:
+                scope.mergeSwitch(switch)
+
+            reqsBegin = scope.getBEGIN()
+            reqsEnd = scope.getEND()
+
+            lreqs = []
+            for yml in self.ymls:
+                if isinstance(yml, Reqs):
+                    reqs = yml
+                    reqs.env = scope
+                    lreqs.append(reqs)
+                else:
+                    lreqs.append(
+                        Reqs(yml, scope)
+                    )  # (no need to clone) scope is cloned at execution time!
+
+            results = []
+
+            if reqsBegin is not None:
+                await reqsBegin.asyncReqsExecute(switches, http)
+                results.append(reqsBegin)
+
+            if paralleliz:
+                ll = [
+                    reqs.asyncReqsExecute(switches, http, outputConsole=self.outputConsole)
+                    for reqs in lreqs
+                ]
+
+                sem = asyncio.Semaphore(10)  # ten concurrent coroutine max
+                async with sem:
+                    await asyncio.gather(*ll)
+                results += lreqs
             else:
-                lreqs.append(
-                    Reqs(yml, scope)
-                )  # (no need to clone) scope is cloned at execution time!
+                for reqs in lreqs:
+                    await reqs.asyncReqsExecute(
+                        switches, http, outputConsole=self.outputConsole
+                    )
+                    results.append(reqs)
 
-        results = []
-
-        if reqsBegin is not None:
-            await reqsBegin.asyncReqsExecute(switches, http)
-            results.append(reqsBegin)
-
-        if paralleliz:
-            ll = [
-                reqs.asyncReqsExecute(switches, http, outputConsole=self.outputConsole)
-                for reqs in lreqs
-            ]
-
-            sem = asyncio.Semaphore(10)  # ten concurrent coroutine max
-            async with sem:
-                await asyncio.gather(*ll)
-            results += lreqs
-        else:
-            for reqs in lreqs:
-                await reqs.asyncReqsExecute(
+            if reqsEnd is not None:
+                await reqsEnd.asyncReqsExecute(
                     switches, http, outputConsole=self.outputConsole
                 )
-                results.append(reqs)
+                results.append(reqsEnd)
 
-        if reqsEnd is not None:
-            await reqsEnd.asyncReqsExecute(
-                switches, http, outputConsole=self.outputConsole
-            )
-            results.append(reqsEnd)
-
-        r = ReqmanResult(results, switches, self.env)
-        # ============================= LIVE CONSOLE
-        if self.outputConsole != OutputConsole.NO:
-            callback = cg if r.ok == r.total else cr
-            print(
-                "RESULT:", callback("%s/%s" % (r.ok, r.total)), "(%sreq(s))" % r.nbReqs
-            )
-        # ============================= LIVE CONSOLE
+            r = ReqmanResult(results, switches, self.env)
+            # ============================= LIVE CONSOLE
+            if self.outputConsole != OutputConsole.NO:
+                callback = cg if r.ok == r.total else cr
+                print(
+                    "RESULT:", callback("%s/%s" % (r.ok, r.total)), "(%sreq(s))" % r.nbReqs
+                )
+            # ============================= LIVE CONSOLE
 
         return r
 
@@ -2135,16 +1329,6 @@ class ReqmanCommand:
         if rqc:
             self._r.env = Env(FString(rqc),rqc)
 
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ SELFCONF
-        self.fileSwitches = []
-        for i in files:
-            try:
-                for s in yaml.load(FString(i), Loader=yaml.SafeLoader):
-                    if "conf" in s:
-                        self.fileSwitches.extend(list(Env(s["conf"]).switches))
-            except:
-                pass
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         for k, v in penv.items():  # add param's input env into env
             self._r.env[k] = guessValue(v)
@@ -2162,7 +1346,7 @@ class ReqmanCommand:
 
     @property
     def switches(self):
-        return self._r.switches + self.fileSwitches
+        return self._r.switches
 
     def execute(
         self,
@@ -2219,16 +1403,20 @@ class ReqmanRMR(ReqmanCommand):
         raise RMException("not implemented")
 
 
-def prettify(txt: str, indentation: int = 4) -> str:
-    if txt == None:
+def prettify(txt: bytes, indentation: int = 4) -> str:
+    assert type(txt)==bytes
+    if not txt:
         return ""
     else:
-        txt = str(txt)
+        if type(txt)==bytes:
+            txt=reqman.common.decodeBytes(txt)
+        else:
+            txt = str(txt)
     try:
-        return repr(Xml(txt))
+        return repr(reqman.xlib.Xml(txt))
     except:
         try:
-            return jdumps(json.loads(txt), indent=indentation, sort_keys=True)
+            return reqman.common.jdumps(json.loads(txt), indent=indentation, sort_keys=True)
         except:
             return txt
 
@@ -2242,12 +1430,15 @@ def render(rr: Result) -> str:
         BODY = 8192
 
     def limit(txt: str, size=None) -> str:
-        if size and txt and len(txt) > int(size):
-            info = "...***TRUNCATED***..."
-            size = size - len(info)
-            return txt[: size // 2] + info + txt[-size // 2 :]
-        else:
+        if rr.forceNoLimit:
             return txt
+        else:
+            if size and txt and type(txt) in [str,bytes] and len(txt) > int(size):
+                info = "...***TRUNCATED***..."
+                size = size - len(info)
+                return txt[: size // 2] + info + txt[-size // 2 :]
+            else:
+                return txt
 
     template = """<!DOCTYPE html>
 <html>
@@ -2342,7 +1533,12 @@ function copyToClipboard( obj ) {
     <div class="r hide">
         <h4 class="click" onclick="this.parentElement.classList.toggle('hide')" title="Click to show/hide details">
             <b>{{first(ex).method}}</b>
-            {{first_path(ex)}} <b style="float:right">{{first(ex).content if first(ex).status is None else first(ex).status}}</b>
+            {{first_path(ex)}}
+            <b style="float:right">
+                %for x in discover(ex):
+                    {{x and (x.content if x.status is None else x.status) or "X"}}
+                %end
+            </b>
             <br/>
             <i>{{limit(first(ex).doc,isLimit and LIMIT.DOC)}}</i>
 
@@ -2357,11 +1553,11 @@ function copyToClipboard( obj ) {
 %for k,v in x.inHeaders.items():
 <b>{{k}}</b>: {{limit(v,isLimit and LIMIT.HEADERVALUE)}}
 %end
-{{limit(prettify(x.bodyContent),isLimit and LIMIT.BODY)}}</pre>
+{{limit(prettify(x.body),isLimit and LIMIT.BODY)}}</pre>
 --> {{x.info}}
 
 <pre>
-%for k,v in genKV(x.outHeaders):
+%for k,v in x.outHeaders.items():
 <b>{{k}}</b>: {{limit(v,isLimit and LIMIT.HEADERVALUE)}}
 %end
 {{limit(prettify(x.content),isLimit and LIMIT.BODY)}}</pre>
@@ -2434,7 +1630,6 @@ function copyToClipboard( obj ) {
         version=__version__,
         limit=limit,
         LIMIT=LIMIT,
-        genKV=genKV,
     )
 
 
@@ -2475,13 +1670,20 @@ def extractParams(params):
     files, rparams, switches, dswitches = [], [], [], []
     for param in params:
         if param.startswith("--"):
-            # reqman param
-            p = param[2:]
-            if p.startswith("o") or p.startswith("x"):
-                rparams.append(p)
-            else:  # ability to group param (ex: --kspb)
-                for i in p:
-                    rparams.append(i)
+            if param.startswith("--log:"):
+                level=param.split("--log:")[-1]
+                numeric_level = getattr(logging, level.upper(), None)
+                if not isinstance(numeric_level, int):
+                    raise RMCommandException('bad log level')
+                logging.basicConfig(level=numeric_level)
+            else:
+                # reqman param
+                p = param[2:]
+                if p.startswith("o") or p.startswith("x") or p.startswith("j"):
+                    rparams.append(p)
+                else:  # ability to group param (ex: --kspb)
+                    for i in p:
+                        rparams.append(i)
         elif param.startswith("-"):
             # switch param
             switches.append(param[1:])
@@ -2496,9 +1698,6 @@ def extractParams(params):
 def main(fakeServer=None, hookResults=None) -> int:
     params = sys.argv[1:]
     r = None
-
-    class RMCommandException(Exception):
-        pass
 
     # extract sys.argv in --> files,rparams,switch
     files, rparams, switches, dswitches = extractParams(params)
@@ -2559,9 +1758,13 @@ def main(fakeServer=None, hookResults=None) -> int:
         saveRMR = False
         replayRMR = False
         outputContent=None
+        forceNoLimit=False
+        junitXmlFile=None
         for p in rparams:
             if p == "k":
                 outputConsole = OutputConsole.MINIMAL_ONLYKO
+            elif p == "f":
+                forceNoLimit=True
             elif p == "i":
                 pass  # already managed (see below ^)
             elif p == "s":
@@ -2591,6 +1794,12 @@ def main(fakeServer=None, hookResults=None) -> int:
                 outputContent = p[1:].strip(":= ")
                 if not outputContent:
                     raise RMCommandException("You should provide a var'name with --x:<varname>")
+            elif p.startswith("j"):
+                junitXmlFile = p[1:].strip(":= ") or "reqman.xml"
+                if paralleliz:
+                    raise RMCommandException("Can't generate junit-xml with --p")
+                if dswitches:
+                    raise RMCommandException("Can't generate junit-xml in dual mode")
             else:
                 raise RMCommandException("bad option '%s'" % p)
 
@@ -2683,6 +1892,7 @@ def main(fakeServer=None, hookResults=None) -> int:
                 print("Save RMR:", rr.saveRMR("reqman.rmr" if saveRMR == 2 else None))
 
         if outputHtmlFile:
+            rr.forceNoLimit=forceNoLimit
             with codecs.open(outputHtmlFile, "w+", "utf-8-sig") as fid:
                 fid.write(rr.html)
             if openBrowser:
@@ -2693,19 +1903,21 @@ def main(fakeServer=None, hookResults=None) -> int:
                 except:
                     pass
 
+        if junitXmlFile:
+            with codecs.open(junitXmlFile, "w+", "utf-8-sig") as fid:
+                fid.write(rr.generateJunitXmlFile())
+
         if hookResults is not None:  # for tests only
             hookResults.rr = rr
 
         if outputContent!=None:
-            x=r._r.env.get(outputContent,None)
-            if x is None:
-                x=r._r.env.globals.get(outputContent,None)
-
-            if x :
-                if isPython(x):
-                    x= r._r.env.transform(None, outputContent)
-                else:
-                    x=r._r.env.replaceObjOrNone(x)
+            ns=reqman.env.Scope( r._r.env.clone() ,EXPOSEDS)
+            try:
+                x=ns.get_var(outputContent)
+                if x is reqman.env.NotFound:
+                    x=None
+            except reqman.env.ResolveException:
+                x=None
 
             if type(x) in [list,dict]:
                 return json.dumps( x )
@@ -2746,8 +1958,6 @@ def main(fakeServer=None, hookResults=None) -> int:
 def toYaml(x,idt=2):
     return yaml.safe_dump( x ,default_flow_style=False,encoding='utf-8', allow_unicode=True,indent=idt,sort_keys=False).decode()
 
-def pad(txt,prefix):
-    return "\n".join([prefix+line for line in txt.splitlines()])
 
 class GenRML:
     """ class Helper to generate a request to RML string """
@@ -2821,24 +2031,16 @@ class GenRML:
         if self.returns:
           l=[]
           l.append( "# RETURNS:" )
-          l.append( pad(toYaml(self.returns),"#   ") )
+          l.append( padLeft(toYaml(self.returns),"#   ") )
           y+="\n".join(l)
 
-        if self.comment:
-            coms=self.comment.splitlines() if type(self.comment)==str else self.comment
-            l=["# "+i for i in coms]
-            l.append("#"*80)
-            c="\n".join(l)
-        else:
-            c="#"*80
 
-        y=y.replace("  doc: Re-pl-ac-eT-he-Do-cs", "  doc: |\n%s" % pad( str(self.doc),"    "))
+        c = padLeft(self.comment,"# ")+"\n"+"#"*80 if self.comment else "#"*80
+
+        y=y.replace("  doc: Re-pl-ac-eT-he-Do-cs", "  doc: |\n%s" % padLeft( str(self.doc),"    "))
         y=y.replace("  XXX: X-X-X",c)
 
         yml= "\n%s\n%s\n" % ( "#"*80,y)
 
         return re.sub(r"\{\{([\w_\-\d]+)\}\}", r"<<\1>>", yml)
 
-
-if __name__ == "__main__":
-    sys.exit(main())

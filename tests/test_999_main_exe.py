@@ -17,9 +17,9 @@ def test_exe(): #ensure that the module is executable (thru its "if __name__=="_
     with pytest.raises(SystemExit):
         with contextlib.redirect_stderr(fe):
             with contextlib.redirect_stdout(fo):
-                execfile("reqman.py")
-    output=fo.getvalue()+fe.getvalue()      
+                execfile("reqman/__main__.py")
+    output=fo.getvalue()+fe.getvalue()
     assert "USAGE" in output
     assert reqman.__version__ in output
 
-        
+

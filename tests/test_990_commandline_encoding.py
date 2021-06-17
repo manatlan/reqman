@@ -5,7 +5,7 @@ MOCK={
     "https://www.manatlan.com/cp1252":(200,"oké".encode().decode("cp1252")),
 }
 
-def test_same_encoding(exe):  
+def test_same_encoding(exe):
     y="""
 GET: https://www.manatlan.com/utf8
 tests:
@@ -14,11 +14,11 @@ tests:
 
     with open("f.yml","w+") as fid:
         fid.write(y)
-        
+
     x=exe(".",fakeServer=MOCK)
     assert x.rc == 0
 
-def test_same_encoding2(exe): 
+def test_same_encoding2(exe):
     y="""
 GET: https://www.manatlan.com/cp1252
 tests:
@@ -27,11 +27,12 @@ tests:
 
     with open("f.yml","w+") as fid:
         fid.write(y)
-        
+
     x=exe(".",fakeServer=MOCK)
+    # x.view()
     assert x.rc == 0
 
-def test_diff_encoding(exe): 
+def test_diff_encoding(exe):
     y="""
 GET: https://www.manatlan.com/cp1252
 tests:
@@ -40,12 +41,12 @@ tests:
 
     with open("f.yml","w+") as fid:
         fid.write(y)
-        
+
     x=exe(".",fakeServer=MOCK)
     assert x.rc == 0
     # x.view()
 
-def test_diff_encoding_with_rconf(exe): 
+def test_diff_encoding_with_rconf(exe):
     y="""
 GET: https://www.manatlan.com/cp1252
 tests:
@@ -57,12 +58,12 @@ tests:
 
     with open("reqman.conf","w+") as fid:
         fid.write("""val: oké""")
-        
+
     x=exe(".",fakeServer=MOCK)
     assert x.rc == 0
     # x.view()
 
-def test_diff_encoding_with_rconf2(exe): 
+def test_diff_encoding_with_rconf2(exe):
     y="""
 - GET: https://www.manatlan.com/utf8
   tests:
@@ -78,7 +79,7 @@ def test_diff_encoding_with_rconf2(exe):
 
     with open("reqman.conf","w+") as fid:
         fid.write("""val: oké""".encode().decode("cp1252"))
-        
+
     x=exe(".",fakeServer=MOCK)
     assert x.rc == 0
     # x.view()

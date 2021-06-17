@@ -17,7 +17,7 @@ def test_500(exe):
 """)
 
     x=exe(".","--o",fakeServer=MOCK)
-    #x.view()
+    # x.view()
     assert x.rc == 0
 
 def test_error_in_py_call(exe):
@@ -40,5 +40,6 @@ def test_error_in_py_call(exe):
 """)
 
     x=exe(".","--o",fakeServer=MOCK)
+    # x.view()
     assert x.rc == 2
 

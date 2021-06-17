@@ -1,13 +1,18 @@
-import pytest, reqman, json
+import pytest, reqman, json,pytest
 import datetime,pickle
 
 
 def test_prettify():
-    print( reqman.prettify("<root><a>yolo</a></root>") )
-    print( reqman.prettify("<root><a>yolo</a>") )
-    print( reqman.prettify(json.dumps( {"a":dict(a=1,b=2),"b":list("abc")}) ) )
+    print( reqman.prettify(b"<root><a>yolo</a></root>") )
+    print( reqman.prettify(b"<root><a>yolo</a>") )
+    print( reqman.prettify(json.dumps( {"a":dict(a=1,b=2),"b":list("abc")}).encode() ) )
     print( reqman.prettify( bytes(range(0,255))) )
-    print( reqman.prettify( None ) )
+    with pytest.raises( AssertionError ):
+         reqman.prettify( None )
+    with pytest.raises( AssertionError ):
+         reqman.prettify( "hello" )
+    with pytest.raises( AssertionError ):
+         reqman.prettify( 42 )
 
 
 def test_guess():
@@ -24,9 +29,9 @@ def test_guess():
     assert reqman.guessValue("true") == True
     assert reqman.guessValue("false") == False
     assert reqman.guessValue("{}") == {}
-    assert reqman.guessValue("[]") == []    
+    assert reqman.guessValue("[]") == []
 
     assert reqman.guessValue(42)==42
     assert reqman.guessValue(b"h")==b"h"
     assert reqman.guessValue(str(b))==str(b)
-    assert reqman.guessValue(None)==None    
+    assert reqman.guessValue(None)==None

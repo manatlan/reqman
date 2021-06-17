@@ -46,7 +46,7 @@ def test_save_new(Reqs):
 
     assert ll[0].url == "/a"
     assert ll[1].url == "/b"
-    
+
     assert ll[2].url == "/a"
     assert ll[3].url == "/200"
 
@@ -81,7 +81,7 @@ def test_save_new_VIA_CALL(Reqs):
 
     assert ll[0].url == "/a"
     assert ll[1].url == "/b"
-    
+
     assert ll[2].url == "/a"
     assert ll[3].url == "/200"
 
@@ -108,8 +108,8 @@ PROC:
     - content: ok
 """
 
-    
-    l=Reqs(y,env)    
+
+    l=Reqs(y,env)
     ll=l.execute( mock )
     assert len(ll)==2
     assert all(ll[0].tests)
@@ -129,7 +129,7 @@ PROC:
     - call: PROC
       params:
         first: start
-      save: 
+      save:
         redirige: <<json.route.second>>
 
     - POST: /go/<<redirige>>
@@ -140,7 +140,7 @@ PROC:
 - call: context
 """
 
-    l=Reqs(y2,env,trace=True)    
+    l=Reqs(y2,env)
     ll=l.execute( mock )
     assert len(ll)==2
     assert all(ll[0].tests)

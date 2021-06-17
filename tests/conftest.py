@@ -1,6 +1,7 @@
 import pytest
 import reqman
-import asyncio,sys
+import reqman.com
+import asyncio,sys,html
 import contextlib,io,re,json,html
 import tempfile,os,shutil
 import html
@@ -37,6 +38,7 @@ def exe(request):
     def tester(*a,fakeServer=None):
         sys.argv=["reqman.exe"]+list(a)
 
+        reqman.com.init()
 
         f=FakeExeReturn()
 

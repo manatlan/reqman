@@ -1,0 +1,71 @@
+#!python3 fakereqman.py
+#:valid:11,11,11,11,11,00 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+- proc:
+    - GET: http://localhost:11111/set?value=<<val?|defaulting>>
+      params:
+        defaulting: return x or "a"
+
+- call: proc
+  doc: providing value 'b'
+  params:
+    val: b
+  tests:
+    - status: 200
+    - content: b
+
+- call: proc
+  doc: not providing a value, do should be defaulting to "a"
+  tests:
+    - status: 200
+    - content: a
+
+
+# version with new "query", which is correct
+- proc2:
+    - GET: http://localhost:11111/set
+      query:
+        value: <<val?|defaulting>>
+      params:
+        defaulting: return x or "a"
+
+- call: proc2
+  doc: providing value 'b'
+  params:
+    val: b
+  tests:
+    - status: 200
+    - content: b
+
+- call: proc2
+  doc: not providing a value, do should be defaulting to "a"
+  tests:
+    - status: 200
+    - content: a
+
+
+# version with new "query", which is NOT correct, coz val is not ignorable !!!!
+- proc3:
+    - GET: http://localhost:11111/set
+      query:
+        value: <<val|defaulting>>
+      params:
+        defaulting: return x or "a"
+
+- call: proc3
+  doc: providing value 'b'
+  params:
+    val: b
+  tests:                # not playable
+    - status: 200
+    - content: b
+
+- call: proc3
+  doc: not providing a value, do should be defaulting to "a"
+  tests:                 # not playable
+    - status: 200
+    - content: a

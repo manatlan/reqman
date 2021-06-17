@@ -2,6 +2,9 @@ import pytest,reqman
 
 MOCK={"https://www.manatlan.com":(200,"ok")}
 
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
+
 def test_static(Reqs):
     y="""
 - yo:
@@ -41,10 +44,10 @@ def test_dynamic_bad(Reqs):
     foreach: "nope"
 """
     env=dict(liste=[dict(a=1),dict(a=2)])
-    
+
     l=Reqs(y,env)
     assert len(l) == 1
-    
+
     with pytest.raises(reqman.RMException):
       l.execute( MOCK )
 
@@ -55,7 +58,7 @@ def test_dynamic_bad2(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 1
-    
+
     with pytest.raises(reqman.RMException):
       l.execute( MOCK )
 
@@ -68,7 +71,7 @@ def test_dynamic_bad3(Reqs):
 
     l=Reqs(y,env)
     assert len(l) == 1
-    
+
     with pytest.raises(reqman.RMException):
       l.execute( MOCK )
 
@@ -81,7 +84,7 @@ def test_dynamic_bad33(Reqs):
 
     l=Reqs(y,env)
     assert len(l) == 1
-    
+
     with pytest.raises(reqman.RMException):
       l.execute( MOCK )
 
@@ -94,7 +97,7 @@ def test_dynamic_bad333(Reqs):
 
     l=Reqs(y,env)
     assert len(l) == 1
-    
+
     with pytest.raises(reqman.RMException):
       l.execute( MOCK )
 
@@ -107,7 +110,7 @@ def test_dynamic_bad333(Reqs):
 
     l=Reqs(y,env)
     assert len(l) == 1
-    
+
     with pytest.raises(reqman.RMException):
       l.execute( MOCK )
 
@@ -120,7 +123,7 @@ def test_dynamic_bad4(Reqs):
 
     l=Reqs(y,env)
     assert len(l) == 1
-    
+
     with pytest.raises(reqman.RMException):
       l.execute( MOCK )
 
@@ -133,7 +136,7 @@ def test_dynamic_bad5(Reqs):
 
     l=Reqs(y,env)
     assert len(l) == 1
-    
+
     with pytest.raises(reqman.RMException):
       l.execute( MOCK )
 

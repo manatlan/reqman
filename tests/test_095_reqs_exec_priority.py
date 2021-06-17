@@ -1,59 +1,69 @@
 from reqman import json,Env
 
 
-def test_priority_dont_override_local_value(Reqs):
+def test_1priority_params_for_proc(exe):
     MOCK={
         "/a":(200,"ok"),
         "/b":(201,"ok"),
     }
+
     y="""
     - proc:
         - GET: /<<p>>
           params:
-            p: a     
+            p: a
 
-    - call: proc # call a
-      tests:
-        status: 200
-
-    - call: proc # call a  (pato will not be happy ;-) )
+    - call: proc
       params:
-        p: b
-      tests:
-        status: 200
+        p: z
+      tests:  # "/a" (local "p" is prefered over others)
+        - status: 200
+        - content: ok
     """
 
-    ll=Reqs(y,trace=True).execute(MOCK)
-    # "b" is NOT priority over "a"
-    for i in ll:
-      assert all(i.tests)    
+    with open("f.yml", "w+") as fid:
+        fid.write(y)
 
-def test_create_default_value_for_proc(Reqs): # hey pato, look here
+    x = exe(".", "--o", fakeServer=MOCK)
+    # print(x.console)
+    # x.view()
+    assert x.rc == 0
+
+
+
+def test_ignorable_params_for_proc(exe): # hey pato, look here
     MOCK={
         "/a":(200,"ok"),
         "/b":(201,"ok"),
     }
+
     y="""
     - proc:
-        - GET: /<<p|defa>>
+        - GET: /<<p?|defaulting>>
           params:
-            defa: return x or "a"
+            defaulting: return x or "a"
 
-    - call: proc # call a
-      tests:
-        status: 200
-
-    - call: proc # call b  (pato will be happy ;-) )
+    - call: proc
       params:
         p: b
-      tests:
-        status: 201
+      tests:            # should be "/b"
+        - status: 201
+        - content: ok
+
+    - call: proc
+      tests:            # should be "/a" (the default)
+        - status: 200
+        - content: ok
     """
 
-    ll=Reqs(y).execute(MOCK)
-    # "b" is priority over "a"
-    for i in ll:
-      assert all(i.tests)    
+    with open("f.yml", "w+") as fid:
+        fid.write(y)
+
+    x = exe(".", "--o", fakeServer=MOCK)
+    # print(x.console)
+    # x.view()
+    assert x.rc == 0
+
 
 
 def test_priority_over_env(Reqs):
@@ -77,10 +87,10 @@ def test_priority_over_env(Reqs):
         "/first":(200,'ok'),
         "/second":(201,'ok'),
     }
-    ll=Reqs(y,{"var":"first"},trace=True).execute(MOCK)
+    ll=Reqs(y,{"var":"first"}).execute(MOCK)
     for i in ll:
       assert all(i.tests)
-    
+
 
 
 def test_priority_over_saved(Reqs):
@@ -115,5 +125,4 @@ def test_priority_over_saved(Reqs):
     ll=Reqs(y).execute(MOCK)
     for i in ll:
       assert all(i.tests)
-    
-    
+

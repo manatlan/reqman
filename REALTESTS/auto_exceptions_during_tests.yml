@@ -1,0 +1,24 @@
+#!python3 fakereqman.py
+#:valid:00,00 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- proc:
+
+  - GET: http://localhost:11111/justeA404 # ex: 404
+    tests:
+        status: <<p1|yo>>
+        status|yo: koko
+
+  - GET: http://localhost:99999/ # ex: unreachable
+    tests:
+        status: <<p1|yo>>
+        status|yo: koko
+
+- call: proc
+  params:
+      p1: 12
+      yo: return x.get("yo")

@@ -1,4 +1,5 @@
 #!python3 fakereqman.py
+#:valid:11,11 THIS --b --f
 #:valid:11,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
@@ -9,15 +10,15 @@
 - GET: http://localhost:11111/bigtxt
   tests:
     - status: 200
-    - content: 1234
+    - content: .? [1234]
   save: xxx
 
 - GET: http://localhost:11111/bigtxt
-  doc: <<xxx>>>
+  doc: <<xxx>>
   headers:
     jo: <<xxx|limit>>
   params:
     limit: return x[:8000]
   tests:
     - status: 200
-    - content: <<xxx>>
+    - content: .? <<xxx>>

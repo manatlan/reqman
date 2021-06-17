@@ -1,22 +1,28 @@
 import pytest,reqman,json,yaml
 import pytest,reqman,json
+MOCK={
+          "/pingpong": lambda m,p,b,h: (200,b)
+      }
 
-@pytest.mark.asyncio
-async def test_hermetic_env():
-    MOCK={
-            "/pingpong": lambda m,p,b,h: (200,b)
-        }
-    
-    r=reqman.Reqman()
-    r.env["bytes"]=bytes(range(0,255))
 
-    r.outputConsole = reqman.OutputConsole.FULL
-    r.add("""
+def test_newway(exe):
+
+    with open("reqman.conf", "w+") as fid:
+        fid.write(
+            """
+bytes: |
+  return bytes(range(0,255))
+"""
+        )
+
+    with open("f.yml", "w+") as fid:
+        fid.write(
+            """
 - POST: /pingpong
   body: Hello World
   tests:
     - status: 200
-    - content: Hello
+    - content: .? Hello
 
 - POST: /pingpong
   body:
@@ -26,7 +32,7 @@ async def test_hermetic_env():
     b: "hello"
   tests:
     - status: 200
-    - content: hello
+    - content: .? hello
     - json.a.0: 1
     - json.a.1: 2
     - json.b: "hello"
@@ -59,7 +65,7 @@ async def test_hermetic_env():
   body: <<bytes>>
   tests:
     - status: 200
-    - content: ABCDEF       # test repr
+    - content: .? ABCDEF       # test repr
 
 - POST: /pingpong
   body: <<bytes>>
@@ -84,11 +90,13 @@ async def test_hermetic_env():
     - status: 200
     - content: <<|giveBytes>>   # test real bytes
   params:
-    giveBytes: return b"ABCDEF"    
+    giveBytes: return b"ABCDEF"
 
-""")
 
-    rr=await r.asyncExecute( paralleliz=False, http=MOCK )
-    assert rr.code==0
-    rr=await r.asyncExecute( paralleliz=True, http=MOCK )
-    assert rr.code==0
+"""
+        )
+
+    x = exe(".", "--o", fakeServer=MOCK)
+    # print(x.console)
+    # x.view()
+    assert x.rc == 0

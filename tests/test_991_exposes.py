@@ -378,7 +378,7 @@ def test_input_is_json_str(exe):
     with open("reqman.conf","w+") as fid:
         fid.write("""
 
-obj: "[1,2,3]"
+obj: [1,2,3]
 """)
 
     x=exe(".",fakeServer=MOCK)

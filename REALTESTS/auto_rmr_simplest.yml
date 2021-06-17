@@ -10,6 +10,7 @@
 #--------------------------------------------------------------
 
 - GET: http://localhost:11111/get_txt
+  doc: hell boy
   tests:
     - status: 200
 

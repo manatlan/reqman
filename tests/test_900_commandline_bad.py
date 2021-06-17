@@ -13,7 +13,7 @@ def test_COMMAND_bad_option(exe):
     assert "USAGE" in r.console
 
 def test_COMMAND_bad_option2(exe):
-    r=exe(".","--ko","--jkjkj")
+    r=exe(".","--ko","--wkwkw")
     assert r.rc==-1
     assert "ERROR COMMAND: bad option" in r.console
     assert "USAGE" in r.console

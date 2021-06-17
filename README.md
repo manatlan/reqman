@@ -1,4 +1,4 @@
-# reqman (2.X)
+# reqman (3.X)
 Reqman is a postman killer ;-)
 
 **Reqman** is a [postman](https://www.getpostman.com/) killer. It shares the same goal, but without GUI ... the GUI is simply your favorite text editor, because requests/tests are only simple yaml files. **Reqman** is a command line tool, available on any platforms.
@@ -15,8 +15,9 @@ All configurations is done via simple yaml files, editable with any text editors
 
 [DEMO](https://test-reqman.glitch.me)
 
+
 **Features**
-   * Light (simple py3 file, 3000 lines of code, and x3 lines for unittests, in TDD mind ... cov:95%)
+   * Light (simple py3 module, 3000 lines of code, and x3 lines for unittests, in TDD mind ... cov:97%)
    * Powerful (at least as postman free version)
    * tests are simple (no code !)
    * Variable pool
@@ -51,7 +52,14 @@ All configurations is done via simple yaml files, editable with any text editors
        * fully compatible with reqman1 conf/ymls
        * xml/xpath support tests
        * used as a lib/module, you can add easily your own features (see below)
+   * NEW 3.0 : (simple py file -> real python module (multiple files))
+        * full rewrite of resolving mechanism (more robust, more maintanable) (the big improvment)
+        - "wait:" commands (time expressed in ms)
+        * "ignorable vars" (avoid ResolveException, with `<<var?>>`)
+        * --f option : to output full exchanges in html output
+        * --j && --j:file.xml : to output junit-xml file
 
+**TODO** : need to rewrite this ^^ ;-)
 
 ## Getting started : installation
 
@@ -61,7 +69,9 @@ If you are on an *nix platform, you can start with pip :
 
 it will install the _reqman_ script in your path (perhaps, you'll need to Add the path `~/.local/bin` to the _PATH_ environment variable.)
 
-If you are on microsoft windows, just download [reqman.exe (v2)](https://github.com/manatlan/reqman/blob/master/dist/reqman.exe). [The old v1 reqman.exe, is still there](https://github.com/manatlan/reqman/blob/reqman1.4.4.0/dist/reqman.exe), and add it in your path.
+If you are on microsoft windows, just download [reqman.exe (v3)](https://github.com/manatlan/reqman/blob/master/dist/NOT_AVAILABLE_YET).
+ [The old reqman.exe V2, is still there](https://github.com/manatlan/reqman/blob/ac7d96319bf53e08f5a01ff55c54ef820e839fa6/dist/reqman.exe), and add it in your path.
+ [The old reqman.exe V1, is still there](https://github.com/manatlan/reqman/blob/reqman1.4.4.0/dist/reqman.exe), and add it in your path.
 
 
 ## Getting started : let's go

@@ -1,6 +1,8 @@
 import pytest, reqman, json
 import datetime, pickle
-
+"""
+THIS IS THE OLD TESTS, BEFORE NEWCORE ... now ok with newcore
+"""
 
 def test_Env_pickable():
     e = reqman.Env({"a": 42})
@@ -48,29 +50,32 @@ def test_createEnvBad():
 
 
 def test_jpath():
-    assert reqman.jpath({"v": 42}, "v") == 42
-    assert reqman.jpath({"v": 42}, "v2") is reqman.NotFound
+    reqman_jpath = lambda d,p: reqman.env.jpath( reqman.env.Scope(d), p)
+    assert reqman_jpath({"v": 42}, "v") == 42
+    assert reqman_jpath({"v": 42}, "v2") is reqman.env.NotFound
 
     env = reqman.Env(dict(toto=dict(v1=100, v2=None), tata=dict(l=["a", "b", "c"])))
-    assert reqman.jpath(env, "titi") is reqman.NotFound
-    assert reqman.jpath(env, "titi.size") is reqman.NotFound
-    assert reqman.jpath(env, "titi.0") is reqman.NotFound
+    assert reqman_jpath(env, "titi") is reqman.env.NotFound
+    assert reqman_jpath(env, "titi.size") is reqman.env.NotFound
+    assert reqman_jpath(env, "titi.0") is reqman.env.NotFound
 
-    assert reqman.jpath(env, "toto.v1") == 100
-    assert reqman.jpath(env, "toto.v2") == None
-    assert reqman.jpath(env, "toto.v3") is reqman.NotFound
-    assert reqman.jpath(env, "toto.size") == 2
+    assert reqman_jpath(env, "toto.v1") == 100
+    assert reqman_jpath(env, "toto.v2") == None
+    assert reqman_jpath(env, "toto.v3") is reqman.env.NotFound
+    assert reqman_jpath(env, "toto.size") == 2
 
-    assert reqman.jpath(env, "tata.l") == ["a", "b", "c"]
-    assert reqman.jpath(env, "tata.l.1") == "b"
-    assert reqman.jpath(env, "tata.l.1.size") == 1
-    assert reqman.jpath(env, "tata.l.size") == 3
+    assert reqman_jpath(env, "tata.l") == ["a", "b", "c"]
+    assert reqman_jpath(env, "tata.l.1") == "b"
+    assert reqman_jpath(env, "tata.l.1.size") == 1
+    assert reqman_jpath(env, "tata.l.size") == 3
 
 
 def test_jpath_python():
+    reqman_jpath = lambda d,p: reqman.env.jpath( reqman.env.Scope(d), p)
+
     env = dict(fct="return dict(a=dict(b=42))")
-    assert reqman.jpath(env, "fct.size") == 1
-    assert reqman.jpath(env, "fct.a.b") == 42
+    assert reqman_jpath(env, "fct.size") == 1
+    assert reqman_jpath(env, "fct.a.b") == 42
 
 
 def test_simple():
@@ -92,7 +97,7 @@ def test_simple():
         )
     )
     assert env.replaceTxt("hello '<<>>'") == "hello '<<>>'"
-    assert env.replaceTxt("hello '<<unknown>>'") == "hello '<<unknown>>'"
+    # assert env.replaceTxt("hello '<<unknown>>'") == "hello '<<unknown>>'"
     assert env.replaceTxt("hello '<<s>>'") == "hello 'world'"
     assert env.replaceTxt("hello '<<i>>'") == "hello '42'"
     assert env.replaceTxt("hello '<<f>>'") == "hello '3.14'"
@@ -111,7 +116,7 @@ def test_complex():
     env = reqman.Env(dict(d=dict(v1=False, v2=None)))
     assert env.replaceTxt("hello '<<d.v1>>'") == "hello 'false'"
     assert env.replaceTxt("hello '<<d.v2>>'") == "hello 'null'"
-    assert env.replaceTxt("hello '<<d.v3>>'") == "hello '<<d.v3>>'"
+    # assert env.replaceTxt("hello '<<d.v3>>'") == "hello '<<d.v3>>'"
 
 
 def test_rec():
@@ -153,7 +158,7 @@ def test_transform_return_int():
 
 def test_transform_return_bytes_and_replace_all():
     env = reqman.Env(dict(m="return b'bijour'"))
-    assert env.replaceTxt("hello '<<|m>>'") == b"bijour"
+    assert env.replaceTxt("hello '<<|m>>'") == "hello 'bijour'"
 
 
 def test_transform_unknown_method():
@@ -179,12 +184,13 @@ def test_replaceObj():
     assert env.replaceObj({"a": "42"}) == {"a": "42"}
     assert env.replaceObj([{"a": "42"}]) == [{"a": "42"}]
 
-    assert env.replaceObj("<<unknown>>") == "<<unknown>>"
     assert env.replaceObj("<<v>>") == 42
     assert env.replaceObj({"a": "<<v>>"}) == {"a": 42}
 
-    assert env.replaceObj("<<b>>") == b"bytes"
+    assert env.replaceObj("<<b>>") == "bytes"
 
+    with pytest.raises(reqman.env.ResolveException):
+        env.replaceObj("<<unknown>>")
 
 def test_replaceObj2():
     env = reqman.Env(dict(obj1=dict(a=42, b="<<obj2>>"), obj2=dict(i=42, j="hello")))
@@ -203,14 +209,10 @@ def test_switches():
     assert list(env.switches) == [("obj1", "https://w1")]
 
 
-def test_renameKeys():
-    dd = dict(KEY="kiki", a=42, b=dict(KEY=12, c=13))
-    reqman.renameKeyInDict(dd, "KEY", "MyKey")
-    assert dd == {"a": 42, "b": {"c": 13, "MyKey": 12}, "MyKey": "kiki"}
 
 
 def test_HeadersMixed():
-    dd = reqman.HeadersMixedCase(KeY="kiki")
+    dd = reqman.testing.HeadersMixedCase(KeY="kiki")
     assert dd["KeY"] == "kiki"
     assert dd["key"] == "kiki"
     assert dd["key2"] == None

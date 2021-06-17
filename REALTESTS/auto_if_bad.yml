@@ -1,0 +1,11 @@
+#!python3 fakereqman.py
+#:valid:1 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+- if: <<jkjkjkljkljklj>>                                    # if can't be evalualed
+  GET: http://localhost:11111/get_txt                       # so the GET is called !
+  tests:                                                    # and tests are done
+    status: 200

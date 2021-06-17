@@ -15,12 +15,22 @@
             "presentation": {
                 "panel": "new",
                 "focus": true
-            }            
+            }
         },
         {
             "label": "upload to pypi",
             "type": "shell",
             "command": "twine upload dist/reqman-*.tar.gz dist/reqman-*.whl",
+            "problemMatcher": [],
+            "presentation": {
+                "panel": "new",
+                "focus": true
+            }
+        },
+        {
+            "label": "clean repo",
+            "type": "shell",
+            "command": "rm -rf build reqman.egg-info __pycache__ reqman/__pycache__ .pytest_cache tests/__pycache__ .coverage reqman.html",
             "problemMatcher": [],
             "presentation": {
                 "panel": "new",

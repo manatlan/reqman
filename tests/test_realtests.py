@@ -10,7 +10,7 @@ def setup_module():
     WS=fakereqman.FakeWebServer(11111)
     WS.start()
     import time
-    time.sleep(1)   
+    time.sleep(1)
 
 
 def teardown_module():

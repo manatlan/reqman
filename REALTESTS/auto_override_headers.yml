@@ -1,21 +1,26 @@
 #!python3 fakereqman.py
-#:valid:1111 THIS --b
+#:valid:11,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
 #    (works in vs code, press F5)
 #--------------------------------------------------------------
 
-- conf:
-    root: http://localhost:11111
-    headers:
-      X-My: Hello
 
-- POST: /ping
-  body: hello
+- yo:
+  - POST: http://localhost:11111/ping
+    headers:
+      x-header: yolo
+
+- call: yo
+  headers:
+    x-header: kif
   tests:
     - status: 201
-    - content: hello
-    - headers.X-mY: Hello   # mixed case heaser works
-    - headers.x-my: Hello
-
+    - response.headers.x-header: kif
+- call: yo
+  headers:
+    x-header: null
+  tests:
+    - status: 201
+    - response.headers.x-header: null

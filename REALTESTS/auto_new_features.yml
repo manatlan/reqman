@@ -1,5 +1,5 @@
 #!python3 fakereqman.py
-#:valid:111111,11111111 THIS --b
+#:valid:111100,11111111 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
@@ -9,7 +9,7 @@
 - old:
 
     - GET: http://localhost:11111/get_json
-      doc: old tests mechanism (to ensure compat)
+      doc: old tests mechanism (to ensure compat) -> NOT COMPATIBLE WITH NEW CORE !!!
       tests:
         - status: 200
         - content: float

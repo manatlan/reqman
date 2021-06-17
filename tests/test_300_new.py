@@ -55,7 +55,7 @@ user1: <<user>>
     - status: 200
 
 - GET: /a/<<user1.id>>
-  doc:  value=<<user1.id>>
+  doc:  value=<<user1.id>> <<user>> <<user1>>
   tests:
     - status: 200
 

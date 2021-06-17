@@ -1,3 +1,48 @@
+3.0.0 (17/06/21)
+- perhaps you should avoid to use this, and use next versions (release fix)
+- a lot of changes ... so a lot of bugs (see alpha changes)
+  btw all my legacy tests works (at 99%) ... but pretty sure that exists some nails to fix.
+- major evols: --f, --j, wait command, ignorable vars ... and lot of fixes (to be as strong as v2 versions)
+- better base/core : futures versions will use git in the right way (and it will be easily to maintain ;-)
+
+ALPHA 3.0.0a6 (new core system) : near ;-)
+- FIX: bug when executing pymethods in tests
+- EVOL: new option --j & --j:name.xml to output junit xml file (jenkins/bamboo can read/interpret junit files)
+- new unit tests
+
+ALPHA 3.0.0a5 (new core system) : near ;-)
+- EVOL: assuming that "save order is important" : so "save" statement can be a dict OR (newly) a list!
+
+ALPHA 3.0.0a4 (new core system) : should be the good one !
+- FIX: event_loop/py38 on windows (Configuration of windows event loop for libraries)
+- FIX: save order is important
+
+ALPHA 3.0.0a3 (new core system)
+- FIX: 'int'.size was wrong
+- FIX: match identical request in dual mode (was wrong)
+
+ALPHA 3.0.0a2 (new core system)
+- back to aiohttp (with aio cookies) (httpx doesn't support SOCKS PROXY (which is a nogo)) ;-(
+- bad if statements fails silently
+
+ALPHA 3.0.0a1 (new core system)
+- now, it's a real module (a folder in site-packages)
+- now, the version is real semver
+- new command (wait: <<time_in_ms>>)
+- remove SELFCONF (too overbloated and not useful)
+- ~~use HTTPX again and forever ;-) (bye aiohttp)~~
+- "proxy" support too ~~(can be really configurable, see proxies/httpx)~~
+- FIX: dual html -> dual status_code ;-) (not just the first)
+- EVOL: new option "--f" to force full output in html rendering
+- EVOL: the "resolving" mechanism is now completly new (more robust, more maintanable)
+- EVOL: some little behaviour has changed :
+    - some complex things (not covered in UT) should just work as expected
+    - headers can't be tested directly, only thru "headers."
+    - "headers contains" no more, should be explicit (use ".?" to simulate historic way)
+    - tests are always resolved to false, when requests non playable
+- "content contains" always here (to keep the same as historic way)
+- EVOL: vars can be "ignorable" (<<var?>> will be empty if not defined), avoid ResolvingException/non playable !
+
 2.11.0 (09/03/21) - the proxy support verion
 - EVOL: can use a "proxy" (str) var in reqman.conf (as "timeout" var)
 

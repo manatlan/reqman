@@ -14,7 +14,6 @@ __pycache__/
 env/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -111,3 +110,4 @@ pypi.txt
 
 *.rmr
 save.yml
+AEFF.py

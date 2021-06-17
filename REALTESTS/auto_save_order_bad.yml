@@ -1,0 +1,41 @@
+#!python3 fakereqman.py
+#:valid:11,11,11,11 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- prox1:
+
+  - POST: http://localhost:11111/ping
+    doc:  Will create vars containing a modified content from <<entity.id>> -> <<reponse>>
+    body:
+      result:
+        id: <<entity.id|add1>>
+    tests:
+      - status: 201
+      - json.result.id: <<entity.id|add1>>
+
+    save:
+      reponse_copy: <<reponse>>     # \_ here resolve order is BAD !
+      reponse: <<json.result.id>>   # /  (at second stage, reponse will be resolved from global scope)
+
+  - POST: http://localhost:11111/ping
+    doc: Send "<<request.body>>" !
+    body:
+      X<<reponse>>X<<reponse_copy>>X
+    tests:
+      - status: 201
+      - content: <<checkValue>>
+
+- call: prox1
+  params:
+    add1: return x+1
+  foreach:
+    - entity:
+        id:   10
+      checkValue: X11X11X
+    - entity:
+        id:   20
+      checkValue: X21X11X
