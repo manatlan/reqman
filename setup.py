@@ -32,5 +32,6 @@ setuptools.setup(
           'stpl >= 1.13.2',
           'colorama',
           "pyjwt",
+          "junit-xml",
     ],
 )

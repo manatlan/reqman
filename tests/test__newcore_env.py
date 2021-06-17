@@ -137,8 +137,7 @@ def test_resolve_stringr():
         ENV.resolve_string("a txt <<unknwon>>")  # unknown method
 
 def test_resolve_stringr_or_not():
-    with pytest.raises(reqman.env.PyMethodException):
-        ENV.resolve_string_or_not("a txt <<upper>>")    # this method use the param !
+    assert ENV.resolve_string_or_not("a txt <<upper>>")=="a txt <<upper>>"
 
     assert ENV.resolve_string_or_not("a txt <<txt2>>")=="a txt world"
 

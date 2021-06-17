@@ -1,3 +1,8 @@
+ALPHA 3.0.0a6 (new core system) : near ;-)
+- FIX: bug when executing pymethods in tests
+- EVOL: new option --j & --j:name.xml to output junit xml file (jenkins/bamboo can read/interpret junit files)
+- new unit tests
+
 ALPHA 3.0.0a5 (new core system) : near ;-)
 - EVOL: assuming that "save order is important" : so "save" statement can be a dict OR (newly) a list!
 

@@ -31,6 +31,8 @@ import yaml  # see "pip install pyyaml"
 import stpl  # see "pip install stpl"
 import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
+import junit_xml # see "pip install junit-xml"
+
 
 import reqman.com
 import reqman.common
@@ -39,7 +41,7 @@ import reqman.xlib
 import reqman.testing
 
 # 97% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.0a5"  # now, real SemVer !
+__version__ = "3.0.0a6"  # now, real SemVer !
 
 try: # https://bugs.python.org/issue37373 FIX: event_loop/py3.8 on windows
     if sys.platform == 'win32':
@@ -72,6 +74,8 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         --r        : Replay the given RMR file in dual mode
         --i        : Use SHEBANG params (for a single file), alone
         --f        : Force full output in html rendering
+        --j:name   : Set a name for the junit-xml output file
+        --j        : Generate a junit-xml output file (reqman.xml)
         --x:var    : Special mode to output an env var (as json output)
 """ % (REQMANEXE,REQMANEXE,__version__)
 
@@ -1072,6 +1076,41 @@ class ReqmanResult(Result):
         self.results = ll
         self.title = "%s %s/%s" % (",".join(switches), ok, total)
 
+    def generateJunitXmlFile(self):
+        ll=[]
+        for r in self.results:
+
+            lc=[]
+            for idx,ex in enumerate(r.exchanges):
+
+                c=junit_xml.TestCase(f"{ex.method} {ex.path}",  # VERB + path
+                    classname=ex.doc,                           # "doc"
+                    elapsed_sec=ex.time,
+                    stdout="\n".join( [ str(i) for i in ex.tests ] ),
+                    # stderr="xxx",
+                    assertions=len(ex.tests),
+                    timestamp=ex.datetime,
+                    status=ex.status,
+                    category=self.title,                    # titre du test general
+                    file=r.name,                            # fichier yml contenant le test
+                    line=idx+1,                             # num de req le fichier yml
+                    # log=None,
+                    # url=None,
+                    allow_multiple_subelements=True
+                )
+                for i in ex.tests:
+                    if not i:
+                        c.add_error_info( str(i) )
+
+                if ex.status is None:
+                    c.add_failure_info(ex.content.decode() )
+
+                lc.append(c)
+            if lc:
+                ll.append( junit_xml.TestSuite(r.name, lc) )
+
+        return junit_xml.TestSuite.to_xml_string(ll)
+
     @property
     def switches(self):
         return self.infos[0]["switches"]  # TODO: not top (but needed for replaying)
@@ -1640,7 +1679,7 @@ def extractParams(params):
             else:
                 # reqman param
                 p = param[2:]
-                if p.startswith("o") or p.startswith("x"):
+                if p.startswith("o") or p.startswith("x") or p.startswith("j"):
                     rparams.append(p)
                 else:  # ability to group param (ex: --kspb)
                     for i in p:
@@ -1720,6 +1759,7 @@ def main(fakeServer=None, hookResults=None) -> int:
         replayRMR = False
         outputContent=None
         forceNoLimit=False
+        junitXmlFile=None
         for p in rparams:
             if p == "k":
                 outputConsole = OutputConsole.MINIMAL_ONLYKO
@@ -1754,6 +1794,12 @@ def main(fakeServer=None, hookResults=None) -> int:
                 outputContent = p[1:].strip(":= ")
                 if not outputContent:
                     raise RMCommandException("You should provide a var'name with --x:<varname>")
+            elif p.startswith("j"):
+                junitXmlFile = p[1:].strip(":= ") or "reqman.xml"
+                if paralleliz:
+                    raise RMCommandException("Can't generate junit-xml with --p")
+                if dswitches:
+                    raise RMCommandException("Can't generate junit-xml in dual mode")
             else:
                 raise RMCommandException("bad option '%s'" % p)
 
@@ -1856,6 +1902,10 @@ def main(fakeServer=None, hookResults=None) -> int:
                     webbrowser.open_new_tab(outputHtmlFile)
                 except:
                     pass
+
+        if junitXmlFile:
+            with codecs.open(junitXmlFile, "w+", "utf-8-sig") as fid:
+                fid.write(rr.generateJunitXmlFile())
 
         if hookResults is not None:  # for tests only
             hookResults.rr = rr

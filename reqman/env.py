@@ -18,6 +18,7 @@
 import re
 import json
 import datetime
+import inspect
 import urllib.parse
 import hashlib
 import logging
@@ -108,6 +109,8 @@ class Exchange:
 
     def __init__(self,method: str,url: str,body: bytes=b"",headers: dict={}, tests:list=[], saves:list=[], doc:str = ""):
         assert type(body)==bytes
+
+        self.datetime = datetime.datetime.now()
 
         # inputs
         self.method=method
@@ -247,6 +250,7 @@ class Exchange:
 
 
 def declare(code):
+    logging.debug("CREATE DYNAMIC (%s)", code)
     return "def DYNAMIC(x,ENV):\n" + ("\n".join(["  " + i for i in code.splitlines()]))
 
 
@@ -353,7 +357,11 @@ class Scope(dict): # like 'Env'
     def resolve_string_or_not(self,obj: object) -> object:
         """ like resolve() but any type in/out, without exception """
         if type(obj)==str:
-            obj = self.resolve_all( obj , forceResolveOrException=False)
+            try:
+                obj = self.resolve_all( obj , forceResolveOrException=False)
+            except PyMethodException as e:
+                logging.debug("resolve_string_or_not : PyMethodException %s", e)
+                obj=obj
 
         return obj
 
@@ -408,7 +416,12 @@ class Scope(dict): # like 'Env'
     def get_var_or_empty(self,vardef: str) -> str:
         assert type(vardef)==str
 
-        value = self.get_var(vardef)
+        try:
+            value = self.get_var(vardef)
+        except PyMethodException as e:
+            logging.debug("get_var_or_empty : PyMethodException %s", e)
+            return ""
+
         if value is NotFound:
             return ""
         else:
@@ -425,9 +438,10 @@ class Scope(dict): # like 'Env'
         if not callable(method):
             raise PyMethodException(f"Can't call '{method}' : unknown one ?")
         try:
+            logging.debug("Execute pymethod %s(%s)", method,value )
             return method(value,self)
         except Exception as e:
-            raise PyMethodException(f"Can't call '{method.__name__}' : {e}")
+            raise PyMethodException(f"Can't execute '{method.__name__}' : {e}")
 
 
     async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None, querys={}, proxies=None, http=None) -> Exchange:
