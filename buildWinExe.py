@@ -35,7 +35,7 @@ try:
         '--onefile',
         '--noupx',
         "--exclude-module","tkinter",
-        '--icon="dist/reqman.ico"'
+        '--icon=dist/reqman.ico'
     ])
 
     v=conv(reqman.__version__)
