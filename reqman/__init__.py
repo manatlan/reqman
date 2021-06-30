@@ -41,9 +41,9 @@ import reqman.xlib
 import reqman.testing
 
 # 95% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.0"  # now, real SemVer !
+__version__ = "3.0.1"  # now, real SemVer !
 
-try: # https://bugs.python.org/issue37373 FIX: event_loop/py3.8 on windows
+try: # https://bugs.python.org/issue37373  FIX: event_loop/py3.8 on windows
     if sys.platform == 'win32':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 except:
@@ -646,8 +646,9 @@ class Reqs(list):
                         log(level, "  Foreach with params:", fparam)
 
                         for l, s, r in _test(i.reqs, scope, level + 1):
-                            r.updateParams({"params": fparam})
-                            yield l, s, r
+                            if isinstance(r,ReqItem):
+                                r.updateParams({"params": fparam})
+                                yield l, s, r
                 else:
                     raise RMException("Reqs: unwaited object %s" % i)
 
@@ -735,6 +736,27 @@ class ReqGroup(ReqItem):
 class ReqWait(ReqItem):
     def __init__(self, time):
         self.time=time
+
+    def updateIf(self, o: dict):
+        pass
+
+    def updateHeaders(self, o: dict):
+        pass
+
+    def updateQuery(self, o: dict):
+        pass
+
+    def updateTests(self, o: dict):
+        pass
+
+    def updateBody(self, o: dict):
+        pass
+
+    def updateDoc(self, o: dict):
+        pass
+
+    def updateSave(self, o: dict):
+        pass
 
 
 class Req(ReqItem):

@@ -1,3 +1,6 @@
+3.0.1 (30/06/21)
+- FIX: 'wait' command was buged in a proc statement
+
 3.0.0 (17/06/21)
 - perhaps you should avoid to use this, and use next versions (release fix)
 - a lot of changes ... so a lot of bugs (see alpha changes)
