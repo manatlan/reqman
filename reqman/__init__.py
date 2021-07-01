@@ -41,7 +41,7 @@ import reqman.xlib
 import reqman.testing
 
 # 95% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.1"  # now, real SemVer !
+__version__ = "3.0.2"  # now, real SemVer !
 
 try: # https://bugs.python.org/issue37373  FIX: event_loop/py3.8 on windows
     if sys.platform == 'win32':
@@ -603,6 +603,16 @@ class Reqs(list):
         def oneline(s):
             return str(s).splitlines()
 
+        async def doWait(time,scope): # time in ms
+            try:
+                envWait = scope.clone()
+                time=envWait.replaceObjOrNone(time) # ms
+                wait = float(time) / 1000 # convert to secondes
+                await asyncio.sleep( wait ) # secs
+            except:
+                print(cy("**WARNING**"), "can't %s on '%s'" % (cr("wait"),time), "in", self.name)
+
+
         def _test(liste: Reqs, gscope, level=0):
             log(level, "Test Global Scope :", gscope)
 
@@ -648,7 +658,8 @@ class Reqs(list):
                         for l, s, r in _test(i.reqs, scope, level + 1):
                             if isinstance(r,ReqItem):
                                 r.updateParams({"params": fparam})
-                                yield l, s, r
+                                
+                            yield l, s, r
                 else:
                     raise RMException("Reqs: unwaited object %s" % i)
 
@@ -672,14 +683,8 @@ class Reqs(list):
                     ll.append(ex)
                     log(l, "  >>> EXECUTE:", ex)
             else:
-                time=r # ms
-                try:
-                    envWait = s.clone()
-                    time=envWait.replaceObjOrNone(time) # ms
-                    wait = float(time) / 1000 # convert to secondes
-                    await asyncio.sleep( wait ) # secs
-                except:
-                    print(cy("**WARNING**"), "can't %s on '%s'" % (cr("wait"),time), "in", self.name)
+                await doWait(r,s) 
+
 
 
         self.exchanges = ll
