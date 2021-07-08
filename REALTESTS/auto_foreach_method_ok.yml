@@ -1,0 +1,48 @@
+#!python3 fakereqman.py
+#:valid:1,111,111,111,111,111,111,1,111,111,111,111,111,111 THIS
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+###################################### Example 1
+
+- GET: http://localhost:11111/get_list
+  tests:
+    - status: 200
+  save:
+    mylist: <<json.items>>
+
+- GET: http://localhost:11111/item/<<id>>
+  doc: Simply iterate for each item of the saved object "mylist" (as it's a list of dict)
+  tests:
+    - status: 200
+    - json.id: <<id>>
+    - json.name: <<name>>
+  foreach: <<mylist>>
+
+###################################### Example 2
+
+#TODO: currently "subsequents foreach" is problematic (infinite loop)
+
+- GET: http://localhost:11111/get_list
+  tests:
+    - status: 200
+  save:
+    mylist: <<json.items>>
+
+- GET: http://localhost:11111/item/<<i.id>>
+  doc: |
+    If you want to attach the item to a var, you must assign each item of your list to this var
+    by using a pymethod like 'iterate_with_i', declared in params.
+  tests:
+    - status: 200
+    - json.id: <<i.id>>
+    - json.name: <<i.name>>
+  foreach: <<mylist|iterate_with_i>>
+  params:
+    iterate_with_i: return [dict(i=i) for i in x]
+
+
+

@@ -41,7 +41,9 @@ import reqman.xlib
 import reqman.testing
 
 # 95% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.2"  # now, real SemVer !
+__version__ = "3.0.3"  # now, real SemVer !
+
+#TODO: currently (3.0.3) "subsequents foreach" is problematic (infinite loop)
 
 try: # https://bugs.python.org/issue37373  FIX: event_loop/py3.8 on windows
     if sys.platform == 'win32':
@@ -636,13 +638,9 @@ class Reqs(list):
                     foreach = i.foreach or [{}]
                     if type(foreach) == str:  # dynamic foreach !
                         try:
-                            foreach = json.loads(scope.replaceTxt(foreach))
-                        except json.decoder.JSONDecodeError as e:
-                            raise RMException(
-                                "Reqs: Dynamic foreach '%s' is not a list of dict"
-                                % foreach
-                            )
-                        except RMPyException as e:
+                            #foreach = json.loads(scope.replaceTxt(foreach))
+                            foreach = scope.replaceObj(foreach)
+                        except Exception as e:
                             raise RMException("Reqs: Dynamic foreach ERROR %s" % e)
 
                         if type(foreach) != list or any(
@@ -658,8 +656,9 @@ class Reqs(list):
                         for l, s, r in _test(i.reqs, scope, level + 1):
                             if isinstance(r,ReqItem):
                                 r.updateParams({"params": fparam})
-                                
+
                             yield l, s, r
+
                 else:
                     raise RMException("Reqs: unwaited object %s" % i)
 
@@ -683,7 +682,7 @@ class Reqs(list):
                     ll.append(ex)
                     log(l, "  >>> EXECUTE:", ex)
             else:
-                await doWait(r,s) 
+                await doWait(r,s)
 
 
 

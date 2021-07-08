@@ -102,6 +102,28 @@ async def hello(request):
 </x>"""
     return web.Response(status=200,text=xml)
 
+
+BDD={
+    1:"toto1",
+    2:"toto2",
+    3:"toto3"
+}
+
+@routes.get('/get_list')
+async def new_get_list(request):
+    obj=dict(items=[dict(id=k,name=v) for k,v in BDD.items()])
+    return web.Response(status=200,body=json.dumps(obj))
+
+@routes.get('/item/{item}')
+async def new_get_item(request):
+    try:
+        idx=int(request.match_info['item'])
+        obj=dict(id=idx, name=BDD[idx])
+        return web.Response(status=200,body=json.dumps(obj))
+    except:
+        return web.Response(status=404,text="no item found")
+
+
 import socket
 def isFree(ip, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -247,7 +269,7 @@ def main( file, avoidBrowser=True ):
 
     finally:
         os.chdir( precdir )
-        shutil.rmtree(testdir)
+        # shutil.rmtree(testdir)
 
 
 if __name__=="__main__":

@@ -1,0 +1,18 @@
+#!python3 fakereqman.py
+#:valid:ERROR THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press F5)
+#--------------------------------------------------------------
+
+- context:
+
+    - GET: http://localhost:11111/item/<<i.id>>
+      foreach: <<bad>>
+      tests:                          
+        - status: 200
+
+- call: context
+  params:
+    bad: return list("123") # -> ERROR  Dynamic foreach params is not a list of dict
