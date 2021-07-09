@@ -21,7 +21,7 @@ def test_la_base():
 
   reqman.dict_merge(dic,upd)
 
-  assert dic["ll"] == [1,2,3,4,5,6]
+  assert dic["ll"] == [4,5,6] #[1,2,3,4,5,6] (in v3.0.3)
   assert dic["var"] == "upd"
   assert dic["var1"] == "old"
   assert dic["var2"] == "new"

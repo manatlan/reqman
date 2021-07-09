@@ -41,9 +41,7 @@ import reqman.xlib
 import reqman.testing
 
 # 95% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.3"  # now, real SemVer !
-
-#TODO: currently (3.0.3) "subsequents foreach" is problematic (infinite loop)
+__version__ = "3.0.4"  # now, real SemVer !
 
 try: # https://bugs.python.org/issue37373  FIX: event_loop/py3.8 on windows
     if sys.platform == 'win32':
@@ -230,7 +228,8 @@ def dict_merge(dst: dict, src: dict) -> None:
             dict_merge(dst[k], src[k])
         else:
             if k in dst and isinstance(dst[k], list) and isinstance(src[k], list):
-                dst[k] += src[k]
+                # dst[k] += src[k] #v3.0.3
+                dst[k] = src[k]
             else:
                 dst[k] = src[k]
 
@@ -633,6 +632,7 @@ class Reqs(list):
                     log(level, "* ReqGroup:", len(i.reqs), "ReqItem(s)")
 
                     dict_merge(scope, i.scope)
+
                     log(level, "  Scope Add: ", i.scope)
 
                     foreach = i.foreach or [{}]
@@ -649,15 +649,15 @@ class Reqs(list):
                             raise RMException(
                                 "Reqs: Dynamic foreach params is not a list of dict"
                             )
-
                     for fparam in foreach:
                         log(level, "  Foreach with params:", fparam)
 
                         for l, s, r in _test(i.reqs, scope, level + 1):
+
                             if isinstance(r,ReqItem):
                                 r.updateParams({"params": fparam})
-
                             yield l, s, r
+
 
                 else:
                     raise RMException("Reqs: unwaited object %s" % i)
