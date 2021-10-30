@@ -127,6 +127,24 @@ def test_call_with_tests():
     assert len(ll) == 2
 
 
+def test_call_try_mix_foreach_and_params():
+    y="""
+- proc:
+    GET: yolo
+    params:
+        p: pp
+- call: proc
+  foreach:
+    - p21: p21
+    - p22: p22
+  params:
+    - p: p
+    - q: q
+"""
+    with pytest.raises(dsl.RMDslCompileException):
+        dsl.compile( yaml.load(y) )
+
+
 F=os.path.join(os.path.dirname(os.path.dirname(__file__)),"REALTESTS")
 @pytest.mark.parametrize('file', [i[len(F)+1:] for i in glob( os.path.join( F,"auto_*.yml")) + glob( os.path.join( F,"auto_*/*.yml")) if "_ERROR_" not in i] )
 def test_file(file):

@@ -30,7 +30,7 @@ class OP:
     WAIT="WAIT"
     IF="IF"
 
-def op_HttpVerb(method,path,query=None,headers=None,body=None, foreach=None,params=None, tests=None,doc=None,save=None):
+def same(foreach,params, doc,tests,headers):
     if params==None: params=[None]
     assert type(params) in [dict,list]
     if type(params)==dict: params=[params]
@@ -40,6 +40,33 @@ def op_HttpVerb(method,path,query=None,headers=None,body=None, foreach=None,para
     else:
         assert type(doc)==str,"doc should be string"
         doc=[doc]
+
+    # common to http and call
+    tests = toListTuple(tests)
+    headers = toListTuple(headers)
+    if foreach == None:
+        foreach=[]
+    else:
+        if type(foreach)==list:
+            print("*DEPRECATED* avoid foreach for list, prefer params")
+            assert len(params)==1, "can't mix foreach list with params list"
+            # transform to params
+            if params==[None]:
+                params=foreach
+            else:
+                p=params[0]
+                params=[ {**i,**p} for i in foreach]
+            foreach=[]
+
+        elif type(foreach)==str:
+            assert is_dynamic(foreach), "foreach must be dynamic"
+            foreach=[foreach]
+        else:
+            raise Exception(f"bad type foreach={foreach}")
+
+    return foreach,params,doc,tests,headers
+
+def op_HttpVerb(method,path,query=None,body=None,save=None, foreach=None,params=None,doc=None,tests=None,headers=None):
 
     # specific http verbs
     query = toListTuple(query)
@@ -48,31 +75,16 @@ def op_HttpVerb(method,path,query=None,headers=None,body=None, foreach=None,para
     else:
         save = toListTuple(save)
 
-    # common to http and call
-    tests = toListTuple(tests)
-    headers = toListTuple(headers)
+    foreach, params, doc, tests, headers= same(foreach,params,doc,tests,headers)
 
-    return (OP.HTTPVERB,dict(method=method,path=path,headers=headers,body=body,params=params,tests=tests,doc=doc,save=save,query=query))
+    return (OP.HTTPVERB,dict(method=method,path=path,headers=headers,body=body,params=params,tests=tests,doc=doc,save=save,query=query,foreach=foreach))
 
-def op_Call(name,foreach=None,params=None, doc=None,tests=None,headers=None):
-    if params==None: params=[None]
-    assert type(params) in [dict,list]
-    if type(params)==dict: params=[params]
-
-    if doc is None:
-        doc=[]
-    else:
-        assert type(doc)==str,"doc should be string"
-        doc=[doc]
-
-    # common to http and call
-    tests = toListTuple(tests)
-    headers = toListTuple(headers)
-
-    return (OP.CALLPROC,dict(name=name,params=params,doc=doc,tests=tests,headers=headers))
+def op_Call(name, foreach=None,params=None, doc=None,tests=None,headers=None):
+    foreach, params, doc, tests, headers= same(foreach,params, doc,tests,headers)
+    return (OP.CALLPROC,dict(name=name,params=params,doc=doc,tests=tests,headers=headers,foreach=foreach))
 
 def op_Wait(time):
-    assert type(time) in [str,int]
+    assert type(time) in [str,int], f"bad type for time={time}"
     return (OP.WAIT,dict(time=time))
 
 def op_Decl( name, code ) :
@@ -184,16 +196,13 @@ def execute(statements:list, scope={}):
 
         elif op==OP.IF:
             condition = defs["condition"]
-            # docs = defs["doc"]
             for i in execute(defs["then"],scope):
                 yield {**i,
                     "IF": i["IF"]+[condition],
-                    # "doc": i["doc"]+docs,
                 }
             for i in execute(defs["else"],scope):
                 yield {**i,
                     "IF": i["IF"]+["NOT "+condition],
-                    # "doc": i["doc"]+docs,
                 }
 
         elif op==OP.DECLPROC:
@@ -211,11 +220,17 @@ def execute(statements:list, scope={}):
 
             for p in params:
                 for i in execute(code,pscope(scope,p)):
-                    yield {**i,
-                        "doc": i["doc"]+docs,
-                        "tests": i["tests"]+tests,
-                        "headers": i["headers"]+headers,
-                    }
+                    if i["OP"]=="HTTP":
+                        yield {**i,
+                            "doc": i["doc"]+docs,
+                            "tests": i["tests"]+tests,
+                            "headers": i["headers"]+headers,
+                        }
+                    elif i["OP"]=="WAIT":
+                        yield i
+                    else:
+                        raise Exception(f"execute an unknown op '{op}'")
+
         else:
             raise Exception(f"execute an unknown op '{op}'")
 
@@ -282,24 +297,19 @@ if __name__=="__main__":
 
     y="""
 - proc:
-    GET: yolo
-    doc: first
+    - wait: <<j>>
+    - GET: yolo
+      params:
+        p: p
 - call: proc
-  doc: second
+  foreach: <<var>>
 """
 
-    y="""
-- if: fdsfds
-  GET: yolo
-  doc: first
-
-    """
 
     ll=compile(yaml.load(y))
     for i in ll:
         print(i)
 
-    quit()
     print(".............................")
     s=dict(
         root="http://root",
