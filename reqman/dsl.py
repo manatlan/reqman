@@ -17,6 +17,11 @@
 
 import yaml
 
+if __name__ == "__main__":
+    import sys,os
+    sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+
+from reqman.env import Scope
 
 #############################################################################
 
@@ -311,11 +316,11 @@ if __name__=="__main__":
         print(i)
 
     print(".............................")
-    s=dict(
+    s=Scope(dict(
         root="http://root",
         headers={"x-me":"hello"},
         mymethod="return 42*3",
-    )
+    ))
     for i in execute(ll, s):
         if i["OP"]=="WAIT":
             action="WAIT " + str(i["time"])

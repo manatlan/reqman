@@ -18,6 +18,10 @@
 from xml.dom import minidom
 import xpath  # see "pip install py-dom-xpath-six"
 
+if __name__ == "__main__":
+    import sys,os
+    sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+
 from reqman.common import NotFound
 
 class Xml:

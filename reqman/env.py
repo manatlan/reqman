@@ -23,6 +23,10 @@ import urllib.parse
 import hashlib
 import logging
 
+if __name__ == "__main__":
+    import sys,os
+    sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+
 from reqman.common import NotFound,decodeBytes,jdumps
 import reqman.com as com
 import reqman.testing as testing

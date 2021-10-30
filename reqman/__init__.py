@@ -33,7 +33,6 @@ import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 import junit_xml # see "pip install junit-xml"
 
-
 import reqman.com
 import reqman.common
 import reqman.env
@@ -42,7 +41,7 @@ import reqman.testing
 import reqman.dsl
 
 # 95% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.4"  # now, real SemVer !
+__version__ = "3.X.X" #"3.0.4"  # now, real SemVer !
 
 try: # https://bugs.python.org/issue37373  FIX: event_loop/py3.8 on windows
     if sys.platform == 'win32':
