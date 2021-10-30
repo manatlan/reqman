@@ -16,6 +16,7 @@
 # #############################################################################
 
 import json
+import io
 
 class NotFound: pass
 
@@ -36,6 +37,22 @@ def decodeBytes(b:bytes) -> str:
             x= str(b)
     assert type(x)==str
     return x
+
+class FString(str):
+    filename = None
+    encoding = None
+
+    def __new__(cls, fn: str):
+        for e in ["utf8", "cp1252"]:
+            try:
+                with io.open(fn, "r", encoding=e) as fid:
+                    obj = str.__new__(cls, fid.read())
+                    obj.filename = fn
+                    obj.encoding = e
+                    return obj
+            except UnicodeDecodeError:
+                pass
+        raise Exception("Can't read '%s'" % fn)
 
 if __name__=="__main__":
     pass

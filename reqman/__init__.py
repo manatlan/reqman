@@ -39,6 +39,7 @@ import reqman.common
 import reqman.env
 import reqman.xlib
 import reqman.testing
+import reqman.dsl
 
 # 95% coverage: python3 -m pytest --cov-report html --cov=reqman .
 __version__ = "3.0.4"  # now, real SemVer !
@@ -190,21 +191,7 @@ def ustr(x):  # ensure str are utf8 inside
             return str(x)
 
 
-class FString(str):
-    filename = None
-    encoding = None
 
-    def __new__(cls, fn: str):
-        for e in ["utf8", "cp1252"]:
-            try:
-                with io.open(fn, "r", encoding=e) as fid:
-                    obj = str.__new__(cls, fid.read())
-                    obj.filename = fn
-                    obj.encoding = e
-                    return obj
-            except UnicodeDecodeError:
-                pass
-        raise Exception("Can't read '%s'" % fn)
 
 
 clone = lambda x: json.loads(json.dumps(x))
@@ -390,10 +377,10 @@ class Env(dict):
 
 
 class Reqs(list):
-    def __init__(self, obj: T.Union[str, FString], env=None, name="<YamlString>"):
+    def __init__(self, obj: T.Union[str, reqman.common.FString], env=None, name="<YamlString>"):
         self.__proc = {}
         self.exchanges = None  # list of Exchange
-        self.name = obj.filename if type(obj) is FString else name
+        self.name = obj.filename if type(obj) is reqman.common.FString else name
 
         if env is None:
             self.env = Env()
@@ -1353,7 +1340,7 @@ class ReqmanCommand:
 
         rqc = findRCup(cp)
         if rqc:
-            self._r.env = Env(FString(rqc),rqc)
+            self._r.env = Env(reqman.common.FString(rqc),rqc)
 
 
         for k, v in penv.items():  # add param's input env into env
@@ -1364,7 +1351,7 @@ class ReqmanCommand:
             self._r.ymls=[""]
         else:
             for i in files:
-                self._r.add(FString(i))
+                self._r.add(reqman.common.FString(i))
 
     @property
     def nbFiles(self):

@@ -131,6 +131,7 @@ def isFree(ip, port):
     return not (s.connect_ex((ip,port)) == 0)
 
 import sys,reqman
+import reqman.common
 import threading,asyncio
 class FakeWebServer(threading.Thread): # the webserver is ran on a separated thread
     def __init__(self,port):
@@ -215,7 +216,7 @@ def main( file, avoidBrowser=True ):
     o=RR()
 
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
-    newValids=[i[8:i.rfind('#') or None].strip().split() for i in reqman.FString(file).splitlines() if i.startswith("#:valid:")]
+    newValids=[i[8:i.rfind('#') or None].strip().split() for i in reqman.common.FString(file).splitlines() if i.startswith("#:valid:")]
     #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ NEW SYSTEM
     try:
         precdir = os.getcwd()
