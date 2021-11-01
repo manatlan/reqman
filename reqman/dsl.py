@@ -15,13 +15,14 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-import yaml
+import yaml,json,asyncio
 
 if __name__ == "__main__":
     import sys,os
     sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
 
 from reqman.env import Scope
+import reqman.common
 
 #############################################################################
 
@@ -74,15 +75,15 @@ def same(foreach,params, doc,tests,headers):
 def op_HttpVerb(method,path,query=None,body=None,save=None, foreach=None,params=None,doc=None,tests=None,headers=None):
 
     # specific http verbs
-    query = toListTuple(query)
+    querys = toListTuple(query)
     if type(save) == str:
-        save={ save: "<<content>>" }    # compat reqman v1
+        saves=[ ("save","<<content>>") ]    # compat reqman v1
     else:
-        save = toListTuple(save)
+        saves = toListTuple(save)
 
     foreach, params, doc, tests, headers= same(foreach,params,doc,tests,headers)
 
-    return (OP.HTTPVERB,dict(method=method,path=path,headers=headers,body=body,params=params,tests=tests,doc=doc,save=save,query=query,foreach=foreach))
+    return (OP.HTTPVERB,dict(method=method,path=path,headers=headers,body=body,params=params,tests=tests,doc=doc,saves=saves,querys=querys,foreach=foreach))
 
 def op_Call(name, foreach=None,params=None, doc=None,tests=None,headers=None):
     foreach, params, doc, tests, headers= same(foreach,params, doc,tests,headers)
@@ -130,8 +131,8 @@ def compile(defs, declares={}) -> list:
 
             assert type(statement)==dict
 
-            first,second= list(statement.items())[0]
-            del statement[first]
+            first,second= list(statement.items())[0]    # The first statement define the OP
+            del statement[first]                        # (remove it !!!)
             if first in ["GET","POST","PUT","DELETE"]:
                 statement["method"]=first
                 statement["path"]=second
@@ -151,19 +152,17 @@ def compile(defs, declares={}) -> list:
                 statement["time"]=second
                 ll.append( op_Wait( **statement ) )
             elif first=="if":
-                if "then" not in statement: #TODO
+                if "then" not in statement: #make it compatible with previous reqmans
                     print("*DEPRECATED* don't use old if statement")
                     statement={"condition":second,"then":compile(statement,declares)}
                 else:
-                    statement["condition"]=second
-                    statement["then"]=compile(statement["then"],declares)
+                    statement={"condition":second,"then":compile(statement["then"],declares)}
                 if "else" in statement:
                     statement["elze"]=compile(statement["else"],declares)
                     del statement["else"]
                 ll.append( op_If( **statement ) )
             else: # declare a proc
-                statement["name"]=first
-                statement["code"]=compile(second,declares)
+                statement={"name":first,"code":compile(second,declares)}
                 declares[first] = 1
                 ll.append( op_Decl( **statement ) )
     except Exception as e:
@@ -176,39 +175,83 @@ def compile(defs, declares={}) -> list:
 def req(scope:dict, method:str,path:str,headers:dict,body:str,tests:list):
     return f"HTTP {method} {path} {headers} avec {scope}"
 
-def pscope(scope:dict,p=None):
-    if p is None:
-        return {**scope}
-    else:
-        assert type(p)==dict
-        return {**scope,**p}
+def prepare(scope:Scope, **defs):
+    """ Ensure compatibility with historic env.call(**) (reqman3) """
 
-def execute(statements:list, scope={}):
+    # get global timeout
+    try:
+        timeout = scope.get("timeout", None)  # global timeout
+        timeout = timeout and float(timeout) / 1000.0 or None
+    except ValueError:
+        timeout = None
+    defs["timeout"]=timeout
+
+    # get global proxy
+    try:
+        proxy = scope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
+    except :
+        proxy = None
+    defs["proxy"]=proxy
+
+    body=defs["body"]
+    # ensure content is str
+    if body is None:
+        body=""
+    elif type(body) in [list,dict]: # TEST 972_500 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        body=json.dumps(body)
+    elif type(body) == bytes:
+        body=reqman.common.decodeBytes(body)
+    else:
+        body=str(body)
+    defs["body"]=body
+
+    defs["doc"] ="\n".join( defs["doc"] )
+    defs["headers"] = dict(defs["headers"])
+    defs["querys"] = dict(defs["querys"])
+
+    return defs
+
+
+async def precall(scope:Scope, **defs):
+    return await scope.call(**defs)
+
+async def fakecaller(scope:Scope, **defs):
+    return {"SCOPE":dict(scope),**defs}
+
+
+async def execute(statements:list, scope:Scope = None, incontext:dict = {}, caller=precall):
+    if scope is None: scope=Scope({})
+    ll=[]
     declarations={}
     for op,defs in statements:
         if op==OP.HTTPVERB:
             params=defs["params"]
 
-            ndefs={"OP":"HTTP","IF":[True],**defs}          # copy the dict
-            del ndefs["params"]     # remove 'params' from copied one
+            #get the context (ex: infos from calling)
+            # by remaking a defs dict -> ndefs
+            ndefs= {**defs,
+                "doc": defs["doc"]+incontext.get("doc",[]),
+                "tests": defs["tests"]+incontext.get("tests",[]),
+                "headers": defs["headers"]+incontext.get("headers",[]),
+            }
+            del ndefs["params"]
+            del ndefs["foreach"]    #TODO
 
             for p in params:
-                ndefs["scope"] = pscope(scope,p)
-                yield ndefs
+                s=Scope(scope)
+                if p: s.update(p)
+                ll.append( await caller(s, **prepare(s,**ndefs) ))
 
         elif op==OP.WAIT:
-            yield {"OP":"WAIT","time":defs["time"],"IF":[True]}
+            time = float(scope.resolve_all(defs["time"])) / 1000 # convert to secondes
+            await asyncio.sleep( time )
 
         elif op==OP.IF:
-            condition = defs["condition"]
-            for i in execute(defs["then"],scope):
-                yield {**i,
-                    "IF": i["IF"]+[condition],
-                }
-            for i in execute(defs["else"],scope):
-                yield {**i,
-                    "IF": i["IF"]+["NOT "+condition],
-                }
+            condition = scope.resolve_all(defs["condition"])
+            block = defs["then" if condition else "else"]
+            if block:
+                for i in await execute(block,scope, incontext, caller=caller):
+                    ll.append(i)
 
         elif op==OP.DECLPROC:
             name,code = defs["name"],defs["code"]
@@ -217,29 +260,24 @@ def execute(statements:list, scope={}):
         elif op==OP.CALLPROC:
             name = defs["name"]
             params=defs["params"]
-            docs=defs["doc"]
-            tests=defs["tests"]
-            headers=defs["headers"]
 
             code = declarations[ name ]
 
             for p in params:
-                for i in execute(code,pscope(scope,p)):
-                    if i["OP"]=="HTTP":
-                        yield {**i,
-                            "doc": i["doc"]+docs,
-                            "tests": i["tests"]+tests,
-                            "headers": i["headers"]+headers,
-                        }
-                    elif i["OP"]=="WAIT":
-                        yield i
-                    else:
-                        raise Exception(f"execute an unknown op '{op}'")
+                s=Scope(scope)
+                if p: s.update(p)
+                for i in await execute(code,s, incontext={**defs},caller=caller):
+                    ll.append(i)
 
         else:
             raise Exception(f"execute an unknown op '{op}'")
-
+    return ll
 #############################################################################
+
+
+def FakeExecute(statements:list, scope:Scope = None):# -> list<dict>
+    return asyncio.run( execute(statements,scope,{},caller=fakecaller))
+
 
 if __name__=="__main__":
     y="""
@@ -302,8 +340,8 @@ if __name__=="__main__":
 
     y="""
 - proc:
-    - wait: <<j>>
-    - GET: yolo
+    - wait: 500
+    - GET: /
       params:
         p: p
 - call: proc
@@ -317,15 +355,12 @@ if __name__=="__main__":
 
     print(".............................")
     s=Scope(dict(
-        root="http://root",
+        vars=[ dict(a=1), dict(a=2) ],
+        root="https://manatlan.com",
         headers={"x-me":"hello"},
         mymethod="return 42*3",
     ))
-    for i in execute(ll, s):
-        if i["OP"]=="WAIT":
-            action="WAIT " + str(i["time"])
-        else:
-            action="HTTP "+i["method"]+" "+i["path"]
-        print("==",action," IF "+str(i["IF"]), i)
-
+    ll=FakeExecute(ll, s)
+    from pprint import pprint
+    pprint(ll)
 
