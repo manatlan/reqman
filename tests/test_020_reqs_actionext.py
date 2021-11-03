@@ -26,7 +26,7 @@ def test_simplest3(Reqs): # bad header's ext, but not called -> forget
     y="""
 - proc:
     - GET: https://www.manatlan.com
-      Headers:
+      headers:
          jo: fsdgfdsgfds
 """
     l=Reqs(y)
@@ -37,7 +37,7 @@ def test_simplest3(Reqs): # bad header's ext, but not called -> forget
 def test_bad(Reqs):
     y="""
 - GET: https://www.manatlan.com
-  Headers:
+  headers:
     jo: fsdgfdsgfds
 """
     with pytest.raises(reqman.RMFormatException):
@@ -48,7 +48,7 @@ def test_bad2(Reqs):
 - proc:
     - GET: https://www.manatlan.com
 - call: proc
-  Headers:
+  headers:
     jo: fsdgfdsgfds
 """
     with pytest.raises(reqman.RMFormatException):

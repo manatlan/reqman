@@ -373,9 +373,60 @@ class Env(dict):
         self.__shared = {}
         self.__global = {}
 
-
-
 class Reqs(list):
+    """ NEW VERSION (a lot of tests are KO ootb )"""
+    def __init__(self, obj: T.Union[str, reqman.common.FString], env=None, name="<YamlString>"):
+        self.name = obj.filename if type(obj) is reqman.common.FString else name
+        self.exchanges=None # tests are not executed yet
+        if env is None:
+            self.env = Env()
+        elif type(env) is Env:
+            self.env = env.clone(cloneSharedScope=False)  # remove shared one
+        elif type(env) is dict:
+            self.env = Env(env)
+
+        if isinstance(obj, str):
+            if obj.strip()=="":
+                defs=[]
+            else:
+                obj = ustr(obj)
+                try:
+                    defs = yaml.load(obj, Loader=yaml.SafeLoader)
+                except Exception as e:
+                    raise self._errorFormat("Reqs: YML syntax in %s\n%s" % (self.name, e))
+        else:
+            raise self._errorFormat("Reqs: bad object")
+
+        try:
+            list.__init__(self, reqman.dsl.compile(defs) )
+        except reqman.dsl.RMDslCompileException as e:
+            raise self._errorFormat("Reqs: bad dsl compilation '%s'"%e)
+
+    def _errorFormat(self, msg):
+        return RMFormatException(msg + " in %s" % self.name)
+
+    def execute(self, http=None, outputConsole=OutputConsole.MINIMAL) -> list:
+        """ call asyncReqsExecute in sync, used only in old pytests """
+        switches = []
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(
+            self.asyncReqsExecute(switches, http, outputConsole=outputConsole)
+        )
+
+    async def asyncReqsExecute(
+        self, switches: list, http=None, outputConsole=OutputConsole.MINIMAL
+    ) -> list:
+        #TODO: switches is not used ?!?
+        #TODO: report console output (yield from async ?)
+        assert type(switches) is list
+
+        scope = reqman.env.Scope(self.env)
+        self.exchanges = await reqman.dsl.execute( list(self), scope )
+
+        return self.exchanges
+
+class ReqsOLD(list):
+    """ Old version (all tests are ok) """
     def __init__(self, obj: T.Union[str, reqman.common.FString], env=None, name="<YamlString>"):
         self.__proc = {}
         self.exchanges = None  # list of Exchange

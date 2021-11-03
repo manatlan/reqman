@@ -24,6 +24,18 @@ if __name__ == "__main__":
 from reqman.env import Scope
 import reqman.common
 
+KNOWNVERBS = [
+    "GET",
+    "POST",
+    "DELETE",
+    "PUT",
+    "HEAD",
+    "OPTIONS",
+    "TRACE",
+    "PATCH",
+    "CONNECT",
+]
+
 #############################################################################
 
 class RMDslCompileException(Exception): pass
@@ -73,7 +85,7 @@ def same(foreach,params, doc,tests,headers):
     return foreach,params,doc,tests,headers
 
 def op_HttpVerb(method,path,query=None,body=None,save=None, foreach=None,params=None,doc=None,tests=None,headers=None):
-
+    assert type(path)==str,"path should be string"
     # specific http verbs
     querys = toListTuple(query)
     if type(save) == str:
@@ -90,13 +102,23 @@ def op_Call(name, foreach=None,params=None, doc=None,tests=None,headers=None):
     return (OP.CALLPROC,dict(name=name,params=params,doc=doc,tests=tests,headers=headers,foreach=foreach))
 
 def op_Wait(time):
-    assert type(time) in [str,int], f"bad type for time={time}"
+    assert type(time) in [str,int,float], f"bad type for time={time}"
+    if type(time)==str:
+        if is_dynamic(time):
+            pass
+        else:
+            try:
+                float(time)
+            except:
+                raise RMDslCompileException(f"bad type for time={time}, should be a var")
+
     return (OP.WAIT,dict(time=time))
 
 def op_Decl( name, code ) :
     return (OP.DECLPROC,dict(name=name,code=code))
 
 def op_If( condition, then, elze=None) :
+    assert type(condition) in [str,int,bool] or condition is None, "if condition must be a str, int or bool"
     return (OP.IF,{"condition":condition,"then":then,"else":elze})
 
 
@@ -133,7 +155,7 @@ def compile(defs, declares={}) -> list:
 
             first,second= list(statement.items())[0]    # The first statement define the OP
             del statement[first]                        # (remove it !!!)
-            if first in ["GET","POST","PUT","DELETE"]:
+            if first in KNOWNVERBS:
                 statement["method"]=first
                 statement["path"]=second
                 ll.append( op_HttpVerb(**statement) )
@@ -357,6 +379,10 @@ if __name__=="__main__":
     - status: 200
 """
 
+    y="""
+- GET:
+    nimp: nimp
+    """
 
     MOCK={
         "https://manatlan.com/nimp": (200,"OK"),

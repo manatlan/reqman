@@ -1,3 +1,13 @@
+NEW REAL DSL (with a compile & execute phases)
+  - The "1st statement" is now the operation (GET, POST, if, wait, call, ....) : can't be used at the second place !
+  - associated parameters are now case sensitive (no more "Headers", just "headers")
+  - Reqs is completly incompatible with olds Reqs (RMR will not be compatible). The length of the lists differ ! (ex: declaration is done at exec phase (not compile phase!))
+  - better respect the semantics (more maintenable, speeder, less memory consumation)
+  - compatibilities/deprecations :
+      - old if statement are deprecated (use new one if/then/else)
+      - foreach will be reserved to dynamic vars ... coz params can handle "foreach" list (more naturals)
+
+
 3.0.4 (09/07/2021)
 - FIX: dict_merge expanded list at each call (now it just replaces it)
 
