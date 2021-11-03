@@ -191,7 +191,7 @@ def prepare(scope:Scope, **defs):
         proxy = scope.get("proxy", None)  # global proxy (proxy can be None, a str or a dict (see httpx/proxy))
     except :
         proxy = None
-    defs["proxy"]=proxy
+    defs["proxies"]=proxy       # named proxies !
 
     body=defs["body"]
     # ensure content is str
@@ -214,9 +214,6 @@ def prepare(scope:Scope, **defs):
 
 async def precall(scope:Scope, **defs):
     return await scope.call(**defs)
-
-async def fakecaller(scope:Scope, **defs):
-    return {"SCOPE":dict(scope),**defs}
 
 
 async def execute(statements:list, scope:Scope = None, incontext:dict = {}, caller=precall):
@@ -275,7 +272,15 @@ async def execute(statements:list, scope:Scope = None, incontext:dict = {}, call
 #############################################################################
 
 
-def FakeExecute(statements:list, scope:Scope = None):# -> list<dict>
+def FakeExecute(statements:list, scope:Scope = None, http:dict=None):# -> list<dict>
+
+    async def fakecaller(scope:Scope, **defs):
+        if http:
+            return await scope.call(**defs,http=http)
+        else:
+            # return non Exchange object, but simpler "call request" + scope
+            return {"SCOPE":dict(scope),**defs}
+
     return asyncio.run( execute(statements,scope,{},caller=fakecaller))
 
 
@@ -341,13 +346,21 @@ if __name__=="__main__":
     y="""
 - proc:
     - wait: 500
-    - GET: /
+    - GET: /nimp
       params:
         p: p
+      tests:
+        - status: 200
 - call: proc
   foreach: <<var>>
+  tests:
+    - status: 200
 """
 
+
+    MOCK={
+        "https://manatlan.com/nimp": (200,"OK"),
+    }
 
     ll=compile(yaml.load(y))
     for i in ll:
@@ -360,7 +373,7 @@ if __name__=="__main__":
         headers={"x-me":"hello"},
         mymethod="return 42*3",
     ))
-    ll=FakeExecute(ll, s)
+    ll=FakeExecute(ll, s, http=MOCK)
     from pprint import pprint
     pprint(ll)
 
