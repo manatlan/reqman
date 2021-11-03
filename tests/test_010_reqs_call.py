@@ -8,7 +8,11 @@ def test_simplest(Reqs):
 - call: yo
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+        assert len(l) == 1
+    else:
+        assert len(l) == 2
+
 
 def test_simplest1(Reqs):
     y="""
@@ -18,9 +22,13 @@ def test_simplest1(Reqs):
     - yo
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+        assert len(l) == 1
+    else:
+        assert len(l) == 2
 
-def test_simplest1(Reqs):
+
+def test_simplest11(Reqs):
     y="""
 - yo:
     - GET: https://www.manatlan.com
@@ -29,7 +37,10 @@ def test_simplest1(Reqs):
     - yo
 """
     l=Reqs(y)
-    assert len(l) == 2
+    if l._old:
+        assert len(l) == 2
+    else:
+        assert len(l) == 3
 
 def test_simplest2(Reqs):
     y="""
@@ -39,7 +50,10 @@ def test_simplest2(Reqs):
 - GET: https://www.manatlan.com
 """
     l=Reqs(y)
-    assert len(l) == 2
+    if l._old:
+        assert len(l) == 2
+    else:
+        assert len(l) == 3
 
 def test_simplest3(Reqs):
     y="""
@@ -49,8 +63,12 @@ def test_simplest3(Reqs):
 - call: yo
 """
     l=Reqs(y)
-    assert len(l) == 1
-    assert type(l[0]) is reqman.ReqGroup
+    if l._old:
+        assert len(l) == 1
+        assert type(l[0]) is reqman.ReqGroup
+    else:
+        assert len(l) == 2
+
 
 def test_simplest4(Reqs):
     y="""
@@ -62,8 +80,11 @@ def test_simplest4(Reqs):
 - call: yo
 """
     l=Reqs(y)
-    assert len(l) == 1
-    assert type(l[0]) is reqman.ReqGroup
+    if l._old:
+        assert len(l) == 1
+        assert type(l[0]) is reqman.ReqGroup
+    else:
+        assert len(l) == 3
 
 def test_simplest5(Reqs):
     y="""
@@ -75,8 +96,11 @@ def test_simplest5(Reqs):
 - call: yo
 """
     l=Reqs(y)
-    assert len(l) == 1
-    assert type(l[0]) is reqman.ReqGroup
+    if l._old:
+        assert len(l) == 1
+        assert type(l[0]) is reqman.ReqGroup
+    else:
+        assert len(l) == 2
 
 
 def test_empty(Reqs):
@@ -86,7 +110,10 @@ def test_empty(Reqs):
     - GET: https://www.manatlan.com
 """
     l=Reqs(y)
-    assert len(l) == 0
+    if l._old:
+        assert len(l) == 0
+    else:
+        assert len(l) == 1
 
 def test_empty2(Reqs):
     y="""
@@ -94,8 +121,11 @@ def test_empty2(Reqs):
     - GET: https://www.manatlan.com
     - "shit happens here"
 """
-    l=Reqs(y)
-    assert len(l) == 0    
+    try:
+        l=Reqs(y)
+        assert len(l) == 0
+    except reqman.RMFormatException:
+        pass
 
 def test_bad_2action(Reqs):
     y="""
@@ -106,7 +136,7 @@ def test_bad_2action(Reqs):
     """
     with pytest.raises(reqman.RMFormatException):
         Reqs(y)
-        
+
 def test_bad(Reqs):
     y="""
 - call: yo
@@ -139,7 +169,7 @@ def test_bad4(Reqs):
     y="""
 - yo:
     - GET: https://www.manatlan.com
-- call: 
+- call:
     yo: yo
 """
     with pytest.raises(reqman.RMFormatException):
@@ -149,7 +179,7 @@ def test_bad5(Reqs):
     y="""
 - yo:
     - GET: https://www.manatlan.com
-- call: 
+- call:
 """
     with pytest.raises(reqman.RMFormatException):
         Reqs(y)

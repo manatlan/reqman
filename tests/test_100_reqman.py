@@ -4,7 +4,7 @@ import reqman, asyncio, pytest
 @pytest.mark.asyncio
 async def test_nimp():
 
-    
+
     conf="""
 BEGIN:
     - GET: /check
@@ -51,6 +51,6 @@ dua:
     rr=await r.asyncExecute( paralleliz=True, http=mock )
     assert rr.code==0
 
-        
-    ll=await r.asyncExecute( paralleliz=False, http=mock )
+
+    rr=await r.asyncExecute( paralleliz=False, http=mock )
     assert rr.code==0

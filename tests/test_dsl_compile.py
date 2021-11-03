@@ -40,12 +40,11 @@ def test_good_order():
 """
     assert len(dsl.compile( yaml.load(y) )) == 1
 
-def test_call_bad():
+def test_call_bad(): # calling an unknown proc is raised at execute time
     y="""
 - call: unknown
 """
-    with pytest.raises(dsl.RMDslCompileException):
-        dsl.compile( yaml.load(y) )
+    assert len(dsl.compile( yaml.load(y) ))==1
 
     y="""
 - proc:

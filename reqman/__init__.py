@@ -375,6 +375,8 @@ class Env(dict):
 
 class Reqs(list):
     """ NEW VERSION (a lot of tests are KO ootb )"""
+    _old=False
+
     def __init__(self, obj: T.Union[str, reqman.common.FString], env=None, name="<YamlString>"):
         self.name = obj.filename if type(obj) is reqman.common.FString else name
         self.exchanges=None # tests are not executed yet
@@ -421,12 +423,20 @@ class Reqs(list):
         assert type(switches) is list
 
         scope = reqman.env.Scope(self.env)
-        self.exchanges = await reqman.dsl.execute( list(self), scope )
+        self.exchanges = await reqman.dsl.execute( list(self), scope ,http=http)
 
+        #ex.nolimit = self.nolimit   #TODO: not beautiful !!!
+
+        # for saveKey, saveWhat in ex.saves.items():
+        #     self.parent.env.save(saveKey, saveWhat, self.parent.name in ["BEGIN","END"])
+
+        print("===",self.exchanges)
         return self.exchanges
 
 class ReqsOLD(list):
     """ Old version (all tests are ok) """
+    _old=True
+
     def __init__(self, obj: T.Union[str, reqman.common.FString], env=None, name="<YamlString>"):
         self.__proc = {}
         self.exchanges = None  # list of Exchange

@@ -16,7 +16,7 @@ def test_call_with_doc():
 """
     ll=dsl.FakeExecute( dsl.compile( yaml.load(y) ) )
     assert len(ll) == 1
-    assert ll[0]["doc"]=="\n".join(["first","second"])
+    assert ll[0].doc=="\n".join(["first","second"])
 
 def test_call_with_tests():
     y="""
@@ -32,7 +32,8 @@ def test_call_with_tests():
 """
     ll=dsl.FakeExecute( dsl.compile( yaml.load(y) ) )
     assert len(ll) == 1
-    assert ll[0]["tests"] == [('t1', 1), ('t2',1), ('t3',1), ('t4', 1)]
+    assert len(ll[0].tests) == 4 #[('t1', 1), ('t2',1), ('t3',1), ('t4', 1)]
+    assert all([not i for i in ll[0].tests])
 
 def test_call_with_headers():
     y="""
@@ -46,7 +47,7 @@ def test_call_with_headers():
 """
     ll=dsl.FakeExecute( dsl.compile( yaml.load(y) ) )
     assert len(ll) == 1
-    assert ll[0]["headers"]==dict([('x-h1', 'hello1'), ('x-h2', 'hello2')])
+    assert ll[0].inHeaders==dict([('x-h1', 'hello1'), ('x-h2', 'hello2')])
 
 def test_call_with_params():
     y="""

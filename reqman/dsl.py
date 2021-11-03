@@ -136,7 +136,7 @@ def toListTuple(d):
         return [ (list(i.keys())[0],list(i.values())[0]) for i in d]
 
 
-def compile(defs, declares={}) -> list:
+def compile(defs) -> list:
     try:
 
         if type(defs)==dict:
@@ -167,7 +167,6 @@ def compile(defs, declares={}) -> list:
                 for pname in second:
                     assert type(pname) == str, "use only str name"
                     assert not is_dynamic(pname), "can't use a dynamic var in call"
-                    assert pname in declares.keys(), f"calling an unknown proc '{pname}'"
                     statement["name"]=pname
                     ll.append( op_Call( **statement ) )
             elif first=="wait":
@@ -176,16 +175,15 @@ def compile(defs, declares={}) -> list:
             elif first=="if":
                 if "then" not in statement: #make it compatible with previous reqmans
                     print("*DEPRECATED* don't use old if statement")
-                    statement={"condition":second,"then":compile(statement,declares)}
+                    statement={"condition":second,"then":compile(statement)}
                 else:
-                    statement={"condition":second,"then":compile(statement["then"],declares)}
+                    statement={"condition":second,"then":compile(statement["then"])}
                 if "else" in statement:
-                    statement["elze"]=compile(statement["else"],declares)
+                    statement["elze"]=compile(statement["else"])
                     del statement["else"]
                 ll.append( op_If( **statement ) )
             else: # declare a proc
-                statement={"name":first,"code":compile(second,declares)}
-                declares[first] = 1
+                statement={"name":first,"code":compile(second)}
                 ll.append( op_Decl( **statement ) )
     except Exception as e:
         raise RMDslCompileException(e)
@@ -234,11 +232,8 @@ def prepare(scope:Scope, **defs):
     return defs
 
 
-async def precall(scope:Scope, **defs):
-    return await scope.call(**defs)
 
-
-async def execute(statements:list, scope:Scope = None, incontext:dict = {}, caller=precall):
+async def execute(statements:list, scope:Scope = None, incontext:dict = {}, http=None):
     if scope is None: scope=Scope({})
     ll=[]
     declarations={}
@@ -259,7 +254,16 @@ async def execute(statements:list, scope:Scope = None, incontext:dict = {}, call
             for p in params:
                 s=Scope(scope)
                 if p: s.update(p)
-                ll.append( await caller(s, **prepare(s,**ndefs) ))
+                ex= await scope.call(**prepare(s,**ndefs),http=http)
+
+                #TODO: should be placed in scope.call() !?
+                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: begin/end !
+                for saveKey, saveWhat in ex.saves.items():
+                    # self.parent.env.save(saveKey, saveWhat, self.parent.name in ["BEGIN","END"])
+                    scope[saveKey]=saveWhat
+                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                ll.append( ex )
 
         elif op==OP.WAIT:
             time = float(scope.resolve_all(defs["time"])) / 1000 # convert to secondes
@@ -269,7 +273,7 @@ async def execute(statements:list, scope:Scope = None, incontext:dict = {}, call
             condition = scope.resolve_all(defs["condition"])
             block = defs["then" if condition else "else"]
             if block:
-                for i in await execute(block,scope, incontext, caller=caller):
+                for i in await execute(block,scope, incontext):
                     ll.append(i)
 
         elif op==OP.DECLPROC:
@@ -280,12 +284,17 @@ async def execute(statements:list, scope:Scope = None, incontext:dict = {}, call
             name = defs["name"]
             params=defs["params"]
 
-            code = declarations[ name ]
+            if name in declarations:
+                # prefer local ones
+                code = declarations[ name ]
+            else:
+                assert name in scope, f"Proc {name} is unknown"
+                code = compile( scope[name] )
 
             for p in params:
                 s=Scope(scope)
                 if p: s.update(p)
-                for i in await execute(code,s, incontext={**defs},caller=caller):
+                for i in await execute(code,s, incontext={**defs}):
                     ll.append(i)
 
         else:
@@ -294,17 +303,9 @@ async def execute(statements:list, scope:Scope = None, incontext:dict = {}, call
 #############################################################################
 
 
-def FakeExecute(statements:list, scope:Scope = None, http:dict=None):# -> list<dict>
-
-    async def fakecaller(scope:Scope, **defs):
-        if http:
-            return await scope.call(**defs,http=http)
-        else:
-            # return non Exchange object, but simpler "call request" + scope
-            return {"SCOPE":dict(scope),**defs}
-
-    return asyncio.run( execute(statements,scope,{},caller=fakecaller))
-
+def FakeExecute(statements:list, scope:Scope = None, http={}):
+    """!!!can't call real http !!!! only mock http({}) so 404 if not defined"""
+    return asyncio.run( execute(statements,scope,{},http=http))
 
 if __name__=="__main__":
     y="""
@@ -380,12 +381,15 @@ if __name__=="__main__":
 """
 
     y="""
-- GET:
-    nimp: nimp
+- GET: /nimp
+  tests:
+    - json.int: 42
+  save:
+    XXX: <<json.int>>
     """
 
     MOCK={
-        "https://manatlan.com/nimp": (200,"OK"),
+        "https://manatlan.com/nimp": (200,json.dumps(dict(int=42))),
     }
 
     ll=compile(yaml.load(y))
@@ -402,4 +406,4 @@ if __name__=="__main__":
     ll=FakeExecute(ll, s, http=MOCK)
     from pprint import pprint
     pprint(ll)
-
+    print(s)
