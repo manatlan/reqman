@@ -20,7 +20,10 @@ def test_simplest2(Reqs):
     jo: fsdgfdsgfds
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+        assert len(l) == 1
+    else:
+        assert len(l) == 2
 
 def test_simplest3(Reqs): # bad header's ext, but not called -> forget
     y="""
@@ -30,7 +33,10 @@ def test_simplest3(Reqs): # bad header's ext, but not called -> forget
          jo: fsdgfdsgfds
 """
     l=Reqs(y)
-    assert len(l) == 0
+    if l._old:
+        assert len(l) == 0
+    else:
+        assert len(l) == 1
 
 
 

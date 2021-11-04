@@ -244,10 +244,11 @@ class Exchange:
         return o and self.id == o.id
 
     def __repr__(self):
-        return "<Exchange: %s %s -> %s tests:%s>" % (
+        return "<Exchange: %s %s -> %s(%s) tests:%s>" % (
             self.method,
             self.url,
             self.status,
+            self.content.decode() if self.status is None else "ok",
             self.tests or "no",
         )
 

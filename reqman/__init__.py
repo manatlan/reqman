@@ -425,10 +425,7 @@ class Reqs(list):
         scope = reqman.env.Scope(self.env)
         self.exchanges = await reqman.dsl.execute( list(self), scope ,http=http)
 
-        #ex.nolimit = self.nolimit   #TODO: not beautiful !!!
-
-        # for saveKey, saveWhat in ex.saves.items():
-        #     self.parent.env.save(saveKey, saveWhat, self.parent.name in ["BEGIN","END"])
+        #ex.nolimit = self.nolimit   #TODO: report that too !!!
 
         print("===",self.exchanges)
         return self.exchanges

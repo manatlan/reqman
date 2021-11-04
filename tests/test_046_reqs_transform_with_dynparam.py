@@ -33,7 +33,11 @@ def test_complexe1(Reqs): # ensure now is executed before upper
 - call: PROC
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+      assert len(l) == 1
+    else:
+      assert len(l) == 2
+
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
     assert ll[0].body == b"WWWXXXWWW"
@@ -51,7 +55,11 @@ def test_complexe2(Reqs): # ensure now is executed before upper
     now: return "xxx"
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+      assert len(l) == 1
+    else:
+      assert len(l) == 2
+
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
     assert ll[0].body == b"WWWXXXWWW"
@@ -69,7 +77,11 @@ def test_complexe3(Reqs): # ensure now is executed before upper
     upper: return x.upper()
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+      assert len(l) == 1
+    else:
+      assert len(l) == 2
+
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
     assert ll[0].body == b"WWWXXXWWW"
@@ -87,7 +99,11 @@ def test_complexe4(Reqs): # ensure now is executed before upper
     now: return "xxx"
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+      assert len(l) == 1
+    else:
+      assert len(l) == 2
+
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
     assert ll[0].body == b"WWWXXXWWW"
@@ -105,7 +121,11 @@ def test_complexe5(Reqs): # ensure now is executed before upper
     upper: return x.upper()
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+      assert len(l) == 1
+    else:
+      assert len(l) == 2
+
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
     assert ll[0].body == b"WWWXXXWWW"
@@ -122,7 +142,11 @@ def test_complexe6(Reqs): # ensure now is executed before upper
     upper: return x.upper()
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+      assert len(l) == 1
+    else:
+      assert len(l) == 2
+
 
     ll=l.execute( {"/" : (200,"ok")} ) # reqman.RMException: Can't find method 'NOW'
     assert ll[0].body == b"WWWXXXWWW"

@@ -23,7 +23,10 @@ def test_static(Reqs):
         - a: 20
 """
     l=Reqs(y)
-    assert len(l) == 1
+    if l._old:
+      assert len(l) == 1
+    else:
+      assert len(l) == 2
     l.execute( MOCK )
 
 def test_dynamic(Reqs):

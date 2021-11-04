@@ -20,4 +20,7 @@ def test_break_in_proc(Reqs):
 - GET: https://www.manatlan.com
 """
     l=Reqs(y)
-    assert len(l) == 2
+    if l._old:
+        assert len(l) == 2
+    else:
+        assert len(l) == 3

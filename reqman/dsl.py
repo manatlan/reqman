@@ -48,6 +48,18 @@ class OP:
     WAIT="WAIT"
     IF="IF"
 
+class MyOP:
+    """ Just to make a container for an (OP,defs)
+        (ensure compat with old tests)
+    """
+    def __init__(self, op, refs:dict):
+        self._op=op
+        self._refs=refs
+        for k,v in refs.items():
+            self.__dict__[k]=v
+    def __repr__(self):
+        return f"<myop {self._op} : {self._refs}>"
+
 def same(foreach,params, doc,tests,headers):
     if params==None: params=[None]
     assert type(params) in [dict,list]
@@ -95,11 +107,11 @@ def op_HttpVerb(method,path,query=None,body=None,save=None, foreach=None,params=
 
     foreach, params, doc, tests, headers= same(foreach,params,doc,tests,headers)
 
-    return (OP.HTTPVERB,dict(method=method,path=path,headers=headers,body=body,params=params,tests=tests,doc=doc,saves=saves,querys=querys,foreach=foreach))
+    return MyOP(OP.HTTPVERB,dict(method=method,path=path,headers=headers,body=body,params=params,tests=tests,doc=doc,saves=saves,querys=querys,foreach=foreach))
 
 def op_Call(name, foreach=None,params=None, doc=None,tests=None,headers=None):
     foreach, params, doc, tests, headers= same(foreach,params, doc,tests,headers)
-    return (OP.CALLPROC,dict(name=name,params=params,doc=doc,tests=tests,headers=headers,foreach=foreach))
+    return MyOP(OP.CALLPROC,dict(name=name,params=params,doc=doc,tests=tests,headers=headers,foreach=foreach))
 
 def op_Wait(time):
     assert type(time) in [str,int,float], f"bad type for time={time}"
@@ -112,14 +124,14 @@ def op_Wait(time):
             except:
                 raise RMDslCompileException(f"bad type for time={time}, should be a var")
 
-    return (OP.WAIT,dict(time=time))
+    return MyOP(OP.WAIT,dict(time=time))
 
 def op_Decl( name, code ) :
-    return (OP.DECLPROC,dict(name=name,code=code))
+    return MyOP(OP.DECLPROC,dict(name=name,code=code))
 
 def op_If( condition, then, elze=None) :
     assert type(condition) in [str,int,bool] or condition is None, "if condition must be a str, int or bool"
-    return (OP.IF,{"condition":condition,"then":then,"else":elze})
+    return MyOP(OP.IF,{"condition":condition,"then":then,"else":elze})
 
 
 def is_dynamic(word):
@@ -237,7 +249,10 @@ async def execute(statements:list, scope:Scope = None, incontext:dict = {}, http
     if scope is None: scope=Scope({})
     ll=[]
     declarations={}
-    for op,defs in statements:
+    for myop in statements:
+        op=myop._op
+        defs=myop._refs
+
         if op==OP.HTTPVERB:
             params=defs["params"]
 
@@ -252,9 +267,12 @@ async def execute(statements:list, scope:Scope = None, incontext:dict = {}, http
             del ndefs["foreach"]    #TODO
 
             for p in params:
-                s=Scope(scope)
-                if p: s.update(p)
-                ex= await scope.call(**prepare(s,**ndefs),http=http)
+                if p:
+                    s=Scope({**scope,**p})
+                else:
+                    s=Scope(scope)
+
+                ex= await s.call(**prepare(s,**ndefs),http=http)
 
                 #TODO: should be placed in scope.call() !?
                 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: begin/end !
@@ -292,8 +310,12 @@ async def execute(statements:list, scope:Scope = None, incontext:dict = {}, http
                 code = compile( scope[name] )
 
             for p in params:
-                s=Scope(scope)
-                if p: s.update(p)
+
+                if p:
+                    s=Scope({**scope,**p})
+                else:
+                    s=Scope(scope)
+
                 for i in await execute(code,s, incontext={**defs}):
                     ll.append(i)
 
@@ -407,3 +429,4 @@ if __name__=="__main__":
     from pprint import pprint
     pprint(ll)
     print(s)
+
