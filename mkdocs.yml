@@ -1,0 +1,31 @@
+site_name: Reqman Docs
+site_description: The postman killer ;-)
+site_url: https://reqman-docs.glitch.me/
+
+theme:
+    name: 'material'
+    palette:
+        primary: 'green'
+        accent: 'green'
+
+repo_name: manatlan/reqman
+repo_url: https://github.com/manatlan/reqman
+edit_uri: ""
+
+nav:
+    - Introduction: 'index.md'
+    - From postman: 'from_postman.md'
+    - Installation: 'install.md'
+    - Simplest use: 'simple_use.md'
+    - Test's Grammar: yml_syntax.md
+    - Using a global conf: conf.md
+    - Python powered: python.md
+    - Command Line: command.md
+    - An example: example.md
+    - Demo: demo.md
+
+
+markdown_extensions:
+  - markdown.extensions.codehilite:
+      guess_lang: false
+  - admonition      
