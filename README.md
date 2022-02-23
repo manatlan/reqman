@@ -7,7 +7,7 @@ Reqman is a postman killer ;-)
 
 All configurations is done via simple yaml files, editable with any text editors. Results are displayed in console and in an html output. It's scriptable, and can be used as a daemon/cron task to automate your tests.
 
-[Documentation](https://reqman-docs.glitch.me/)
+[Documentation](https://manatlan.github.io/reqman/)
 
 [Changelog](https://github.com/manatlan/reqman/blob/master/changelog) !
 
