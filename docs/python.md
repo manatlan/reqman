@@ -70,6 +70,21 @@ Example of using a python method to save content during tests:
 !!! warning
     You will need version >= 2.2.3.0 (previous was bugged ;-( ) 
 
+## Improve tests
+
+You can improve the way you test yours api, by adding python in your tests. Here is an example :
+
+```yaml
+- GET: /my_api
+  params:
+    my_own_test: |
+        import re
+        return True if re.search( "^2", str(x) ) else False
+  tests:
+    - status|my_own_test: true
+```
+
+
 
 !!! tip
     A better place for theses methods : declare them in the [reqman.conf](conf.md) !
