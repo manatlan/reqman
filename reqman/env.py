@@ -498,7 +498,12 @@ class Scope(dict): # like 'Env'
             path=self.resolve_string(path)
             if not urllib.parse.urlparse(path).scheme:
                 path=self.get_var_or_empty("root")+path
-            body=self.resolve_string(body)
+
+            if body.startswith("<<!") and body.endswith(">>"):  # <<!var>> : ne tente pas de resolver le content de var !
+                asBytes=self.get_var(body[3:-2])
+            else:
+                asBytes=self.resolve_string(body).encode()
+            
             headers={k:self.resolve_string(str(v)) for k,v in headers.items() if v is not None} # remove headers valuated as None
             r=None
         except ResolveException as e:
@@ -509,7 +514,7 @@ class Scope(dict): # like 'Env'
             r=com.ResponseError(f"Python Method in error: {e}")
 
 
-        ex=Exchange(method,path,body.encode(),headers, tests=tests, saves=saves, doc=doc)
+        ex=Exchange(method,path,asBytes,headers, tests=tests, saves=saves, doc=doc)
         ex.id=uid.hexdigest() #<- save unique id for this kind of request (to be able to match them in dual mode)
         if r is None: # we can call it safely
             r=await ex.call(timeout,proxies=proxies,http=http)
