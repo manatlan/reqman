@@ -449,6 +449,7 @@ class Scope(dict): # like 'Env'
         assert all( [type(i)==tuple and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
 
+        asBytes=body.encode()
 
         # create a Unique ID for this request
         uid = hashlib.md5()
