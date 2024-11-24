@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reqman"
-version = "0.0.0"  
+version = "0.0.0" # auto-updated
 description = "Create your http(s)-tests in simple yaml files, and run them with command line, against various environments"
 authors = ["manatlan <manatlan@gmail.com>"]
 repository = "https://github.com/manatlan/reqman"
