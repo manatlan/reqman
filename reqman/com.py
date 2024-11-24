@@ -30,6 +30,7 @@ def jdumps(o, *a, **k):
 JAR=None
 
 def init():
+    # since py3.11 : this must be called in an asyncio loop ;-(
     global JAR
     JAR = aiohttp.CookieJar(unsafe=True)
     class fake:
@@ -39,7 +40,6 @@ def init():
             pass
     return fake()
 
-init()
 
 class Response:
     def __init__(self, status:int, headers: dict, content: bytes, info: str):
@@ -83,6 +83,7 @@ isBytes = lambda bytes: bool(bytes.translate(None, textchars))
 
 async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,proxies=None) -> Response:
     assert type(body)==bytes
+    if JAR is None: init()
     try:
         async with aiohttp.ClientSession(trust_env=True,cookie_jar=JAR) as session:
 

@@ -38,8 +38,6 @@ def exe(request):
     def tester(*a,fakeServer=None):
         sys.argv=["reqman.exe"]+list(a)
 
-        reqman.com.init()
-
         f=FakeExeReturn()
 
         print(sys.argv)
