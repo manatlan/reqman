@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # #############################################################################
-#    Copyright (C) 2018-2021 manatlan manatlan[at]gmail(dot)com
+#    Copyright (C) 2018-2024 manatlan manatlan[at]gmail(dot)com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -41,7 +41,7 @@ import reqman.xlib
 import reqman.testing
 
 # 95% coverage: python3 -m pytest --cov-report html --cov=reqman .
-__version__ = "3.0.4"  # now, real SemVer !
+__version__ = "0.0.0" # auto updated
 
 try: # https://bugs.python.org/issue37373  FIX: event_loop/py3.8 on windows
     if sys.platform == 'win32':
