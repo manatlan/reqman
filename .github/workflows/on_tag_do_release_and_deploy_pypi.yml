@@ -13,7 +13,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.x'
 
       - name: Patch Sources with "tag version ref"
         run: python .github/workflows/update_version.py ${{github.ref_name}}
@@ -29,5 +29,5 @@ jobs:
 
       - name: Build and publish to pypi
         uses: JRubics/poetry-publish@v1.12
-        #with:
-        #  pypi_token: ${{ secrets.PYPI_TOKEN }}
+        with:
+          pypi_token: ${{ secrets.PYPI_TOKEN }}
