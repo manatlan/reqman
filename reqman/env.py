@@ -14,7 +14,7 @@
 #
 # https://github.com/manatlan/reqman
 # #############################################################################
-
+import os
 import re
 import json
 import datetime
@@ -22,6 +22,7 @@ import inspect
 import urllib.parse
 import hashlib
 import logging
+import dotenv; dotenv.load_dotenv()
 
 from reqman.common import NotFound,decodeBytes,jdumps
 import reqman.com as com
@@ -409,6 +410,9 @@ class Scope(dict): # like 'Env'
                     value=self.run(callabl,value)
                 else:
                     return NotFound
+        else:
+            # FALLBACK to resolv from dotenv (new 27/12/2024)
+            value = os.environ.get(var,NotFound)
 
         return value
 

@@ -2,7 +2,7 @@ import pytest
 import reqman.env
 import reqman.com
 import reqman.xlib
-import json
+import json,os
 
 ENV=reqman.env.Scope(dict(
     txt="hello",
@@ -212,9 +212,24 @@ def test_copy_dico():
     assert e.get_var("user1.name") == "jo"
 
 
+def test_dotenv():
+    if "ENV_VAR" in os.environ:
+        del os.environ["ENV_VAR"]
+
+    e=reqman.env.Scope( dict(
+        user="<<ENV_VAR>>",
+    ))
+    assert e.get_var("ENV_VAR") == NotFound
+    assert e.get_var("user") == "<<ENV_VAR>>"
 
 
+    os.environ["ENV_VAR"]="dotenv_ready"
 
+    assert os.getenv("ENV_VAR") == "dotenv_ready"
+    assert os.environ["ENV_VAR"] == "dotenv_ready"
+
+    assert e.get_var("ENV_VAR") == "dotenv_ready"
+    assert e.get_var("user") == "dotenv_ready"
 
 
 @pytest.mark.asyncio
