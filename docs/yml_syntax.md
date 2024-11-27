@@ -12,6 +12,8 @@ Its content is a list of statements. There are 4 types of statements :
 **reqman** brings its own substitution mechanism. In many places (value side), you can create vars (`{{a_var}}` or `<<a_var>>`), 
 which will be substituted at runtime using [local params](#params), [global params](conf.md#define-some-globals-parameters) or [saved ones](#save)
 
+(since 3.2.0 version : you can use your environments vars (dotenv compliant) too !)
+
 ### A HTTP Request
 This kind of statement, should contain ONE HTTP VERB, in uppercase (Known HTTP verbs : "GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT")
 
