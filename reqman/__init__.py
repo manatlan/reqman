@@ -1919,7 +1919,7 @@ def main(fakeServer=None, hookResults=None) -> int:
 
         if outputHtmlFile:
             rr.forceNoLimit=forceNoLimit
-            with codecs.open(outputHtmlFile, "w+", "utf-8-sig") as fid:
+            with codecs.open(outputHtmlFile, "w+", "utf-8-sig", errors="replace") as fid:
                 fid.write(rr.html)
             if openBrowser:
                 try:
@@ -1930,7 +1930,7 @@ def main(fakeServer=None, hookResults=None) -> int:
                     pass
 
         if junitXmlFile:
-            with codecs.open(junitXmlFile, "w+", "utf-8-sig") as fid:
+            with codecs.open(junitXmlFile, "w+", "utf-8-sig", errors="replace") as fid:
                 fid.write(rr.generateJunitXmlFile())
 
         if hookResults is not None:  # for tests only
