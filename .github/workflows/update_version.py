@@ -11,7 +11,7 @@ def patch_init(v):
 
 def patch_pyproject(v):
     file="pyproject.toml"
-    content = re.sub(r'version = [^#]*',f'version = "{v}" ',open(file,'r+').read(),1)
+    content = re.sub(r'version = "\d+.\d+.\d+"',f'version = "{v}" ',open(file,'r+').read(),1)
     assert v in content
     with open(file,'w+') as fid:
         fid.write( content )
