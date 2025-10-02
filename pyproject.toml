@@ -1,12 +1,12 @@
 [project]
 name = "reqman"
 version = "0.0.0"
+requires-python = ">=3.8"
 description = "Create your http(s)-tests in simple yaml files, and run them with command line, against various environments"
 authors = [
     {name = "manatlan", email = "manatlan@gmail.com"},
 ]
 readme = "README.md"
-requires-python = ">=3.8"
 dependencies = [
     "aiohttp",
     "python-dotenv",

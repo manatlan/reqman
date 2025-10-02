@@ -12,7 +12,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: "3.x"
           
       - name: Patch Sources with "tag version ref"
         run: |
@@ -22,6 +22,7 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           uv sync --dev
+          python -m pip install pytest
 
       - name: Test with pytest
         run: uv run pytest
