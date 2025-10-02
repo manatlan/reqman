@@ -18,7 +18,7 @@
 from xml.dom import minidom
 import xpath  # see "pip install py-dom-xpath-six"
 
-from reqman.common import NotFound
+from .common import NotFound
 
 class Xml:
     def __init__(self, x):

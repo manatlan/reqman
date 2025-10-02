@@ -1,4 +1,5 @@
-import reqman,pytest,sys,os
+import pytest,sys,os
+from src import reqman
 
 def test_COMMAND_output_junit_xml(exe):
     with open("f.yml","w+") as fid:

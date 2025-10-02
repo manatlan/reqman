@@ -1,4 +1,5 @@
-import reqman, asyncio, pytest
+import asyncio, pytest
+from src import reqman
 
 @pytest.mark.asyncio
 async def test():

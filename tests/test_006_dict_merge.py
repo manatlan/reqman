@@ -1,4 +1,5 @@
-import pytest, reqman, json
+from src import reqman
+import pytest, json
 
 def test_la_base():
   upd={

@@ -1,7 +1,5 @@
 import pytest
-import reqman.env
-import reqman.com
-import reqman.xlib
+from src import reqman
 import json,os
 
 ENV=reqman.env.Scope(dict(

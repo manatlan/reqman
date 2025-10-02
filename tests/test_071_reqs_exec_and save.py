@@ -1,5 +1,5 @@
-import pytest,reqman,json
-
+import pytest,json
+from src import reqman
 mock={
     "/start" : (200,json.dumps(dict(route=dict(second="next"),nb=42))),
     "/go/next" : (200,"ok"),

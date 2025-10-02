@@ -1,4 +1,5 @@
-import reqman, asyncio,pytest
+import asyncio,pytest
+from src import reqman
 from pprint import pprint
 
 # def test_solo1():

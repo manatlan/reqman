@@ -1,4 +1,5 @@
-import pytest,reqman
+from src import reqman
+import pytest
 
 
 def test_if_ok(Reqs):

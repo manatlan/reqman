@@ -1,4 +1,5 @@
-import pytest,reqman
+import pytest
+from src import reqman
 
 MOCK={"https://www.manatlan.com":(200,"ok")}
 

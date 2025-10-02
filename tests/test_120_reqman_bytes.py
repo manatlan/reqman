@@ -1,5 +1,6 @@
-import pytest,reqman,json,yaml
-import pytest,reqman,json
+import pytest,json,yaml
+import pytest,json
+from src import reqman
 MOCK={
           "/pingpong": lambda m,p,b,h: (200,b)
       }

@@ -1,4 +1,6 @@
-import pytest,reqman
+from src import reqman
+import pytest
+
 
 
 def test_break(Reqs):

@@ -1,5 +1,4 @@
-from reqman import json,Env
-
+from src.reqman import json,Env
 
 def test_1priority_params_for_proc(exe):
     MOCK={

@@ -1,4 +1,5 @@
-import pytest,reqman
+import pytest
+from src import reqman
 
 # same as 045
 # same as 045

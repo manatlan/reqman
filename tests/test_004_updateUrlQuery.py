@@ -1,4 +1,5 @@
-import pytest, reqman, json
+from src import reqman
+import pytest, json
 import datetime,pickle
 
 updateUrlQuery = reqman.env.updateUrlQuery

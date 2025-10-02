@@ -1,4 +1,5 @@
-import pytest,reqman,pickle
+from src import reqman
+import pytest,pickle
 
 def test_reqs_pickable(Reqs):
     y="""

@@ -1,4 +1,5 @@
-import reqman,pytest,sys,os
+import pytest,sys,os
+from src import reqman
 
 mock = {
   "http://a/start":(200,"ok"),

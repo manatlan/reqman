@@ -1,4 +1,5 @@
-import pytest, reqman, json,pytest
+from src import reqman
+import pytest, json,pytest
 import datetime,pickle
 
 

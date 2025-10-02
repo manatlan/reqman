@@ -1,4 +1,5 @@
-import pytest, reqman, json
+from src import reqman
+import pytest, json
 
 class Ex:
     def __init__(self,id):

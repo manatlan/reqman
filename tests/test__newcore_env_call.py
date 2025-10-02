@@ -1,6 +1,5 @@
 import pytest,json
-import reqman.env
-import reqman.com
+from src import reqman
 
 
 def test_simul_json():

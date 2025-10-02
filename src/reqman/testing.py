@@ -19,7 +19,7 @@ import re
 import json
 import logging
 
-from reqman.common import decodeBytes,jdumps
+from .common import decodeBytes,jdumps
 
 
 class HeadersMixedCase(dict):

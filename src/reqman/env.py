@@ -24,10 +24,10 @@ import hashlib
 import logging
 import dotenv; dotenv.load_dotenv()
 
-from reqman.common import NotFound,decodeBytes,jdumps
-import reqman.com as com
-import reqman.testing as testing
-import reqman.xlib as xlib
+from .common import NotFound,decodeBytes,jdumps
+from . import com
+from . import testing
+from . import xlib
 
 import typing as T
 

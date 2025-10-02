@@ -1,4 +1,5 @@
-import reqman, asyncio,pytest
+from src import reqman
+import  asyncio,pytest
 from datetime import datetime
 from pprint import pprint
 import json

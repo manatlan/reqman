@@ -1,4 +1,5 @@
-import reqman,pytest,sys,os
+from src import reqman
+import pytest,sys,os
 import contextlib,io
 
 def execfile(filepath, globals=None, locals=None):
@@ -17,7 +18,7 @@ def test_exe(): #ensure that the module is executable (thru its "if __name__=="_
     with pytest.raises(SystemExit):
         with contextlib.redirect_stderr(fe):
             with contextlib.redirect_stdout(fo):
-                execfile("reqman/__main__.py")
+                execfile("src/reqman/__main__.py")
     output=fo.getvalue()+fe.getvalue()
     assert "USAGE" in output
     assert reqman.__version__ in output

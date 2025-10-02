@@ -1,4 +1,5 @@
-import pytest,reqman
+import pytest
+from src import reqman
 
 
 def test_simplest(Reqs):

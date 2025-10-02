@@ -1,4 +1,5 @@
-import reqman,pytest,sys
+import pytest,sys
+from src import reqman
 
 def test_COMMAND_no_args(exe):
     r=exe()

@@ -1,4 +1,5 @@
-import reqman, asyncio,pytest
+from src import reqman
+import asyncio,pytest
 from pprint import pprint
 import json
 s= dict(int=42,str="hello")

@@ -1,5 +1,6 @@
-import pytest,reqman,json
-import reqman, asyncio, pytest
+import pytest,json
+import asyncio, pytest
+from src import reqman
 
 
 MOCK={

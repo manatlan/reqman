@@ -1,5 +1,5 @@
 import pytest,os
-import reqman.com
+from src import reqman
 
 @pytest.mark.skipif(os.getenv("CI") == "true", reason="No internet on CI")
 @pytest.mark.asyncio

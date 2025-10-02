@@ -1,7 +1,8 @@
 import sys,os,io,contextlib
 from glob import glob
 import pytest
-import fakereqman, reqman
+import fakereqman
+from src import reqman
 import os,tempfile,shutil
 
 WS=None

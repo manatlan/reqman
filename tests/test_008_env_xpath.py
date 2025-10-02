@@ -1,8 +1,6 @@
-import pytest, reqman, json
+import pytest, json
 import datetime,pickle
-import reqman.xlib
-import reqman.common
-
+from src import reqman
 
 xml="""<?xml version="1.0" encoding="UTF-8"?>
 <x xmlns:ns2="www">

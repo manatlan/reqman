@@ -1,4 +1,5 @@
-import pytest, reqman, json
+from src import reqman
+import pytest, json
 import datetime, pickle
 """
 THIS IS THE OLD TESTS, BEFORE NEWCORE ... now ok with newcore

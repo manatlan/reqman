@@ -1,6 +1,5 @@
 import pytest
-import reqman
-import reqman.com
+from src import reqman
 import asyncio,sys,html
 import contextlib,io,re,json,html
 import tempfile,os,shutil

@@ -1,4 +1,5 @@
-import pytest, reqman, json
+from src import reqman
+import pytest,  json
 import datetime,pickle
 
 H=[("X-num",1),("X-str","1"),("content-type","yolo"),("X-User","<<head>>")]

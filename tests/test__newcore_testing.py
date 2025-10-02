@@ -1,5 +1,5 @@
 import pytest,json
-import reqman.testing
+from src import reqman
 
 
 def test_comp():

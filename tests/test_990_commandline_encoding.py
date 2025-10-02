@@ -1,4 +1,5 @@
-import pytest,reqman,json
+from src import reqman
+import pytest,json
 
 MOCK={
     "https://www.manatlan.com/utf8":(200,"oké"),
