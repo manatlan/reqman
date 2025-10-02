@@ -38,7 +38,7 @@ jobs:
 
       - name: Patch Sources with "tag version ref"
         run: |
-          python .github/workflows/update_version.py ${{github.ref_name}}
+          uv run .github/workflows/update_version.py ${{github.ref_name}}
 
       - name: build (needed ?)
         run: |
