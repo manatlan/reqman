@@ -43,13 +43,13 @@ jobs:
       - name: build (needed ?)
         run: |
           mkdir pypi_dist
-          uv build -o pypi_dist
+          uv build -o pypi_dist/
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
           name: release-dists
-          path: dist/
+          path: pypi_dist/
 
   pypi-publish:
     runs-on: ubuntu-latest
