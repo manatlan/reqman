@@ -42,7 +42,8 @@ jobs:
 
       - name: build (needed ?)
         run: |
-          uv build
+          mkdir pypi_dist
+          uv build -o pypi_dist
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
@@ -74,9 +75,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: release-dists
-          path: dist/
+          path: pypi_dist/
 
       - name: Publish release distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: dist/
+          packages-dir: pypi_dist/
