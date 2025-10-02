@@ -7,7 +7,7 @@ on:
   workflow_dispatch:  # to be able to test manually on github/actions
   push:
     branches:
-      - main
+      - master
       
 jobs:
   build:

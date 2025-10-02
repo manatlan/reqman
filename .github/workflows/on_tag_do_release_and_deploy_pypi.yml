@@ -16,7 +16,9 @@ jobs:
           python-version: '3.x'
 
       - name: Patch Sources with "tag version ref"
-        run: python .github/workflows/update_version.py ${{github.ref_name}}
+        run: |
+          git fetch origin master
+          python .github/workflows/update_version.py ${{github.ref_name}}
 
       - name: Install uv
         run: |
@@ -24,7 +26,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync
           uv sync --extra dev
 
       - name: Test with pytest
