@@ -36,7 +36,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=reqman --cov-report=html --cov-report=xml --cov-report=term-missing"
+addopts = "--cov=src/reqman --cov-report=html --cov-report=xml --cov-report=term-missing"
 
 [build-system]
 requires = ["uv_build>=0.8.15,<0.9.0"]
