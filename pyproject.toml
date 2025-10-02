@@ -4,6 +4,7 @@ version = "0.0.0"
 requires-python = ">=3.8"
 description = "Create your http(s)-tests in simple yaml files, and run them with command line, against various environments"
 readme = "README.md"
+license = { file = "LICENSE" }
 authors = [
     {name = "manatlan", email = "manatlan@gmail.com"},
 ]
@@ -18,24 +19,23 @@ dependencies = [
     "junit-xml",
 ]
 
-
-[project.urls]
-Homepage = "https://github.com/manatlan/reqman"
-Repository = "https://github.com/manatlan/reqman"
-Issues = "https://github.com/manatlan/reqman/issues"
-
-[project.scripts]
-reqman = "reqman:main"
-
-[tool.pytest.ini_options]
-addopts = "--cov=src/reqman --cov-report=html --cov-report=xml --cov-report=term-missing"
-
 [tool.uv]
 package = true
 
 [build-system]
 requires = ["uv_build>=0.8.15,<0.9.0"]
 build-backend = "uv_build"
+
+[project.scripts]
+reqman = "reqman.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/manatlan/reqman"
+Repository = "https://github.com/manatlan/reqman"
+Issues = "https://github.com/manatlan/reqman/issues"
+
+[tool.pytest.ini_options]
+addopts = "--cov=src/reqman --cov-report=html --cov-report=xml --cov-report=term-missing"
 
 [dependency-groups]
 dev = [
