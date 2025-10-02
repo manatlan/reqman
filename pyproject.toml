@@ -31,7 +31,7 @@ dev = [
     "pytest>=8.3.3",
     "pytest-asyncio",
     "py>=1.11.0",
-    "pytest-cov",
+    "pytest-cov"
 ]
 
 [tool.pytest.ini_options]
