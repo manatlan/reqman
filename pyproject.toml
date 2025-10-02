@@ -1,33 +1,36 @@
-[tool.poetry]
+[project]
 name = "reqman"
-version = "0.0.0" # auto-updated
+version = "0.0.0"
 description = "Create your http(s)-tests in simple yaml files, and run them with command line, against various environments"
-authors = ["manatlan <manatlan@gmail.com>"]
-repository = "https://github.com/manatlan/reqman"
+authors = [
+    {name = "manatlan", email = "manatlan@gmail.com"},
+]
 readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "aiohttp",
+    "python-dotenv",
+    "py-dom-xpath-six",
+    "pyyaml>=4.2b1",
+    "stpl>=1.13.2",
+    "colorama",
+    "pyjwt",
+    "junit-xml",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.8"
-aiohttp = "*"
-python-dotenv = "*"
-py-dom-xpath-six = "*"
-pyyaml = ">=4.2b1"
-stpl = ">=1.13.2"
-colorama = "*"
-pyjwt = "*"
-junit-xml = "*"
+[project.urls]
+Repository = "https://github.com/manatlan/reqman"
 
-[tool.poetry.dev-dependencies]
-pytest = "*"
-pytest-asyncio = "*"
-
-[tool.poetry.scripts]
+[project.scripts]
 reqman = "reqman:main"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.3"
-py = "^1.11.0"
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.3",
+    "pytest-asyncio",
+    "py>=1.11.0",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
