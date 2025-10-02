@@ -1,11 +1,12 @@
-import pytest
+import pytest,os
 import reqman.com
 
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="No internet on CI")
 @pytest.mark.asyncio
 async def test_real_http_call():
     reqman.com.init()
 
-    r=await reqman.com.call("GET","https://httpstat.us/200")
+    r=await reqman.com.call("GET","https://tools-httpstatus.pickup-services.com/200")
     assert r.status==200
     assert type(r)==reqman.com.Response
 
@@ -15,11 +16,12 @@ async def test_real_http_call():
     r=await reqman.com.call("GET","http://fgsdjghfdsgfsdhhgfdjks.com")
     assert type(r)==reqman.com.ResponseUnreachable
 
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="No internet on CI")
 @pytest.mark.asyncio
 async def test_real_http_call_timeout():
     reqman.com.init()
 
-    r=await reqman.com.call("GET","https://httpstat.us/200?sleep=2000",timeout=1)
+    r=await reqman.com.call("GET","https://tools-httpstatus.pickup-services.com/200?sleep=1000",timeout=1)
     assert type(r)==reqman.com.ResponseTimeout
 
 
