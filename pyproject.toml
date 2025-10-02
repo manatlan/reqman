@@ -19,17 +19,23 @@ dependencies = [
 ]
 
 [project.urls]
+Homepage = "https://github.com/manatlan/reqman"
 Repository = "https://github.com/manatlan/reqman"
+Issues = "https://github.com/manatlan/reqman/issues"
 
 [project.scripts]
 reqman = "reqman:main"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=8.3.3",
     "pytest-asyncio",
     "py>=1.11.0",
+    "pytest-cov",
 ]
+
+[tool.pytest.ini_options]
+addopts = "--cov=reqman --cov-report=html --cov-report=xml --cov-report=term-missing"
 
 [build-system]
 requires = ["hatchling"]
