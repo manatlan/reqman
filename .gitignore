@@ -111,3 +111,5 @@ pypi.txt
 *.rmr
 save.yml
 AEFF.py
+uv.lock
+
