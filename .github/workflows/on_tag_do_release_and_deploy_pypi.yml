@@ -30,15 +30,13 @@ jobs:
         run: |
           python .github/workflows/update_version.py ${{github.ref_name}}
 
+      - name: del garbage
+        run: |
+          rm dist/*
+
       - name: Build project
         run: uv build -o dist/
 
-      - name: del garbage
-        run: |
-          ls -l dist/
-          rm dist/readme.md
-          rm dist/reqman.exe
-          rm dist/reqman.ico
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
