@@ -2,7 +2,7 @@ import sys,re
 
 
 def patch_init(v):
-    file="reqman/__init__.py"
+    file="src/reqman/__init__.py"
     content = re.sub(r'__version__ = [^#]*',f'__version__ = "{v}" ',open(file,'r+').read(),1)
     assert v in content
     with open(file,'w+') as fid:
