@@ -26,7 +26,7 @@ Issues = "https://github.com/manatlan/reqman/issues"
 [project.scripts]
 reqman = "reqman:main"
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pytest>=8.3.3",
     "pytest-asyncio",

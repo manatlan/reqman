@@ -1534,7 +1534,7 @@ dependencies = [
     { name = "stpl" },
 ]
 
-[package.dev-dependencies]
+[package.optional-dependencies]
 dev = [
     { name = "py" },
     { name = "pytest", version = "8.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
@@ -1550,20 +1550,17 @@ requires-dist = [
     { name = "aiohttp" },
     { name = "colorama" },
     { name = "junit-xml" },
+    { name = "py", marker = "extra == 'dev'", specifier = ">=1.11.0" },
     { name = "py-dom-xpath-six" },
     { name = "pyjwt" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.3" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'" },
+    { name = "pytest-cov", marker = "extra == 'dev'" },
     { name = "python-dotenv" },
     { name = "pyyaml", specifier = ">=4.2b1" },
     { name = "stpl", specifier = ">=1.13.2" },
 ]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "py", specifier = ">=1.11.0" },
-    { name = "pytest", specifier = ">=8.3.3" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
+provides-extras = ["dev"]
 
 [[package]]
 name = "six"
