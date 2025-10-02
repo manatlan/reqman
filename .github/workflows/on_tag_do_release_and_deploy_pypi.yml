@@ -14,18 +14,21 @@ jobs:
         with:
           python-version: "3.x"
           
-      - name: Patch Sources with "tag version ref"
-        run: |
-          python .github/workflows/update_version.py ${{github.ref_name}}
-
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: init
+        run: |
+          uv sync
           uv sync --dev
-          python -m pip install pytest
 
       - name: Test with pytest
         run: uv run pytest
+
+      - name: Patch Sources with "tag version ref"
+        run: |
+          python .github/workflows/update_version.py ${{github.ref_name}}
 
       - name: Build project
         run: uv build -o dist/
