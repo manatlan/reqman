@@ -552,6 +552,19 @@ class Reqs(list):
             except Exception as e:
                 raise self._errorFormat("Reqs: YML syntax in %s\n%s" % (self.name, e))
 
+            ######################################################### rq4
+            if isintance(y,dict) and isintance(y.get("RUN"),list):
+                # scenar is embedded in a "RUN:" section
+                scenar = list(y["RUN"])
+                del y["RUN"]
+                local_env = dict(y)
+
+                # so we update the env with local_env
+                self.env.update(local_env)
+                # and the scenar is only steps in RUN section
+                y = scenar
+            #########################################################
+
             lreqs = controle(y)
         else:
             raise self._errorFormat("Reqs: bad object")
