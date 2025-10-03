@@ -27,11 +27,12 @@ def rm(f):
         os.unlink(f)
 
 try:
+    exe_name=f"reqman-{reqman.__version__}.exe"
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     py.run([
         'src/reqman/__main__.py',
-        "-n","reqman",
+        "-n",exe_name[:-4],
         '--onefile',
         '--noupx',
         "--exclude-module","tkinter",
@@ -39,6 +40,6 @@ try:
     ])
 
     v=conv(reqman.__version__)
-    os.system(f"""dist\\verpatch.exe dist\\reqman.exe {v} /high /va /pv {v} /s description "Commandline tool to test a http service with yaml's scenarios (more info : https://github.com/manatlan/reqman)" /s product "Reqman" /s copyright "GPLv2, 2021" /s company "manatlan" """)
+    os.system(f"""dist\\verpatch.exe dist\\{exe_name} {v} /high /va /pv {v} /s description "Commandline tool to test a http service with yaml's scenarios (more info : https://github.com/manatlan/reqman)" /s product "Reqman" /s copyright "GPLv2, 2021" /s company "manatlan" """)
 finally:
-    rm("reqman.spec")
+    rm(exe_name[:-4]+".spec")
