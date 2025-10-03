@@ -13,6 +13,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -24,6 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --dev
+          uv build
 
       - name: Build EXE with pyinstaller
         run: python buildWinExe.py
