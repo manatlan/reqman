@@ -30,14 +30,27 @@ try:
     exe_name=f"reqman-{reqman.__version__}.exe"
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    py.run([
+    # build PyInstaller arguments and detect UPX
+    args = [
         'src/reqman/__main__.py',
-        "-n",exe_name[:-4],
+        "-n", exe_name[:-4],
         '--onefile',
-        '--noupx',
-        "--exclude-module","tkinter",
+        "--exclude-module", "tkinter",
         '--icon=dist/reqman.ico'
-    ])
+    ]
+
+    upx_path = shutil.which('upx') or shutil.which('upx.exe')
+    if upx_path:
+        upx_dir = os.path.dirname(os.path.abspath(upx_path))
+
+    if upx_dir:
+        print(f"Using UPX from {upx_dir}")
+        args.append(f"--upx-dir={upx_dir}")
+    else:
+        print("UPX not found or disabled; building without UPX")
+        args.append('--noupx')
+
+    py.run(args)
 
     v=conv(reqman.__version__)
     os.system(f"""dist\\verpatch.exe dist\\{exe_name} {v} /high /va /pv {v} /s description "Commandline tool to test a http service with yaml's scenarios (more info : https://github.com/manatlan/reqman)" /s product "Reqman" /s copyright "GPLv2, 2021" /s company "manatlan" """)
