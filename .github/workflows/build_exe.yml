@@ -28,7 +28,7 @@ jobs:
           uv build
 
       - name: Build EXE with pyinstaller
-        run: python buildWinExe.py
+        run: uv run buildWinExe.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
