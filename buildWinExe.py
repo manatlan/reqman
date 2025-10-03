@@ -30,7 +30,7 @@ try:
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     py.run([
-        'reqman/__main__.py',
+        'src/reqman/__main__.py',
         "-n","reqman",
         '--onefile',
         '--noupx',
