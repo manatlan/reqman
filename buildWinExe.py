@@ -27,7 +27,7 @@ def rm(f):
         os.unlink(f)
 
 try:
-    os.chdir(os.path.split(sys.argv[0])[0])
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     py.run([
         'reqman/__main__.py',
