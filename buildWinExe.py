@@ -36,7 +36,7 @@ try:
         "-n", exe_name[:-4],
         '--onefile',
         "--exclude-module", "tkinter",
-        '--icon=dist/reqman.ico'
+        '--icon=ressources/reqman.ico'
     ]
 
     upx_path = shutil.which('upx') or shutil.which('upx.exe')
@@ -53,6 +53,6 @@ try:
     py.run(args)
 
     v=conv(reqman.__version__)
-    os.system(f"""dist\\verpatch.exe dist\\{exe_name} {v} /high /va /pv {v} /s description "Commandline tool to test a http service with yaml's scenarios (more info : https://github.com/manatlan/reqman)" /s product "Reqman" /s copyright "GPLv2, 2021" /s company "manatlan" """)
+    os.system(f"""ressources\\verpatch.exe dist\\{exe_name} {v} /high /va /pv {v} /s description "Commandline tool to test a http service with yaml's scenarios (more info : https://github.com/manatlan/reqman)" /s product "Reqman" /s copyright "GPLv2, 2021" /s company "manatlan" """)
 finally:
     rm(exe_name[:-4]+".spec")
