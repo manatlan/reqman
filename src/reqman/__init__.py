@@ -553,7 +553,7 @@ class Reqs(list):
                 raise self._errorFormat("Reqs: YML syntax in %s\n%s" % (self.name, e))
 
             ######################################################### rq4
-            if isintance(y,dict) and isintance(y.get("RUN"),list):
+            if isinstance(y,dict) and isinstance(y.get("RUN"),list):
                 # scenar is embedded in a "RUN:" section
                 scenar = list(y["RUN"])
                 del y["RUN"]
