@@ -5,6 +5,10 @@ import contextlib,io,re,json,html
 import tempfile,os,shutil
 import html
 
+@pytest.fixture(scope="function", autouse=True)
+def reset_reqman(request):
+    reqman.com.reset()
+
 @pytest.fixture(scope="function")
 def Reqs(request):
     def tester(*a,**k):

@@ -20,15 +20,16 @@ async def hello(request):
 @routes.get('/cookie')
 async def cookie(request):
     resp=web.Response(status=200,text="?")
-
+    domain = request.host.split(":")[0]
+    path = "/"
     argv=request.query.get("value","?")
     if argv=="create":
-        resp.set_cookie("cpt",0)
+        resp.set_cookie("cpt", "0", domain=domain, path=path)
         msg= "create"
     elif argv=="inc":
         cpt=int(request.cookies.get("cpt",-1))
         if cpt>=0:
-            resp.set_cookie("cpt",cpt+1)
+            resp.set_cookie("cpt", str(cpt+1), domain=domain, path=path)
             msg="inc"
         else:
             msg="no"
@@ -39,7 +40,7 @@ async def cookie(request):
         else:
             msg="no"
     elif argv=="del":
-        resp.del_cookie("cpt")
+        resp.del_cookie("cpt", domain=domain, path=path)
         msg="del"
     else:
         msg="???"

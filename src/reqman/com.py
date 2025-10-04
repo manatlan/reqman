@@ -15,24 +15,22 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-import aiohttp  # see "pip install aiohttp"
+import httpx
 import asyncio
 import json
 import logging
-import concurrent
-import ssl
 
 def jdumps(o, *a, **k):
     k["ensure_ascii"] = False
-    # ~ k["default"]=serialize
     return json.dumps(o, *a, **k)
 
-JAR=None
+COOKIE_JAR = None
 
 def init():
-    # since py3.11 : this must be called in an asyncio loop ;-(
-    global JAR
-    JAR = aiohttp.CookieJar(unsafe=True)
+    global COOKIE_JAR
+    if COOKIE_JAR is None:
+        COOKIE_JAR = httpx.Cookies()
+
     class fake:
         async def __aenter__(self,*a,**k):
             pass
@@ -40,10 +38,13 @@ def init():
             pass
     return fake()
 
+def reset():
+    global COOKIE_JAR
+    COOKIE_JAR = None
 
 class Response:
     def __init__(self, status:int, headers: dict, content: bytes, info: str):
-        assert type(content)==bytes
+        assert isinstance(content, bytes)
         self.status=status
         self.headers=headers
         self.content=content
@@ -55,7 +56,8 @@ class Response:
 
 class ResponseError(Response):
     def __init__(self,error):
-        Response.__init__(self,None,{},error.encode(),"")
+        super().__init__(None,{},str(error).encode(),"")
+        self.error = str(error)
     def get_json(self):
         return None
     def get_xml(self):
@@ -65,78 +67,72 @@ class ResponseError(Response):
 
 class ResponseTimeout(ResponseError):
     def __init__(self):
-        ResponseError.__init__(self,"Timeout")
+        super().__init__("Timeout")
 
 class ResponseUnreachable(ResponseError):
     def __init__(self):
-        ResponseError.__init__(self,"Unreachable")
+        super().__init__("Unreachable")
 
 class ResponseInvalid(ResponseError):
     def __init__(self,url):
-        ResponseError.__init__(self,f"Invalid {url}")
-
-
-#TODO: wtf ?
-textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
-isBytes = lambda bytes: bool(bytes.translate(None, textchars))
-
+        super().__init__(f"Invalid {url}")
 
 async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,proxies=None) -> Response:
-    assert type(body)==bytes
-    if JAR is None: init()
+    assert isinstance(body, bytes)
+    if COOKIE_JAR is None: init()
+
     try:
-        async with aiohttp.ClientSession(trust_env=True,cookie_jar=JAR) as session:
+        client_args = {
+            "trust_env": True,
+            "follow_redirects": False,
+            "verify": False,
+            "cookies": COOKIE_JAR,
+        }
+
+        if proxies:
+            if "socks" in proxies:
+                try:
+                    from httpx_socks import AsyncProxyTransport
+                    client_args["transport"] = AsyncProxyTransport.from_url(proxies)
+                except ImportError:
+                    return ResponseError("httpx-socks is not installed. Please install it with 'pip install httpx-socks'")
+            else:
+                client_args["proxies"] = {'http://': proxies, 'https://': proxies}
+
+        async with httpx.AsyncClient(**client_args) as session:
 
             r = await session.request(
                 method,
                 url,
-                data=body,
+                content=body,
                 headers=headers,
-                ssl=False,
                 timeout=timeout,
-                allow_redirects=False,
-                proxy=proxies
             )
+            COOKIE_JAR.update(r.cookies)
+
             try:
-                obj = await r.json()
-                content = jdumps(obj).encode("utf-8")  # ensure json chars are not escaped, and are in utf8
-            except:
-                content = await r.read()
-                if not isBytes(content):
-                    txt = await r.text()
-                    content = txt.encode("utf-8")  # force bytes to be in utf8
+                obj = r.json()
+                content = jdumps(obj).encode("utf-8")
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                content = r.content
 
-            info = "HTTP/%s.%s %s %s" % (
-                r.version.major,
-                r.version.minor,
-                int(r.status),
-                r.reason,
-            )
-            outHeaders = r.headers
+            http_version = r.http_version.split('/')[1] if r.http_version and r.http_version.startswith("HTTP/") else "1.1"
+            info = f"HTTP/{http_version} {r.status_code} {r.reason_phrase}"
 
-            return Response(r.status, r.headers, content, info)
+            return Response(r.status_code, r.headers, content, info)
 
-    except aiohttp.client_exceptions.ClientConnectorError as e:
+    except httpx.ConnectError:
         return ResponseUnreachable()
-    except (concurrent.futures._base.TimeoutError, asyncio.exceptions.TimeoutError) as e:
+    except httpx.TimeoutException:
         return ResponseTimeout()
-    except aiohttp.client_exceptions.InvalidURL as e:
+    except (httpx.InvalidURL, httpx.UnsupportedProtocol):
         return ResponseInvalid(url)
-    except ssl.SSLError:
-        pass
-    except:
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
         return ResponseUnreachable()
-
-
 
 def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
-    #simulate with http hook
-    #####################################################################"
-    status, content, outHeaders = ( # default response 404
-        404,
-        "mock not found",
-        {"server": "reqman mock"},
-    )
+    status, content, outHeaders = (404, "mock not found", {"server": "reqman mock"})
 
     if url in http:
         rep = http[url]
@@ -148,18 +144,13 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
                 status, content = rep
             elif len(rep) == 3:
                 status, content, oHeaders = rep
-                outHeaders.update( oHeaders )
+                outHeaders.update(oHeaders)
             else:
                 raise Exception("Bad mock response")
         except Exception as e:
             status, content = 500, f"mock server error: {e}"
-    assert type(content) in [str, bytes]
-    assert type(status) is int
-    assert type(outHeaders) is dict
 
-    # ensure content is bytes
-    if type(content)==str:
-        #convert to bytes
+    if isinstance(content, str):
         try:
             content=content.encode("cp1252").decode().encode()
         except:
@@ -168,18 +159,12 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
             except:
                 raise Exception("Mock decoding str trouble")
 
-    assert type(content)==bytes
-
+    assert isinstance(content, bytes)
     info=f"MOCK/1.0 {status} RESPONSE"
-
-
     logging.debug(f"Simulate {method} {url} --> {status}")
-    return Response(status,outHeaders,content,info)
-    #####################################################################"
-
+    return Response(status, outHeaders, content, info)
 
 if __name__=="__main__":
-
     import logging
     logging.basicConfig(level=logging.DEBUG)
 
@@ -187,12 +172,12 @@ if __name__=="__main__":
     print("simul:",r)
 
     async def t():
+        init()
         e=await call("GET","https://httpstat.us/200?sleep=2000",timeout=1)
         print(e)
         e=await call("GET","https://www.manatlan.com")
         print(e)
-        e=await call("GET","https://www.manatlan.com",proxies="http://77.232.100.132") # with a bad proxy ;-(
+        e=await call("GET","https://www.manatlan.com",proxies="http://77.232.100.132")
         print(e)
 
     asyncio.run(t())
-
