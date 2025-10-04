@@ -21,10 +21,10 @@ import xpath  # see "pip install py-dom-xpath-six"
 from .common import NotFound
 
 class Xml:
-    def __init__(self, x):
+    def __init__(self, x:str):
         self.doc = minidom.parseString(x)
 
-    def xpath(self, p):
+    def xpath(self, p:str):
         ll = []
         for ii in xpath.find(p, self.doc):
             if ii.nodeType in [self.doc.ELEMENT_NODE, self.doc.DOCUMENT_NODE]:

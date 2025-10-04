@@ -41,7 +41,7 @@ def init():
 
 
 class Response:
-    def __init__(self, status:int, headers: dict, content: bytes, info: str):
+    def __init__(self, status:int|None, headers: dict[str,str], content: bytes, info: str):
         assert type(content)==bytes
         self.status=status
         self.headers=headers
@@ -106,7 +106,7 @@ async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,p
             info = f"{r.http_version} {r.status_code} {r.reason_phrase}"
             outHeaders = r.headers
 
-            return Response(r.status_code, outHeaders, content, info)
+            return Response(r.status_code, dict(outHeaders), content, info)
 
     except httpx.ConnectError as e:
         return ResponseUnreachable()
