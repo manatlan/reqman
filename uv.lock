@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.8"
 resolution-markers = [
     "python_full_version >= '3.10'",
@@ -847,7 +847,7 @@ dependencies = [
     { name = "stpl" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "py" },
     { name = "pyinstaller" },
@@ -869,20 +869,23 @@ requires-dist = [
     { name = "httpx" },
     { name = "httpx-socks" },
     { name = "junit-xml" },
-    { name = "py", marker = "extra == 'dev'", specifier = ">=1.11.0" },
     { name = "py-dom-xpath-six" },
-    { name = "pyinstaller", marker = "extra == 'dev'" },
     { name = "pyjwt" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.3" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0" },
     { name = "python-dotenv" },
     { name = "pyyaml", specifier = ">=4.2b1" },
-    { name = "starlette", marker = "extra == 'dev'" },
     { name = "stpl", specifier = ">=1.13.2" },
-    { name = "uvicorn", marker = "extra == 'dev'" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "py", specifier = ">=1.11.0" },
+    { name = "pyinstaller" },
+    { name = "pytest", specifier = ">=8.3.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
+    { name = "pytest-cov", specifier = ">=5.0.0" },
+    { name = "starlette" },
+    { name = "uvicorn" },
+]
 
 [[package]]
 name = "setuptools"
