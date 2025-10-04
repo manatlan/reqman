@@ -1,4 +1,4 @@
-#:valid:111,111,111,11,111,11,11 THIS --b
+#:valid:101,100,100,10,100,11,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)

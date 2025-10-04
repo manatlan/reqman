@@ -15,11 +15,10 @@
 # https://github.com/manatlan/reqman
 # #############################################################################
 
-import aiohttp  # see "pip install aiohttp"
+import httpx
 import asyncio
 import json
 import logging
-import concurrent
 import ssl
 
 def jdumps(o, *a, **k):
@@ -27,12 +26,12 @@ def jdumps(o, *a, **k):
     # ~ k["default"]=serialize
     return json.dumps(o, *a, **k)
 
-JAR=None
+# a global cookie jar, to persist cookies between calls
+_COOKIES = httpx.Cookies()
 
 def init():
-    # since py3.11 : this must be called in an asyncio loop ;-(
-    global JAR
-    JAR = aiohttp.CookieJar(unsafe=True)
+    _COOKIES.clear()
+    # compatibility with old system, which required an init in an async loop
     class fake:
         async def __aenter__(self,*a,**k):
             pass
@@ -76,55 +75,48 @@ class ResponseInvalid(ResponseError):
         ResponseError.__init__(self,f"Invalid {url}")
 
 
-#TODO: wtf ?
-textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
-isBytes = lambda bytes: bool(bytes.translate(None, textchars))
-
-
 async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,proxies=None) -> Response:
     assert type(body)==bytes
-    if JAR is None: init()
-    try:
-        async with aiohttp.ClientSession(trust_env=True,cookie_jar=JAR) as session:
 
-            r = await session.request(
+    try:
+        async with httpx.AsyncClient(
+            cookies=_COOKIES,
+            verify=False,
+            follow_redirects=False,
+            proxy=proxies,
+        ) as client:
+
+            r = await client.request(
                 method,
                 url,
-                data=body,
+                content=body,
                 headers=headers,
-                ssl=False,
                 timeout=timeout,
-                allow_redirects=False,
-                proxy=proxies
             )
+            content = r.content
             try:
-                obj = await r.json()
-                content = jdumps(obj).encode("utf-8")  # ensure json chars are not escaped, and are in utf8
-            except:
-                content = await r.read()
-                if not isBytes(content):
-                    txt = await r.text()
-                    content = txt.encode("utf-8")  # force bytes to be in utf8
+                # Try to decode json if the content type is correct
+                if 'application/json' in r.headers.get('content-type', ''):
+                    obj = r.json()
+                    content = jdumps(obj).encode("utf-8")  # ensure json chars are not escaped, and are in utf8
+            except (json.JSONDecodeError, TypeError):
+                pass
 
-            info = "HTTP/%s.%s %s %s" % (
-                r.version.major,
-                r.version.minor,
-                int(r.status),
-                r.reason,
-            )
+            info = f"HTTP/{r.http_version} {r.status_code} {r.reason_phrase}"
             outHeaders = r.headers
 
-            return Response(r.status, r.headers, content, info)
+            return Response(r.status_code, r.headers, content, info)
 
-    except aiohttp.client_exceptions.ClientConnectorError as e:
+    except httpx.ConnectError as e:
         return ResponseUnreachable()
-    except (concurrent.futures._base.TimeoutError, asyncio.exceptions.TimeoutError) as e:
+    except httpx.TimeoutException as e:
         return ResponseTimeout()
-    except aiohttp.client_exceptions.InvalidURL as e:
+    except (httpx.InvalidURL, httpx.UnsupportedProtocol) as e:
         return ResponseInvalid(url)
     except ssl.SSLError:
         pass
-    except:
+    except Exception as e:
+        logging.error("Unhandled exception in call: %s (%s)",e, type(e))
         return ResponseUnreachable()
 
 

@@ -1,25 +1,30 @@
-#Install
+# reqman
 
-## On Windows
+## TL;DR
 
-Download [reqman.exe](https://github.com/manatlan/reqman/raw/master/dist/reqman.exe)
+`reqman` is a command line tool to test your http requests. It uses `.req` files, which are simple yaml files, to define your requests and tests.
 
-## On *nix platforms
-In a console:
+It's a single file, you can download it here :
+[reqman](https://raw.githubusercontent.com/manatlan/reqman/master/reqman)
+(Will install [PyYAML](https://pypi.org/project/PyYAML/), [httpx](https://pypi.org/project/httpx/), [stpl](https://pypi.org/project/stpl/) and [colorama](https://pypi.org/project/colorama/) dependencies)
+
+## Installation using pip
+
+You can install it thru pip/pip3, like that:
 ```
 $ pip3 install reqman
 ```
-(Will install [PyYAML](https://pypi.org/project/PyYAML/), [aiohttp](https://pypi.org/project/aiohttp/), [stpl](https://pypi.org/project/stpl/) and [colorama](https://pypi.org/project/colorama/) dependencies)
+(it will install dependencies)
 
-!!! info
-    Before version<2.2.0.0, reqman used [httpcore/httpx](https://pypi.org/project/httpcore/). Now it uses [aiohttp](https://pypi.org/project/aiohttp/), to preserve mixed cases in http/1.x headers !
-
-## From Sources
-In a console:
+Or, if you want to install it manually, you will need to install these dependencies:
 ```
-$ git clone https://github.com/manatlan/reqman.git
-$ pip3 install pyyaml aiohttp stpl colorama pytest
-$ python3 -m pytest tests/
-$ python3 setup.py install
+$ pip3 install pyyaml httpx stpl colorama pytest
 ```
 
+## IDE Integration
+
+There is a [vscode extension](https://marketplace.visualstudio.com/items?itemName=manatlan.reqman) to add syntax highlighting for `.req` files.
+Here is a [video](https://www.youtube.com/watch?v=sO-s_nZ-tA4) of the extension in action.
+
+And there is a [vim plugin](https://github.com/manatlan/reqman.vim) for vim users.
+Here is a [video](https://www.youtube.com/watch?v=q-J_q-J_q-A) of the plugin in action.
