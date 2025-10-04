@@ -55,6 +55,7 @@ class Response:
 class ResponseError(Response):
     def __init__(self,error):
         Response.__init__(self,None,{},error.encode(),"")
+        self.error=error
     def get_json(self):
         return None
     def get_xml(self):
@@ -114,7 +115,7 @@ async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,p
     except (httpx.InvalidURL, httpx.UnsupportedProtocol) as e:
         return ResponseInvalid(url)
     except ssl.SSLError:
-        pass
+        return ResponseUnreachable()
     except Exception as e:
         logging.error("Unhandled exception in call: %s (%s)",e, type(e))
         return ResponseUnreachable()
