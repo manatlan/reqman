@@ -4,7 +4,7 @@
 name: Build Windows EXE
 
 on:
-  workflow_dispatch:   # déclenchement manuel possible
+  #workflow_dispatch:   # déclenchement manuel possible
   push:
     tags:
       - "v*.*.*"
