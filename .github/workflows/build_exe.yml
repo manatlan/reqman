@@ -46,6 +46,14 @@ jobs:
           name: reqman-windows-exe
           path: dist/*.exe
 
+      - name: Check if release exists
+        id: check_release
+        run: |
+          gh release view ${{ github.ref_name }} --json name || echo "Release does not exist"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+        
       - name: Create Release
         if: steps.check_release.outcome != 'success'
         id: create_release
