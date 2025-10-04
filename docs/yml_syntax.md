@@ -4,7 +4,7 @@ A reqman's file tests, is a YAML file, endings with ".yml" or ".rml" (ReqMan Lan
 
 Its content is a list of statements. There are 4 types of statements :
 
- * A http request
+ * An http request
  * A Procedure's declaration
  * A call procedure
  * A break statement
@@ -14,7 +14,7 @@ which will be substituted at runtime using [local params](#params), [global para
 
 (since 3.2.0 version : you can use your environments vars (dotenv compliant) too !)
 
-### A HTTP Request
+### An HTTP Request
 This kind of statement, should contain ONE HTTP VERB, in uppercase (Known HTTP verbs : "GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT")
 
 ```yaml
