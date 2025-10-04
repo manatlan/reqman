@@ -1,10 +1,9 @@
-#!python3 fakereqman.py
 #:valid:11,11 THIS --b --f
 #:valid:11,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
-#    (works in vs code, press F5)
+#    (works in vs code, press CTRL+SHIF+B)
 #--------------------------------------------------------------
 
 - GET: http://localhost:11111/bigtxt

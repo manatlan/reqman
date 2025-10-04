@@ -1,9 +1,8 @@
-#!python3 fakereqman.py
 #:valid:11,11,00,11 THIS --b
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
-#    (works in vs code, press F5)
+#    (works in vs code, press CTRL+SHIF+B)
 #--------------------------------------------------------------
 
 # 095 - test_priority_dont_override_local_value

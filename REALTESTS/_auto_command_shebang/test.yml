@@ -1,8 +1,7 @@
-#!python3 fakereqman.py
 #:valid:1 --i test.rml
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
-#    (works in vs code, press F5)
+#    (works in vs code, press CTRL+SHIF+B)
 #--------------------------------------------------------------
 

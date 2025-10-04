@@ -1,4 +1,3 @@
-#!python3 fakereqman.py
 #:valid:1 THIS --b --o:AEFF_solo_default.html
 #:valid:1,1,1 THIS -second --b --o:AEFF_solo_second.html
 #:valid:1:1,1,1 THIS +second --b
@@ -7,7 +6,7 @@
 ## -*- coding: utf-8 -*-
 #--------------------------------------------------------------
 # ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
-#    (works in vs code, press F5)
+#    (works in vs code, press CTRL+SHIF+B)
 #--------------------------------------------------------------
 
 - POST: /ping?<<env>>
