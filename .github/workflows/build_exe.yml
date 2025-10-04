@@ -60,6 +60,7 @@ jobs:
 
       - name: Create Release
         if: steps.check_release.outputs.exists == 'false'
+        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
@@ -70,10 +71,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/reqman-*.exe 
-          asset_name: reqman-${{ github.ref_name }}.exe          
-          asset_content_type: application/octet-stream
+
+      # - name: Upload Release Asset
+      #   uses: actions/upload-release-asset@v1
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: ./dist/reqman-*.exe 
+      #     asset_name: reqman-${{ github.ref_name }}.exe          
+      #     asset_content_type: application/octet-stream
