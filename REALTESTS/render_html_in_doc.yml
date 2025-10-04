@@ -1,0 +1,23 @@
+#:valid:1 THIS --b
+
+test: |
+    h=["<table border=1 cellspacing=0 cellpadding=2 style='font-size:0.8em'>"]
+    for row in x:
+        h.append("<tr>")
+        if isinstance(row,dict):
+            for item in dict(row).items():
+                h.append(f"<td>{item}</td>")
+        elif isinstance(row,list):
+            for item in row:
+                h.append(f"<td>{item}</td>")
+        else:
+            h.append(f"<td>{row}</td>")
+        h.append("</tr>")
+    h.append("</table>")
+    return "".join(h)
+
+RUN:
+- GET: http://localhost:11111/get_json
+  doc: hey <<json.infos|test>>
+  tests:
+      - status: 200
