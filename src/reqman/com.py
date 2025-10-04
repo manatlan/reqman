@@ -102,10 +102,10 @@ async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,p
             except (json.JSONDecodeError, TypeError):
                 pass
 
-            info = f"HTTP/{r.http_version} {r.status_code} {r.reason_phrase}"
+            info = f"{r.http_version} {r.status_code} {r.reason_phrase}"
             outHeaders = r.headers
 
-            return Response(r.status_code, r.headers, content, info)
+            return Response(r.status_code, outHeaders, content, info)
 
     except httpx.ConnectError as e:
         return ResponseUnreachable()
