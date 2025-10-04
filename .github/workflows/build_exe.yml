@@ -40,11 +40,11 @@ jobs:
       - name: Build EXE with pyinstaller
         run: uv run buildWinExe.py
 
-      # - name: Upload artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: reqman-windows-exe
-      #     path: dist/*.exe
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: reqman-windows-exe
+          path: dist/*.exe
 
       - name: Create Release
         id: create_release
@@ -62,5 +62,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./dist/reqman-*.exe 
-          asset_name: reqman.exe          
+          asset_name: reqman-${{ github.ref_name }}.exe          
           asset_content_type: application/octet-stream
