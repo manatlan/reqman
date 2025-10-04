@@ -48,19 +48,23 @@ jobs:
 
       - name: Check if release exists
         id: check_release
+        shell: bash
         run: |
-          gh release view ${{ github.ref_name }} --json name || echo "Release does not exist"
+          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
-        
+
       - name: Create Release
-        if: steps.check_release.outcome != 'success'
-        id: create_release
-        uses: actions/create-release@v1
+        if: steps.check_release.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          files: dist/reqman-*.exe
           draft: false
           prerelease: false
         env:
