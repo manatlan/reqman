@@ -18,6 +18,7 @@
 import re
 import json
 import logging
+import typing as T
 
 from .common import decodeBytes,jdumps
 
@@ -49,19 +50,19 @@ class Test(int):
 
     name = ""
     value = ""
-    _nameOK = ""
-    _nameKO = ""
+    _nameOK:T.Optional[str] = ""
+    _nameKO:T.Optional[str] = ""
 
     def __new__(
-        cls, value: int, nameOK: str = None, nameKO: str = None, realValue=None
+        cls, value: int, nameOK: T.Optional[str] = None, nameKO: T.Optional[str] = None, realValue=None
     ):
         s = super().__new__(cls, value)
         s._nameOK=nameOK
         s._nameKO=nameKO
         if value:
-            s.name = nameOK
+            s.name = nameOK or ""
         else:
-            s.name = nameKO
+            s.name = nameKO or ""
         s.value = realValue
         return s
 

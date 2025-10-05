@@ -20,6 +20,7 @@ import asyncio
 import json
 import logging
 import ssl
+import typing as T
 
 def jdumps(o, *a, **k):
     k["ensure_ascii"] = False
@@ -41,7 +42,7 @@ def init():
 
 
 class Response:
-    def __init__(self, status:int, headers: dict, content: bytes, info: str):
+    def __init__(self, status:T.Optional[int], headers: dict, content: bytes, info: str):
         assert type(content)==bytes
         self.status=status
         self.headers=headers

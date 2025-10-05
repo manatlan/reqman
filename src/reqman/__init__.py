@@ -1977,10 +1977,11 @@ def main(fakeServer=None, hookResults=None) -> T.Union[int, str, None]:
                 except env.ResolveException:
                     x=None
 
-                if type(x) in [list,dict]:
-                    return json.dumps( x )
-                else:
+                if isinstance(x, (list, dict)):
+                    return json.dumps(x)
+                if x is None or isinstance(x, (int, str)):
                     return x
+                return str(x)
             return None
         else:
             return rr.code
