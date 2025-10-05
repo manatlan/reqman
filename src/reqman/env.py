@@ -200,6 +200,10 @@ class Exchange:
 
         d["rm"]=dict(response=d["response"],request=d["request"])
 
+        # new "R" (full response object) ("rm" may disappear)
+        d["R"]=resp
+        d["R"]["request"] = d["request"]
+    
         repEnv=Scope(env) # clone
         repEnv.update(d)
 

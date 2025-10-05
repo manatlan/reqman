@@ -1,0 +1,14 @@
+#:valid:11111 THIS
+
+
+RUN:
+- GET: http://localhost:11111/get_json
+  doc: |
+      Now, there is a 'R' object which contains all the information about the test.
+      It's a good pratice to use it, in place of simple "status" or "json" refs
+  tests:
+      - R.status: 200
+      - R.time: .> 0
+      - R.json.infos: [1,2,3]
+      - R.request.url : http://localhost:11111/get_json
+      - R.request.method : GET
