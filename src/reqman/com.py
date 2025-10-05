@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # #############################################################################
-#    Copyright (C) 2018-2021 manatlan manatlan[at]gmail(dot)com
+#    Copyright (C) 2018-2025 manatlan manatlan[at]gmail(dot)com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -176,20 +176,20 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
 
 
 if __name__=="__main__":
+    ...
+    # import logging
+    # logging.basicConfig(level=logging.DEBUG)
 
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
+    # r=call_simulation( {"/":(200,"ok")},"GET","/" )
+    # print("simul:",r)
 
-    r=call_simulation( {"/":(200,"ok")},"GET","/" )
-    print("simul:",r)
+    # async def t():
+    #     e=await call("GET","https://httpstat.us/200?sleep=2000",timeout=1)
+    #     print(e)
+    #     e=await call("GET","https://www.manatlan.com")
+    #     print(e)
+    #     e=await call("GET","https://www.manatlan.com",proxies="http://77.232.100.132") # with a bad proxy ;-(
+    #     print(e)
 
-    async def t():
-        e=await call("GET","https://httpstat.us/200?sleep=2000",timeout=1)
-        print(e)
-        e=await call("GET","https://www.manatlan.com")
-        print(e)
-        e=await call("GET","https://www.manatlan.com",proxies="http://77.232.100.132") # with a bad proxy ;-(
-        print(e)
-
-    asyncio.run(t())
+    # asyncio.run(t())
 

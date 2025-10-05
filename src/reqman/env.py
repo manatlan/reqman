@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # #############################################################################
-#    Copyright (C) 2018-2021 manatlan manatlan[at]gmail(dot)com
+#    Copyright (C) 2018-2025 manatlan manatlan[at]gmail(dot)com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -541,58 +541,59 @@ class Scope(dict): # like 'Env'
 
 
 if __name__=="__main__":
-    import pytest
+    ...
+    # import pytest
 
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
 
-    env=Scope(dict(
-        v200=200,
-        upper= lambda x,ENV: x.upper(),
-    ))
+    # env=Scope(dict(
+    #     v200=200,
+    #     upper= lambda x,ENV: x.upper(),
+    # ))
 
-    # with pytest.raises(PyMethodException):
-    #     e.resolve("a txt <<upper>>")    # this method use the param !
+    # # with pytest.raises(PyMethodException):
+    # #     e.resolve("a txt <<upper>>")    # this method use the param !
 
-    # with pytest.raises(ResolveException):
-    #     e.resolve("a txt <<unknwon>>")  # unknown method
+    # # with pytest.raises(ResolveException):
+    # #     e.resolve("a txt <<unknwon>>")  # unknown method
 
-    tests=[
-        ("status","<<v200>>"),
-        ("status",".>= {{v200}}"),
-        ("status",".> 100"),
-        ("response.status",200),
-        ("json.items.size",".> 2"),
-        ("json.value|upper","HELLO"),
-        ("response.json.items.size",3),
-        ("rm.response.json.items.size",3),
-        ("request.method","GET"),
-        ("rm.request.method|upper","GET"),
-        ("response.headers.x-test","hello"),
-        ("rm.response.headers.X-TeSt|upper","HELLO"),
-        ("unknwon|upper",None),
-    ]
-    saves=[
-        ("hello","<<status>>"),
-        ("js","<<response.json>>"),
-        ("ll","<<response.json.items>>"),
-        ("val","<<response.json.items.1>>"),
-        ("MAX","<<response.json.value|upper>>"),
-        ("nimp","<<nimp>>"),
-    ]
+    # tests=[
+    #     ("status","<<v200>>"),
+    #     ("status",".>= {{v200}}"),
+    #     ("status",".> 100"),
+    #     ("response.status",200),
+    #     ("json.items.size",".> 2"),
+    #     ("json.value|upper","HELLO"),
+    #     ("response.json.items.size",3),
+    #     ("rm.response.json.items.size",3),
+    #     ("request.method","GET"),
+    #     ("rm.request.method|upper","GET"),
+    #     ("response.headers.x-test","hello"),
+    #     ("rm.response.headers.X-TeSt|upper","HELLO"),
+    #     ("unknwon|upper",None),
+    # ]
+    # saves=[
+    #     ("hello","<<status>>"),
+    #     ("js","<<response.json>>"),
+    #     ("ll","<<response.json.items>>"),
+    #     ("val","<<response.json.items.1>>"),
+    #     ("MAX","<<response.json.value|upper>>"),
+    #     ("nimp","<<nimp>>"),
+    # ]
 
-    ex=Exchange("GET","/", tests=tests, saves=saves)
+    # ex=Exchange("GET","/", tests=tests, saves=saves)
 
-    obj= dict(items=list("abc"),value="hello")
-    r=com.Response(200,{"x-test":"hello"},json.dumps(obj).encode(),"http1/1 200 ok")
-    ex.treatment(env,r)
+    # obj= dict(items=list("abc"),value="hello")
+    # r=com.Response(200,{"x-test":"hello"},json.dumps(obj).encode(),"http1/1 200 ok")
+    # ex.treatment(env,r)
 
-    assert ex.time==0
-    assert ex.id
+    # assert ex.time==0
+    # assert ex.id
 
-    import pprint
-    pprint.pprint(ex.tests)
-    pprint.pprint(ex.saves)
-    #     print(r)
+    # import pprint
+    # pprint.pprint(ex.tests)
+    # pprint.pprint(ex.saves)
+    # #     print(r)
 
 
 

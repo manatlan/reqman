@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # #############################################################################
-#    Copyright (C) 2018-2021 manatlan manatlan[at]gmail(dot)com
+#    Copyright (C) 2018-2025 manatlan manatlan[at]gmail(dot)com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -202,27 +202,27 @@ def testCompare(var: str, val, opeval) -> Test:
     return Test( test ,nameOK, nameKO,val )
 
 if __name__=="__main__":
+    ...
+    # import logging
+    # logging.basicConfig(level=logging.DEBUG)
 
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
+    # assert( guessValue("41")==41 )
+    # assert( guessValue(b"[1234]")=="[1234]")
+    # assert( guessValue("float")=="float")
+    # assert( guessValue("None")==None)
+    # assert( guessValue("null")==None)
+    # assert( guessValue("True")==True)
+    # assert( guessValue("true")==True)
 
-    assert( guessValue("41")==41 )
-    assert( guessValue(b"[1234]")=="[1234]")
-    assert( guessValue("float")=="float")
-    assert( guessValue("None")==None)
-    assert( guessValue("null")==None)
-    assert( guessValue("True")==True)
-    assert( guessValue("true")==True)
+    # print( strjs(3.14) )
 
-    print( strjs(3.14) )
+    # assert testCompare("jo","42","42")
+    # assert testCompare("content","axa","x")
 
-    assert testCompare("jo","42","42")
-    assert testCompare("content","axa","x")
+    # t=testCompare("content","axa","x")
+    # print(t)
+    # print(t.toFalse())
 
-    t=testCompare("content","axa","x")
-    print(t)
-    print(t.toFalse())
-
-    t=testCompare("content","axa",["x","z"]) # DO MORE HERE !!!!
-    print( repr(t) )
-    print( repr(t.toFalse()) )
+    # t=testCompare("content","axa",["x","z"]) # DO MORE HERE !!!!
+    # print( repr(t) )
+    # print( repr(t.toFalse()) )

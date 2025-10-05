@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # #############################################################################
-#    Copyright (C) 2018-2021 manatlan manatlan[at]gmail(dot)com
+#    Copyright (C) 2018-2025 manatlan manatlan[at]gmail(dot)com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -57,7 +57,8 @@ class Xml:
 
 
 if __name__=="__main__":
-    x=Xml("<a>hello</a>")
-    assert x.doc
-    l=x.xpath("//a")
-    print(l)
+    ...
+    # x=Xml("<a>hello</a>")
+    # assert x.doc
+    # l=x.xpath("//a")
+    # print(l)
