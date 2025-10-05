@@ -53,7 +53,7 @@ class Test(int):
     _nameKO = ""
 
     def __new__(
-        cls, value: int, nameOK: str|None = None, nameKO: str|None = None, realValue=None
+        cls, value: int, nameOK: str = None, nameKO: str = None, realValue=None
     ):
         s = super().__new__(cls, value)
         s._nameOK=nameOK
