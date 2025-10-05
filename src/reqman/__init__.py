@@ -88,7 +88,7 @@ try:  # colorama is optionnal
 
     init()
 
-    def colorize(color: int, t: str) -> T.Union[str, None]:
+    def colorize(color: str, t: str) -> T.Union[str, None]:
         return (color + Style.BRIGHT + str(t) + Fore.RESET + Style.RESET_ALL if t else None)
 
     cy = lambda t: colorize(Fore.YELLOW, t)
@@ -136,7 +136,10 @@ def izip(ex1, ex2):
         for i in ex:
             uid = i.id
             while uid in tex:
-                uid += type(uid) == str and "b" or 1
+                if isinstance(uid, str):
+                    uid += "b"
+                else:
+                    uid += 1
             tex[uid] = i
             lex.append((uid, i))
         return tex, lex
@@ -156,12 +159,14 @@ def izip(ex1, ex2):
         if i1 == i2:
             l.append(i1)
         else:
-            if i2 in cex1:
-                l.append((i1[0], None))
+            if i2 and i2 in cex1:
+                if i1:
+                    l.append((i1[0], None))
                 cex2.insert(0, i2)
             else:
-                if i1 in cex2:
-                    l.append((None, i2[0]))
+                if i1 and i1 in cex2:
+                    if i2:
+                        l.append((None, i2[0]))
                     cex1.insert(0, i1)
                 else:
                     if i1:
@@ -183,7 +188,7 @@ def ustr(x):  # ensure str are utf8 inside
         return x.encode("cp1252").decode()
     except:
         if type(x) == bytes:
-            return x.encode("utf8").decode()
+            return x.decode("utf8")
         else:
             return str(x)
 
@@ -625,7 +630,7 @@ class Reqs(list):
                 print(cy("**WARNING**"), "can't %s on '%s'" % (cr("wait"),time), "in", self.name)
 
 
-        def _test(liste: Reqs, gscope, level=0):
+        def _test(liste: T.List[ReqItem], gscope, level=0):
             log(level, "Test Global Scope :", gscope)
 
             for idx, i in enumerate(liste):
@@ -678,7 +683,7 @@ class Reqs(list):
         ll = []
 
         for l, s, r in _test(self, gscope):
-            if isinstance(r,ReqItem):
+            if isinstance(r, Req):
                 doIf = True
                 if r.ifs:
                     try:
@@ -741,6 +746,10 @@ class ReqGroup(ReqItem):
         for r in self.reqs:
             r.updateSave(o)
 
+    def updateParams(self, o: dict):
+        for r in self.reqs:
+            r.updateParams(o)
+
     def __repr__(self):
         l = []
         l.append("<ReqGroup foreach:%s scope:%s>" % (self.foreach, self.scope))
@@ -771,6 +780,9 @@ class ReqWait(ReqItem):
         pass
 
     def updateSave(self, o: dict):
+        pass
+
+    def updateParams(self, o: dict):
         pass
 
 
@@ -972,7 +984,7 @@ class Req(ReqItem):
         newenv=env.Scope( scope , EXPOSEDS)
 
         # execute the request (newcore)
-        ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc, querys=querys, proxies=proxy, http=http)
+        ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc or "", querys=querys, proxies=proxy, http=http)
 
         ex.nolimit = self.nolimit   #TODO: not beautiful !!!
 
@@ -982,7 +994,7 @@ class Req(ReqItem):
         ##/\ (because it's a pertinent test !!!)
         ##/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
         if outputConsole=="*OLD*TESTS*":
-            ex.scope = dict(newenv)
+            setattr(ex,"scope",dict(newenv))
         ##/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
         # get the saved ones
@@ -1093,7 +1105,7 @@ class ReqmanResult(Result):
         total = 0
         nbReqs = 0
         for r in ll:
-            for x in r.exchanges:
+            for x in r.exchanges or []:
                 nbReqs += 1
                 total += len(x.tests)
                 ok += sum([t for t in x.tests])
@@ -1118,7 +1130,7 @@ class ReqmanResult(Result):
         for r in self.results:
 
             lc=[]
-            for idx,ex in enumerate(r.exchanges):
+            for idx,ex in enumerate(r.exchanges or []):
 
                 c=junit_xml.TestCase(f"{ex.method} {ex.path}",  # VERB + path
                     classname=ex.doc,                           # "doc"
@@ -1154,13 +1166,19 @@ class ReqmanResult(Result):
 
     def saveRMR(self, name=None):
         if name is None:
-            name = (
-                "_".join(
-                    [self.infos[0]["date"].strftime("%y%m%d_%H%M")]
-                    + self.infos[0]["switches"]
+            the_date = self.infos[0].get("date")
+            the_switches = self.infos[0].get("switches")
+
+            if isinstance(the_date, datetime.datetime) and isinstance(the_switches, list):
+                name = (
+                    "_".join(
+                        [the_date.strftime("%y%m%d_%H%M")]
+                        + the_switches
+                    )
+                    + ".rmr"
                 )
-                + ".rmr"
-            )
+            else:
+                name = "default.rmr"
         with open(name, "wb") as fid:
             x = pickle.dumps(self)
             fid.write(b"RMR3" + zlib.compress(x))
@@ -1176,8 +1194,8 @@ class ReqmanDualResult(Result):
         d2 = {i.name: i.exchanges for i in r2.results}
 
         class ReqsMix:
-            name = None
-            exchanges = []
+            name:T.Optional[str] = None
+            exchanges:T.List = []
 
         ll = []
         for i in r1.results:
@@ -1199,12 +1217,8 @@ class ReqmanDualResult(Result):
         self.results = ll
         self.title = "%s vs %s" % (r1.title, r2.title)
 
-        # for i in ll:
-        #     print("FILE:",i.name)
-        #     for ex,v1,v2 in i.exchanges:
-        #         print("  ",ex.method,ex.path)
-        #         if v1: print("    v1:",v1.method,v1.url)
-        #         if v2: print("    v2:",v2.method,v2.url)
+    def generateJunitXmlFile(self):
+        raise RMException("Can't generate junit-xml in dual mode")
 
 
 class Reqman:
@@ -1440,22 +1454,22 @@ class ReqmanRMR(ReqmanCommand):
         raise RMException("not implemented")
 
 
-def prettify(txt: bytes, indentation: int = 4) -> str:
-    assert type(txt)==bytes
+def prettify(txt: T.Union[bytes, str], indentation: int = 4) -> str:
     if not txt:
         return ""
+
+    if isinstance(txt, bytes):
+        txt_str = common.decodeBytes(txt)
     else:
-        if type(txt)==bytes:
-            txt=common.decodeBytes(txt)
-        else:
-            txt = str(txt)
+        txt_str = str(txt)
+
     try:
-        return repr(xlib.Xml(txt))
+        return repr(xlib.Xml(txt_str))
     except:
         try:
-            return common.jdumps(json.loads(txt), indent=indentation, sort_keys=True)
+            return common.jdumps(json.loads(txt_str), indent=indentation, sort_keys=True)
         except:
-            return txt
+            return txt_str
 
 
 def render(rr: Result) -> str:
@@ -1645,10 +1659,13 @@ function copyToClipboard( obj ) {
             return ex
 
     def first_path(ex):
-        if type(ex) is tuple:
-            return first(ex).path
-        else:
-            return ex.url
+        f = first(ex)
+        if f:
+            if hasattr(f, "path"):
+                return f.path
+            if hasattr(f, "url"):
+                return f.url
+        return ""
 
     def relpath(p):
         try:
@@ -1732,9 +1749,9 @@ def extractParams(params):
     return files, rparams, switches, dswitches
 
 
-def main(fakeServer=None, hookResults=None) -> int:
+def main(fakeServer=None, hookResults=None) -> T.Union[int, str, None]:
     params = sys.argv[1:]
-    r = None
+    r:T.Optional[ReqmanCommand] = None
 
     # extract sys.argv in --> files,rparams,switch
     files, rparams, switches, dswitches = extractParams(params)
@@ -1753,7 +1770,7 @@ def main(fakeServer=None, hookResults=None) -> int:
                 firstLine = fid.readline()
             if firstLine.startswith("#!"):
                 firstLine = firstLine.strip()
-                print(cr("Use SHEBANG : %s") % firstLine)
+                print(cr(f"Use SHEBANG : {firstLine}"))
                 pp = firstLine.split(" ")[1:]
                 exfiles, rparams, switches, dswitches = extractParams(pp)
                 files.extend(exfiles)
@@ -1790,13 +1807,13 @@ def main(fakeServer=None, hookResults=None) -> int:
         # control options
         paralleliz = False
         outputConsole = OutputConsole.MINIMAL
-        outputHtmlFile = "reqman.html"
+        outputHtmlFile:T.Optional[str] = "reqman.html"
         openBrowser = False
-        saveRMR = False
+        saveRMR:T.Union[bool,int] = False
         replayRMR = False
-        outputContent=None
+        outputContent:T.Optional[str]=None
         forceNoLimit=False
-        junitXmlFile=None
+        junitXmlFile:T.Optional[str]=None
         for p in rparams:
             if p == "k":
                 outputConsole = OutputConsole.MINIMAL_ONLYKO
@@ -1825,6 +1842,7 @@ def main(fakeServer=None, hookResults=None) -> int:
                 outputHtmlFile = p[1:].strip(":= ")
                 if not outputHtmlFile:
                     outputConsole = OutputConsole.FULL
+                    outputHtmlFile = None
             elif p.startswith("b"):
                 openBrowser = True
             elif p.startswith("x"):
@@ -1942,24 +1960,28 @@ def main(fakeServer=None, hookResults=None) -> int:
 
         if junitXmlFile:
             with codecs.open(junitXmlFile, "w+", "utf-8-sig", errors="replace") as fid:
+                if isinstance(rr,ReqmanDualResult):
+                    raise RMException("Can't generate junit-xml in dual mode")
                 fid.write(rr.generateJunitXmlFile())
 
         if hookResults is not None:  # for tests only
-            hookResults.rr = rr
+            setattr(hookResults,"rr",rr)
 
         if outputContent!=None:
-            ns=env.Scope( r._r.env.clone() ,EXPOSEDS)
-            try:
-                x=ns.get_var(outputContent)
-                if x is env.NotFound:
+            if r:
+                ns=env.Scope( r._r.env.clone() ,EXPOSEDS)
+                try:
+                    x=ns.get_var(outputContent)
+                    if x is env.NotFound:
+                        x=None
+                except env.ResolveException:
                     x=None
-            except env.ResolveException:
-                x=None
 
-            if type(x) in [list,dict]:
-                return json.dumps( x )
-            else:
-                return x
+                if type(x) in [list,dict]:
+                    return json.dumps( x )
+                else:
+                    return x
+            return None
         else:
             return rr.code
 

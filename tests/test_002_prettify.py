@@ -8,12 +8,9 @@ def test_prettify():
     print( reqman.prettify(b"<root><a>yolo</a>") )
     print( reqman.prettify(json.dumps( {"a":dict(a=1,b=2),"b":list("abc")}).encode() ) )
     print( reqman.prettify( bytes(range(0,255))) )
-    with pytest.raises( AssertionError ):
-         reqman.prettify( None )
-    with pytest.raises( AssertionError ):
-         reqman.prettify( "hello" )
-    with pytest.raises( AssertionError ):
-         reqman.prettify( 42 )
+    assert reqman.prettify(None) == ""
+    assert reqman.prettify("hello") == "hello"
+    assert reqman.prettify(42) == "42"
 
 
 def test_guess():

@@ -47,4 +47,5 @@ dev = [
     "pyinstaller",
     "starlette",
     "uvicorn",
+    "pyright",
 ]

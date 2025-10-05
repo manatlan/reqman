@@ -16,6 +16,7 @@
 # #############################################################################
 
 from xml.dom import minidom
+from xpath import expr
 import xpath  # see "pip install py-dom-xpath-six"
 
 from .common import NotFound
@@ -26,15 +27,21 @@ class Xml:
 
     def xpath(self, p:str):
         ll = []
-        for ii in xpath.find(p, self.doc):
-            if ii.nodeType in [self.doc.ELEMENT_NODE, self.doc.DOCUMENT_NODE]:
-                ll.append(xpath.expr.string_value(ii))
-            elif ii.nodeType == self.doc.TEXT_NODE:
-                ll.append(ii.wholeText)
-            elif ii.nodeType == self.doc.ATTRIBUTE_NODE:
-                ll.append(ii.value)
-            else:  # 'CDATA_SECTION_NODE', 'COMMENT_NODE', 'DOCUMENT_FRAGMENT_NODE', 'DOCUMENT_TYPE_NODE', 'ENTITY_NODE', 'ENTITY_REFERENCE_NODE', 'NOTATION_NODE', 'PROCESSING_INSTRUCTION_NODE'
-                raise Exception("Not implemented")
+        result = xpath.find(p, self.doc)
+        if not isinstance(result, list):
+            result = [result]
+        for ii in result:
+            if isinstance(ii, minidom.Node):
+                if ii.nodeType in [minidom.Node.ELEMENT_NODE, minidom.Node.DOCUMENT_NODE]:
+                    ll.append(expr.string_value(ii))
+                elif ii.nodeType == minidom.Node.TEXT_NODE:
+                    assert isinstance(ii, minidom.Text)
+                    ll.append(ii.wholeText)
+                elif ii.nodeType == minidom.Node.ATTRIBUTE_NODE:
+                    assert isinstance(ii, minidom.Attr)
+                    ll.append(ii.value)
+            else:
+                ll.append(str(ii))
 
         if ll:
             return ll

@@ -137,11 +137,14 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
             if callable(rep):
                 rep = rep(method, url, body, headers)
 
-            if len(rep) == 2:
-                status, content = rep
-            elif len(rep) == 3:
-                status, content, oHeaders = rep
-                outHeaders.update( oHeaders )
+            if isinstance(rep, (list, tuple)):
+                if len(rep) == 2:
+                    status, content = rep
+                elif len(rep) == 3:
+                    status, content, oHeaders = rep
+                    outHeaders.update(oHeaders)
+                else:
+                    raise Exception("Bad mock response")
             else:
                 raise Exception("Bad mock response")
         except Exception as e:

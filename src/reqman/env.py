@@ -34,6 +34,8 @@ import typing as T
 class PyMethodException(Exception): pass
 class ResolveException(Exception): pass
 
+DYNAMIC: T.Optional[T.Callable] = None
+
 
 
 def updateUrlQuery(url,d: dict):
@@ -57,15 +59,15 @@ def updateUrlQuery(url,d: dict):
         return o.geturl()
 
 
-def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
+def jpath(elem, path: str) -> T.Any:
     runner=elem.run
     resolver=elem.resolve_string_or_not
     for i in path.strip(".").split("."):
         try:
-            if elem is None:
+            if elem is None or elem is NotFound:
                 return NotFound
 
-            elif type(elem) == list:
+            elif isinstance(elem, list):
                 if i == "size":
                     return len(elem)
                 else:
@@ -83,7 +85,7 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
                             elem=runner(elem,None)
                         # NOT TOP /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
-            elif type(elem) == str:
+            elif isinstance(elem, str):
                 if i == "size":
                     return len(elem)
                 elif i.isnumeric() or i.startswith("-"):
@@ -91,10 +93,10 @@ def jpath(elem, path: str) -> T.Union[int, T.Type[NotFound], str]:
                 else:
                     return NotFound
 
-            elif type(elem)==xlib.Xml:
+            elif isinstance(elem,xlib.Xml):
                 elem=elem.xpath(i)
 
-            elif type(elem) in [int,float]:
+            elif isinstance(elem, (int,float)):
                 if i == "size":
                     return len(str(elem))
 
@@ -326,12 +328,12 @@ class Scope(dict): # like 'Env'
                     raise ResolveException(f"can't resolve {pattern}")
                 else:
                     v=pattern
-            elif type(value) == bytes:
+            elif isinstance(value, bytes):
                 try:
                     v = value.decode()
                 except:
                     v = "".join(map(chr, value))    #TODO: (test 120)
-            elif type(value) ==str:
+            elif isinstance(value, str):
                 v = value
             else:
                 try:
@@ -342,12 +344,12 @@ class Scope(dict): # like 'Env'
             # and replace
             logging.debug(f"replace in `{txt}` : `{pattern}` <- `{v}`")
             if f'"{pattern}"' in txt:
-                if isJson(v):
+                if isinstance(v, str) and isJson(v):
                     txt=txt.replace( f'"{pattern}"', v )
                 else:
-                    txt=txt.replace( pattern, v )
+                    txt=txt.replace( pattern, str(v) )
             else:
-                txt=txt.replace( pattern, v )
+                txt=txt.replace( pattern, str(v) )
             logging.debug(f"replaced -> `{txt}`")
 
         if forceResolveOrException and find_vars(txt):
@@ -428,14 +430,14 @@ class Scope(dict): # like 'Env'
 
         if value is NotFound:
             return ""
-        else:
-            if type(value)==bytes:
-                return decodeBytes(value)
-            else:
-                if type(value) in [list,dict]:
-                    return jdumps(value)
-                else:
-                    return str(value)
+
+        if isinstance(value, bytes):
+            return decodeBytes(value)
+
+        if isinstance(value, (list, dict)):
+            return jdumps(value)
+
+        return str(value)
 
 
     def run(self,method: T.Callable , value):
@@ -504,10 +506,16 @@ class Scope(dict): # like 'Env'
             if not urllib.parse.urlparse(path).scheme:
                 path=self.get_var_or_empty("root")+path
 
-            if body.startswith("<<!") and body.endswith(">>"):  # <<!var>> : ne tente pas de resolver le content de var !
-                asBytes=self.get_var(body[3:-2])
+            if body.startswith("<<!") and body.endswith(">>"):
+                asBytes_val = self.get_var(body[3:-2])
+                if asBytes_val is NotFound:
+                    asBytes = b""
+                elif isinstance(asBytes_val, bytes):
+                    asBytes = asBytes_val
+                else:
+                    asBytes = str(asBytes_val).encode()
             else:
-                asBytes=self.resolve_string(body).encode()
+                asBytes = self.resolve_string(body).encode()
             
             headers={k:self.resolve_string(str(v)) for k,v in headers.items() if v is not None} # remove headers valuated as None
             r=None
