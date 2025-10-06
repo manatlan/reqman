@@ -312,27 +312,46 @@ class Env(dict):
     @property
     def switches(self):
         """ return list of tuple (switchName,doc) """
-        if "switches" in self.keys():
-            # new system (hourraaaaa !!!! )
-            switches = self["switches"].keys()
-            for k in switches:
-                yield k, self["switches"].get(k, {}).get("doc", "???")
-        elif "switchs" in self.keys():
-            # new system (but with bad name)
-            switches = self["switchs"].keys()
-            for k in switches:
-                yield k, self["switchs"].get(k, {}).get("doc", "???")
-        else:
-            # old system #DEPRECATED
-            for k, v in self.items():
-                root = v.get("root", None) if isinstance(v, dict) else None
-                if root:
-                    yield (
-                        k,
-                        v.get("doc", root),
-                    )  # return the doc or the url of the root
+
+        new_switch_mechanism=False
+        ############################################################ new system
+        for k,v in self.items():
+            if k.startswith("-"):
+                new_switch_mechanism=True
+                switch = k[1:]
+                yield switch,v.get("doc","?")
+        ############################################################ new system
+
+        if new_switch_mechanism is False:
+            if "switches" in self.keys():
+                # new system (hourraaaaa !!!! )
+                switches = self["switches"].keys()
+                for k in switches:
+                    yield k, self["switches"].get(k, {}).get("doc", "???")
+            elif "switchs" in self.keys():
+                # new system (but with bad name)
+                switches = self["switchs"].keys()
+                for k in switches:
+                    yield k, self["switchs"].get(k, {}).get("doc", "???")
+            else:
+                # old system #DEPRECATED
+                for k, v in self.items():
+                    root = v.get("root", None) if isinstance(v, dict) else None
+                    if root:
+                        yield (
+                            k,
+                            v.get("doc", root),
+                        )  # return the doc or the url of the root
 
     def mergeSwitch(self, switch):
+
+        ############################################################ new system
+        if f"-{switch}" in self:
+            dict_merge(self, self[f"-{switch}"])
+            return
+        ############################################################ new system
+
+
         if switch in self:  # DEPRECATED
             dict_merge(self, self[switch])
         else:

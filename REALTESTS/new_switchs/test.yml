@@ -1,0 +1,13 @@
+#:valid:1 THIS --b
+#:valid:1,1,1 THIS -yolo --b
+
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press CTRL+SHIF+B)
+#--------------------------------------------------------------
+
+- GET: /get_txt # same as "auto_rmr_cant_save_rmr_on_dual.yml" but with a reqman.conf
+  tests:
+    - status: 200
+
