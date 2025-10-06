@@ -1591,7 +1591,7 @@ function copyToClipboard( obj ) {
                 %end
             </b>
             <br/>
-            <i>{{!limit(first(ex).doc,isLimit and LIMIT.DOC)}}</i>
+            <i>{{!first(ex).doc}}</i>
 
         </h4>
 
