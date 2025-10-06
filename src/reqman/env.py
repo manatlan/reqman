@@ -194,9 +194,9 @@ class Exchange:
         )
 
         d={}
-        d.update( resp)
+        d.update( resp) # expose status, json, ... (old direct attributs)
 
-        # new "R" (full response object) ("rm" may disappear)
+        # expose "R" (full response/request object) .. catch all in one place !
         d["R"] = {**resp, "request":dict( method=self.method, url=self.url, headers=testing.HeadersMixedCase(**self.inHeaders), body=self.body)}
     
         repEnv=Scope(env) # clone
