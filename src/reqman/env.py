@@ -276,17 +276,19 @@ class Scope(dict): # like 'Env'
     def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
 
-        # locals={}
-        # #============================================================ NEW PY DECLARATNIO
-        # if "python" in self:
-        #     exec(self["python"],globals(),locals)
-        #     del self["python"]
-        # #============================================================
+        locals={}
+        #============================================================ NEW PY DECLARATNIO
+        if "python" in self:
+            exec(self["python"],globals(),locals)
+            del self["python"]
+        #============================================================
 
         # transform pymethod's string into REAL pymethod's code
+        g=globals()
+        g.update(locals)
         for k,v in self.items():
             if v and isPython(v):
-                exec(declare(v), globals())
+                exec(declare(v), g)
                 self[k]=DYNAMIC
 
 
