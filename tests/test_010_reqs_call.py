@@ -50,7 +50,7 @@ def test_simplest3(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 1
-    assert type(l[0]) is reqman.ReqGroup
+    assert isinstance(l[0], reqman.ReqGroup)
 
 def test_simplest4(Reqs):
     y="""
@@ -63,7 +63,7 @@ def test_simplest4(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 1
-    assert type(l[0]) is reqman.ReqGroup
+    assert isinstance(l[0], reqman.ReqGroup)
 
 def test_simplest5(Reqs):
     y="""
@@ -76,7 +76,7 @@ def test_simplest5(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 1
-    assert type(l[0]) is reqman.ReqGroup
+    assert isinstance(l[0], reqman.ReqGroup)
 
 
 def test_empty(Reqs):

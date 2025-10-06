@@ -10,7 +10,7 @@ def test_simplest(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 1
-    assert type(l[0]) is reqman.Req
+    assert isinstance(l[0], reqman.Req)
     assert l[0].headers == {'jo': 'hello'}
 
 def test_simplest2(Reqs):
@@ -25,7 +25,7 @@ def test_simplest2(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 1
-    assert type(l[0]) is reqman.ReqGroup
+    assert isinstance(l[0], reqman.ReqGroup)
     assert l[0].reqs[0].headers == {'jo': 'hello2'}
 
 def test_headers_as_list_and_tests_as_dict(Reqs): #bad practice
@@ -42,7 +42,7 @@ def test_headers_as_list_and_tests_as_dict(Reqs): #bad practice
 """
     l=Reqs(y)
     assert len(l) == 1
-    assert type(l[0]) is reqman.ReqGroup
+    assert isinstance(l[0], reqman.ReqGroup)
     assert l[0].reqs[0].headers == {'jo': 'hello2'}
 
 def test_empty(Reqs):
@@ -166,7 +166,7 @@ def test_header_override_remove(Reqs):
 """
     l=Reqs(y)
     assert len(l) == 1
-    assert type(l[0]) is reqman.ReqGroup
+    assert isinstance(l[0], reqman.ReqGroup)
     assert l[0].reqs[0].headers ==  {'jo': None}  # before execution
 
     ll=l.execute( {"https://www.manatlan.com":(200,"ok")})

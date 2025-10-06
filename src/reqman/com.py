@@ -43,7 +43,7 @@ def init():
 
 class Response:
     def __init__(self, status:T.Optional[int], headers: dict, content: bytes, info: str):
-        assert type(content)==bytes
+        assert isinstance(content, bytes)
         self.status=status
         self.headers=headers
         self.content=content
@@ -78,7 +78,7 @@ class ResponseInvalid(ResponseError):
 
 
 async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,proxies=None) -> Response:
-    assert type(body)==bytes
+    assert isinstance(body, bytes)
 
     try:
         async with httpx.AsyncClient(
@@ -150,12 +150,12 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
                 raise Exception("Bad mock response")
         except Exception as e:
             status, content = 500, f"mock server error: {e}"
-    assert type(content) in [str, bytes]
-    assert type(status) is int
-    assert type(outHeaders) is dict
+    assert isinstance(content, (str, bytes))
+    assert isinstance(status, int)
+    assert isinstance(outHeaders, dict)
 
     # ensure content is bytes
-    if type(content)==str:
+    if isinstance(content, str):
         #convert to bytes
         try:
             content=content.encode("cp1252").decode().encode()
@@ -165,7 +165,7 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
             except:
                 raise Exception("Mock decoding str trouble")
 
-    assert type(content)==bytes
+    assert isinstance(content, bytes)
 
     info=f"MOCK/1.0 {status} RESPONSE"
 

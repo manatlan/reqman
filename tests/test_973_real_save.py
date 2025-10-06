@@ -15,11 +15,11 @@ def test_savvve(exe):
     with open("reqman.conf","w+") as fid:
         fid.write("""
 testByte: |
-    return "ok" if type(x)==bytes else "ko"
+    return "ok" if isinstance(x, bytes) else "ko"
 testInt: |
-    return "ok" if type(x)==int else "ko"
+    return "ok" if isinstance(x, int) else "ko"
 testStr: |
-    return "ok" if type(x)==str else "ko"
+    return "ok" if isinstance(x, str) else "ko"
 """)
 
     with open("f.yml","w+") as fid:

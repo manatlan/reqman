@@ -38,9 +38,9 @@ class HeadersMixedCase(dict):
 
 
 def strjs(x) -> str:
-    if type(x) is bytes:
+    if isinstance(x, bytes):
         return str(x)
-    elif type(x) is str:
+    elif isinstance(x, str):
         return x
     else:
         return jdumps(x)
@@ -75,18 +75,18 @@ class Test(int):
 
 def guessValue(txt):
     """ return a value that is comparable (everything but not bytes)"""
-    if type(txt) == bytes:
+    if isinstance(txt, bytes):
         return decodeBytes(txt) # to string
 
-    if type(txt) == str:
+    if isinstance(txt, str):
         if txt=="":
             return None
         else:
             try:
                 obj=eval(txt)
-                if type(obj)==bytes:
+                if isinstance(obj, bytes):
                     return decodeBytes(obj)
-                elif obj is None or type(obj) in [bool,int,float,str]:
+                elif obj is None or isinstance(obj, (bool,int,float,str)):
                     return obj
                 else:
                     raise Exception("!!!")
@@ -103,7 +103,7 @@ def guessValue(txt):
 
 
 def getValOpe(v):
-    if type(v) == str:
+    if isinstance(v, str):
         if v.startswith("."):
             g = re.match(r"^\. *([\?!=<>]{1,2}) *(.+)$", v)
             if g:
@@ -157,10 +157,10 @@ def getValOpe(v):
     return v, lambda a, b: a == b, "=", "!="
 
 def testCompare(var: str, val, opeval) -> Test:
-    if type(opeval)==list:
+    if isinstance(opeval, list):
         values=opeval # or [guessValue(i) for i in opeval], but baddest
         val=guessValue(val)
-        if type(val)==list: # compare 2 list
+        if isinstance(val, list): # compare 2 list
             test= val == values
             tok="="
             tko="!="
@@ -174,7 +174,7 @@ def testCompare(var: str, val, opeval) -> Test:
                 tok="in"
                 tko="not in"
         value=values
-    elif type(opeval)==dict:
+    elif isinstance(opeval, dict):
         val=guessValue(val)
         test = (val == opeval)
         tok="="

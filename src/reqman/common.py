@@ -26,7 +26,7 @@ def jdumps(o, *a, **k):
 
 
 def decodeBytes(b:bytes) -> str:
-    assert type(b)==bytes
+    assert isinstance(b, bytes)
     try:
         x=b.decode("utf8")
     except:
@@ -34,7 +34,7 @@ def decodeBytes(b:bytes) -> str:
             x= b.decode("cp1252")
         except:
             x= str(b)
-    assert type(x)==str
+    assert isinstance(x, str)
     return x
 
 if __name__=="__main__":

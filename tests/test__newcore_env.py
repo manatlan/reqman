@@ -199,12 +199,12 @@ def test_copy_dico():
         user=dict(id=42,name="jo"),
         user1="<<user>>",
     ))
-    assert type(e.get_var("user"))==dict
+    assert isinstance(e.get_var("user"), dict)
     assert e.get_var("user") == dict(id=42,name="jo")
     assert e.get_var("user.id") == 42
     assert e.get_var("user.name") == "jo"
 
-    assert type(e.get_var("user1"))==dict
+    assert isinstance(e.get_var("user1"), dict)
     assert e.get_var("user1") == dict(id=42,name="jo")
     assert e.get_var("user1.id") == 42
     assert e.get_var("user1.name") == "jo"

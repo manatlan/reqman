@@ -50,7 +50,7 @@ def updateUrlQuery(url,d: dict):
                 if k in q:
                     del q[k]
             else:
-                if type(v)==list:
+                if isinstance(v, list):
                     q.setdefault(k,[]).extend(v)
                 else:
                     q.setdefault(k,[]).append(v)
@@ -111,7 +111,7 @@ class Exchange:
     id:str="" #unique id to identify request structure (to be able to match in dual mode)
 
     def __init__(self,method: str,url: str,body: bytes=b"",headers: dict={}, tests:list=[], saves:list=[], doc:str = ""):
-        assert type(body)==bytes
+        assert isinstance(body, bytes)
 
         self.datetime = datetime.datetime.now()
 
@@ -262,7 +262,7 @@ def declare(code):
 
 
 def isPython(x):
-    if type(x) == str and "return" in x:
+    if isinstance(x, str) and "return" in x:
         try:
             return compile(declare(x), "unknown", "exec") and True
         except:
@@ -293,7 +293,7 @@ class Scope(dict): # like 'Env'
 
     #TODO: that (could replace "get_var")
     def resolve_all(self,obj,forceResolveOrException=True):
-        if type(obj)!=str:
+        if not isinstance(obj, str):
             obj=json.dumps(obj)
 
         obj= self.resolve_string(obj,forceResolveOrException)
@@ -308,11 +308,11 @@ class Scope(dict): # like 'Env'
         """ replace all vars in the str
         raise ResolveException if can't
         """
-        assert type(txt)==str, "wtf?"
+        assert isinstance(txt, str), "wtf?"
 
         try:
             string=self._resolve_string(txt,forceResolveOrException)
-            assert type(string)==str,"?!WTF"
+            assert isinstance(string, str),"?!WTF"
             return string
         except RecursionError:
             raise ResolveException("Recursion trouble") # raise in all cases
@@ -363,7 +363,7 @@ class Scope(dict): # like 'Env'
 
     def resolve_string_or_not(self,obj: object) -> object:
         """ like resolve() but any type in/out, without exception """
-        if type(obj)==str:
+        if isinstance(obj, str):
             try:
                 obj = self.resolve_all( obj , forceResolveOrException=False)
             except PyMethodException as e:
@@ -377,7 +377,7 @@ class Scope(dict): # like 'Env'
             return value or NotFound
             can raise PyMethodException
         """
-        assert type(vardef)==str
+        assert isinstance(vardef, str)
 
         if "|" in vardef:
             var, *methods = vardef.split("|")
@@ -401,7 +401,7 @@ class Scope(dict): # like 'Env'
 
             value = jpath(self,var)
 
-            if type(value)==str:
+            if isinstance(value, str):
                 # resolve value content, before applying methods
                 value = self.resolve_string_or_not( value )
 
@@ -424,7 +424,7 @@ class Scope(dict): # like 'Env'
 
 
     def get_var_or_empty(self,vardef: str) -> str:
-        assert type(vardef)==str
+        assert isinstance(vardef, str)
 
         try:
             value = self.get_var(vardef)
@@ -455,9 +455,9 @@ class Scope(dict): # like 'Env'
 
 
     async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None, querys={}, proxies=None, http=None) -> Exchange:
-        assert type(body)==str
-        assert all( [type(i)==tuple and len(i)==2 for i in tests] ) # assert list of tuple of 2
-        assert all( [type(i)==tuple and len(i)==2 for i in saves] ) # assert list of tuple of 2
+        assert isinstance(body, str)
+        assert all( [isinstance(i, tuple) and len(i)==2 for i in tests] ) # assert list of tuple of 2
+        assert all( [isinstance(i, tuple) and len(i)==2 for i in saves] ) # assert list of tuple of 2
 
         asBytes=body.encode()
 
@@ -471,10 +471,10 @@ class Scope(dict): # like 'Env'
             # use global headers and merge them in headers
             gheaders = self.get("headers", None)  # global headers
             if gheaders is not None:
-                if type(gheaders) == str:
+                if isinstance(gheaders, str):
                     gheaders = self.resolve_all(gheaders)
 
-                    if type(gheaders)!=dict:
+                    if not isinstance(gheaders, dict):
                         raise ResolveException("global headers are not resolved as a dict")
                 else:
                     gheaders=dict(gheaders) # clone
@@ -489,12 +489,12 @@ class Scope(dict): # like 'Env'
             for k,v in querys.items():
                 if v is None:
                     pquerys[k]=None
-                elif type(v)==list:
+                elif isinstance(v, list):
                     ll=[]
                     for i in v:
                         if i is not None:
                             i=self.resolve_all(i)
-                            if type(i)==list:
+                            if isinstance(i, list):
                                 ll.extend(i)
                             else:
                                 ll.append(i)

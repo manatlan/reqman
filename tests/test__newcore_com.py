@@ -9,13 +9,13 @@ async def test_real_http_call():
 
     r=await reqman.com.call("GET","https://tools-httpstatus.pickup-services.com/200")
     assert r.status==200
-    assert type(r)==reqman.com.Response
+    assert isinstance(r, reqman.com.Response)
 
     r=await reqman.com.call("GET","fgsdjghfdsgfsdhhgfdjks.com")
-    assert type(r)==reqman.com.ResponseInvalid
+    assert isinstance(r, reqman.com.ResponseInvalid)
 
     r=await reqman.com.call("GET","http://fgsdjghfdsgfsdhhgfdjks.com")
-    assert type(r)==reqman.com.ResponseUnreachable
+    assert isinstance(r, reqman.com.ResponseUnreachable)
 
 @pytest.mark.skipif(os.getenv("CI") == "true", reason="No internet on CI")
 @pytest.mark.asyncio
@@ -23,7 +23,7 @@ async def test_real_http_call_timeout():
     reqman.com.init()
 
     r=await reqman.com.call("GET","https://tools-httpstatus.pickup-services.com/200?sleep=1000",timeout=1)
-    assert type(r)==reqman.com.ResponseTimeout
+    assert isinstance(r, reqman.com.ResponseTimeout)
 
 
 def test_simu_call():

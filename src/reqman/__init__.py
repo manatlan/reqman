@@ -187,7 +187,7 @@ def ustr(x):  # ensure str are utf8 inside
     try:
         return x.encode("cp1252").decode()
     except:
-        if type(x) == bytes:
+        if isinstance(x, bytes):
             return x.decode("utf8")
         else:
             return str(x)
@@ -214,7 +214,7 @@ clone = lambda x: json.loads(json.dumps(x))
 
 
 def toList(d) -> T.List:
-    return d if type(d) == list else [d]
+    return d if isinstance(d, list) else [d]
 
 
 padLeft = lambda b,pre="  ": ("\n".join([pre + i for i in str(b).splitlines()]))
@@ -254,7 +254,7 @@ class Env(dict):
             except Exception as e:
                 raise RMFormatException("Env conf is not yaml")
 
-        if type(d) not in [dict, Env]:
+        if not isinstance(d, (dict, Env)):
             # raise RMFormatException("Env conf is not a dict %s" % str(d))
             d = {}
 
@@ -325,7 +325,7 @@ class Env(dict):
         else:
             # old system #DEPRECATED
             for k, v in self.items():
-                root = v.get("root", None) if type(v) == dict else None
+                root = v.get("root", None) if isinstance(v, dict) else None
                 if root:
                     yield (
                         k,
@@ -352,7 +352,7 @@ class Env(dict):
 
     def replaceTxt(self, txt: str) -> T.Union[str, bytes]:
         """ DEPRECATED """
-        assert type(txt) is str
+        assert isinstance(txt, str)
 
         #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
         d=dict(self.clone())
@@ -373,7 +373,7 @@ class Env(dict):
 
     def getNonResolvedVars(self, txt):
         """ DEPRECATED """
-        if type(txt) == str:
+        if isinstance(txt, str):
             return re.findall(r"\{\{[^\}]+\}\}", txt) + re.findall("<<[^><]+>>", txt)
         else:
             return []
@@ -396,20 +396,20 @@ class Reqs(list):
     def __init__(self, obj: T.Union[str, FString], env=None, name="<YamlString>"):
         self.__proc = {}
         self.exchanges = None  # list of Exchange
-        self.name = obj.filename if type(obj) is FString else name
+        self.name = obj.filename if isinstance(obj, FString) else name
 
         if env is None:
             self.env = Env()
-        elif type(env) is Env:
+        elif isinstance(env, Env):
             self.env = env.clone(cloneSharedScope=False)  # remove shared one
-        elif type(env) is dict:
+        elif isinstance(env, dict):
             self.env = Env(env)
 
         def controle(obj) -> T.List:
             """ Controle that 'obj' is a list of dict, and is valid """
-            if type(obj) == list:
+            if isinstance(obj, list):
                 pass
-            elif type(obj) == dict:
+            elif isinstance(obj, dict):
                 obj = toList(obj)
             elif obj is None:
                 obj = []
@@ -429,9 +429,9 @@ class Reqs(list):
                     keys = list(i.keys())
                     if len(keys)==1 and keys[0]=="wait":
                         value = i["wait"]
-                        if type(value) in [int,float]:
+                        if isinstance(value, (int, float)) and not isinstance(value, bool):
                             pass
-                        elif type(value) == str:
+                        elif isinstance(value, str):
                             if (value.startswith( ("<<","{{") ) and value.endswith( (">>","}}") )): #TODO: not great
                                 pass
                             else:
@@ -446,7 +446,7 @@ class Reqs(list):
                     elif (
                         len(keys) == 1
                         and (keys[0] not in KNOWNVERBS + ["call"])
-                        and (type(i[keys[0]]) in [dict, list])
+                        and isinstance(i[keys[0]], (dict, list))
                     ):
 
                         # it's a definition of a proc's named 'key', content = value
@@ -521,7 +521,7 @@ class Reqs(list):
                             # append the current action/req to the liste
                             method = verbs[0]
                             path = i.get(method, None)
-                            if type(path) is not str:
+                            if not isinstance(path, str):
                                 raise self._errorFormat(
                                     "Reqs: The action %s should contains a path/string"
                                     % method
@@ -587,7 +587,7 @@ class Reqs(list):
         return RMFormatException(msg + " in %s" % self.name)
 
     def _assertType(self, name, o, types):
-        if o is not None and type(o) not in types:
+        if o is not None and not isinstance(o, tuple(types)):
             raise self._errorFormat("TT: %s is malformed, not a %s" % (name, types))
 
     def execute(self, http=None, outputConsole=OutputConsole.MINIMAL) -> list:
@@ -601,7 +601,7 @@ class Reqs(list):
     async def asyncReqsExecute(
         self, switches: list, http=None, outputConsole=OutputConsole.MINIMAL
     ) -> list:
-        assert type(switches) is list
+        assert isinstance(switches, list)
         ############################################# live console
         if len(self) > 0 and outputConsole in [
             OutputConsole.MINIMAL,
@@ -652,15 +652,15 @@ class Reqs(list):
                     log(level, "  Scope Add: ", i.scope)
 
                     foreach = i.foreach or [{}]
-                    if type(foreach) == str:  # dynamic foreach !
+                    if isinstance(foreach, str):  # dynamic foreach !
                         try:
                             #foreach = json.loads(scope.replaceTxt(foreach))
                             foreach = scope.replaceObj(foreach)
                         except Exception as e:
                             raise RMException("Reqs: Dynamic foreach ERROR %s" % e)
 
-                        if type(foreach) != list or any(
-                            [type(p) != dict for p in foreach]
+                        if not isinstance(foreach, list) or any(
+                            [not isinstance(p, dict) for p in foreach]
                         ):
                             raise RMException(
                                 "Reqs: Dynamic foreach params is not a list of dict"
@@ -829,7 +829,7 @@ class Req(ReqItem):
     def updateHeaders(self, o: dict):  # merge headers
         headers = o.get("headers", {})
         self.parent._assertType("headers", headers, [dict, list])
-        if type(headers) is list:  # list > dict
+        if isinstance(headers, list):  # list > dict
             # TODO: "'headers:' should be filled of key/value pairs (ex: 'Content-Type: text/plain')"
             headers = {list(d.keys())[0]: list(d.values())[0] for d in headers}
         if headers is not None:
@@ -844,7 +844,7 @@ class Req(ReqItem):
     def updateTests(self, o: dict):  # append tests
         tests = o.get("tests", [])
         self.parent._assertType("tests", tests, [list, dict])
-        if type(tests) == dict:  # dict to list
+        if isinstance(tests, dict):  # dict to list
             # TODO: "'tests:' should be a list of mono key/value pairs (ex: '- status: 200')"
             tests = [{k: v} for k, v in dict(tests).items()]
         if tests is not None:
@@ -867,10 +867,10 @@ class Req(ReqItem):
     def updateSave(self, o: dict):  # append save
         save = o.get("save", None)
         self.parent._assertType("save", save, [str, dict, list])  # new
-        if type(save) is list:  # list > dict
+        if isinstance(save, list):  # list > dict
             # TODO: "'save:' should be filled of key/value pairs (ex: 'saveKey: <<saveValue>>')"
             save = {list(d.keys())[0]: list(d.values())[0] for d in save}
-        elif type(save) is str:
+        elif isinstance(save, str):
             save = {save: "<<content>>"}  # convert to new system save
         if save is not None:
             self.saves += [save]
@@ -885,7 +885,7 @@ class Req(ReqItem):
                 if v is None:
                     self.querys[k]=None
                 else:
-                    if type(v)==list:
+                    if isinstance(v, list):
                         self.querys.setdefault(k,[]).extend(v)
                     else:
                         self.querys.setdefault(k,[]).append(v)
@@ -972,9 +972,9 @@ class Req(ReqItem):
         # ensure content is str
         if body is None:
             body=""
-        elif type(body) in [list,dict]: # TEST 972_500 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        elif isinstance(body, (list,dict)): # TEST 972_500 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             body=json.dumps(body)
-        elif type(body) == bytes:
+        elif isinstance(body, bytes):
             body=common.decodeBytes(body)
         else:
             body=str(body)
@@ -1058,7 +1058,7 @@ class Req(ReqItem):
 
 
 def guessValue(txt):
-    if type(txt) == str:
+    if isinstance(txt, str):
         try:
             return json.loads(txt)
         except:
@@ -1484,7 +1484,7 @@ def render(rr: Result) -> str:
         if rr.forceNoLimit:
             return txt
         else:
-            if size and txt and type(txt) in [str,bytes] and len(txt) > int(size):
+            if size and txt and isinstance(txt, (str,bytes)) and len(txt) > int(size):
                 info = "...***TRUNCATED***..."
                 size = size - len(info)
                 return txt[: size // 2] + info + txt[-size // 2 :]
@@ -1647,13 +1647,13 @@ function copyToClipboard( obj ) {
 """
 
     def discover(ex):
-        if type(ex) is tuple:
+        if isinstance(ex, tuple):
             return list(ex)
         else:
             return [ex]
 
     def first(ex):
-        if type(ex) is tuple:
+        if isinstance(ex, tuple):
             return ex[0] or ex[1]
         else:
             return ex
@@ -2026,13 +2026,13 @@ class GenRML:
         if verb is None: verb="GET"
         verb=verb.upper().strip()
         assert verb in KNOWNVERBS
-        assert type(headers) in [list,dict]
+        assert isinstance(headers, (list,dict))
 
         self.verb=verb
         self.path=path
         self.body=body
 
-        self.headers=dict(headers) if type(headers)==dict else {k:v for k,v in headers}
+        self.headers=dict(headers) if isinstance(headers, dict) else {k:v for k,v in headers}
 
         self.doc=""         # str
         self.comment=""     # str|list
