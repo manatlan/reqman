@@ -14,25 +14,25 @@ def test_simul_json():
         ("status","<<v200>>"),
         ("status",".>= <<v200>>"),
         ("status",".> 100"),
-        ("response.status",200),
+        ("R.status",200),
         ("json.items.size",".> 2"),
         ("json.value|upper","HELLO"),
-        ("response.json.items.size",3),
-        ("rm.response.json.items.size",3),
-        ("request.method","GET"),
-        ("rm.request.method|upper","GET"),
-        ("response.headers.x-test","hello"),
-        ("rm.response.headers.X-TeSt|upper","HELLO"),
+        ("R.json.items.size",3),
+        ("R.json.items.size",3),
+        ("R.request.method","GET"),
+        ("R.request.method|upper","GET"),
+        ("R.headers.x-test","hello"),
+        ("R.headers.X-TeSt|upper","HELLO"),
         ("unknwon|upper",None),
-        ("response.json", json.dumps(obj)),         # Prob sur "auto_check_values.yml" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ("response.json", obj),
+        ("R.json", json.dumps(obj)),         # Prob sur "auto_check_values.yml" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ("R.json", obj),
     ]
     saves=[
         ("hello","<<status>>"),
-        ("js","<<response.json>>"),
-        ("ll","<<response.json.items>>"),
-        ("val","<<response.json.items.1>>"),
-        ("MAX","<<response.json.value|upper>>"),
+        ("js","<<R.json>>"),
+        ("ll","<<R.json.items>>"),
+        ("val","<<R.json.items.1>>"),
+        ("MAX","<<R.json.value|upper>>"),
         ("nimp","<<nimp>>"),
     ]
 

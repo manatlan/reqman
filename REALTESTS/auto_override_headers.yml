@@ -16,10 +16,10 @@
     x-header: kif
   tests:
     - status: 201
-    - response.headers.x-header: kif
+    - R.headers.x-header: kif
 - call: yo
   headers:
     x-header: null
   tests:
     - status: 201
-    - response.headers.x-header: null
+    - R.headers.x-header: null

@@ -1,0 +1,16 @@
+#:valid:11111 THIS
+python: |
+    def add(a,b):
+        return a+b
+
+test:
+    return str( add(3,4) )
+
+RUN:
+- GET: http://localhost:11111/get_json?x=<<test>>
+  tests:
+      - R.status: 200
+      - R.time: .> 0
+      - R.json.infos: [1,2,3]
+      - R.request.url : http://localhost:11111/get_json?x=7
+      - R.request.method : GET

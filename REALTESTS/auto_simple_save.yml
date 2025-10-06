@@ -7,16 +7,16 @@
 
 
 - GET: http://localhost:11111/get_json
-  doc: Yo  <<request.url>> -> <<response.time>>ms
+  doc: Yo  <<R.request.url>> -> <<R.time>>ms
   tests:
     - status: 200
   save:
     - next: "get_json"
-    - nextStatus: <<response.status>>
+    - nextStatus: <<R.status>>
 
 - GET: http://localhost:11111/<<next>>
   doc: |
    Calling /<<next>> should be status=<<nextStatus>>
-   (Yo  <<request.url>> -> <<response.time>>ms)
+   (Yo  <<R.request.url>> -> <<R.time>>ms)
   tests:
-    - response.status: <<nextStatus>>
+    - R.status: <<nextStatus>>

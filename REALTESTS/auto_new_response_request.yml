@@ -6,7 +6,7 @@
 #--------------------------------------------------------------
 
 - POST: http://localhost:11111/ping
-  doc: Taking <<response.time>> <<rm>>
+  doc: Taking <<R.time>> <<rm>>
   headers:
     X-Test: test
   body: hello
@@ -20,10 +20,10 @@
       assert x["status"]
       return True
   save:
-      isOK1: <<response|inMethod>>
-      isOK2: <<response.content|inMethod>>
-      isOK3: <<rm.response.content|inMethod>>
-      isOK4: <<response|testRmDict>>
+      isOK1: <<R|inMethod>>
+      isOK2: <<R.content|inMethod>>
+      isOK3: <<R.content|inMethod>>
+      isOK4: <<R|testRmDict>>
   tests:
     - status: 201
 
@@ -40,33 +40,33 @@
     - X-TesT:             # old can contains ! /
 
     # newest
-    - headers.x-test: test  # header lowercased!
-    - headers.x-test: . ? es
-    - headers.x-test: . !? xxx
-    - headers.x-test: . !? xxx
-    - headers.X-Test: test    # mixed case heaser works
+    - R.headers.x-test: test  # header lowercased!
+    - R.headers.x-test: . ? es
+    - R.headers.x-test: . !? xxx
+    - R.headers.x-test: . !? xxx
+    - R.headers.X-Test: test    # mixed case heaser works
 
-    - header.X-Test: null   # old way (2.3.10 < 2.4)
-    - header.x-test: null   # old way (2.3.10 < 2.4)
+    - R.header.X-Test: null   # old way (2.3.10 < 2.4)
+    - R.header.x-test: null   # old way (2.3.10 < 2.4)
 
     # ultra newest
-    - response.time: .<100    # ms
+    - R.time: .<100    # ms
 
-    - response.status: 201
-    - response.content: hello
-    - response.content: .? hel
-    - response.headers.X-Test: test # mixed case heaser works
-    - response.headers.x-test: test # header lowercased!
-    - response.headers.x-test: .? es
+    - R.status: 201
+    - R.content: hello
+    - R.content: .? hel
+    - R.headers.X-Test: test # mixed case heaser works
+    - R.headers.x-test: test # header lowercased!
+    - R.headers.x-test: .? es
 
-    - request.url: http://localhost:11111/ping
-    - request.method: POST
-    - response.content: hello
-    - response.content: .? hel
-    - request.headers.X-Test: test # mixed case heaser works
-    - request.headers.x-test: test # header lowercased!
-    - request.headers.x-test: .? es # header lowercased!
+    - R.request.url: http://localhost:11111/ping
+    - R.request.method: POST
+    - R.content: hello
+    - R.content: .? hel
+    - R.request.headers.X-Test: test # mixed case heaser works
+    - R.request.headers.x-test: test # header lowercased!
+    - R.request.headers.x-test: .? es # header lowercased!
 
     # confidential (the full exchange is in "rm")
-    - rm.response.status: 201
-    - rm.request.method: POST
+    - R.status: 201
+    - R.request.method: POST

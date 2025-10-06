@@ -195,14 +195,9 @@ class Exchange:
 
         d={}
         d.update( resp)
-        d["request"] = dict( method=self.method, url=self.url, headers=testing.HeadersMixedCase(**self.inHeaders), body=self.body)
-        d["response"] = resp
-
-        d["rm"]=dict(response=d["response"],request=d["request"])
 
         # new "R" (full response object) ("rm" may disappear)
-        d["R"]=resp
-        d["R"]["request"] = d["request"]
+        d["R"] = {**resp, "request":dict( method=self.method, url=self.url, headers=testing.HeadersMixedCase(**self.inHeaders), body=self.body)}
     
         repEnv=Scope(env) # clone
         repEnv.update(d)
@@ -281,11 +276,19 @@ class Scope(dict): # like 'Env'
     def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
 
-        # transform on pymethod's string in REAL pymethod's code
+        # locals={}
+        # #============================================================ NEW PY DECLARATNIO
+        # if "python" in self:
+        #     exec(self["python"],globals(),locals)
+        #     del self["python"]
+        # #============================================================
+
+        # transform pymethod's string into REAL pymethod's code
         for k,v in self.items():
             if v and isPython(v):
                 exec(declare(v), globals())
                 self[k]=DYNAMIC
+
 
         for k,v in exposedsMethods.items():
             if k not in self:
