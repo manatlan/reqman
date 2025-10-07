@@ -272,17 +272,17 @@ def isJson(s:str):
 
 
 class Scope(dict): # like 'Env'
+    _locals_={}
 
     def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
 
         #============================================================ NEW PY DECLARATNIO
-        self._locals_={}
         if "python" in self:
             try:
                 g=globals()
                 g.update( dict(ENV=self) )
-                exec(self["python"],g,self._locals_)
+                exec(self["python"],g,Scope._locals_)
             except Exception as e:
                 print("Python section error:", str(e))
                 raise e
@@ -291,7 +291,7 @@ class Scope(dict): # like 'Env'
 
         # transform pymethod's string into REAL pymethod's code
         g=globals()
-        g.update(self._locals_)
+        g.update(Scope._locals_)
         for k,v in self.items():
             if v and isPython(v):
                 exec(declare(v), g)

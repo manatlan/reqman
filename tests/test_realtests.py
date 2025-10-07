@@ -19,7 +19,7 @@ def teardown_module():
     WS.stop()
 
 F=os.path.join(os.path.dirname(os.path.dirname(__file__)),"REALTESTS")
-@pytest.mark.parametrize('file', glob( os.path.join( F,"*.yml")) + glob( os.path.join( F,"auto_*/*.yml")) )
+@pytest.mark.parametrize('file', glob( os.path.join( F,"*.yml")) + glob( os.path.join( F,"auto_*/*.yml") )+ glob( os.path.join( F,"new_*/*.yml")) )
 def test_file(file):
     err=run(file)
     assert err=="", "File '%s' : %s" % (file,err)

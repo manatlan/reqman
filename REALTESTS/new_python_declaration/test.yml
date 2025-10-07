@@ -1,0 +1,26 @@
+#:valid:11,11 THIS 
+
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press CTRL+SHIF+B)
+#--------------------------------------------------------------
+
+python: |
+    def m2(x):
+        assert ENV
+        return f"[2{x}2]"
+
+val: marco
+
+RUN:
+- GET: /get_txt?x=<<val|m2>>  # from loval env
+  tests:
+    - R.status: 200
+    - R.request.url: http://localhost:11111/get_txt?x=[2marco2]
+
+- GET: /get_txt?x=<<val|m1>> # from reqman.conf
+  tests:
+    - R.status: 200
+    - R.request.url: http://localhost:11111/get_txt?x=[1marco1]
+
