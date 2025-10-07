@@ -231,15 +231,7 @@ def dict_merge(dst: dict, src: dict) -> None:
         ):
             dict_merge(dst[k], src[k])
         else:
-            if k in dst and isinstance(dst[k], list) and isinstance(src[k], list):
-                # dst[k] += src[k] #v3.0.3
-                dst[k] = src[k]
-            else:
-                if k=="python":
-                    # concatenate python section
-                    dst[k] = dst.get("python","") + "\n" + src[k]
-                else:
-                    dst[k] = src[k]
+            dst[k] = src[k]
 
 
 
