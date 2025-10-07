@@ -276,16 +276,22 @@ class Scope(dict): # like 'Env'
     def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
 
-        locals={}
         #============================================================ NEW PY DECLARATNIO
+        self._locals_={}
         if "python" in self:
-            exec(self["python"],globals(),locals)
-            del self["python"]
+            try:
+                g=globals()
+                g.update( dict(ENV=self) )
+                exec(self["python"],g,self._locals_)
+            except Exception as e:
+                print("Python section error:", str(e))
+                raise e
+            del self["python"] # remove from scope, good idea ?
         #============================================================
 
         # transform pymethod's string into REAL pymethod's code
         g=globals()
-        g.update(locals)
+        g.update(self._locals_)
         for k,v in self.items():
             if v and isPython(v):
                 exec(declare(v), g)
@@ -419,6 +425,11 @@ class Scope(dict): # like 'Env'
                 if method in self:
                     callabl=self[method]
                     value=self.run(callabl,value)
+                #===============================================
+                elif method in self._locals_:
+                    callabl=self._locals_[method]
+                    value=self.run(callabl,value,with_env=False)
+                #===============================================
                 else:
                     return NotFound
         else:
@@ -449,15 +460,18 @@ class Scope(dict): # like 'Env'
         return str(value)
 
 
-    def run(self,method: T.Callable , value):
+    def run(self,method: T.Callable , value, with_env=True):
         if not callable(method):
             raise PyMethodException(f"Can't call '{method}' : unknown one ?")
         try:
             logging.debug("Execute pymethod %s(%s)", method,value )
-            return method(value,self)
+            if with_env:
+                return method(value,self)
+            else:
+                return method(value)
         except Exception as e:
             raise PyMethodException(f"Can't execute '{method.__name__}' : {e}")
-
+        
 
     async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None, querys={}, proxies=None, http=None) -> Exchange:
         assert isinstance(body, str)

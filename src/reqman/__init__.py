@@ -234,7 +234,11 @@ def dict_merge(dst: dict, src: dict) -> None:
                 # dst[k] += src[k] #v3.0.3
                 dst[k] = src[k]
             else:
-                dst[k] = src[k]
+                if k=="python":
+                    # concatenate python section
+                    dst[k] = dst.get("python","") + "\n" + src[k]
+                else:
+                    dst[k] = src[k]
 
 
 

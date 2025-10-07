@@ -1,16 +1,30 @@
-#:valid:11111 THIS
+#:valid:11,11,11 THIS
 python: |
-    def add(a,b):
+    def add(a:int,b:int) -> int:
         return a+b
 
-test:
+    def TRANS(x:str) -> str:
+        assert ENV # now a global
+        return x.upper()
+
+val: "hello"
+
+trans: |
+    assert ENV # it's declared as 2nd argument in "test(x,ENV=self)"
     return str( add(3,4) )
 
 RUN:
-- GET: http://localhost:11111/get_json?x=<<test>>
+- GET: http://localhost:11111/get_json?x=<<trans>>
   tests:
       - R.status: 200
-      - R.time: .> 0
-      - R.json.infos: [1,2,3]
       - R.request.url : http://localhost:11111/get_json?x=7
-      - R.request.method : GET
+
+- GET: http://localhost:11111/get_json?x=<<val|TRANS>>
+  tests:
+      - R.status: 200
+      - R.request.url : http://localhost:11111/get_json?x=HELLO
+
+- GET: http://localhost:11111/get_json?x=<<trans>>
+  tests:
+      - R.status: 200
+      - R.request.url : http://localhost:11111/get_json?x=7
