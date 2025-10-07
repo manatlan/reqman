@@ -12,13 +12,32 @@ import shutil
 import uvicorn
 
 async def ping(request):
+    """
+    This endpoint is used to test the connection.
+    It returns a 201 status code with the request body and headers.
+    To use it, send a POST request to /ping with any body.
+    """
     b = await request.body()
     return Response(status_code=201, content=b, headers=dict(request.headers))
 
 async def set_value(request):
+    """
+    This endpoint returns the value of the 'value' query parameter.
+    To use it, send a GET request to /set?value=your_value.
+    If the 'value' parameter is not provided, it returns '?'.
+    """
     return Response(status_code=200, content=request.query_params.get("value", "?"))
 
 async def cookie(request):
+    """
+    This endpoint is used to manage cookies.
+    It can create, increment, view, and delete a cookie named 'cpt'.
+    To use it, send a GET request to /cookie?value=[create|inc|view|del].
+    - 'create': creates the 'cpt' cookie with a value of '0'.
+    - 'inc': increments the value of the 'cpt' cookie.
+    - 'view': returns the value of the 'cpt' cookie.
+    - 'del': deletes the 'cpt' cookie.
+    """
     argv = request.query_params.get("value", "?")
 
     if argv == "create":
@@ -47,35 +66,77 @@ async def cookie(request):
     return Response(status_code=200, content="???")
 
 async def bigtxt(request):
+    """
+    This endpoint returns a large text response.
+    To use it, send a GET request to /bigtxt.
+    """
     return Response(status_code=200, content="".join(["[%s]" % i for i in range(10000)]))
 
 async def wait(request):
+    """
+    This endpoint waits for a specified amount of time before returning a response.
+    To use it, send a GET request to /wait?value=seconds.
+    If the 'value' parameter is not provided, it waits for 5 seconds.
+    """
     await asyncio.sleep(float(request.query_params.get("value", "5")))
     return Response(status_code=200, content="OK")
 
 async def get_404(request):
+    """
+    This endpoint always returns a 404 Not Found response.
+    To use it, send a GET request to /get_404.
+    """
     return Response(status_code=404, content="My not found")
 
 async def get_500(request):
+    """
+    This endpoint always returns a 500 Internal Server Error response.
+    To use it, send a GET request to /get_500.
+    """
     a = 12 / 0
 
 async def get_txt(request):
+    """
+    This endpoint returns a simple text response with UTF-8 encoding.
+    To use it, send a GET request to /get_txt.
+    """
     return Response(status_code=200, content="Héllo ça và ?")
 
 async def get_txt_cp1252(request):
+    """
+    This endpoint returns a text response with Windows-1252 encoding.
+    To use it, send a GET request to /get_txt_cp1252.
+    """
     return Response(status_code=200, content="Héllo ça và ?", media_type="text/plain; charset=Windows-1252")
 
 async def get_bytes(request):
+    """
+    This endpoint returns a byte stream.
+    To use it, send a GET request to /get_bytes.
+    """
     return Response(status_code=200, content=bytes(range(0, 255)), media_type="application/octet-stream")
 
 async def get_json(request):
+    """
+    This endpoint returns a JSON response.
+    To use it, send a GET request to /get_json.
+    """
     obj = dict(info=dict(t="Hello", n=42, m="42"), infos=[1, 2, 3], float=3.14, empty=None, mot="héllo ça va ?", msg="héllo")
     return JSONResponse(status_code=200, content=obj, headers={"X-MyHeader": "hello"})
 
 async def get_header(request):
+    """
+    This endpoint returns a response with a custom header.
+    To use it, send a GET request to /get_header.
+    The response will contain the header 'msg: héhé'.
+    """
     return Response(status_code=200, content="ok", headers=dict(msg="héhé"))
 
 async def get_xml(request):
+    """
+    This endpoint returns an XML response.
+    To use it, send a GET request to /get_xml.
+    """
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <x xmlns:ns2="www">
     <entete>
@@ -97,10 +158,19 @@ BDD = {
 }
 
 async def get_list(request):
+    """
+    This endpoint returns a list of items from the BDD dictionary.
+    To use it, send a GET request to /get_list.
+    """
     obj = dict(items=[dict(id=k, name=v) for k, v in BDD.items()])
     return JSONResponse(status_code=200, content=obj)
 
 async def get_item(request):
+    """
+    This endpoint returns a specific item from the BDD dictionary.
+    To use it, send a GET request to /item/{item_id}.
+    If the item is not found, it returns a 404 error.
+    """
     try:
         idx = int(request.path_params['item'])
         obj = dict(id=idx, name=BDD[idx])
