@@ -1,4 +1,4 @@
-#:valid:11,11 THIS 
+#:valid:11,11,11,11 THIS 
 
 # -*- coding: utf-8 -*-
 #--------------------------------------------------------------
@@ -11,6 +11,10 @@ python: |
         assert ENV
         return f"[2{x}2]"
 
+    def mm(x):
+        assert ENV
+        return m1(x)
+
 val: marco
 
 RUN:
@@ -20,6 +24,16 @@ RUN:
     - R.request.url: http://localhost:11111/get_txt?x=[2marco2]
 
 - GET: /get_txt?x=<<val|m1>> # from reqman.conf
+  tests:
+    - R.status: 200
+    - R.request.url: http://localhost:11111/get_txt?x=[1marco1]
+
+- GET: /get_txt?x=<<val|m1|m2>> # chain
+  tests:
+    - R.status: 200
+    - R.request.url: http://localhost:11111/get_txt?x=[2[1marco1]2]
+
+- GET: /get_txt?x=<<val|mm>> # reuse m1 from this
   tests:
     - R.status: 200
     - R.request.url: http://localhost:11111/get_txt?x=[1marco1]

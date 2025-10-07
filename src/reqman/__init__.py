@@ -222,6 +222,7 @@ padLeft = lambda b,pre="  ": ("\n".join([pre + i for i in str(b).splitlines()]))
 
 def dict_merge(dst: dict, src: dict) -> None:
     """ merge dict 'src' in --> dst """
+
     for k, v in src.items():
         if (
             k in dst
@@ -702,7 +703,7 @@ class Reqs(list):
                     raise RMException("Reqs: unwaited object %s" % i)
 
         gscope = self.env.clone()
-
+        env.Scope(gscope)           # <- declare python statement of reqman.conf
         ll = []
 
         for l, s, r in _test(self, gscope):
