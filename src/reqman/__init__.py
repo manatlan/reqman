@@ -866,6 +866,11 @@ class Req(ReqItem):
         if isinstance(tests, dict):  # dict to list
             # TODO: "'tests:' should be a list of mono key/value pairs (ex: '- status: 200')"
             tests = [{k: v} for k, v in dict(tests).items()]
+        elif isinstance(tests,list):
+            for test in tests:
+                if not isinstance(test,dict):
+                    raise RMFormatException(f"test '{test}' is not a dict")
+                
         if tests is not None:
             self.tests += tests
 

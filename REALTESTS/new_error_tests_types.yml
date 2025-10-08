@@ -1,0 +1,13 @@
+#:valid:ERROR THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press CTRL+SHIF+B)
+#--------------------------------------------------------------
+
+root: http://localhost:11111
+
+RUN:
+- GET: /get_json
+  tests:
+    - status == 200   # bad test format (not a dict)
