@@ -252,29 +252,34 @@ def _convert(obj) -> Any:
         return obj
     
 class PythonTest:
-    def __init__(self, test:str):
-        self._test=test
-    def execute(self, scope) -> Test:
-        r=eval(self._test, scope._locals_, _convert(scope))
+    def __init__(self, statement:str):
+        self._statement=statement
+    def test_with_scope(self, scope) -> Test:
+        r=eval(self._statement, scope._locals_, _convert(scope))
 
         try:
-            vars_in_expr = {node.id for node in ast.walk(ast.parse(self._test)) if isinstance(node, ast.Name)}
+            vars_in_expr = {node.id for node in ast.walk(ast.parse(self._statement)) if isinstance(node, ast.Name)}
             values = {var: scope.get(var, None) for var in vars_in_expr}
         except Exception:
             values = {}
 
-        return Test(bool(r), "PY: "+self._test, "PY: "+self._test, str(values))
+        def negate_expression(expr_str):
+            expr = ast.parse(expr_str, mode='eval').body
+            neg_expr = ast.UnaryOp(op=ast.Not(), operand=expr)
+            return ast.unparse(ast.Expression(body=neg_expr))
+        
+        negate_statement = negate_expression(self._statement)
+        return Test(bool(r), "PY: "+self._statement, "PY: "+negate_statement, str(values))
 
 class CompareTest:
-    def __init__(self,a,b):
-        self.var=a
-        self.expected=b
+    def __init__(self,var:str,expected:str):
+        self._var=var
+        self._expected=expected
 
-    def execute(self, scope) -> Test:
-        expected=scope.resolve_string_or_not(self.expected)
-        val=scope.get_var_or_empty(self.var)
-        test=testCompare(self.var,val,expected)
-        return test   
+    def test_with_scope(self, scope) -> Test:
+        resolved_expected=scope.resolve_string_or_not(self._expected)
+        resolved_val=scope.get_var_or_empty(self._var)
+        return testCompare(self._var,resolved_val,resolved_expected)
 
 if __name__=="__main__":
     ...

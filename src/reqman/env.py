@@ -229,7 +229,7 @@ class Exchange:
         new_tests=[]
         for item in self._tests_to_do:
             if isinstance(item,(testing.CompareTest,testing.PythonTest)):
-                test = item.execute( repEnv )
+                test = item.test_with_scope( repEnv )
                 if self.status is None:
                     test=test.toFalse()
                 new_tests.append( test )
