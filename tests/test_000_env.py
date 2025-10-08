@@ -212,11 +212,21 @@ def test_switches():
 
 
 
-def test_HeadersMixed():
+def test_HeadersMixed_old():
     dd = reqman.testing.HeadersMixedCase(KeY="kiki")
     assert dd["KeY"] == "kiki"
     assert dd["key"] == "kiki"
     assert dd["key2"] == None
+    assert dd.get("key") == "kiki"
+    assert dd.get("key2") == None
+
+def test_HeadersMixed_future():
+    from httpx import Headers
+    dd = Headers( {"KeY":"kiki"} )
+    assert dd["KeY"] == "kiki"
+    assert dd["key"] == "kiki"
+    with pytest.raises(KeyError):
+        assert dd["key2"] == None
     assert dd.get("key") == "kiki"
     assert dd.get("key2") == None
 

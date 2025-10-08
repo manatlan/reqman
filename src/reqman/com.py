@@ -42,16 +42,16 @@ def init():
             pass
     return fake()
 
-# class MyHeaders(httpx.Headers):
-#     def __getattr__(self, key):
-#         fix=lambda x: x and x.lower().strip().replace("-","_") or None
-#         for k,v in super().items():
-#             if fix(k)==fix(key):
-#                 return v
-#         return super().__getitem__(key) 
+class Headers(httpx._models.Headers):
+    def __getattr__(self, key):
+        fix=lambda x: x and x.lower().strip().replace("-","_") or None
+        for k,v in super().items():
+            if fix(k)==fix(key):
+                return v
+        return super().__getitem__(key) 
 
 class Response:
-    def __init__(self, status:T.Optional[int], headers: dict, content: bytes, info: str):
+    def __init__(self, status:T.Optional[int], headers: Headers, content: bytes, info: str):
         assert isinstance(content, bytes)
         self.status=status
         self.headers=headers
@@ -64,7 +64,7 @@ class Response:
 
 class ResponseError(Response):
     def __init__(self,error):
-        Response.__init__(self,None,{},error.encode(),"")
+        Response.__init__(self,None,Headers(),error.encode(),"")
         self.error=error
     def get_json(self):
         return None
@@ -86,7 +86,7 @@ class ResponseInvalid(ResponseError):
         ResponseError.__init__(self,f"Invalid {url}")
 
 
-async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,proxies=None) -> Response:
+async def call(method, url:str, body: bytes=b'', headers:Headers=Headers(), timeout=None,proxies=None) -> Response:
     assert isinstance(body, bytes)
 
     try:
@@ -114,9 +114,8 @@ async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,p
                 pass
 
             info = f"{r.http_version} {r.status_code} {r.reason_phrase}"
-            outHeaders = r.headers
 
-            return Response(r.status_code, dict(outHeaders), content, info)
+            return Response(r.status_code, Headers(r.headers), content, info)
 
     except httpx.ConnectError as e:
         logger.warning(f"Connection error for {url}: {e}")
@@ -184,7 +183,7 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
 
 
     logger.debug(f"Simulate {method} {url} --> {status}")
-    return Response(status,outHeaders,content,info)
+    return Response(status,Headers(outHeaders),content,info)
     #####################################################################"
 
 

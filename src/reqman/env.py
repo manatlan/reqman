@@ -112,7 +112,7 @@ def jpath(elem, path: str) -> T.Any:
 class Exchange:
     id:str="" #unique id to identify request structure (to be able to match in dual mode)
 
-    def __init__(self,method: str,url: str,body: bytes=b"",headers: dict={}, tests:list=[], saves:list=[], doc:str = ""):
+    def __init__(self,method: str,url: str,body: bytes=b"",headers: com.Headers=com.Headers(), tests:list=[], saves:list=[], doc:str = ""):
         assert isinstance(body, bytes)
 
         self.datetime = datetime.datetime.now()
@@ -155,7 +155,7 @@ class Exchange:
             r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout, proxies=proxies)
         else:
             #simulate with http hook
-            r = com.call_simulation(http,self.method,self.url,self.body,self.inHeaders)
+            r = com.call_simulation(http,self.method,self.url,self.body,dict(self.inHeaders))
 
         diff = datetime.datetime.now() - t1
         self.time = (diff.days * 86400000) + (diff.seconds * 1000) + (diff.microseconds / 1000)
@@ -188,6 +188,7 @@ class Exchange:
         # creating an Env for testing and saving
         resp=dict(
             status=self.status,
+            # headers=testing.HeadersMixedCase(**self.outHeaders),
             headers=testing.HeadersMixedCase(**self.outHeaders),
             content=self.content, #bytes
             json=get_json(),
@@ -227,17 +228,11 @@ class Exchange:
         # tests
         new_tests=[]
         for item in self._tests_to_do:
-            if isinstance(item,testing.CompareTest):
-                expected=repEnv.resolve_string_or_not(item.expected)
-                val=repEnv.get_var_or_empty(item.var)
-                test=testing.testCompare(item.var,val,expected)
+            if isinstance(item,(testing.CompareTest,testing.PythonTest)):
+                test = item.execute( repEnv )
                 if self.status is None:
                     test=test.toFalse()
                 new_tests.append( test )
-
-            elif isinstance(item,testing.PythonTest):
-                new_tests.append( item.execute( repEnv ) )
-            
 
 
         del repEnv
@@ -559,7 +554,7 @@ class Scope(dict): # like 'Env'
         logger.debug("Request: %s %s", method, path)
         logger.debug("Headers: %s", headers)
         logger.debug("Body: %s", asBytes.decode(errors='ignore'))
-        ex=Exchange(method,path,asBytes,headers, tests=tests, saves=saves, doc=doc)
+        ex=Exchange(method,path,asBytes,dict(headers), tests=tests, saves=saves, doc=doc)
         ex.id=uid.hexdigest() #<- save unique id for this kind of request (to be able to match them in dual mode)
         if r is None: # we can call it safely
             r=await ex.call(timeout,proxies=proxies,http=http)

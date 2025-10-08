@@ -254,12 +254,12 @@ def _convert(obj) -> Any:
 class PythonTest:
     def __init__(self, test:str):
         self._test=test
-    def execute(self, env:"Scope") -> Test:
-        r=eval(self._test, env._locals_, _convert(env))
+    def execute(self, scope) -> Test:
+        r=eval(self._test, scope._locals_, _convert(scope))
 
         try:
             vars_in_expr = {node.id for node in ast.walk(ast.parse(self._test)) if isinstance(node, ast.Name)}
-            values = {var: env.get(var, None) for var in vars_in_expr}
+            values = {var: scope.get(var, None) for var in vars_in_expr}
         except Exception:
             values = {}
 
@@ -270,6 +270,11 @@ class CompareTest:
         self.var=a
         self.expected=b
 
+    def execute(self, scope) -> Test:
+        expected=scope.resolve_string_or_not(self.expected)
+        val=scope.get_var_or_empty(self.var)
+        test=testCompare(self.var,val,expected)
+        return test   
 
 if __name__=="__main__":
     ...
