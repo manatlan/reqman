@@ -279,7 +279,7 @@ class Scope(dict): # like 'Env'
     def __init__(self,d,exposedsMethods={}):
         dict.__init__(self,d)
 
-        #============================================================ NEW PY DECLARATNIO
+        #============================================================ NEW PY DECLARATION mechanism
         if "python" in self:
             try:
                 g=globals()
