@@ -282,12 +282,11 @@ class Scope(dict): # like 'Env'
         #============================================================ NEW PY DECLARATNIO
         if "python" in self:
             try:
-                print([self["python"]])
                 g=globals()
                 g.update( dict(ENV=self) )
                 exec(self["python"],g,Scope._locals_)
             except Exception as e:
-                print("Python section error:", str(e))
+                logger.error("Python section error: %s", str(e))
                 raise e
             del self["python"] # remove from scope, good idea ?
         #============================================================
