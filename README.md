@@ -32,7 +32,7 @@ All configurations is done via simple yaml files, editable with any text editors
    * ~~tests inherits~~
    * ~~timed requests + average times~~
    * html tests renderer (with request/response contents)
-   * encoding aware
+   * encoding aware (western occident & utf8 (prefer!))
    * cookie handling
    * color output in console (when [colorama](https://pypi.org/project/colorama/) is present)
    * variables can be computed/transformed (in a chain way)
