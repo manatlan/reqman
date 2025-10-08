@@ -33,6 +33,8 @@ import xpath  # see "pip install py-dom-xpath-six"
 import jwt  # (pip install pyjwt) just for pymethods in rml files (useful to build jwt token)
 import junit_xml # see "pip install junit-xml"
 
+logger = logging.getLogger(__name__)
+
 from . import com
 from . import common
 from . import env
@@ -75,6 +77,7 @@ Test a http service with pre-made scenarios, whose are simple yaml files
         --j:name   : Set a name for the junit-xml output file
         --j        : Generate a junit-xml output file (reqman.xml)
         --x:var    : Special mode to output an env var (as json output)
+        --d        : Set log level to DEBUG
 """ % (REQMANEXE,REQMANEXE,__version__)
 
 EXPOSEDS={}  #to be able to expose real python code as {"functName": <callable>, ...}
@@ -592,12 +595,12 @@ class Reqs(list):
 
         # here 'obj' is a list of ReqBase, and valid one
         list.__init__(self, lreqs)
-        logging.debug("~" * 80)
-        logging.debug("~~ Reqs")
-        logging.debug("~" * 80)
-        logging.debug(f"env: {self.env}")
-        logging.debug(self)
-        logging.debug("~" * 80)
+        logger.debug("~" * 80)
+        logger.debug("~~ Reqs")
+        logger.debug("~" * 80)
+        logger.debug(f"env: {self.env}")
+        logger.debug(self)
+        logger.debug("~" * 80)
 
     def _errorFormat(self, msg):
         return RMFormatException(msg + " in %s" % self.name)
@@ -627,7 +630,7 @@ class Reqs(list):
         ############################################# live console
 
         def log(level, *l):
-            logging.debug( (level * "    ") + " ".join([str(x) for x in l]) )
+            logger.debug( (level * "    ") + " ".join([str(x) for x in l]) )
 
         log(0, "~" * 80)
         log(0, "~~ Reqs.Execute")
@@ -1015,6 +1018,7 @@ class Req(ReqItem):
 
         # get the saved ones
         for saveKey, saveWhat in ex.saves.items():
+            logger.debug(f"Saved variable '{saveKey}' with value: {saveWhat}")
             self.parent.env.save(saveKey, saveWhat, self.parent.name in ["BEGIN","END"])
         ###################################################################################### NEWCORE
         ###################################################################################### NEWCORE
@@ -1740,20 +1744,13 @@ def extractParams(params):
     files, rparams, switches, dswitches = [], [], [], []
     for param in params:
         if param.startswith("--"):
-            if param.startswith("--log:"):
-                level=param.split("--log:")[-1]
-                numeric_level = getattr(logging, level.upper(), None)
-                if not isinstance(numeric_level, int):
-                    raise RMCommandException('bad log level')
-                logging.basicConfig(level=numeric_level)
-            else:
-                # reqman param
-                p = param[2:]
-                if p.startswith("o") or p.startswith("x") or p.startswith("j"):
-                    rparams.append(p)
-                else:  # ability to group param (ex: --kspb)
-                    for i in p:
-                        rparams.append(i)
+            # reqman param
+            p = param[2:]
+            if p.startswith("o") or p.startswith("x") or p.startswith("j"):
+                rparams.append(p)
+            else:  # ability to group param (ex: --kspb)
+                for i in p:
+                    rparams.append(i)
         elif param.startswith("-"):
             # switch param
             switches.append(param[1:])
@@ -1771,6 +1768,10 @@ def main(fakeServer=None, hookResults=None) -> T.Union[int, str, None]:
 
     # extract sys.argv in --> files,rparams,switch
     files, rparams, switches, dswitches = extractParams(params)
+    debug_mode = 'd' in rparams
+    if debug_mode:
+        logging.basicConfig(level=logging.DEBUG)
+
 
     isNewSheBang = (
         len(files) == 1
@@ -1831,7 +1832,9 @@ def main(fakeServer=None, hookResults=None) -> T.Union[int, str, None]:
         forceNoLimit=False
         junitXmlFile:T.Optional[str]=None
         for p in rparams:
-            if p == "k":
+            if p == "d":
+                pass # already handled
+            elif p == "k":
                 outputConsole = OutputConsole.MINIMAL_ONLYKO
             elif p == "f":
                 forceNoLimit=True
@@ -2008,12 +2011,18 @@ def main(fakeServer=None, hookResults=None) -> T.Union[int, str, None]:
         return -1
     except RMFormatException as e:
         print("\nERROR FORMAT: %s" % e)
+        if 'd' in rparams:
+            traceback.print_exc()
         return -1
     except RMException as e:
         print("\nERROR EXECUTION: %s" % e)
+        if 'd' in rparams:
+            traceback.print_exc()
         return -1
     except RMCommandException as e:
         print("\nERROR COMMAND: %s" % e)
+        if 'd' in rparams:
+            traceback.print_exc()
 
         print( __usage__ )
         if r and r.switches:

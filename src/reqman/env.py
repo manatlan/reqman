@@ -24,6 +24,8 @@ import hashlib
 import logging
 import dotenv; dotenv.load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 from .common import NotFound,decodeBytes,jdumps
 from . import com
 from . import testing
@@ -213,7 +215,7 @@ class Exchange:
 
                 new_vars[save_as] = v
             except Exception as e:
-                logging.debug(f"Can't resolve saved var '{save_as}', because {e}")
+                logger.debug(f"Can't resolve saved var '{save_as}', because {e}")
                 new_vars[save_as]= content # create a non-resolved var'string (<<example>>)
 
         # Save all in this env, to be visible in tests later (vv)
@@ -252,7 +254,7 @@ class Exchange:
 
 
 def declare(code):
-    logging.debug("CREATE DYNAMIC (%s)", code)
+    logger.debug("CREATE DYNAMIC (%s)", code)
     return "def DYNAMIC(x,ENV):\n" + ("\n".join(["  " + i for i in code.splitlines()]))
 
 
@@ -358,7 +360,7 @@ class Scope(dict): # like 'Env'
                     v=str(value)
 
             # and replace
-            logging.debug(f"replace in `{txt}` : `{pattern}` <- `{v}`")
+            logger.debug(f"replace in `{txt}` : `{pattern}` <- `{v}`")
             if f'"{pattern}"' in txt:
                 if isinstance(v, str) and isJson(v):
                     txt=txt.replace( f'"{pattern}"', v )
@@ -366,7 +368,7 @@ class Scope(dict): # like 'Env'
                     txt=txt.replace( pattern, str(v) )
             else:
                 txt=txt.replace( pattern, str(v) )
-            logging.debug(f"replaced -> `{txt}`")
+            logger.debug(f"replaced -> `{txt}`")
 
         if forceResolveOrException and find_vars(txt):
             txt=self._resolve_string(txt)
@@ -379,7 +381,7 @@ class Scope(dict): # like 'Env'
             try:
                 obj = self.resolve_all( obj , forceResolveOrException=False)
             except PyMethodException as e:
-                logging.debug("resolve_string_or_not : PyMethodException %s", e)
+                logger.debug("resolve_string_or_not : PyMethodException %s", e)
                 obj=obj
 
         return obj
@@ -446,7 +448,7 @@ class Scope(dict): # like 'Env'
         try:
             value = self.get_var(vardef)
         except PyMethodException as e:
-            logging.debug("get_var_or_empty : PyMethodException %s", e)
+            logger.debug("get_var_or_empty : PyMethodException %s", e)
             return ""
 
         if value is NotFound:
@@ -465,7 +467,7 @@ class Scope(dict): # like 'Env'
         if not callable(method):
             raise PyMethodException(f"Can't call '{method}' : unknown one ?")
         try:
-            logging.debug("Execute pymethod %s(%s)", method,value )
+            logger.debug("Execute pymethod %s(%s)", method,value )
             if with_env:
                 return method(value,self)
             else:
@@ -550,7 +552,9 @@ class Scope(dict): # like 'Env'
             #a conf trouble .... break the rule !
             r=com.ResponseError(f"Python Method in error: {e}")
 
-
+        logger.debug("Request: %s %s", method, path)
+        logger.debug("Headers: %s", headers)
+        logger.debug("Body: %s", asBytes.decode(errors='ignore'))
         ex=Exchange(method,path,asBytes,headers, tests=tests, saves=saves, doc=doc)
         ex.id=uid.hexdigest() #<- save unique id for this kind of request (to be able to match them in dual mode)
         if r is None: # we can call it safely

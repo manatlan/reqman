@@ -22,6 +22,8 @@ import logging
 import ssl
 import typing as T
 
+logger = logging.getLogger(__name__)
+
 def jdumps(o, *a, **k):
     k["ensure_ascii"] = False
     # ~ k["default"]=serialize
@@ -110,15 +112,19 @@ async def call(method, url:str, body: bytes=b'', headers:dict={}, timeout=None,p
             return Response(r.status_code, dict(outHeaders), content, info)
 
     except httpx.ConnectError as e:
+        logger.warning(f"Connection error for {url}: {e}")
         return ResponseUnreachable()
     except httpx.TimeoutException as e:
+        logger.warning(f"Request to {url} timed out.")
         return ResponseTimeout()
     except (httpx.InvalidURL, httpx.UnsupportedProtocol) as e:
+        logger.warning(f"Invalid URL '{url}': {e}")
         return ResponseInvalid(url)
     except ssl.SSLError:
+        logger.warning(f"SSL Error for {url}")
         return ResponseUnreachable()
     except Exception as e:
-        logging.error("Unhandled exception in call: %s (%s)",e, type(e))
+        logger.error("Unhandled exception in call: %s (%s)",e, type(e))
         return ResponseUnreachable()
 
 
@@ -170,7 +176,7 @@ def call_simulation(http, method, url:str,body: bytes=b"", headers:dict={}):
     info=f"MOCK/1.0 {status} RESPONSE"
 
 
-    logging.debug(f"Simulate {method} {url} --> {status}")
+    logger.debug(f"Simulate {method} {url} --> {status}")
     return Response(status,outHeaders,content,info)
     #####################################################################"
 
