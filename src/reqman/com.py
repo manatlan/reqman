@@ -42,6 +42,13 @@ def init():
             pass
     return fake()
 
+# class MyHeaders(httpx.Headers):
+#     def __getattr__(self, key):
+#         fix=lambda x: x and x.lower().strip().replace("-","_") or None
+#         for k,v in super().items():
+#             if fix(k)==fix(key):
+#                 return v
+#         return super().__getitem__(key) 
 
 class Response:
     def __init__(self, status:T.Optional[int], headers: dict, content: bytes, info: str):

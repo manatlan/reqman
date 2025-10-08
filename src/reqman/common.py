@@ -37,5 +37,6 @@ def decodeBytes(b:bytes) -> str:
     assert isinstance(x, str)
     return x
 
+
 if __name__=="__main__":
     ...

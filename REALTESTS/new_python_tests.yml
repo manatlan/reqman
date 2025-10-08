@@ -1,0 +1,30 @@
+#:valid:1110111111111 THIS --b
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press CTRL+SHIF+B)
+#--------------------------------------------------------------
+
+root: http://localhost:11111
+
+python: >
+  def add(a,b,c):
+    return sum([a,b,c])
+
+RUN:
+- GET: /get_json
+  tests:
+    - status: 200                                     # classic reqman
+    - status == 200                                   # new py tests
+    - R.status == 200
+    - R.status == 201  
+    - 1 in R.json.infos
+    - 2 == R.json.infos[1]
+    - add( *R.json.infos ) == 6
+    - R.json.msg == "héllo"
+    - R.json.empty is None
+    - R.json.info.n == 42
+    - R.headers["x-myheader"] == "hello"
+    - R.headers.x_myheader == "hello"
+    - 0 < R.time <= 100
+

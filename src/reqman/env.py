@@ -226,13 +226,18 @@ class Exchange:
 
         # tests
         new_tests=[]
-        for var,expected in self._tests_to_do:
-            expected=repEnv.resolve_string_or_not(expected)
-            val=repEnv.get_var_or_empty(var)
-            test=testing.testCompare(var,val,expected)
-            if self.status is None:
-                test=test.toFalse()
-            new_tests.append( test )
+        for item in self._tests_to_do:
+            if isinstance(item,testing.CompareTest):
+                expected=repEnv.resolve_string_or_not(item.expected)
+                val=repEnv.get_var_or_empty(item.var)
+                test=testing.testCompare(item.var,val,expected)
+                if self.status is None:
+                    test=test.toFalse()
+                new_tests.append( test )
+
+            elif isinstance(item,testing.PythonTest):
+                new_tests.append( item.execute( repEnv ) )
+            
 
 
         del repEnv
@@ -477,7 +482,7 @@ class Scope(dict): # like 'Env'
 
     async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None, querys={}, proxies=None, http=None) -> Exchange:
         assert isinstance(body, str)
-        assert all( [isinstance(i, tuple) and len(i)==2 for i in tests] ) # assert list of tuple of 2
+        # assert all( [isinstance(i, tuple) and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [isinstance(i, tuple) and len(i)==2 for i in saves] ) # assert list of tuple of 2
 
         asBytes=body.encode()

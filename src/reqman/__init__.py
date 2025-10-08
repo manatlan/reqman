@@ -39,6 +39,7 @@ from . import com
 from . import common
 from . import env
 from . import xlib
+from . import testing
 
 # 95% coverage: python3 -m pytest --cov-report html --cov=reqman .
 __version__ = "0.0.0" # auto updated
@@ -868,7 +869,10 @@ class Req(ReqItem):
             tests = [{k: v} for k, v in dict(tests).items()]
         elif isinstance(tests,list):
             for test in tests:
-                if not isinstance(test,dict):
+                if isinstance(test,str):
+                    # python tests
+                    pass
+                elif not isinstance(test,dict):
                     raise RMFormatException(f"test '{test}' is not a dict")
                 
         if tests is not None:
@@ -990,8 +994,12 @@ class Req(ReqItem):
         # transform tests to newtests
         newtests=[]
         for d in tests:
-            k,v=list(d.items())[0]
-            newtests.append( (k,v) )
+            if isinstance(d,str):
+                # python test
+                newtests.append( testing.PythonTest(d) )
+            else:
+                k,v=list(d.items())[0]
+                newtests.append( testing.CompareTest(k,v) )
 
         # ensure content is str
         if body is None:

@@ -202,6 +202,74 @@ def testCompare(var: str, val, opeval) -> Test:
     nameOK = var + " " + tok + " " + strjs(value)  # test name OK
     nameKO = var + " " + tko + " " + strjs(value)  # test name KO
     return Test( test ,nameOK, nameKO,val )
+######################################################################################################
+from typing import Any
+import ast
+class MyDict(dict):
+    #Theses are dict methods whose can't be used directly
+    #you must use md._items_() in place of regular md.items()
+    forbidden = {"items","pop","copy","clear"}
+
+    def __init__(self, *args, **kwargs):
+        super(MyDict, self).__init__(*args, **kwargs)
+
+    def __getattribute__(self, name):
+        if name in object.__getattribute__(self, 'forbidden'):
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+        return super().__getattribute__(name)
+
+    def __getattr__(self, key):
+        for real in object.__getattribute__(self, 'forbidden'):
+            if key == "_%s_" % real:
+                return getattr(super(), real )
+        if key in self:
+            return self[key]
+        if "_" in key:
+            okey = key.replace("_","-")
+            if okey in self:
+                return self[okey]
+        raise AttributeError(f"'MyDict' object has no attribute '{key}'")
+    
+   
+
+class MyList(list):
+    def __init__(self, liste: list):
+        super().__init__(liste)
+
+# transforme un objet python (pouvant contenir des dict et des list) en objet avec accès par attribut
+def _convert(obj) -> Any:
+    if isinstance(obj, dict):
+        dico = {}
+        for k,v in dict(obj).items():
+            dico[k]=_convert(v)
+        return MyDict(dico)
+    elif isinstance(obj, list):
+        liste = []
+        for v in obj:
+            liste.append( _convert(v) )
+        return MyList(liste)
+    else:
+        return obj
+    
+class PythonTest:
+    def __init__(self, test:str):
+        self._test=test
+    def execute(self, env:"Scope") -> Test:
+        r=eval(self._test, env._locals_, _convert(env))
+
+        try:
+            vars_in_expr = {node.id for node in ast.walk(ast.parse(self._test)) if isinstance(node, ast.Name)}
+            values = {var: env.get(var, None) for var in vars_in_expr}
+        except Exception:
+            values = {}
+
+        return Test(bool(r), "PY: "+self._test, "PY: "+self._test, str(values))
+
+class CompareTest:
+    def __init__(self,a,b):
+        self.var=a
+        self.expected=b
+
 
 if __name__=="__main__":
     ...
