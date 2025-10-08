@@ -20,6 +20,8 @@ import json
 import logging
 import typing as T
 
+logger = logging.getLogger(__name__)
+
 from .common import decodeBytes,jdumps
 
 
@@ -194,7 +196,7 @@ def testCompare(var: str, val, opeval) -> Test:
             val=guessValue(val)
             test=fct(value,val)
         except Exception as e:
-            logging.debug(f"testCompare('{var}','{val}','{opeval}') : {e} -> assuming test is negative !")
+            logger.debug(f"testCompare('{var}','{val}','{opeval}') : {e} -> assuming test is negative !")
             test=False
 
     nameOK = var + " " + tok + " " + strjs(value)  # test name OK
