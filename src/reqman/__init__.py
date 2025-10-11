@@ -1285,9 +1285,10 @@ class Reqman:
 
             scope = self.env.clone()
 
-
+            #-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
             for switch in switches:
                 scope.mergeSwitch(switch)
+            #-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 
             reqsBegin = scope.getBEGIN()
             reqsEnd = scope.getEND()
@@ -1299,8 +1300,13 @@ class Reqman:
                     reqs.env = scope
                     lreqs.append(reqs)
                 else:
+                    r=Reqs(yml, scope)
+                    #-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
+                    for switch in switches:
+                        r.env.mergeSwitch(switch)
+                    #-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
                     lreqs.append(
-                        Reqs(yml, scope)
+                        r
                     )  # (no need to clone) scope is cloned at execution time!
 
             results = []

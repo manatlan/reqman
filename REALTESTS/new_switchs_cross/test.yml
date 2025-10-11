@@ -1,0 +1,21 @@
+#:valid:11 THIS --b EXPECTED:0
+#:valid:11 THIS --b -default EXPECTED:1
+#:valid:11 THIS --b -yolo EXPECTED:3
+
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------
+# ^^^^^ REAL SHEBANG ^^^^^ (real test with real reqman sources)
+#    (works in vs code, press CTRL+SHIF+B)
+#--------------------------------------------------------------
+
+-yolo:
+  val: 3  # override val with -yolo, for this test
+
+RUN:
+- GET: /get_txt
+  query:
+    val: <<val>>
+  tests:
+    - R.status: 200
+    - R.request.url: http://localhost:11111/get_txt?val=<<EXPECTED>>
+
