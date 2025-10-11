@@ -56,7 +56,7 @@ class Test(int):
     _nameKO:T.Optional[str] = ""
 
     def __new__(
-        cls, value: int, nameOK: T.Optional[str] = None, nameKO: T.Optional[str] = None, realValue:str|dict|None=None
+        cls, value: int, nameOK: T.Optional[str] = None, nameKO: T.Optional[str] = None, realValue=None
     ):
         s = super().__new__(cls, value)
         s._nameOK=nameOK
