@@ -10,6 +10,7 @@ import os
 import tempfile
 import shutil
 import uvicorn
+import time
 
 async def ping(request):
     """
@@ -307,6 +308,7 @@ def main(file, avoidBrowser=True):
             yield err
     finally:
         os.chdir(precdir)
+        time.sleep(0.1)
         shutil.rmtree(testdir)
 
 if __name__ == "__main__":

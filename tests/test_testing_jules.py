@@ -9,7 +9,11 @@ from reqman.testing import (
     guessValue,
     getValOpe,
     testCompare,
+    PythonTest,
+    CompareTest,
+    _convert
 )
+from reqman.env import Scope
 testCompare.__test__ = False
 
 def test_headers_mixed_case_jules():
@@ -131,3 +135,39 @@ def test_compare_list_equality_jules():
     t = testCompare("var", "[1,2]", [1,2])
     assert t
     assert t.name == "var = [1, 2]"
+
+
+def test_PythonTest():
+    R=dict(status=201,json=dict(liste=[dict(val=1),dict(val=2)]))
+    context=Scope({"R": R, "x": 5})
+    t=PythonTest("R.status == 201 and x < 10").test_with_scope( context )
+    assert t
+    assert "R.status == 201 and x < 10" in t._nameOK
+    assert "R.status == 201 and x < 10" in t._nameKO
+    assert "not" in t._nameKO
+    assert "R.status = 201" in t.value
+    assert "x = 5" in t.value
+    t=PythonTest("R.json.liste[0].val == 1").test_with_scope( context )
+    assert t
+    assert "R.json.liste[0].val = 1" in t.value
+
+
+def test_CompareTest():
+    R=dict(status=201)
+    context=Scope({"R": R, "x": 5})
+
+    t=CompareTest(var="x",expected="5").test_with_scope( context )
+    assert t
+    assert t.value==5
+    assert t._nameOK == "x = 5"
+    assert t._nameKO == "x != 5"
+
+    t=CompareTest(var="R.status",expected="201").test_with_scope( context )
+    assert t
+    assert t.value==201 # t.value is the value of real 'var'
+    assert t._nameOK == "R.status = 201"
+    assert t._nameKO == "R.status != 201"
+
+if __name__=="__main__":
+    test_PythonTest()
+    # test_CompareTest()

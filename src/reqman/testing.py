@@ -56,7 +56,7 @@ class Test(int):
     _nameKO:T.Optional[str] = ""
 
     def __new__(
-        cls, value: int, nameOK: T.Optional[str] = None, nameKO: T.Optional[str] = None, realValue=None
+        cls, value: int, nameOK: T.Optional[str] = None, nameKO: T.Optional[str] = None, realValue:str|dict|None=None
     ):
         s = super().__new__(cls, value)
         s._nameOK=nameOK
@@ -65,7 +65,13 @@ class Test(int):
             s.name = nameOK or ""
         else:
             s.name = nameKO or ""
-        s.value = realValue
+        if isinstance(realValue,dict):
+            # new PythonTest
+            s.value="\n".join([f"{k} = {v}" for k,v in realValue.items()])
+        else:
+            # old mechanism
+            s.value = realValue
+        
         return s
 
     def __repr__(self):
@@ -205,49 +211,76 @@ def testCompare(var: str, val, opeval) -> Test:
 ######################################################################################################
 from typing import Any
 import ast
-class MyDict(dict):
-    #Theses are dict methods whose can't be used directly
-    #you must use md._items_() in place of regular md.items()
-    forbidden = {"items","pop","copy","clear"}
 
-    def __init__(self, *args, **kwargs):
-        super(MyDict, self).__init__(*args, **kwargs)
+class Tracer:
+    resolutions={}
+class MyDict(dict):
+    # These are dict methods that can't be used directly as attributes
+    forbidden = {"items", "pop", "copy", "clear"}
+
+    def __init__(self, d,name):
+        self._name=name
+        super().__init__(d)
+
+    def _trace(self,k,v):
+        if self._name is None:
+            Tracer.resolutions[f"{k}"]=v
+        else:
+            Tracer.resolutions[f"{self._name}.{k}"]=v
 
     def __getattribute__(self, name):
         if name in object.__getattribute__(self, 'forbidden'):
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
         return super().__getattribute__(name)
 
-    def __getattr__(self, key):
-        for real in object.__getattribute__(self, 'forbidden'):
-            if key == "_%s_" % real:
-                return getattr(super(), real )
-        if key in self:
-            return self[key]
+    def __getitem__(self, key):
+        forbidden = object.__getattribute__(self, 'forbidden')
+
+        # handle _<forbidden>_ pattern
+        for real in forbidden:
+            if key == f"_{real}_":
+                return getattr(super(), real)
+
+        # try normal key
+        if dict.__contains__(self, key):
+            v = dict.__getitem__(self, key)
+            self._trace(key, v)
+            return v
+
+        # try replacing "_" by "-"
         if "_" in key:
-            okey = key.replace("_","-")
-            if okey in self:
-                return self[okey]
-        raise AttributeError(f"'MyDict' object has no attribute '{key}'")
-    
-   
+            okey = key.replace("_", "-")
+            if dict.__contains__(self, okey):
+                v = dict.__getitem__(self, okey)
+                self._trace(key, v)
+                return v
+
+        raise KeyError(key)
+
+    def __getattr__(self, key):
+        try:
+            return self[key]  # délégation directe
+        except KeyError:
+            raise AttributeError(f"'MyDict' object has no attribute '{key}'")
 
 class MyList(list):
-    def __init__(self, liste: list):
+    def __init__(self, liste: list,name):
+        self._name=name
         super().__init__(liste)
+    def __getitem__(self,idx):
+        v=super().__getitem__(idx)
+        if self._name is None:
+            Tracer.resolutions[f"[{idx}]"]=v
+        else:
+            Tracer.resolutions[f"{self._name}[{idx}]"]=v
+        return v
 
 # transforme un objet python (pouvant contenir des dict et des list) en objet avec accès par attribut
-def _convert(obj) -> Any:
+def _convert(obj,name) -> Any:
     if isinstance(obj, dict):
-        dico = {}
-        for k,v in dict(obj).items():
-            dico[k]=_convert(v)
-        return MyDict(dico)
+        return MyDict({k:_convert(v,name=f"{name}.{k}" if name else k) for k,v in dict(obj).items()}, name=name)
     elif isinstance(obj, list):
-        liste = []
-        for v in obj:
-            liste.append( _convert(v) )
-        return MyList(liste)
+        return MyList([_convert(v,name=f"{name}[{idx}]" if name else f"[{idx}]") for idx,v in enumerate(obj)],name)
     else:
         return obj
     
@@ -255,13 +288,20 @@ class PythonTest:
     def __init__(self, statement:str):
         self._statement=statement
     def test_with_scope(self, scope) -> Test:
-        r=eval(self._statement, scope._locals_, _convert(scope))
+        Tracer.resolutions={}
+        r=eval(self._statement, {**scope._locals_,"_trace_":{}}, _convert(scope,name=None))
 
-        try:
-            vars_in_expr = {node.id for node in ast.walk(ast.parse(self._statement)) if isinstance(node, ast.Name)}
-            values = {var: scope.get(var, None) for var in vars_in_expr}
-        except Exception:
-            values = {}
+
+        # try:
+        #     vars_in_expr = {node.id for node in ast.walk(ast.parse(self._statement)) if isinstance(node, ast.Name)}
+        #     print(vars_in_expr)
+        #     values = {var: scope.get(var, None) for var in vars_in_expr}
+        # except Exception:
+        #     values = {}
+
+        # keep traces of most resolved vars (those not a list or a dict) ;-(
+        # TODO: can do better ?
+        values= {k:v for k,v in Tracer.resolutions.items() if not isinstance(v,(list,dict))}
 
         def negate_expression(expr_str):
             expr = ast.parse(expr_str, mode='eval').body
@@ -269,7 +309,7 @@ class PythonTest:
             return ast.unparse(ast.Expression(body=neg_expr))
         
         negate_statement = negate_expression(self._statement)
-        return Test(bool(r), "PY: "+self._statement, "PY: "+negate_statement, str(values))
+        return Test(bool(r), self._statement, negate_statement, values)
 
 class CompareTest:
     def __init__(self,var:str,expected:str):
