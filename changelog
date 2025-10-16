@@ -1,3 +1,8 @@
+the changelog is now here :
+https://github.com/manatlan/reqman/releases
+
+this is the old one
+
 3.0.4 (09/07/2021)
 - FIX: dict_merge expanded list at each call (now it just replaces it)
 
