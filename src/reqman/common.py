@@ -28,14 +28,13 @@ def jdumps(o, *a, **k):
 def decodeBytes(b:bytes) -> str:
     assert isinstance(b, bytes)
     try:
-        x=b.decode("utf8")
-    except:
+        return b.decode("utf-8")
+    except UnicodeDecodeError:
         try:
-            x= b.decode("cp1252")
-        except:
-            x= str(b)
-    assert isinstance(x, str)
-    return x
+            return b.decode("cp1252")
+        except UnicodeDecodeError:
+            # Fallback to latin-1, which can decode any byte
+            return b.decode("latin-1")
 
 
 if __name__=="__main__":

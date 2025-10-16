@@ -1503,12 +1503,22 @@ def prettify(txt: T.Union[bytes, str], indentation: int = 4) -> str:
         txt_str = str(txt)
 
     try:
-        return repr(xlib.Xml(txt_str))
+        pretty_output = repr(xlib.Xml(txt_str))
     except:
         try:
-            return common.jdumps(json.loads(txt_str), indent=indentation, sort_keys=True)
+            pretty_output = common.jdumps(json.loads(txt_str), indent=indentation, sort_keys=True)
         except:
-            return txt_str
+            pretty_output = txt_str
+
+    # Replace unsupported characters with backslashreplace for console output on Windows
+    if sys.platform == 'win32' and sys.stdout.encoding:
+        try:
+            # Try to encode to the console's encoding to see if it fails
+            pretty_output.encode(sys.stdout.encoding)
+        except UnicodeEncodeError:
+            return pretty_output.encode(sys.stdout.encoding, 'backslashreplace').decode(sys.stdout.encoding)
+
+    return pretty_output
 
 
 def render(rr: Result) -> str:
