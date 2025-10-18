@@ -613,7 +613,11 @@ class Reqs(list):
     def execute(self, http=None, outputConsole=OutputConsole.MINIMAL) -> list:
         """ call asyncReqsExecute in sync, used only in old pytests """
         switches = []
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         return loop.run_until_complete(
             self.asyncReqsExecute(switches, http, outputConsole=outputConsole)
         )
@@ -1274,7 +1278,11 @@ class Reqman:
         self.ymls.append(y)
 
     def execute(self, switches=[], paralleliz=False, http=None) -> ReqmanResult:
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         return loop.run_until_complete(self.asyncExecute(switches, paralleliz, http))
 
     async def asyncExecute(
@@ -1906,7 +1914,11 @@ def main(fakeServer=None, hookResults=None) -> T.Union[int, str, None]:
             else:
                 raise RMCommandException("bad option '%s'" % p)
 
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         if dswitches:
             # dual mode -> ReqmanDualResult
             if rmrFile:
@@ -1996,7 +2008,7 @@ def main(fakeServer=None, hookResults=None) -> T.Union[int, str, None]:
 
         if outputHtmlFile:
             rr.forceNoLimit=forceNoLimit
-            with codecs.open(outputHtmlFile, "w+", "utf-8-sig", errors="replace") as fid:
+            with open(outputHtmlFile, "w+", encoding="utf-8-sig", errors="replace") as fid:
                 fid.write(rr.html)
             if openBrowser:
                 try:
@@ -2007,7 +2019,7 @@ def main(fakeServer=None, hookResults=None) -> T.Union[int, str, None]:
                     pass
 
         if junitXmlFile:
-            with codecs.open(junitXmlFile, "w+", "utf-8-sig", errors="replace") as fid:
+            with open(junitXmlFile, "w+", encoding="utf-8-sig", errors="replace") as fid:
                 if isinstance(rr,ReqmanDualResult):
                     raise RMException("Can't generate junit-xml in dual mode")
                 fid.write(rr.generateJunitXmlFile())
