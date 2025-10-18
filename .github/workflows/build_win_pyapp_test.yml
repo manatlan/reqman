@@ -36,7 +36,9 @@ jobs:
         PYAPP_DISTRIBUTION_EMBED: 1
         PYAPP_EXEC_SPEC: "reqman.__main__:main"
         PYAPP_VERSION: v0.29.0 # Pinning for reproducibility
-        RUST_BACKTRACE: 1
+        RUST_BACKTRACE: "full"
+        CARGO_PROFILE_RELEASE_BUILD_OVERRIDE_DEBUG: "true"
+
       run: |
         Invoke-WebRequest -Uri "https://github.com/ofek/pyapp/archive/refs/tags/${env:PYAPP_VERSION}.zip" -OutFile "pyapp.zip"
         Expand-Archive -Path "pyapp.zip" -DestinationPath "."
