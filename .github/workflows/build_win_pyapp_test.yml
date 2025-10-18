@@ -27,13 +27,9 @@ jobs:
         echo "wheel_name=$wheel" >> $env:GITHUB_OUTPUT
       shell: pwsh
 
-    - name: copy the wheel on "."
+    - name: whats in folders
       run: |
         dir dist
-        copy .\dist\${{ steps.build_wheel.outputs.wheel_name }} .
-
-    - name: whats in folder ?
-      run: |
         dir
 
     - name: Install Rust toolchain
@@ -41,7 +37,7 @@ jobs:
 
     - name: Download and build pyapp
       env:
-        PYAPP_PROJECT_PATH: .\${{ steps.build_wheel.outputs.wheel_name }}
+        PYAPP_PROJECT_PATH: D:\a\reqman\reqman\dist\${{ steps.build_wheel.outputs.wheel_name }}
         # PYAPP_DISTRIBUTION_EMBED: 1
         # PYAPP_EXEC_SPEC: "reqman.__main__:main"
         PYAPP_VERSION: v0.29.0 # Pinning for reproducibility
