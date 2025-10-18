@@ -1,4 +1,4 @@
-name: Build Windows Executable
+name: build_win_pyapp_test
 
 on:
   workflow_dispatch:
@@ -35,13 +35,13 @@ jobs:
         PYAPP_PROJECT_PATH: dist/${{ steps.build_wheel.outputs.wheel_name }}
         PYAPP_DISTRIBUTION_EMBED: 1
         PYAPP_EXEC_SPEC: "reqman.__main__:main"
-        PYAPP_VERSION: v0.28.0 # Pinning for reproducibility
+        PYAPP_VERSION: v0.29.0 # Pinning for reproducibility
       run: |
         Invoke-WebRequest -Uri "https://github.com/ofek/pyapp/archive/refs/tags/${env:PYAPP_VERSION}.zip" -OutFile "pyapp.zip"
         Expand-Archive -Path "pyapp.zip" -DestinationPath "."
         $pyappDir = "pyapp-" + "${env:PYAPP_VERSION}".Substring(1)
         cd $pyappDir
-        cargo build --release
+        RUST_BACKTRACE=1 cargo build --release
         Move-Item -Path "target/release/pyapp.exe" -Destination "${{ github.workspace }}/reqman.exe"
       shell: pwsh
 
