@@ -9,12 +9,7 @@ All configurations is done via simple yaml files, editable with any text editors
 
 [Documentation](https://manatlan.github.io/reqman/)
 
-[Changelog](https://github.com/manatlan/reqman/blob/master/changelog) !
-
-[Online tool to convert swagger/openapi3, OR postman collections](https://reqman-tools.glitch.me/) to reqman's tests
-
-[DEMO](https://test-reqman.glitch.me)
-
+[Changelog](https://github.com/manatlan/reqman/releases) ([previous changelog](https://github.com/manatlan/reqman/blob/master/changelog))
 
 
 **Features**
@@ -64,16 +59,19 @@ All configurations is done via simple yaml files, editable with any text editors
 
 ## Getting started : installation
 
-If you are on an *nix platform, you can start with pip :
+### If you are on an *nix platform:
+
+You can pip it :
 
     $ pip3 install reqman
 
-it will install the _reqman_ script in your path (perhaps, you'll need to Add the path `~/.local/bin` to the _PATH_ environment variable.)
+It will install the _reqman_ script in your path 
 
-If you are on microsoft windows, just download [reqman.exe (v3)](https://github.com/manatlan/reqman/blob/master/dist/reqman.exe).
- [The old reqman.exe V2, is still there](https://github.com/manatlan/reqman/blob/ac7d96319bf53e08f5a01ff55c54ef820e839fa6/dist/reqman.exe), and add it in your path.
- [The old reqman.exe V1, is still there](https://github.com/manatlan/reqman/blob/reqman1.4.4.0/dist/reqman.exe), and add it in your path.
 
+### If you are on microsoft windows 10/11:
+
+Just download [a exe release](https://github.com/manatlan/reqman/releases).
+ 
 
 ## Getting started : let's go
 
@@ -120,7 +118,7 @@ switches:
 
 Now, you have created your first _switch_. And try to run your tests like this:
 
-    $ reqman.py . -test
+    $ reqman . -test
 
 It will run your tests against the _root_ defined in _test_ section ; and the test is KO, because _reqman_ doesn't exist on test.pypi.org !
 In fact; all declared things under _test_ will replace those at the top ! So you can declare multiple environments, with multiple switches !
