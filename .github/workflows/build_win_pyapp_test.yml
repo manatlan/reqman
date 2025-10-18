@@ -27,10 +27,15 @@ jobs:
         echo "wheel_name=$wheel" >> $env:GITHUB_OUTPUT
       shell: pwsh
 
+    - name: Generate requirements.text
+      run: |
+        uv pip compile pyproject.toml -o requirements.txt
+
     - name: whats in folders
       run: |
         dir dist
         dir
+
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -38,6 +43,9 @@ jobs:
     - name: Download and build pyapp
       env:
         PYAPP_PROJECT_PATH: D:\a\reqman\reqman\dist\${{ steps.build_wheel.outputs.wheel_name }}
+        PYAPP_PROJECT_DEPENDENCY_FILE: D:\a\reqman\reqman\requirements.txt
+        PYAPP_PROJECT_NAME: "reqman"
+        PYAPP_PROJECT_VERSION : "1.0.0"
         # PYAPP_DISTRIBUTION_EMBED: 1
         # PYAPP_EXEC_SPEC: "reqman.__main__:main"
         PYAPP_VERSION: v0.29.0 # Pinning for reproducibility
