@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"   # adapte si nécessaire
+          python-version: "3.14"   # adapte si nécessaire
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
