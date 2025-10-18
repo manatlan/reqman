@@ -41,7 +41,7 @@ jobs:
         Expand-Archive -Path "pyapp.zip" -DestinationPath "."
         $pyappDir = "pyapp-" + "${env:PYAPP_VERSION}".Substring(1)
         cd $pyappDir
-        RUST_BACKTRACE=1 cargo build --release
+        cargo build --release
         Move-Item -Path "target/release/pyapp.exe" -Destination "${{ github.workspace }}/reqman.exe"
       shell: pwsh
 
