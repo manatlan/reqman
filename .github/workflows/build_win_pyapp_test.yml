@@ -1,0 +1,52 @@
+name: Build Windows Executable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      run: pip install uv
+
+    - name: Build the wheel
+      id: build_wheel
+      run: |
+        uv build --wheel -o dist .
+        $wheel = (Get-ChildItem -Path dist -Filter *.whl).Name
+        echo "wheel_name=$wheel" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Download and build pyapp
+      env:
+        PYAPP_PROJECT_PATH: dist/${{ steps.build_wheel.outputs.wheel_name }}
+        PYAPP_DISTRIBUTION_EMBED: 1
+        PYAPP_EXEC_SPEC: "reqman.__main__:main"
+        PYAPP_VERSION: v0.28.0 # Pinning for reproducibility
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/ofek/pyapp/archive/refs/tags/${env:PYAPP_VERSION}.zip" -OutFile "pyapp.zip"
+        Expand-Archive -Path "pyapp.zip" -DestinationPath "."
+        $pyappDir = "pyapp-" + "${env:PYAPP_VERSION}".Substring(1)
+        cd $pyappDir
+        cargo build --release
+        Move-Item -Path "target/release/pyapp.exe" -Destination "${{ github.workspace }}/reqman.exe"
+      shell: pwsh
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: reqman-windows-exe
+        path: reqman.exe
