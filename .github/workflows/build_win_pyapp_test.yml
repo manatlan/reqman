@@ -27,6 +27,10 @@ jobs:
         echo "wheel_name=$wheel" >> $env:GITHUB_OUTPUT
       shell: pwsh
 
+    - name: test the wheel ?
+      run: |
+        dir dist
+
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
 
