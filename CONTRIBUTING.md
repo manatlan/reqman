@@ -41,9 +41,12 @@ But some features, whose doesn't appear in the docs, may be removed soon like (s
 
 need to explain/details :
 
-- new scenario mechanism "RUN:" (from v3.5)
-- new switch mechanism '-<switch>" in conf or scenar (from v3.5)
+- the dotenv/env vars (from v3.2) (very USEFULL !!! for secrets)
+- new scenario mechanism "RUN:" (from v3.4)
+- new switch mechanism '-<switch>" in conf or scenar (from v3.4/3.5)
 - new "python tests statements" (lot better for IA/LLM) (from v3.5)
+- new "python declaration" ("python:" in conf or scenar) (from v3.5)
+- new "R" object (the Response object) (from v3.4)
 - "ignorable vars" (things like `<<var?>>`) (from v3.0)
 - the "wait" command (really usefull ?) (from v3.0)
 - the "break" command (really usefull ?) (from ??)
