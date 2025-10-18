@@ -41,7 +41,7 @@ jobs:
 
     - name: Download and build pyapp
       env:
-        PYAPP_PROJECT_PATH: ./${{ steps.build_wheel.outputs.wheel_name }}
+        PYAPP_PROJECT_PATH: .\${{ steps.build_wheel.outputs.wheel_name }}
         # PYAPP_DISTRIBUTION_EMBED: 1
         # PYAPP_EXEC_SPEC: "reqman.__main__:main"
         PYAPP_VERSION: v0.29.0 # Pinning for reproducibility
