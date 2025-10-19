@@ -1,0 +1,84 @@
+name: build_win_pyapp_test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.14'
+
+    - name: Install uv
+      run: pip install uv
+
+    - name: Build the wheel
+      id: build_wheel
+      run: |
+        uv build --wheel -o dist .
+        $wheel = (Get-ChildItem -Path dist -Filter *.whl).Name
+        echo "wheel_name=$wheel" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+
+    - name: Generate requirements.text
+      run: |
+        uv pip compile pyproject.toml -o requirements.txt
+
+    - name: whats in folders
+      run: |
+        dir dist
+        dir
+
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Download and build pyapp
+      env:
+        PYAPP_PROJECT_PATH: D:\a\reqman\reqman\dist\${{ steps.build_wheel.outputs.wheel_name }}
+        PYAPP_PROJECT_DEPENDENCY_FILE: D:\a\reqman\reqman\requirements.txt
+        PYAPP_PROJECT_NAME: "reqman"
+        PYAPP_PROJECT_VERSION : "1.0.0"
+        PYAPP_FULL_ISOLATION: 1
+        PYAPP_DISTRIBUTION_EMBED: 1
+        PYAPP_PYTHON_VERSION: pypy3.11
+        # PYAPP_DISTRIBUTION_EMBED: 1
+        # PYAPP_EXEC_SPEC: "reqman.__main__:main"
+        PYAPP_VERSION: v0.29.0 # Pinning for reproducibility
+        RUST_BACKTRACE: "full"
+        CARGO_PROFILE_RELEASE_BUILD_OVERRIDE_DEBUG: "true"
+
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/ofek/pyapp/archive/refs/tags/${env:PYAPP_VERSION}.zip" -OutFile "pyapp.zip"
+        Expand-Archive -Path "pyapp.zip" -DestinationPath "."
+        $pyappDir = "pyapp-" + "${env:PYAPP_VERSION}".Substring(1)
+        cd $pyappDir
+        cargo build --release
+        Move-Item -Path "target/release/pyapp.exe" -Destination "${{ github.workspace }}/reqman.exe"
+      shell: pwsh
+
+    #################################################################
+    # NOT REALLY NEEDED THE COMPRESSION RATE IS MARGINAL
+    #################################################################
+    #- name: Compress executable with UPX
+    #  run: |
+    #    $upxVersion = "4.2.4"
+    #    Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v$upxVersion/upx-$upxVersion-win64.zip" -OutFile "upx.zip"
+    #    Expand-Archive upx.zip -DestinationPath .
+    #    $upxExe = Get-ChildItem -Path . -Recurse -Filter upx.exe | Select-Object -First 1
+    #    & $upxExe.FullName --best --lzma "${{ github.workspace }}\reqman.exe"
+    #  shell: pwsh
+    #################################################################
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: reqman-windows-exe
+        path: reqman.exe
