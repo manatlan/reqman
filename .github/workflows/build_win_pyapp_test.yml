@@ -46,6 +46,8 @@ jobs:
         PYAPP_PROJECT_DEPENDENCY_FILE: D:\a\reqman\reqman\requirements.txt
         PYAPP_PROJECT_NAME: "reqman"
         PYAPP_PROJECT_VERSION : "1.0.0"
+        PYAPP_FULL_ISOLATION: 1
+        PYAPP_DISTRIBUTION_EMBED: 1
         # PYAPP_DISTRIBUTION_EMBED: 1
         # PYAPP_EXEC_SPEC: "reqman.__main__:main"
         PYAPP_VERSION: v0.29.0 # Pinning for reproducibility
