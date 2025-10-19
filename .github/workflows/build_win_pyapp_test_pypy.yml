@@ -1,4 +1,4 @@
-name: build_win_pyapp_test
+name: build_win_pyapp_test_pypy
 
 on:
   workflow_dispatch:
