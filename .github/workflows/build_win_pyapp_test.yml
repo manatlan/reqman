@@ -63,15 +63,18 @@ jobs:
         Move-Item -Path "target/release/pyapp.exe" -Destination "${{ github.workspace }}/reqman.exe"
       shell: pwsh
 
-
-    - name: Compress executable with UPX
-      run: |
-        $upxVersion = "4.2.4"
-        Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v$upxVersion/upx-$upxVersion-win64.zip" -OutFile "upx.zip"
-        Expand-Archive upx.zip -DestinationPath .
-        $upxExe = Get-ChildItem -Path . -Recurse -Filter upx.exe | Select-Object -First 1
-        & $upxExe.FullName --best --lzma "${{ github.workspace }}\reqman.exe"
-      shell: pwsh
+    #################################################################
+    # NOT REALLY NEEDED THE COMPRESSION RATE IS MARGINAL
+    #################################################################
+    #- name: Compress executable with UPX
+    #  run: |
+    #    $upxVersion = "4.2.4"
+    #    Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v$upxVersion/upx-$upxVersion-win64.zip" -OutFile "upx.zip"
+    #    Expand-Archive upx.zip -DestinationPath .
+    #    $upxExe = Get-ChildItem -Path . -Recurse -Filter upx.exe | Select-Object -First 1
+    #    & $upxExe.FullName --best --lzma "${{ github.workspace }}\reqman.exe"
+    #  shell: pwsh
+    #################################################################
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
