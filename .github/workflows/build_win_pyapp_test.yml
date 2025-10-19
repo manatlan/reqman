@@ -14,7 +14,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.14'
+        python-version: '3.9'
 
     - name: Install uv
       run: pip install uv
@@ -46,6 +46,7 @@ jobs:
         PYAPP_PROJECT_DEPENDENCY_FILE: D:\a\reqman\reqman\requirements.txt
         PYAPP_PROJECT_NAME: "reqman"
         PYAPP_PROJECT_VERSION : "1.0.0"
+        PYAPP_PYTHON_VERSION: "3.9"
         PYAPP_FULL_ISOLATION: 1
         PYAPP_DISTRIBUTION_EMBED: 1
         # PYAPP_DISTRIBUTION_EMBED: 1
