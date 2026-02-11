@@ -1,5 +1,6 @@
-This SKILL(for agentic ia) is under construction.
+# This SKILL (for agentic ia) is under construction.
 
+## Current
 It already gives me good result with claude's agent with skills support (in my case gemini-cli (0.28/skill-support), with claude 4.5 sonnet llm ... or using it, as part of a prompt, in a simple exchange with a claude llm).
 
 Its goal is to create a usable scenario (given a swagger + prompt), currently, it focus on :
@@ -10,6 +11,7 @@ Its goal is to create a usable scenario (given a swagger + prompt), currently, i
  - able to save data to reuse later.
  - able to produce/capitalize a sequence of requests (a reuse using "call" statement)
 
+## Future
 TODO:
 
  - be able to use foreach/params statements
