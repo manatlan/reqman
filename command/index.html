@@ -1,0 +1,1217 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="The postman killer ;-)">
+      
+      
+      
+        <link rel="canonical" href="https://reqman-docs.glitch.me/command/">
+      
+      
+        <link rel="prev" href="../python/">
+      
+      
+        <link rel="next" href="../example/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Command Line - Reqman Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#the-command-line" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Reqman Docs" class="md-header__button md-logo" aria-label="Reqman Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Reqman Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Command Line
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/manatlan/reqman" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    manatlan/reqman
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Reqman Docs" class="md-nav__button md-logo" aria-label="Reqman Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Reqman Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/manatlan/reqman" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    manatlan/reqman
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../from_postman/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    From postman
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simple_use/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Simplest use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../yml_syntax/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Test's Grammar
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conf/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using a global conf
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Python powered
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Command Line
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Command Line
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#reqmans-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reqman's usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reqman's usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-k-only-ko" class="md-nav__link">
+    <span class="md-ellipsis">
+      --k: only ko
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-p-paralleliz" class="md-nav__link">
+    <span class="md-ellipsis">
+      --p: paralleliz
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-b-browser" class="md-nav__link">
+    <span class="md-ellipsis">
+      --b: browser
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-o-html-output-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      --o: html output file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-s-save-a-rmr-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      --s: Save a RMR file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-s-save-a-rmr-file_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      --S: Save a RMR file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-r-replay-a-rmr-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      --r: Replay a RMR file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-f-force-full-output-in-html" class="md-nav__link">
+    <span class="md-ellipsis">
+      --f: force full output in html
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-j-generate-junit-xml-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      --j: generate junit-xml output
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-jxxxx-generate-junit-xml-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      --j:xxxx: generate junit-xml output
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-xxxxx-output-an-internal-var" class="md-nav__link">
+    <span class="md-ellipsis">
+      --x:xxxx: output an internal var
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-a-new-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      Start a new project
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shebang-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Shebang mode
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dual-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dual mode
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rmr-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      RMR file
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RMR file">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#save-the-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      Save the state
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replay-the-rmr-same-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      Replay the rmr (same context)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests-the-rmr" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tests the rmr
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests the rmr">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-another-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      In another context
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-another-context-in-dual-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      With another context, in dual mode
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#share-a-test-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      Share a test suite
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../example/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    An example
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#reqmans-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reqman's usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reqman's usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-k-only-ko" class="md-nav__link">
+    <span class="md-ellipsis">
+      --k: only ko
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-p-paralleliz" class="md-nav__link">
+    <span class="md-ellipsis">
+      --p: paralleliz
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-b-browser" class="md-nav__link">
+    <span class="md-ellipsis">
+      --b: browser
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-o-html-output-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      --o: html output file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-s-save-a-rmr-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      --s: Save a RMR file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-s-save-a-rmr-file_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      --S: Save a RMR file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-r-replay-a-rmr-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      --r: Replay a RMR file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-f-force-full-output-in-html" class="md-nav__link">
+    <span class="md-ellipsis">
+      --f: force full output in html
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-j-generate-junit-xml-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      --j: generate junit-xml output
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-jxxxx-generate-junit-xml-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      --j:xxxx: generate junit-xml output
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-xxxxx-output-an-internal-var" class="md-nav__link">
+    <span class="md-ellipsis">
+      --x:xxxx: output an internal var
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-a-new-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      Start a new project
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shebang-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Shebang mode
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dual-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dual mode
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rmr-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      RMR file
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RMR file">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#save-the-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      Save the state
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replay-the-rmr-same-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      Replay the rmr (same context)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests-the-rmr" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tests the rmr
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests the rmr">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-another-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      In another context
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-another-context-in-dual-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      With another context, in dual mode
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#share-a-test-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      Share a test suite
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="the-command-line">The command line</h1>
+<p>You can pass as many yaml's test files or folders as you want. Reqman will compute a list of tests, and order them according names. </p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>It's a good practice, to prefix filenames with numbers. </p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Reqman will ignore files/folders starting with a "." or "_".</p>
+</div>
+<p>And it will run the tests against the first <code>reqman.conf</code> found in the common path (ascending), if it exists.</p>
+<p>If <a href="../conf/">reqman.conf</a> contains <a href="../conf/#switches">switches</a>, you'll be able to add switches in your command line.</p>
+<h2 id="reqmans-usage">Reqman's usage</h2>
+<ul>
+<li><code>options</code> are internal features of <strong>reqman</strong>, and starts with 2 "-".</li>
+<li><code>switches</code> are exposed features of your <code>reqman.conf</code>, and starts with 1 "-". (it can start with 1 '+', to enable <a href="#dual-mode">Dual Mode</a>). It's the common place, to set your environment for your tests.</li>
+</ul>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>NEW(since 2.2.4.0) : there is a way to declare var in environment from command line</p>
+<p>Example:
+<code>$ reqman . var:value</code></p>
+<p>will declare the var named 'var' valued with content 'value' in the env.</p>
+</div>
+<div class="codehilite"><pre><span></span><code>USAGE TEST   : reqman [--option] [-switch] &lt;folder|file&gt;...
+USAGE CREATE : reqman new &lt;url&gt;
+Version 3.0.4
+Test a http service with pre-made scenarios, whose are simple yaml files
+(More info on https://github.com/manatlan/reqman)
+
+&lt;folder|file&gt; : yml scenario or folder of yml scenario
+                (as many as you want)
+
+[option]
+        --k        : Limit standard output to failed tests (ko only)
+        --p        : Paralleliz file tests (display only ko tests)
+        --o:name   : Set a name for the html output file
+        --o        : No html output file, but full console
+        --b        : Open html output in browser if generated
+        --s        : Save RMR file (timestamped)
+        --S        : Save RMR file (reqman.rmr)
+        --r        : Replay the given RMR file in dual mode
+        --i        : Use SHEBANG params (for a single file), alone
+        --f        : Force full output in html rendering
+        --j:name   : Set a name for the junit-xml output file
+        --j        : Generate a junit-xml output file (reqman.xml)
+        --x:var    : Special mode to output an env var (as json output)
+</code></pre></div>
+
+<h3 id="-k-only-ko">--k: only ko</h3>
+<p>Will output, in console, only the failed tests (DEPRECATED)</p>
+<h3 id="-p-paralleliz">--p: paralleliz</h3>
+<p>Will run a "thread" by test's file. It's a lot speeder ;-)</p>
+<h3 id="-b-browser">--b: browser</h3>
+<p>Will open <code>reqman.html</code> file in the default browser, after tests.</p>
+<h3 id="-o-html-output-file">--o: html output file</h3>
+<p>If you need to set a name for the html output file, you can do it with that.
+(it can be useful when reqman is scripted, and you need to produce different html result)
+By default, the file will alwasys be named <code>reqman.html</code>.</p>
+<p>Examples:</p>
+<p><code>$ reqman . --o:mytests.html</code></p>
+<p>The html output file will be named 'mytests.html'</p>
+<p><code>$ reqman . --o</code></p>
+<p>It's a special case, when you don't want a html result.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>In that case : the full http exchange is outputed in the console.</p>
+</div>
+<h3 id="-s-save-a-rmr-file">--s: Save a RMR file</h3>
+<p>Save a <a href="#rmr-file">RMR file</a> for later use
+The filename is timestamped</p>
+<h3 id="-s-save-a-rmr-file_1">--S: Save a RMR file</h3>
+<p>Save a <a href="#rmr-file">RMR file</a> for later use
+The filename will be "reqman.rmr"</p>
+<h3 id="-r-replay-a-rmr-file">--r: Replay a RMR file</h3>
+<p>Replay a <a href="#rmr-file">RMR file</a>
+(new feature in reqman2)</p>
+<h3 id="-f-force-full-output-in-html">--f: force full output in html</h3>
+<p>To minimize html'filesize. Big output is truncated. If you want to have the full output, you can pass this option.</p>
+<h3 id="-j-generate-junit-xml-output">--j: generate junit-xml output</h3>
+<p>With this option, you can tell to reqman to output a "reqman.xml" file. Can be used with Jenkins’ or Bamboo’s pretty graphs.
+(This file is computer readable)</p>
+<h3 id="-jxxxx-generate-junit-xml-output">--j:xxxx: generate junit-xml output</h3>
+<p>Same as "--j", but you can set a filename.</p>
+<p>Example:</p>
+<p><code>$ reqman . --j:mytests.xml</code></p>
+<h3 id="-xxxxx-output-an-internal-var">--x:xxxx: output an internal var</h3>
+<p>Same as "--j", but you can set a filename.</p>
+<p>Example:</p>
+<p>Imagine that you have a test, which create/save a var named "myresult"
+With this option, you can output its content in stdout with <code>$ reqman . --x:myresult</code></p>
+<h2 id="start-a-new-project">Start a new project</h2>
+<p>There is a special command to help you to start a new project from scratch :</p>
+<div class="codehilite"><pre><span></span><code>$ reqman new https://www.example.com/myapi/v1/test
+</code></pre></div>
+
+<p>It will create, in the current folder, a (very) basic <a href="../conf/">reqman.conf</a> and a test file against this url</p>
+<p>And you can run test immediatly (in current folder):</p>
+<div class="codehilite"><pre><span></span><code>$ reqman .
+</code></pre></div>
+
+<h2 id="shebang-mode">Shebang mode</h2>
+<p>It's my most loved feature, over reqman1 ;-)</p>
+<p>It brings the power of the shebang's linux on windows platforms.</p>
+<p>Very useful in a text editor : just configure your editor to run the edited yaml file against reqman executable. And if you run a single file, without any parameters. Reqman will look at the shebang, and use the parameters.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">#!/usr/local/bin/reqman --b -prod</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/&lt;&lt;path&gt;&gt;</span>
+<span class="w">  </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hello&quot;</span>
+</code></pre></div>
+
+<p>or</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">#! --b -prod</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/&lt;&lt;path&gt;&gt;</span>
+<span class="w">  </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hello&quot;</span>
+</code></pre></div>
+
+<p>Will run the file, with <code>prod</code> switch, and open the html output in the default browser ...
+(if the file is runned with others files or with options/switches ... reqman will use options/switches from commandline)</p>
+<p>Very handy, to avoid to go in console while coding your test, from your editor ;-)</p>
+<h2 id="dual-mode">Dual mode</h2>
+<p>It let you compare the html results of two environments switches ! To enable dual mode, you will need to pass switches prefixed by '<code>-</code>' and '<code>+</code>'.</p>
+<p>Imagine the following reqman.conf</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">root</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://localhost</span>
+
+<span class="nt">switches</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">env1</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">root</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://env1.example.com</span>
+<span class="w">  </span><span class="nt">env2</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">root</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://env2.example.com</span>
+</code></pre></div>
+
+<p>You can compare the dual execution tests, by using :</p>
+<div class="codehilite"><pre><span></span><code>$ reqman . -env1 +env2
+</code></pre></div>
+
+<p>It will produce an html output file where you could compare, side by side, the execution
+of your tests on each environment, in one shot. Very handy to spot problems ;-)</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Tests are executed in parallel, to save times ;-)</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>You can add as many swithes as you want. Those with "-" refer to the left one, those with "+" refer to the right one.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>If you don't mix '<code>-</code>' and '<code>+</code>' you will be in single mode only. You need to mix them to fire up dual mode. (adding just '<code>+</code>' switches (without '<code>-</code>' switches), you will be in single mode only)</p>
+</div>
+<h2 id="rmr-file">RMR file</h2>
+<p>A <strong>RMR file</strong> is a saved state of all requests/tests results. It's an "image"
+of a test suite results, at a given time. RMR means "ReqMan Results".</p>
+<p>It's a reqman's feature which lets you :</p>
+<ul>
+<li>save the state</li>
+<li>replay the tests (same context)</li>
+<li>compare the states</li>
+<li>share a test suite (one file : the rmr), without sharing the yamls/reqman.conf.</li>
+</ul>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Technically, it's the resulting reqman objects which are just zipped and saved in a file (pickle), for later use.</p>
+</div>
+<h3 id="save-the-state">Save the state</h3>
+<p>Just use the option <code>--s</code></p>
+<div class="codehilite"><pre><span></span><code>$ reqman . --s
+</code></pre></div>
+
+<p>It will execute the tests, in a regular way ... and will save a rmr file (timestamp named)</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>At anytime, you can see the content of a RMR file, by calling <code>$ reqman &lt;yourfile&gt;.rmr</code>
+It will just regenerate the <code>reqman.html</code> file, with the content of the RMR.</p>
+</div>
+<h3 id="replay-the-rmr-same-context">Replay the rmr (same context)</h3>
+<p>Just use the option <code>--r</code> by giving the rmr filename</p>
+<div class="codehilite"><pre><span></span><code><span class="l l-Scalar l-Scalar-Plain">$ reqman --r 191215_1706.rmr</span>
+</code></pre></div>
+
+<p>In that case : it replays the tests, and will save a html file in dual mode : 
+the previous state (left one) VS a current state (right one)</p>
+<p>It will replay the tests with the given switches when it was produced ! Same tests, same context ... but at a different time.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Very useful for "non regression tests" (TNR)</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When using <code>--r</code>, it's not possible to add swicthes to commandline ! The <code>--r</code> is just for replaying the same tests, to see a fresh version in Dual mode.</p>
+</div>
+<h3 id="tests-the-rmr">Tests the rmr</h3>
+<p>As the RMR is a file containing all executed tests. It's possible to use it, as base tests, for tests in others contexts.
+Just pass the rmr file to the command line, as you give yaml, and add swicthes.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Note that, if you don't add switches, it will just regenerate the output html. (to see the content)</p>
+</div>
+<h4 id="in-another-context">In another context</h4>
+<p>You can change the context, by providing switches prefixed by "<code>-</code>". It will replay the tests from the rmr, in the context, defined by your "<code>-</code>" swithes.
+It will ouput an html in single mode.</p>
+<h4 id="with-another-context-in-dual-mode">With another context, in dual mode</h4>
+<p>You can start a dual mode tests, by providing switches prefixed by "<code>+</code>". It will replay the tests from the rmr, in the context, defined by your "<code>+</code>" swithes.
+It will ouput an html in dual mode : the original tests from the RMR VS the fresh ones in the new context.</p>
+<h3 id="share-a-test-suite">Share a test suite</h3>
+<p>So, the rmr file can be shared with your users. They couldn't change the tests, the order, ... But the will be able
+to tests it without dealing with yaml, subfolders or reqman.conf.</p>
+<p>To see the given state (what they should have)</p>
+<div class="codehilite"><pre><span></span><code>$ reqman state.rmr
+</code></pre></div>
+
+<p>To test the rmr in another context</p>
+<div class="codehilite"><pre><span></span><code>$ reqman state.rmr -context1
+</code></pre></div>
+
+<p>To compare the rmr with another context(2)</p>
+<div class="codehilite"><pre><span></span><code>$ reqman state.rmr +context2
+</code></pre></div>
+
+<p>To compare the rmr, in a fresh state, with another context(2)</p>
+<div class="codehilite"><pre><span></span><code>$ reqman state.rmr -context1 +context2
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Note, that it's the same syntax as classic calls, with yaml or subfolders in place of "state.rmr".</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+    
+  </body>
+</html>

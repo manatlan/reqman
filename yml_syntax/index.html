@@ -1,0 +1,1173 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="The postman killer ;-)">
+      
+      
+      
+        <link rel="canonical" href="https://reqman-docs.glitch.me/yml_syntax/">
+      
+      
+        <link rel="prev" href="../simple_use/">
+      
+      
+        <link rel="next" href="../conf/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Test's Grammar - Reqman Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#reqman-language-syntax" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Reqman Docs" class="md-header__button md-logo" aria-label="Reqman Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Reqman Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Test's Grammar
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/manatlan/reqman" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    manatlan/reqman
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Reqman Docs" class="md-nav__button md-logo" aria-label="Reqman Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Reqman Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/manatlan/reqman" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    manatlan/reqman
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../from_postman/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    From postman
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simple_use/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Simplest use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Test's Grammar
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Test's Grammar
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#reqman-language-syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reqman language Syntax
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reqman language Syntax">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#an-http-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      An HTTP Request
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-procedures-declaration" class="md-nav__link">
+    <span class="md-ellipsis">
+      A Procedure's declaration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-call-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      A call procedure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-break-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      A 'break' statement
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additionnal-keywords" class="md-nav__link">
+    <span class="md-ellipsis">
+      Additionnal keywords
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Additionnal keywords">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#body" class="md-nav__link">
+    <span class="md-ellipsis">
+      "body"
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      "headers"
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      "tests"
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=""tests"">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      basic tests
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      json tests
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xml-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      xml tests
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#doc" class="md-nav__link">
+    <span class="md-ellipsis">
+      "doc"
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#params" class="md-nav__link">
+    <span class="md-ellipsis">
+      "params"
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#save" class="md-nav__link">
+    <span class="md-ellipsis">
+      "save"
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=""save"">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#save-all-the-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      Save all the response
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#save-a-partial-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      Save a partial response
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foreach" class="md-nav__link">
+    <span class="md-ellipsis">
+      "foreach"
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conf/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using a global conf
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Python powered
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../command/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Command Line
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../example/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    An example
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#reqman-language-syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reqman language Syntax
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reqman language Syntax">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#an-http-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      An HTTP Request
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-procedures-declaration" class="md-nav__link">
+    <span class="md-ellipsis">
+      A Procedure's declaration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-call-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      A call procedure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-break-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      A 'break' statement
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additionnal-keywords" class="md-nav__link">
+    <span class="md-ellipsis">
+      Additionnal keywords
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Additionnal keywords">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#body" class="md-nav__link">
+    <span class="md-ellipsis">
+      "body"
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      "headers"
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      "tests"
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=""tests"">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      basic tests
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      json tests
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xml-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      xml tests
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#doc" class="md-nav__link">
+    <span class="md-ellipsis">
+      "doc"
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#params" class="md-nav__link">
+    <span class="md-ellipsis">
+      "params"
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#save" class="md-nav__link">
+    <span class="md-ellipsis">
+      "save"
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=""save"">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#save-all-the-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      Save all the response
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#save-a-partial-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      Save a partial response
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foreach" class="md-nav__link">
+    <span class="md-ellipsis">
+      "foreach"
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>Test's Grammar</h1>
+
+<h2 id="reqman-language-syntax">Reqman language Syntax</h2>
+<p>A reqman's file tests, is a YAML file, endings with ".yml" or ".rml" (ReqMan Language).</p>
+<p>Its content is a list of statements. There are 4 types of statements :</p>
+<ul>
+<li>An http request</li>
+<li>A Procedure's declaration</li>
+<li>A call procedure</li>
+<li>A break statement</li>
+</ul>
+<p><strong>reqman</strong> brings its own substitution mechanism. In many places (value side), you can create vars (<code>{{a_var}}</code> or <code>&lt;&lt;a_var&gt;&gt;</code>), 
+which will be substituted at runtime using <a href="#params">local params</a>, <a href="../conf/#define-some-globals-parameters">global params</a> or <a href="#save">saved ones</a></p>
+<p>(since 3.2.0 version : you can use your environments vars (dotenv compliant) too !)</p>
+<h3 id="an-http-request">An HTTP Request</h3>
+<p>This kind of statement, should contain ONE HTTP VERB, in uppercase (Known HTTP verbs : "GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT")</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">OPTIONS</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">HEAD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello</span>
+</code></pre></div>
+
+<p>And it's generally completed with <a href="./#additionnal-keywords">additionnal keywords</a></p>
+<h3 id="a-procedures-declaration">A Procedure's declaration</h3>
+<p>This statement declare a procedure which can be only called by a "call statement".</p>
+<p>Here is the declaration of a procedure <code>MyProcedure</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">MyProcedure</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello1</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello2</span>
+</code></pre></div>
+
+<p>The content of the procedure is a list which can contains the 4 types of statements.</p>
+<p>Note : Without a call statement : this file does nothing ...</p>
+<h3 id="a-call-procedure">A call procedure</h3>
+<p>This statement let you call a procedure.</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">call</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MyProcedure</span>
+</code></pre></div>
+
+<p>or</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">call</span><span class="p">:</span><span class="w"> </span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MyProcedure1</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MyProcedure2</span>
+</code></pre></div>
+
+<p>And it's generally completed with <a href="./#additionnal-keywords">additionnal keywords</a></p>
+<h3 id="a-break-statement">A 'break' statement</h3>
+<p>This statement is only useful, when you are working on a test file, it lets you break the process. So you can edit your statements step by step.</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello1</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">break</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello2</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello3</span>
+</code></pre></div>
+
+<p>In this case ^^; only the first request is called ... The others are simply ignored.</p>
+<h2 id="additionnal-keywords">Additionnal keywords</h2>
+<p>Theses keywords can be added on request or call statements, to complete the statement.</p>
+<h3 id="body">"body"</h3>
+<p>Let you add a 'body' in your POST/PUT/... statements ;-)</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">POST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello</span>
+<span class="w">  </span><span class="nt">body</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;I&#39;m</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">body&quot;</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">POST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello</span>
+<span class="w">  </span><span class="nt">body</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="s">&quot;key&quot;</span><span class="p p-Indicator">:</span><span class="nv">12</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;value&quot;</span><span class="p p-Indicator">:</span><span class="s">&quot;hello&quot;</span><span class="p p-Indicator">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">POST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello</span>
+<span class="w">  </span><span class="nt">body</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">12</span>
+<span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hello&quot;</span>
+</code></pre></div>
+
+<p>Body described in yaml syntax, will automatically converted in json. The latest 2 examples are the same.</p>
+<h3 id="headers">"headers"</h3>
+<p>Let you add input's 'headers' in yours statements. </p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">POST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello</span>
+<span class="w">  </span><span class="nt">body</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;I&#39;m</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">body&quot;</span>
+<span class="w">  </span><span class="nt">headers</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">content-type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text/plain</span>
+<span class="w">    </span><span class="nt">x-hello</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">it&#39;s me</span>
+</code></pre></div>
+
+<p>If there are global or inherited headers, you can override them, by setting them to <code>null</code>, like that:</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">myproc</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">POST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/hello</span>
+<span class="w">      </span><span class="nt">body</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;I&#39;m</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">body&quot;</span>
+<span class="w">      </span><span class="nt">headers</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">content-type</span><span class="p">:</span><span class="w">       </span><span class="c1"># leave empty, will not send the content-type from the caller</span>
+<span class="w">        </span><span class="nt">x-hello</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">it&#39;s me</span>
+
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">call</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">myproc</span>
+<span class="w">  </span><span class="nt">headers</span><span class="p">:</span>
+<span class="w">     </span><span class="nt">content-type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">application/json</span>
+</code></pre></div>
+
+<p>Header's keys are case insensitive.</p>
+<h3 id="tests">"tests"</h3>
+<p>Let you add 'tests' in yours statements. </p>
+<p><strong>reqman</strong> provides you special syntax to let you write easily tests on complex content:</p>
+<ul>
+<li>basic tests: tests around http response (status, headers, content)</li>
+<li>json tests: tests around http response as a json object</li>
+<li>xml tests: tests around http response as a xml object</li>
+</ul>
+<p>Obviously, you can mix all this kind of tests ^^</p>
+<h4 id="basic-tests">basic tests</h4>
+<p>Basic tests are:</p>
+<ul>
+<li>test a http response status, with keyword <code>status</code></li>
+<li>test a http response header, with the desired headers</li>
+<li>test the http response content, with keyword <code>content</code></li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/returnJson</span><span class="w">  </span><span class="c1"># return {&quot;result&quot;:{&quot;content&quot;:&quot;ok&quot;,&quot;value&quot;:3.3, &quot;list&quot;:[42,43]}}</span>
+<span class="w">  </span><span class="nt">tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">content-type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">application/json</span><span class="w">    </span><span class="c1"># test a response header</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">content</span><span class="p">:</span><span class="w">  </span><span class="s">&quot;result&quot;</span><span class="w">                </span><span class="c1"># ensure that the global response contains text &quot;result&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">content</span><span class="p">:</span><span class="w">  </span><span class="s">&quot;list&quot;</span><span class="w">                  </span><span class="c1"># ensure that the global response contains text &quot;list&quot;</span>
+</code></pre></div>
+
+<p>Here, there are 4 tests.</p>
+<p>If you want to tests multiple values, you can add them in a yaml's list, like this :</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/returnJson</span>
+<span class="w">  </span><span class="nt">tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">304</span>
+</code></pre></div>
+
+<p>This test will be "OK", if returned status is 200 or 304.</p>
+<p>or simpler/shorter :</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/returnJson</span>
+<span class="w">  </span><span class="nt">tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">200</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">304</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+
+<p>as json is a subset of yaml ;-)</p>
+<h4 id="json-tests">json tests</h4>
+<p><code>json</code> is a special keyword, which will be populated with the http response content. Only useful, when http
+response is <em>json</em> content. (if it's not the case, all tests are <code>null</code>)</p>
+<p>You can navigate in the json object model, with a simple dot notation, like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/returnJson</span><span class="w">  </span><span class="c1"># return {&quot;result&quot;:{&quot;content&quot;:&quot;ok&quot;,&quot;value&quot;:3.3, &quot;list&quot;:[42,43]}}</span>
+<span class="w">  </span><span class="nt">tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span><span class="w">                       </span><span class="c1"># a basic test</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.content</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ok&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.content</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;&lt;myValue&gt;&gt;</span><span class="w">  </span><span class="c1"># ensure that the content is equal to myValue param</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.content</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">. != &quot;ko&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.content.size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">       </span><span class="c1"># test size of the string</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">               </span><span class="c1"># test size of the dict</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">. &gt; 3</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">. &lt;= 4</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.list.size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">          </span><span class="c1"># ensure the list contains 2 values</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.list.0</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">42</span><span class="w">            </span><span class="c1"># refer to the first item in the list</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.list.1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">43</span><span class="w">            </span><span class="c1"># refer to the second item in the list</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">json.result.list.-1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">43</span><span class="w">           </span><span class="c1"># refer to the last item in the list</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>the <code>.size</code> is a special key, to compute the size of the object</p>
+</div>
+<h4 id="xml-tests">xml tests</h4>
+<p>Since reqman&gt;=2.3.0, xml/xpath is supported too (yet!).</p>
+<p><code>xml</code> is a special keyword, which will be populated with the http response content. Only useful, when http
+response is (valid) <em>xml</em> content. (if it's not the case, all tests are <code>null</code>)</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://manatlan.com/sitemap.xml</span>
+<span class="w">  </span><span class="nt">tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span><span class="w">                              </span><span class="c1"># a basic test</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">xml.//url/loc.0</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://manatlan.com/</span><span class="w">    </span><span class="c1"># ensure that the first *url/loc* is the good url</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">xml.//url.size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">. &gt; 10</span><span class="w">                   </span><span class="c1"># ensure that there are more than 10 urls.</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<ul>
+<li>Syntax could be <code>xml.xpath[.size]</code>, where <code>xpath</code> is a valid xpath expression 
+  (ns clark notation not accepted).</li>
+<li>The <strong>xpath expression always returns a list</strong> : so you can apply the <code>.size</code>, to compute the size of the list.
+  Or index an element, with the dot notation (ex: "xml.//url/loc<strong>.0</strong>" -&gt; the first one)</li>
+</ul>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Currently, you can't use the char "." in the xpath expressions ... will be fixed in next releases !</p>
+</div>
+<h3 id="doc">"doc"</h3>
+<p>It's optionnal. It let you describe your test ... This doc will be in the html reqman's output.</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/test</span><span class="w"> </span>
+<span class="w">  </span><span class="nt">doc</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Just</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">test</span><span class="nv"> </span><span class="s">on</span><span class="nv"> </span><span class="s">&lt;&lt;root&gt;&gt;</span><span class="nv"> </span><span class="s">!&quot;</span>
+</code></pre></div>
+
+<p>Yes, you can use var substitutions in <code>doc</code> !</p>
+<h3 id="params">"params"</h3>
+<p>It let you set local parameters in your statement, in a dict form.</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/&lt;&lt;path&gt;&gt;</span>
+<span class="w">  </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hello&quot;</span>
+</code></pre></div>
+
+<p><code>&lt;&lt;path&gt;&gt;</code> is substituted by the value of the param <code>path</code>.</p>
+<h3 id="save">"save"</h3>
+<p>It lets you save parameters for later use. Theses parameters are only available in the current yaml tests. Only thoses saved in the <code>BEGIN</code> procedure will be shared with all test files.</p>
+<h4 id="save-all-the-response">Save all the response</h4>
+<p>It's the way to create parameters based on results. The created param will be available in the current file test, for the following requests.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Thoses created in a <a href="../conf/#declare-procedures">global's procedure (in reqman.conf)</a>, will be available in all tests files.</p>
+</div>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/returnJson</span><span class="w">  </span><span class="c1"># return {&quot;result&quot;:{&quot;content&quot;:&quot;ok&quot;,&quot;value&quot;:3.3}}</span>
+<span class="w">  </span><span class="nt">save</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">allJson</span>
+</code></pre></div>
+
+<p>Now, you can use 'allJson' in following statements</p>
+<h4 id="save-a-partial-response">Save a partial response</h4>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/returnJson</span><span class="w">  </span><span class="c1"># return {&quot;result&quot;:{&quot;content&quot;:&quot;ok&quot;,&quot;value&quot;:3.3}}</span>
+<span class="w">  </span><span class="nt">save</span><span class="p">:</span><span class="w"> </span>
+<span class="w">    </span><span class="nt">mycontent</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;&lt;json.result.content&gt;&gt;</span>
+</code></pre></div>
+
+<p>Now, you can use 'mycontent' in following statements</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul>
+<li>While saving partial response, you can applying <a href="../python/">python transformations</a> on saved content.</li>
+</ul>
+</div>
+<p>Here, it's a <code>json</code> partial content which is saved, but it could be a <code>xml</code> partial content, like this :</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/returnXml</span>
+<span class="w">  </span><span class="nt">save</span><span class="p">:</span><span class="w"> </span>
+<span class="w">    </span><span class="nt">mycontent</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;&lt;xml.//*:myNode[first()]&gt;&gt;</span>
+</code></pre></div>
+
+<h3 id="foreach">"foreach"</h3>
+<p>It let you repeat your statement, with a list of dict.</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/test/&lt;&lt;value&gt;&gt;</span>
+<span class="w">  </span><span class="nt">foreach</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+</code></pre></div>
+
+<p>Will make 3 requests. BTW, it's the same thing as :</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/test/1</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/test/2</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">GET</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/test/3</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>You can use only one <code>foreach</code> per statement. But if you need nested <code>foreach</code> you can do it using <a href="#a-call-procedure">nested call statements</a>.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+    
+  </body>
+</html>
