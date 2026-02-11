@@ -41,6 +41,7 @@ It's a global property which will be used as the default proxy for each request
 "RUN" is a "list of requests".
 It's the "list of request" whose will be executed by the reqman cli.
 Alternativly, you can create others keys, to contains a "list of requests". And you can call it from the RUN's list, with a call statement in place of a simple request (useful if you need to capitalize a "list of request", to avoid duplication), example:
+
     ```yaml
     COMMON:
         - GET: /path1
@@ -58,6 +59,7 @@ A request is a dict
 - the third entry could be "headers" (dict[str,str]) to set specific headers on the requests. But by default globals headers are used, you can surcharge them here.
 - the 4th can be a "body" key, which can contains the payload as yaml description.
 - the 5th entry can be a "tests" key, which contains a list of mono dict. Theses tests will be executed after the request, and permits to valid assertions. Examples:
+
     - R.status: 200                : assert the http status code is 200
     - R.status: [200, 201]         : assert the http status code is 200 or 201
     - R.json.response.code: "ok"   : assert the output payload is {"response": {"code":"ok"}}
@@ -81,6 +83,7 @@ A request is a dict
 
 ### using python
 You can create python method, to make transformation on the fly. You must declare them at the root of the yaml, example:
+
     ```
     method: |
         return str(x).upper()
