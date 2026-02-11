@@ -79,10 +79,11 @@ A request is a dict
     "R" is an object which contains always the last result of the request (its properties are only status, json, time, headers, content)
     
 - a last entry can be "save" (dict[str,str]), where you can create a var which can be reused in the following requests (use only if needed), examples:
+  
     - lastId: <<R.json.items.-1.id>> : create a var "lastId" which contains the last item.id in the "items" list.
 
 ## "pattern substitution"
-"Pattern substitution" is available, mainly in values, and can be done with {{key}} or <<key>>.
+"Pattern substitution" is available, mainly in values, and can be done with `{{key}}` or `<<key>>`.
 
 ### using python
 You can create python method, to make transformation on the fly. You must declare them at the root of the yaml, example:
