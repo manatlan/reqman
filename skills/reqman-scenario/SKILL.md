@@ -19,9 +19,11 @@ Every key will be a declared var. (vars must be declared before concrete use)
 
 ## switch's keys
 A key prefixed with "-" is a "switch" (can only be declared at the root of the yaml), when given in reqman cli, will declare all its sub dict[str,str] as vars in the current execution context. 
+
 In reqman cli, if a switch "-test" is declared in "scenario.yml", you can invoke cli like this:
-    - "reqman.exe scenario.yml"
-    - "reqman.exe scenario.yml -test"
+
+ - "reqman.exe scenario.yml"
+ - "reqman.exe scenario.yml -test"
 
 ## key `root` is a str.
 It's a global property which will be the basepath at each requests, if the request'url is relative.
@@ -40,6 +42,7 @@ It's a global property which will be used as the default proxy for each request
 ## key `RUN`
 "RUN" is a "list of requests".
 It's the "list of request" whose will be executed by the reqman cli.
+
 Alternativly, you can create others keys, to contains a "list of requests". And you can call it from the RUN's list, with a call statement in place of a simple request (useful if you need to capitalize a "list of request", to avoid duplication), example:
 
     ```yaml
