@@ -84,9 +84,10 @@ A request is a dict
 ### using python
 You can create python method, to make transformation on the fly. You must declare them at the root of the yaml, example:
 
-    ```
+    ```yaml
     method: |
         return str(x).upper()
     ```
-Internally, it declares a method "def method(x:str|None = None) -> str", that you can use them in "pattern substitution", like <<R.json.response.code|method>> or {{R.json.response.code|method}}. Methods are chainables.
+    
+Internally, it declares a method "def method(x:str|None = None) -> str", that you can use them in "pattern substitution", like `<<R.json.response.code|method>>` or `{{R.json.response.code|method}}`. Methods are chainables.
 
