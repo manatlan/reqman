@@ -60,6 +60,95 @@ headers:
     content-type: application/json
 ```
 
+### "verify", "cacert" and "cert"
+Reqman keeps its historical HTTPS behavior by default: SSL verification is disabled unless configured.
+
+Enable server certificate verification using the default trusted CA bundle:
+
+```yaml
+verify: true
+```
+
+Use a custom CA bundle, equivalent to curl's `--cacert`:
+
+```yaml
+cacert: ca.pem
+```
+
+Use a PEM client certificate, equivalent to curl's `--cert`:
+
+```yaml
+cert: client.pem
+```
+
+Use a separate PEM client certificate and key, equivalent to curl's `--cert` and `--key`:
+
+```yaml
+cert:
+    cert: client.pem
+    key: key.pem
+```
+
+Encrypted private keys can set `password`:
+
+```yaml
+cert:
+    cert: client.pem
+    key: key.pem
+    password: secret
+```
+
+You can also group SSL options under `ssl`. This is preferred when setting a client key because `key` is otherwise a generic top-level name:
+
+```yaml
+ssl:
+    verify: true
+    cacert: ca.pem
+    cert: client.pem
+    key: key.pem
+```
+
+Relative certificate paths are resolved from the folder containing `reqman.conf` or the scenario file.
+
+Full TLS example in a `reqman.conf`:
+
+```yaml
+root: https://api.example.com
+timeout: 10000
+
+headers:
+    accept: application/json
+    content-type: application/json
+
+ssl:
+    # Optional when cacert is set; shown here to make verification explicit.
+    verify: true
+
+    # Verify the server certificate against this private CA bundle.
+    cacert: certs/ca.pem
+
+    # Send this client certificate/key pair for mutual TLS authentication.
+    cert: certs/client.pem
+    key: certs/client.key
+
+    # Optional: only needed when the private key is encrypted.
+    password: secret
+```
+
+With this configuration, a scenario can use relative paths and inherit the TLS settings:
+
+```yaml
+- GET: /health
+  tests:
+    - R.status: 200
+
+- POST: /schemas
+  body:
+    name: customer
+  tests:
+    - R.status: [200, 201]
+```
+
 ## Declare switches for command line
 ### "switches"
 Switches are a reqman's feature, to let you override default param with command line switches.
@@ -118,5 +207,3 @@ It can be useful to obtain an oauth2 token bearer, initiate some things, ...
 
 It's a special procedure, which can be declared in reqman.conf only, and is auto-called at the end of all tests.
 It can be useful to clear some things after all tests, ...
-
-

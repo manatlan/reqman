@@ -24,6 +24,8 @@ import typing as T
 
 logger = logging.getLogger(__name__)
 
+VerifyTypes = T.Union[bool, str, ssl.SSLContext]
+
 def jdumps(o, *a, **k):
     k["ensure_ascii"] = False
     # ~ k["default"]=serialize
@@ -86,13 +88,13 @@ class ResponseInvalid(ResponseError):
         ResponseError.__init__(self,f"Invalid {url}")
 
 
-async def call(method, url:str, body: bytes=b'', headers:Headers=Headers(), timeout=None,proxies=None) -> Response:
+async def call(method, url:str, body: bytes=b'', headers:T.Mapping[str, str]=Headers(), timeout=None,proxies=None, verify: VerifyTypes=False) -> Response:
     assert isinstance(body, bytes)
 
     try:
         async with httpx.AsyncClient(
             cookies=_COOKIES,
-            verify=False,
+            verify=verify,
             follow_redirects=False,
             proxy=proxies,
         ) as client:
@@ -204,4 +206,3 @@ if __name__=="__main__":
     #     print(e)
 
     # asyncio.run(t())
-

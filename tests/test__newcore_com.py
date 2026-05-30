@@ -112,6 +112,26 @@ async def test_call_json_decode_error_jules(mock_async_client):
 
 @pytest.mark.asyncio
 @patch('httpx.AsyncClient')
+async def test_call_passes_ssl_verify(mock_async_client):
+    mock_response = MagicMock()
+    mock_response.headers = {}
+    mock_response.content = b'ok'
+    mock_response.status_code = 200
+    mock_response.reason_phrase = "OK"
+    mock_response.http_version = "HTTP/1.1"
+    mock_instance = mock_async_client.return_value.__aenter__.return_value
+    mock_instance.request.return_value = mock_response
+
+    verify = object()
+    r = await reqman.com.call("GET", "https://test.com", verify=verify)
+
+    assert r.status == 200
+    mock_async_client.assert_called_once()
+    assert mock_async_client.call_args.kwargs["verify"] is verify
+
+
+@pytest.mark.asyncio
+@patch('httpx.AsyncClient')
 async def test_call_ssl_error_jules(mock_async_client):
     # Mock the client to raise SSLError
     mock_instance = mock_async_client.return_value.__aenter__.return_value

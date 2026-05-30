@@ -1,6 +1,7 @@
 import pytest
 from src import reqman
 import json,os
+from unittest.mock import MagicMock
 
 ENV=reqman.env.Scope(dict(
     txt="hello",
@@ -228,6 +229,96 @@ def test_dotenv():
 
     assert e.get_var("ENV_VAR") == "dotenv_ready"
     assert e.get_var("user") == "dotenv_ready"
+
+
+def test_create_ssl_verify_defaults_to_current_unverified_behavior():
+    e = reqman.env.Scope({})
+
+    assert reqman.env.create_ssl_verify(e) is False
+
+
+def test_create_ssl_verify_uses_boolean_value():
+    e = reqman.env.Scope(dict(verify=True))
+
+    assert reqman.env.create_ssl_verify(e) is True
+
+
+def test_create_ssl_verify_uses_cacert(monkeypatch, tmp_path):
+    ca = tmp_path / "ca.pem"
+    ca.write_text("ca")
+    created = object()
+
+    create_default_context = MagicMock(return_value=created)
+    monkeypatch.setattr(reqman.env.ssl, "create_default_context", create_default_context)
+    e = reqman.env.Scope(dict(cacert="ca.pem"))
+
+    assert reqman.env.create_ssl_verify(e, str(tmp_path)) is created
+    create_default_context.assert_called_once_with(cafile=str(ca))
+
+
+def test_create_ssl_verify_loads_client_cert_and_key(monkeypatch, tmp_path):
+    cert = tmp_path / "client.pem"
+    key = tmp_path / "client.key"
+    cert.write_text("cert")
+    key.write_text("key")
+    ctx = MagicMock()
+
+    monkeypatch.setattr(reqman.env, "_create_unverified_client_context", MagicMock(return_value=ctx))
+    e = reqman.env.Scope(dict(cert=dict(cert="client.pem", key="client.key", password="secret")))
+
+    assert reqman.env.create_ssl_verify(e, str(tmp_path)) is ctx
+    ctx.load_cert_chain.assert_called_once_with(
+        certfile=str(cert),
+        keyfile=str(key),
+        password="secret",
+    )
+
+
+def test_create_ssl_verify_uses_ssl_grouping(monkeypatch, tmp_path):
+    ca = tmp_path / "ca.pem"
+    ca.write_text("ca")
+    created = object()
+
+    create_default_context = MagicMock(return_value=created)
+    monkeypatch.setattr(reqman.env.ssl, "create_default_context", create_default_context)
+    e = reqman.env.Scope(dict(ssl=dict(cacert="ca.pem")))
+
+    assert reqman.env.create_ssl_verify(e, str(tmp_path)) is created
+    create_default_context.assert_called_once_with(cafile=str(ca))
+
+
+def test_create_ssl_verify_loads_client_cert_from_list(monkeypatch, tmp_path):
+    cert = tmp_path / "client.pem"
+    key = tmp_path / "client.key"
+    cert.write_text("cert")
+    key.write_text("key")
+    ctx = MagicMock()
+
+    monkeypatch.setattr(reqman.env, "_create_unverified_client_context", MagicMock(return_value=ctx))
+    e = reqman.env.Scope(dict(cert=["client.pem", "client.key", "secret"]))
+
+    assert reqman.env.create_ssl_verify(e, str(tmp_path)) is ctx
+    ctx.load_cert_chain.assert_called_once_with(
+        certfile=str(cert),
+        keyfile=str(key),
+        password="secret",
+    )
+
+
+def test_create_ssl_verify_loads_client_cert_from_string(monkeypatch, tmp_path):
+    cert = tmp_path / "client.pem"
+    cert.write_text("cert")
+    ctx = MagicMock()
+
+    monkeypatch.setattr(reqman.env, "_create_unverified_client_context", MagicMock(return_value=ctx))
+    e = reqman.env.Scope(dict(cert="client.pem"))
+
+    assert reqman.env.create_ssl_verify(e, str(tmp_path)) is ctx
+    ctx.load_cert_chain.assert_called_once_with(
+        certfile=str(cert),
+        keyfile=None,
+        password=None,
+    )
 
 
 @pytest.mark.asyncio

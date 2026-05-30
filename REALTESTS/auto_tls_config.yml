@@ -1,0 +1,13 @@
+#:valid:1 THIS --b
+# -*- coding: utf-8 -*-
+
+root: http://localhost:11111
+
+ssl:
+    verify: true
+
+RUN:
+- GET: /get_json
+  doc: TLS config can be declared globally and inherited by requests.
+  tests:
+    - R.status: 200

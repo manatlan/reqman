@@ -1019,8 +1019,25 @@ class Req(ReqItem):
         # CREATE the REAL NEW SCOPE !!!!!!
         newenv=env.Scope( scope , EXPOSEDS)
 
+        base_path = gscope.path
+        if not base_path and self.parent.name and self.parent.name != "<YamlString>":
+            base_path = os.path.dirname(os.path.abspath(self.parent.name))
+
+        verify = False
+        try:
+            verify = env.create_ssl_verify(newenv, base_path)
+        except env.ResolveException as e:
+            ssl_error = str(e)
+        else:
+            ssl_error = None
+
         # execute the request (newcore)
-        ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc or "", querys=querys, proxies=proxy, http=http)
+        if ssl_error is None:
+            ex = await newenv.call(method,path,headers,body,newsaves,newtests, timeout=timeout, doc=doc or "", querys=querys, proxies=proxy, http=http, verify=verify)
+        else:
+            r = com.ResponseError(f"Request can't be resolved: {ssl_error}")
+            ex = env.Exchange(method,path,headers=dict(headers), tests=newtests, saves=newsaves, doc=doc or "")
+            ex.treatment(newenv, r)
 
         ex.nolimit = self.nolimit   #TODO: not beautiful !!!
 
@@ -2169,4 +2186,3 @@ class GenRML:
         yml= "\n%s\n%s\n" % ( "#"*80,y)
 
         return re.sub(r"\{\{([\w_\-\d]+)\}\}", r"<<\1>>", yml)
-

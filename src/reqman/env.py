@@ -23,6 +23,7 @@ import urllib.parse
 import hashlib
 import logging
 import dotenv; dotenv.load_dotenv()
+import ssl
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +113,7 @@ def jpath(elem, path: str) -> T.Any:
 class Exchange:
     id:str="" #unique id to identify request structure (to be able to match in dual mode)
 
-    def __init__(self,method: str,url: str,body: bytes=b"",headers: com.Headers=com.Headers(), tests:list=[], saves:list=[], doc:str = ""):
+    def __init__(self,method: str,url: str,body: bytes=b"",headers: T.Mapping[str, str]=com.Headers(), tests:list=[], saves:list=[], doc:str = ""):
         assert isinstance(body, bytes)
 
         self.datetime = datetime.datetime.now()
@@ -147,12 +148,12 @@ class Exchange:
     def path(self):
         return urllib.parse.urlparse(self.url).path
 
-    async def call(self, timeout=None, proxies=None, http=None) -> com.Response:
+    async def call(self, timeout=None, proxies=None, http=None, verify: com.VerifyTypes=False) -> com.Response:
         t1 = datetime.datetime.now()
 
         if http is None:
             #real call on the web
-            r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout, proxies=proxies)
+            r = await com.call(self.method,self.url,self.body,self.inHeaders,timeout=timeout, proxies=proxies, verify=verify)
         else:
             #simulate with http hook
             r = com.call_simulation(http,self.method,self.url,self.body,dict(self.inHeaders))
@@ -271,6 +272,104 @@ def isJson(s:str):
         return True
     except:
         pass
+
+
+def _as_bool_or_path(value):
+    if isinstance(value, str):
+        v = value.strip()
+        if v.lower() in ["true", "yes", "on", "1"]:
+            return True
+        if v.lower() in ["false", "no", "off", "0", "none", "null", ""]:
+            return False
+        return v
+    return value
+
+
+def _resolve_path(path, base_path=None):
+    if not isinstance(path, str) or not path:
+        return path
+    if os.path.isabs(path) or base_path is None:
+        return path
+    return os.path.abspath(os.path.join(base_path, path))
+
+
+def _create_unverified_client_context():
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
+def create_ssl_verify(scope, base_path=None):
+    """Build the httpx verify setting from reqman SSL config."""
+
+    sslconf = scope.get("ssl", {})
+    if sslconf is None:
+        sslconf = {}
+    if not isinstance(sslconf, dict):
+        raise ResolveException("ssl should be a dict")
+
+    def get_ssl_value(name, default=None):
+        if name in sslconf:
+            return sslconf[name]
+        return scope.get(name, default)
+
+    verify = get_ssl_value("verify", None)
+    cacert = get_ssl_value("cacert", None)
+    cert = get_ssl_value("cert", None)
+    key = get_ssl_value("key", get_ssl_value("cert_key", None))
+    password = get_ssl_value("password", get_ssl_value("cert_password", None))
+
+    if cacert is not None:
+        verify = cacert
+    if verify is None:
+        verify = False
+
+    verify = _as_bool_or_path(scope.resolve_string_or_not(verify))
+    key = scope.resolve_string_or_not(key)
+    password = scope.resolve_string_or_not(password)
+
+    if isinstance(cert, dict):
+        key = scope.resolve_string_or_not(cert.get("key", key))
+        password = scope.resolve_string_or_not(cert.get("password", password))
+        cert = scope.resolve_string_or_not(cert.get("cert", cert.get("file", None)))
+    elif isinstance(cert, (list, tuple)):
+        parts = list(cert)
+        if len(parts) not in [1, 2, 3]:
+            raise ResolveException("cert should contain cert, optional key, optional password")
+        cert = scope.resolve_string_or_not(parts[0])
+        if len(parts) >= 2:
+            key = scope.resolve_string_or_not(parts[1])
+        if len(parts) == 3:
+            password = scope.resolve_string_or_not(parts[2])
+    else:
+        cert = scope.resolve_string_or_not(cert)
+
+    if not cert:
+        if isinstance(verify, str):
+            cafile = _resolve_path(verify, base_path)
+            try:
+                return ssl.create_default_context(cafile=cafile)
+            except Exception as e:
+                raise ResolveException(f"ssl verify error: {e}")
+        return bool(verify)
+
+    cert = _resolve_path(cert, base_path)
+    key = _resolve_path(key, base_path)
+    if isinstance(verify, str):
+        cafile = _resolve_path(verify, base_path)
+        context_factory = lambda: ssl.create_default_context(cafile=cafile)
+    elif verify:
+        context_factory = ssl.create_default_context
+    else:
+        context_factory = _create_unverified_client_context
+
+    try:
+        ctx = context_factory()
+        ctx.load_cert_chain(certfile=cert, keyfile=key or None, password=password or None)
+        return ctx
+    except Exception as e:
+        raise ResolveException(f"ssl cert error: {e}")
 
 
 class Scope(dict): # like 'Env'
@@ -475,7 +574,7 @@ class Scope(dict): # like 'Env'
             raise PyMethodException(f"Can't execute '{method.__name__}' : {e}")
         
 
-    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None, querys={}, proxies=None, http=None) -> Exchange:
+    async def call(self, method:str, path:str, headers:dict={}, body:str="", saves=[], tests=[], doc:str="", timeout=None, querys={}, proxies=None, http=None, verify: com.VerifyTypes=False) -> Exchange:
         assert isinstance(body, str)
         # assert all( [isinstance(i, tuple) and len(i)==2 for i in tests] ) # assert list of tuple of 2
         assert all( [isinstance(i, tuple) and len(i)==2 for i in saves] ) # assert list of tuple of 2
@@ -557,7 +656,7 @@ class Scope(dict): # like 'Env'
         ex=Exchange(method,path,asBytes,dict(headers), tests=tests, saves=saves, doc=doc)
         ex.id=uid.hexdigest() #<- save unique id for this kind of request (to be able to match them in dual mode)
         if r is None: # we can call it safely
-            r=await ex.call(timeout,proxies=proxies,http=http)
+            r=await ex.call(timeout,proxies=proxies,http=http,verify=verify)
 
         ex.treatment( self, r)
 
@@ -621,7 +720,4 @@ if __name__=="__main__":
     # pprint.pprint(ex.tests)
     # pprint.pprint(ex.saves)
     # #     print(r)
-
-
-
 
